@@ -90,11 +90,11 @@ const stayDateLabel = computed(() => {
       </span>
     </div>
 
-    <div v-if="assignedStaff" class="w-full flex items-center gap-1.5">
-      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warning text-[8px] font-medium text-white">
-        {{ assignedStaff.name.split(' ').map(n => n[0]).join('') }}
+    <div class="w-full flex items-center gap-1.5">
+      <div :class="cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full', assignedStaff ? 'bg-warning' : 'bg-muted')">
+        <Icon :class="cn('size-3', assignedStaff ? 'text-white' : 'text-muted-foreground')" name="lucide:user" />
       </div>
-      <span class="text-[10px] text-muted-foreground">{{ assignedStaff.name }}</span>
+      <span class="text-[10px] text-muted-foreground">{{ assignedStaff?.name ?? 'Unassigned' }}</span>
     </div>
   </button>
 </template>
