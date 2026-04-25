@@ -6,7 +6,7 @@ import { conversations } from '~/components/inbox/data/conversations'
 
 const props = withDefaults(defineProps<InboxLayoutProps>(), {
   defaultCollapsed: false,
-  defaultLayout: () => [18, 25, 42, 15],
+  defaultLayout: () => [18, 22, 38, 22],
 })
 
 interface InboxLayoutProps {
@@ -104,8 +104,7 @@ watch(() => isMobile.value, () => {
       <ResizablePanel
         id="inbox-reservation-panel"
         :default-size="defaultLayout[3]"
-        :min-size="15"
-        :max-size="25"
+        :min-size="20"
         collapsible
       >
         <template v-if="selectedConversation && selectedReservation">

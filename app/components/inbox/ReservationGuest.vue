@@ -70,13 +70,13 @@ const stayCfg = computed(() => stayStatusConfig[props.stayStatus])
       </div>
     </div>
 
-    <div class="flex items-center gap-4 text-xs text-muted-foreground">
+    <div class="flex flex-col gap-1.5 text-xs text-muted-foreground">
       <div class="flex items-center gap-1.5">
-        <Icon name="lucide:mail" class="size-3.5" />
-        <span>{{ guest.email }}</span>
+        <Icon name="lucide:mail" class="size-3.5 shrink-0" />
+        <span class="truncate">{{ guest.email }}</span>
       </div>
       <div class="flex items-center gap-1.5">
-        <Icon name="lucide:phone" class="size-3.5" />
+        <Icon name="lucide:phone" class="size-3.5 shrink-0" />
         <span>{{ guest.phone }}</span>
       </div>
     </div>

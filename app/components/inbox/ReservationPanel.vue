@@ -23,11 +23,11 @@ const props = defineProps<ReservationPanelProps>()
       <Separator />
 
       <Tabs default-value="summary" class="flex flex-col">
-        <TabsList class="w-full justify-start rounded-none border-b bg-transparent px-4 h-9">
-          <TabsTrigger value="summary" class="text-xs">Summary</TabsTrigger>
-          <TabsTrigger value="listing" class="text-xs">Listing</TabsTrigger>
-          <TabsTrigger value="tasks" class="text-xs">Tasks</TabsTrigger>
-          <TabsTrigger value="activity" class="text-xs">Activity</TabsTrigger>
+        <TabsList class="w-full justify-start rounded-none border-b bg-transparent px-2 h-9 overflow-x-auto">
+          <TabsTrigger value="summary" class="text-xs shrink-0">Summary</TabsTrigger>
+          <TabsTrigger value="listing" class="text-xs shrink-0">Listing</TabsTrigger>
+          <TabsTrigger value="tasks" class="text-xs shrink-0">Tasks</TabsTrigger>
+          <TabsTrigger value="activity" class="text-xs shrink-0">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary">
