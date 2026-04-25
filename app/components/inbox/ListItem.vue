@@ -96,13 +96,5 @@ const stayDateLabel = computed(() => {
       </div>
       <span class="text-[10px] text-muted-foreground">{{ assignedStaff.name }}</span>
     </div>
-
-    <div class="w-full flex items-center gap-1.5">
-      <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
-      <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
-      <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
-        {{ stayConfig.label }}
-      </span>
-    </div>
   </button>
 </template>
