@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { otaSources } from '~/components/inbox/data/conversations'
 import { isToday, isYesterday, differenceInDays, format } from 'date-fns'
 import { toast } from 'vue-sonner'
 
@@ -9,7 +8,6 @@ const { selectedConversation,
   selectedReservation,
   markAsHandled,
   markAsUnread,
-  getAssignedStaff,
   isElevaiEnabled,
   useSuggestion,
   getNotes,
@@ -72,7 +70,7 @@ function dismissSuggestion() {
   }
 }
 
-const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
+
 
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   action_needed: 'destructive',
@@ -82,9 +80,12 @@ const statusLabelMap: Record<string, string> = {
   action_needed: 'Action Needed',
 }
 
-const assignedStaff = computed(() => {
-  if (!selectedConversation.value) return null
-  return getAssignedStaff(selectedConversation.value)
+
+
+const stayDateLabel = computed(() => {
+  const res = selectedReservation.value
+  if (!res?.checkIn || !res?.checkOut) return ''
+  return `${format(new Date(res.checkIn), 'MMM d')} – ${format(new Date(res.checkOut), 'MMM d')}`
 })
 
 function handleMarkAsHandled() {
@@ -122,21 +123,15 @@ function formatNoteDate(timestamp: string) {
   <div v-else class="flex flex-col h-full">
     <div class="flex items-center px-4 h-[56px]">
       <div class="flex flex-col justify-center min-w-0 flex-1">
-        <span class="font-semibold text-sm truncate">{{ selectedConversation.guestName }}</span>
-        <div class="flex items-center gap-1.5">
-          <span class="text-xs text-muted-foreground truncate">{{ selectedConversation.listingName }}</span>
-          <Icon :name="otaIconMap[selectedConversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm truncate">{{ selectedConversation.guestName }}</span>
           <Badge v-if="selectedConversation.status === 'action_needed'" :variant="statusVariantMap[selectedConversation.status]" class="text-[10px]">
             {{ statusLabelMap[selectedConversation.status] }}
           </Badge>
-          <span v-if="assignedStaff" class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Icon name="lucide:user-check" class="size-3" />
-            {{ assignedStaff.name }}
-          </span>
-          <span v-else class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Icon name="lucide:user-x" class="size-3" />
-            Unassigned
-          </span>
+        </div>
+        <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span class="truncate">{{ selectedConversation.listingName }}</span>
+          <span v-if="stayDateLabel" class="shrink-0">{{ stayDateLabel }}</span>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
