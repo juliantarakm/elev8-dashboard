@@ -471,7 +471,7 @@ export const conversations: Conversation[] = [
     reservationId: 'res-16',
     status: 'action_needed',
     lastMessage: 'Hi, we\'d like to book for our honeymoon. Do you offer any special packages?',
-    lastMessageAt: '2026-04-25T16:00:00Z',
+    lastMessageAt: '2026-04-26T12:00:00Z',
     unreadCount: 1,
     isAssignedToMe: false,
     assignedTo: null,
@@ -962,7 +962,7 @@ export const messages: Record<string, Message[]> = {
       senderName: 'Raj Patel',
       content: 'Hi, we\'d like to book for our honeymoon. Do you offer any special packages?',
       channel: 'Airbnb',
-      timestamp: '2026-04-25T16:00:00Z',
+      timestamp: '2026-04-26T12:00:00Z',
     },
   ],
   'conv-17': [
