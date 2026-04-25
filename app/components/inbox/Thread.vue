@@ -152,7 +152,7 @@ function formatNoteDate(timestamp: string) {
               Mark as Resolved
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Mark conversation as done</TooltipContent>
+          <TooltipContent>Resolve action needed for this guest</TooltipContent>
         </Tooltip>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
