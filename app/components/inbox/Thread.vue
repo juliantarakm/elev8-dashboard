@@ -6,12 +6,15 @@ import { toast } from 'vue-sonner'
 
 const { selectedConversation,
   selectedMessages,
+  selectedReservation,
   markAsHandled,
   markAsUnread,
   getAssignedStaff,
   isElevaiEnabled,
   useSuggestion,
 } = useInbox()
+
+const activeThreadTab = ref<'messages' | 'notes'>('messages')
 
 const dismissedSuggestions = ref<string[]>([])
 
@@ -33,7 +36,7 @@ function getDateLabel(timestamp: string) {
 }
 
 const showSuggestion = computed(() => {
-  if (!aiSuggestion.value) return false
+  if (aiSuggestion.value) return false
   if (dismissedSuggestions.value.includes(aiSuggestion.value.id)) return false
   return selectedConversation.value ? isElevaiEnabled(selectedConversation.value.id) : false
 })
@@ -138,34 +141,59 @@ function handleMarkAsUnread() {
     </div>
     <Separator />
 
-    <div class="flex-1 min-h-0">
-      <ScrollArea class="h-full p-4">
-        <div class="flex flex-col gap-4">
-          <template v-for="(msg, index) of displayMessages" :key="msg.id">
-            <div v-if="index === 0 || getDateLabel(msg.timestamp) !== getDateLabel(displayMessages[index - 1].timestamp)" class="flex items-center justify-center">
-              <Badge variant="outline" class="text-xs text-muted-foreground">
-                {{ getDateLabel(msg.timestamp) }}
-              </Badge>
-            </div>
-            <InboxThreadMessage :message="msg" />
-          </template>
+    <Tabs v-model="activeThreadTab" class="flex flex-col min-h-0 flex-1">
+      <TabsList class="w-full justify-start rounded-none border-b bg-transparent h-8 px-4">
+        <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
+        <TabsTrigger value="notes" class="text-xs">Notes</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="messages" class="flex-1 min-h-0 flex flex-col">
+        <ScrollArea class="flex-1 p-4">
+          <div class="flex flex-col gap-4">
+            <template v-for="(msg, index) of displayMessages" :key="msg.id">
+              <div v-if="index === 0 || getDateLabel(msg.timestamp) !== getDateLabel(displayMessages[index - 1].timestamp)" class="flex items-center justify-center">
+                <Badge variant="outline" class="text-xs text-muted-foreground">
+                  {{ getDateLabel(msg.timestamp) }}
+                </Badge>
+              </div>
+              <InboxThreadMessage :message="msg" />
+            </template>
+          </div>
+        </ScrollArea>
+
+        <div v-if="showSuggestion && aiSuggestion" class="shrink-0 px-4 py-2">
+          <InboxHostbuddySuggestion
+            :suggestion="aiSuggestion"
+            @use="handleUseSuggestion"
+            @dismiss="dismissSuggestion"
+          />
         </div>
-      </ScrollArea>
-    </div>
 
-    <div v-if="showSuggestion && aiSuggestion" class="shrink-0 px-4 py-2">
-      <InboxHostbuddySuggestion
-        :suggestion="aiSuggestion"
-        @use="handleUseSuggestion"
-        @dismiss="dismissSuggestion"
-      />
-    </div>
+        <div class="shrink-0 border-t bg-background">
+          <InboxReplyBox
+            :channel="selectedConversation.otaSource"
+            :conversation-id="selectedConversation.id"
+          />
+        </div>
+      </TabsContent>
 
-    <div class="shrink-0 border-t bg-background">
-      <InboxReplyBox
-        :channel="selectedConversation.otaSource"
-        :conversation-id="selectedConversation.id"
-      />
-    </div>
+      <TabsContent value="notes" class="flex-1 min-h-0">
+        <ScrollArea class="h-full">
+          <div v-if="selectedReservation?.guestDetails?.notes" class="p-4">
+            <div class="rounded-lg border bg-muted/50 p-3">
+              <div class="flex items-center gap-2 mb-1.5">
+                <Icon name="lucide:pencil-line" class="size-3.5 text-muted-foreground" />
+                <span class="text-sm font-medium">Guest Notes</span>
+              </div>
+              <p class="text-sm text-muted-foreground leading-relaxed">{{ selectedReservation.guestDetails.notes }}</p>
+            </div>
+          </div>
+          <div v-else class="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
+            <Icon name="lucide:sticky-note" class="size-10 mb-2" />
+            <p class="text-sm">No notes for this conversation</p>
+          </div>
+        </ScrollArea>
+      </TabsContent>
+    </Tabs>
   </div>
 </template>

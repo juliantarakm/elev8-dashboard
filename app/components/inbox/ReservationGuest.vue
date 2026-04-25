@@ -134,15 +134,6 @@ function handleAssign(staffId: string | null) {
       </div>
     </div>
 
-    <!-- Notes -->
-    <div v-if="guest.notes" class="rounded-lg border bg-muted/50 p-3">
-      <div class="flex items-center gap-2 mb-1.5">
-        <Icon name="lucide:pencil-line" class="size-3.5 text-muted-foreground" />
-        <span class="text-sm font-medium">Notes</span>
-      </div>
-      <p class="text-xs text-muted-foreground leading-relaxed">{{ guest.notes }}</p>
-    </div>
-
     <!-- Assign To -->
     <Popover v-model:open="assignOpen">
       <PopoverTrigger as-child>
