@@ -12,8 +12,6 @@ const props = defineProps<ReservationSummaryProps>()
 function handleResolveAll() {
   props.smartActions.splice(0, props.smartActions.length)
 }
-</script>
-</script>
 
 <template>
   <div class="space-y-4">
