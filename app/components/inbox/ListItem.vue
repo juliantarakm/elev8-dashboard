@@ -88,19 +88,19 @@ const stayDateLabel = computed(() => {
       </p>
     </div>
 
-    <div class="w-full flex items-center gap-3">
+    <div class="w-full flex items-center justify-between gap-3">
+      <div class="flex items-center gap-1.5">
+        <div :class="cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full', assignedStaff ? 'bg-warning' : 'bg-muted')">
+          <Icon :class="cn('size-3', assignedStaff ? 'text-white' : 'text-muted-foreground')" name="lucide:user" />
+        </div>
+        <span class="text-[10px] text-muted-foreground">{{ assignedStaff?.name ?? 'Unassigned' }}</span>
+      </div>
       <div class="flex items-center gap-1.5">
         <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
         <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
         <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
           {{ stayConfig.label }}
         </span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div :class="cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full', assignedStaff ? 'bg-warning' : 'bg-muted')">
-          <Icon :class="cn('size-3', assignedStaff ? 'text-white' : 'text-muted-foreground')" name="lucide:user" />
-        </div>
-        <span class="text-[10px] text-muted-foreground">{{ assignedStaff?.name ?? 'Unassigned' }}</span>
       </div>
     </div>
   </button>
