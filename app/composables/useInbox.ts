@@ -120,6 +120,7 @@ export function useInbox() {
     sortBy,
     pendingSuggestion,
     filteredConversations,
+    conversations,
     selectedConversation,
     selectedMessages,
     selectedReservation,
