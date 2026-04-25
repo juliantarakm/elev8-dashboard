@@ -9,7 +9,7 @@ interface NavProps {
 
 defineProps<NavProps>()
 
-const { activeFilter, activeStayFilter, unreadCountByStatus, stayCountByStatus } = useInbox()
+const { activeFilter, activeStayFilter, activeListingFilter, unreadCountByStatus, stayCountByStatus, listingOptions } = useInbox()
 
 const statusFilters = computed(() => [
   { key: 'needs_reply' as ConversationStatus, label: 'Needs Reply', icon: 'lucide:message-circle-warning', count: unreadCountByStatus('needs_reply') },
@@ -34,6 +34,14 @@ function setStayFilter(key: StayStatus | 'all') {
 
 function clearStayFilter() {
   activeStayFilter.value = 'all'
+}
+
+function setListingFilter(name: string) {
+  activeListingFilter.value = name
+}
+
+function clearListingFilter() {
+  activeListingFilter.value = 'all'
 }
 </script>
 
@@ -173,6 +181,60 @@ function clearStayFilter() {
               )"
             >
               {{ filter.count }}
+            </span>
+          </a>
+        </template>
+      </nav>
+    </div>
+
+    <Separator />
+
+    <div>
+      <nav class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
+        <template v-for="listing of listingOptions" :key="listing.name">
+          <Tooltip v-if="isCollapsed" :delay-duration="0">
+            <TooltipTrigger as-child>
+              <a
+                href="#"
+                :class="cn(
+                  buttonVariants({ variant: activeListingFilter === listing.name ? 'default' : 'ghost', size: 'icon' }),
+                  'h-9 w-9',
+                  activeListingFilter === listing.name
+                    && 'dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white',
+                )"
+                @click.prevent="activeListingFilter === listing.name ? clearListingFilter() : setListingFilter(listing.name)"
+              >
+                <Icon name="lucide:building" class="size-4" />
+                <span class="sr-only">{{ listing.name }}</span>
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="right" class="flex items-center gap-4">
+              {{ listing.name }}
+              <span class="ml-auto text-muted-foreground">{{ listing.count }}</span>
+            </TooltipContent>
+          </Tooltip>
+
+          <a
+            v-else
+            href="#"
+            :class="cn(
+              buttonVariants({ variant: activeListingFilter === listing.name ? 'default' : 'ghost', size: 'sm' }),
+              activeListingFilter === listing.name
+                && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
+              'justify-start',
+            )"
+            @click.prevent="activeListingFilter === listing.name ? clearListingFilter() : setListingFilter(listing.name)"
+          >
+            <Icon name="lucide:building" class="mr-2 size-4" />
+            <span class="truncate">{{ listing.name }}</span>
+            <span
+              :class="cn(
+                'ml-auto',
+                activeListingFilter === listing.name
+                  && 'text-background dark:text-white',
+              )"
+            >
+              {{ listing.count }}
             </span>
           </a>
         </template>

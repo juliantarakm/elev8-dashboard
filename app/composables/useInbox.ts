@@ -7,6 +7,7 @@ export function useInbox() {
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
   const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'needs_reply')
   const activeStayFilter = useState<StayStatus | 'all'>('inbox-active-stay-filter', () => 'all')
+  const activeListingFilter = useState<string>('inbox-active-listing-filter', () => 'all')
   const elevaiEnabled = useState<Record<string, boolean>>('inbox-elevai-enabled', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
@@ -22,6 +23,10 @@ export function useInbox() {
 
     if (activeStayFilter.value !== 'all') {
       result = result.filter(c => c.stayStatus === activeStayFilter.value)
+    }
+
+    if (activeListingFilter.value !== 'all') {
+      result = result.filter(c => c.propertyName === activeListingFilter.value)
     }
 
     if (searchValue.value) {
@@ -106,6 +111,14 @@ export function useInbox() {
     return conversations.filter(c => c.stayStatus === status).length
   }
 
+  const listingOptions = computed(() => {
+    const map = new Map<string, number>()
+    for (const c of conversations) {
+      map.set(c.propertyName, (map.get(c.propertyName) ?? 0) + 1)
+    }
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
+  })
+
   function useSuggestion(content: string) {
     pendingSuggestion.value = content
   }
@@ -118,6 +131,7 @@ export function useInbox() {
     selectedConversationId,
     activeFilter,
     activeStayFilter,
+    activeListingFilter,
     elevaiEnabled,
     searchValue,
     rightPanelCollapsed,
@@ -134,6 +148,7 @@ export function useInbox() {
     markAsDone,
     unreadCountByStatus,
     stayCountByStatus,
+    listingOptions,
     unreadNeedsReply,
     useSuggestion,
     clearSuggestion,
