@@ -17,7 +17,7 @@ const props = defineProps<ReservationPanelProps>()
 
     <ScrollArea class="flex-1 min-h-0">
       <div class="px-4 pt-2 pb-2">
-        <InboxReservationGuest :guest="reservation.guestDetails" />
+        <InboxReservationGuest :guest="reservation.guestDetails" :reservation="reservation" :stay-status="conversation.stayStatus" />
       </div>
 
       <Separator />
@@ -33,7 +33,6 @@ const props = defineProps<ReservationPanelProps>()
         <TabsContent value="summary">
           <div class="p-4">
             <InboxReservationSummary
-              :reservation="reservation"
               :sentiment="conversation.sentiment"
               :sentiment-note="conversation.sentimentNote"
               :smart-actions="reservation.smartActions"
