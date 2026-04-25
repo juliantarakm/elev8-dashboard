@@ -1,0 +1,40 @@
+<h2>Inbox Layout Approaches</h2>
+<p class="subtitle">Three approaches for structuring the Elev8 Inbox module</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Adapt Mail Module Pattern</h3>
+      <p>Reuse the existing <code>mail/Layout.vue</code> resizable 3-panel pattern. Swap in Inbox-specific content: conversation filters on left, thread list center-left, message thread center-right, reservation summary as a collapsible right panel or tab inside the thread view.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Fastest to build — leverages familiar layout</li><li>Consistent with existing codebase patterns</li><li>ResizablePanelGroup already wired up</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Couple Reservation Summary into thread panel — may feel cramped</li><li>Mail code wasn't designed for 4 panels</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>4-Panel Resizable Layout</h3>
+      <p>Four independent resizable panels: Filter sidebar | Conversation list | Message thread | Reservation summary. Each panel can collapse/expand. Built fresh but following the same ResizablePanelGroup pattern from mail/.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Matches PRD layout exactly</li><li>Each panel fully independent</li><li>Reservation context always visible</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex resizable logic (4 panels)</li><li>Horizontal space is tight on &lt;1440px screens</li><li>More UI to build from scratch</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>3-Panel + Slide-over Detail</h3>
+      <p>Three main panels: Filter sidebar | Conversation list | Message thread. Reservation summary opens as a slide-over Sheet from the right when needed. Default collapsed, click to open.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Clean default view — not cluttered</li><li>Reservation detail on-demand</li><li>Works well on 1280px screens</li><li>Follows shadcn Sheet pattern</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Reservation context not always visible</li><li>Extra click to see reservation details</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

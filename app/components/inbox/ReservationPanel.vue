@@ -26,7 +26,7 @@ const props = defineProps<ReservationPanelProps>()
 
       <TabsContent value="summary" class="flex-1 min-h-0">
         <ScrollArea class="h-full p-4">
-          <ReservationSummary
+          <InboxReservationSummary
             :reservation="reservation"
             :sentiment="conversation.sentiment"
             :sentiment-note="conversation.sentimentNote"
@@ -37,25 +37,25 @@ const props = defineProps<ReservationPanelProps>()
 
       <TabsContent value="guest" class="flex-1 min-h-0">
         <ScrollArea class="h-full p-4">
-          <ReservationGuest :guest="reservation.guestDetails" />
+          <InboxReservationGuest :guest="reservation.guestDetails" />
         </ScrollArea>
       </TabsContent>
 
       <TabsContent value="listing" class="flex-1 min-h-0">
         <ScrollArea class="h-full p-4">
-          <ReservationListing :listing="reservation.listingDetails" />
+          <InboxReservationListing :listing="reservation.listingDetails" />
         </ScrollArea>
       </TabsContent>
 
       <TabsContent value="tasks" class="flex-1 min-h-0">
         <ScrollArea class="h-full p-4">
-          <ReservationTasks :tasks="reservation.tasks" />
+          <InboxReservationTasks :tasks="reservation.tasks" />
         </ScrollArea>
       </TabsContent>
 
       <TabsContent value="activity" class="flex-1 min-h-0">
         <ScrollArea class="h-full p-4">
-          <ReservationActivity :activity="reservation.activity" />
+          <InboxReservationActivity :activity="reservation.activity" />
         </ScrollArea>
       </TabsContent>
     </Tabs>

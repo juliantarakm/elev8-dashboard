@@ -1,0 +1,195 @@
+<h2>Inbox: 4-Panel Layout Structure</h2>
+<p class="subtitle">Filter sidebar · Conversation list · Message thread · Reservation summary</p>
+
+<div class="mockup">
+  <div class="mockup-header">Desktop view (1280px+)</div>
+  <div class="mockup-body">
+    <div style="display:flex;height:500px;background:#0a0a0f;border-radius:6px;overflow:hidden;font-family:Inter,sans-serif;font-size:11px;color:#ccc;">
+      
+      <!-- Panel 1: Filters (240px) -->
+      <div style="width:200px;border-right:1px solid #222;background:#0f0f18;flex-shrink:0;display:flex;flex-direction:column;">
+        <div style="padding:12px 16px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;">
+          <span style="color:#C8A84B;font-weight:700;font-size:13px;">Inbox</span>
+          <span style="background:#C8A84B;color:#0a0a0f;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600;">3</span>
+        </div>
+        <div style="padding:8px 8px;flex:1;">
+          <div style="display:flex;align-items:center;background:#1a1a28;border-radius:6px;padding:6px 10px;margin-bottom:8px;">
+            <span style="color:#888;font-size:10px;">🔍 Search conversations...</span>
+          </div>
+          <div style="margin-bottom:4px;color:#666;font-size:9px;text-transform:uppercase;letter-spacing:1px;padding:4px 8px;">Status</div>
+          <div style="padding:6px 8px;border-radius:4px;background:#1a1a28;border-left:2px solid #C8A84B;margin-bottom:2px;">
+            <div style="font-weight:600;color:#e0e0e0;">Needs Reply</div>
+            <div style="font-size:10px;color:#C8A84B;">3 conversations</div>
+          </div>
+          <div style="padding:6px 8px;border-radius:4px;margin-bottom:2px;">
+            <div style="color:#aaa;">Waiting on Guest</div>
+            <div style="font-size:10px;color:#666;">5 conversations</div>
+          </div>
+          <div style="padding:6px 8px;border-radius:4px;margin-bottom:2px;">
+            <div style="color:#aaa;">Done</div>
+            <div style="font-size:10px;color:#666;">12 conversations</div>
+          </div>
+          <div style="padding:6px 8px;border-radius:4px;margin-bottom:2px;">
+            <div style="color:#aaa;">All</div>
+          </div>
+          <div style="margin-top:12px;margin-bottom:4px;color:#666;font-size:9px;text-transform:uppercase;letter-spacing:1px;padding:4px 8px;">Quick Filters</div>
+          <div style="padding:6px 8px;border-radius:4px;margin-bottom:2px;">
+            <div style="color:#aaa;">Check-in Today</div>
+            <div style="font-size:10px;color:#666;">2 conversations</div>
+          </div>
+          <div style="padding:6px 8px;border-radius:4px;">
+            <div style="color:#aaa;">Unassigned</div>
+            <div style="font-size:10px;color:#666;">1 conversation</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resizable handle -->
+      <div style="width:4px;background:#222;cursor:col-resize;flex-shrink:0;"></div>
+
+      <!-- Panel 2: Conversation list (320px) -->
+      <div style="width:260px;border-right:1px solid #222;background:#0f0f18;flex-shrink:0;display:flex;flex-direction:column;">
+        <div style="padding:12px 16px;border-bottom:1px solid #222;font-weight:600;font-size:12px;">Conversations</div>
+        <div style="flex:1;overflow-y:auto;">
+          <!-- Active conversation -->
+          <div style="padding:12px 16px;border-bottom:1px solid #1a1a28;background:#1a1a28;border-left:2px solid #C8A84B;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-weight:600;color:#e0e0e0;">Sarah Mitchell</span>
+              <span style="font-size:9px;color:#C8A84B;">2m ago</span>
+            </div>
+            <div style="font-size:10px;color:#888;margin-bottom:2px;">Villa Canggu · Airbnb</div>
+            <div style="font-size:10px;color:#aaa;">Hi, is late check-out available for...</div>
+            <div style="margin-top:4px;"><span style="background:#C8A84B22;color:#C8A84B;border-radius:3px;padding:1px 5px;font-size:9px;">Needs Reply</span></div>
+          </div>
+          <!-- Conversation 2 -->
+          <div style="padding:12px 16px;border-bottom:1px solid #1a1a28;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-weight:600;color:#aaa;">James Wilson</span>
+              <span style="font-size:9px;color:#666;">1h ago</span>
+            </div>
+            <div style="font-size:10px;color:#888;margin-bottom:2px;">Sunset Loft · Booking.com</div>
+            <div style="font-size:10px;color:#888;">Thank you for confirming! We'll arrive...</div>
+            <div style="margin-top:4px;"><span style="background:#1a3a1a;color:#6fdc6f;border-radius:3px;padding:1px 5px;font-size:9px;">Waiting on Guest</span></div>
+          </div>
+          <!-- Conversation 3 -->
+          <div style="padding:12px 16px;border-bottom:1px solid #1a1a28;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-weight:600;color:#aaa;">Emily Chen</span>
+              <span style="font-size:9px;color:#666;">3h ago</span>
+            </div>
+            <div style="font-size:10px;color:#888;margin-bottom:2px;">Beach House · Airbnb</div>
+            <div style="font-size:10px;color:#888;">Can we get an extra towel?</div>
+            <div style="margin-top:4px;"><span style="background:#C8A84B22;color:#C8A84B;border-radius:3px;padding:1px 5px;font-size:9px;">Needs Reply</span></div>
+          </div>
+          <!-- Conversation 4 -->
+          <div style="padding:12px 16px;border-bottom:1px solid #1a1a28;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="color:#888;">Alex Rivera</span>
+              <span style="font-size:9px;color:#666;">1d ago</span>
+            </div>
+            <div style="font-size:10px;color:#666;margin-bottom:2px;">Pool Villa · Airbnb</div>
+            <div style="font-size:10px;color:#666;">Sounds great, thanks!</div>
+            <div style="margin-top:4px;"><span style="background:#333;color:#888;border-radius:3px;padding:1px 5px;font-size:9px;">Done</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resizable handle -->
+      <div style="width:4px;background:#222;cursor:col-resize;flex-shrink:0;"></div>
+
+      <!-- Panel 3: Message thread (flex) -->
+      <div style="flex:1;background:#0a0a12;display:flex;flex-direction:column;min-width:0;">
+        <!-- Thread header -->
+        <div style="padding:12px 16px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-weight:600;color:#e0e0e0;font-size:13px;">Sarah Mitchell</span>
+            <span style="color:#666;font-size:10px;margin-left:8px;">Villa Canggu · Airbnb</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <span style="background:#C8A84B;color:#0a0a0f;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:600;">Needs Reply</span>
+            <span style="color:#888;font-size:11px;cursor:pointer;">⋯</span>
+          </div>
+        </div>
+        <!-- Messages -->
+        <div style="flex:1;overflow-y:auto;padding:16px;">
+          <div style="margin-bottom:12px;display:flex;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888;flex-shrink:0;">SM</div>
+            <div>
+              <div style="font-size:10px;color:#888;margin-bottom:4px;">Sarah Mitchell · Guest · Today 10:32 AM</div>
+              <div style="background:#1a1a28;border-radius:8px;padding:10px;color:#ccc;font-size:12px;max-width:400px;">Hi! I was wondering if late check-out is available for our stay? We have a late flight and would love to stay a bit longer.</div>
+            </div>
+          </div>
+          
+          <!-- Hostbuddy suggestion -->
+          <div style="margin-bottom:12px;background:#1a1a10;border:1px solid #C8A84B;border-radius:8px;padding:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="color:#C8A84B;font-size:11px;font-weight:600;">✨ Hostbuddy Suggestion</span>
+              <div style="display:flex;gap:4px;">
+                <span style="background:#C8A84B;color:#0a0a0f;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;font-weight:600;">Use & Edit</span>
+                <span style="background:#333;color:#888;border-radius:3px;padding:2px 8px;font-size:9px;cursor:pointer;">Dismiss</span>
+              </div>
+            </div>
+            <div style="color:#ccc;font-size:11px;line-height:1.5;">Hi Sarah! Yes, late check-out until 2:00 PM is available for an additional fee of $25 USD. Would you like me to add this to your reservation?</div>
+          </div>
+        </div>
+        <!-- Reply box -->
+        <div style="border-top:1px solid #222;padding:12px 16px;">
+          <div style="background:#1a1a28;border-radius:8px;padding:10px;font-size:12px;color:#888;margin-bottom:8px;min-height:40px;">Type your reply...</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span style="background:#1a1a28;border-radius:4px;padding:4px 8px;font-size:10px;color:#888;">via <span style="color:#C8A84B;">Airbnb</span> ▾</span>
+            </div>
+            <span style="background:#C8A84B;color:#0a0a0f;border-radius:6px;padding:6px 16px;font-size:11px;font-weight:600;">Send</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resizable handle -->
+      <div style="width:4px;background:#222;cursor:col-resize;flex-shrink:0;"></div>
+
+      <!-- Panel 4: Reservation summary (280px) -->
+      <div style="width:240px;background:#0f0f18;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;">
+        <div style="padding:12px 16px;border-bottom:1px solid #222;font-weight:600;font-size:12px;">Reservation</div>
+        <!-- Tabs -->
+        <div style="display:flex;border-bottom:1px solid #222;padding:0 8px;">
+          <div style="padding:8px 8px;border-bottom:2px solid #C8A84B;color:#e0e0e0;font-size:10px;font-weight:600;">Summary</div>
+          <div style="padding:8px 8px;color:#666;font-size:10px;">Guest</div>
+          <div style="padding:8px 8px;color:#666;font-size:10px;">Listing</div>
+          <div style="padding:8px 8px;color:#666;font-size:10px;">Tasks</div>
+        </div>
+        <div style="padding:12px 16px;flex:1;">
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Property</div>
+            <div style="color:#e0e0e0;font-weight:500;font-size:12px;">Villa Canggu</div>
+            <div style="color:#888;font-size:10px;">Room 1 - Pool View</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">OTA Source</div>
+            <div style="display:flex;align-items:center;gap:4px;"><span style="background:#2a5a2a;color:#6fdc6f;border-radius:3px;padding:2px 6px;font-size:10px;">Airbnb</span></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Dates</div>
+            <div style="color:#e0e0e0;font-size:12px;">Jun 15 – Jun 20</div>
+            <div style="color:#888;font-size:10px;">5 nights</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Guests</div>
+            <div style="color:#e0e0e0;font-size:12px;">2 adults</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total</div>
+            <div style="color:#C8A84B;font-weight:700;font-size:16px;">$1,250</div>
+          </div>
+          <div style="border-top:1px solid #222;padding-top:12px;margin-bottom:8px;">
+            <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Quick Actions</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="background:#1a1a28;border-radius:4px;padding:6px 10px;font-size:10px;color:#aaa;cursor:pointer;">📋 View in Cockpit</div>
+              <div style="background:#1a1a28;border-radius:4px;padding:6px 10px;font-size:10px;color:#aaa;cursor:pointer;">🧹 Create Cleaning Task</div>
+              <div style="background:#1a1a28;border-radius:4px;padding:6px 10px;font-size:10px;color:#aaa;cursor:pointer;">📝 View Activity Log</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

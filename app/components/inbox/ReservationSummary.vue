@@ -29,11 +29,11 @@ function handleDismiss(action: SmartAction) {
 
 <template>
   <div class="space-y-4">
-    <GuestSentiment :sentiment="sentiment" :note="sentimentNote" />
+    <InboxGuestSentiment :sentiment="sentiment" :note="sentimentNote" />
 
     <div v-if="smartActions.length > 0" class="space-y-2">
       <div class="text-sm font-medium">Action Needed</div>
-      <ActionCard
+      <InboxActionCard
         v-for="action of smartActions"
         :key="action.id"
         :action="action"

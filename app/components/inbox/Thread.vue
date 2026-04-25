@@ -101,13 +101,13 @@ function statusBadge(status: string) {
 
     <ScrollArea class="flex-1 p-4">
       <div class="flex flex-col gap-4">
-        <ThreadMessage
+        <InboxThreadMessage
           v-for="msg of displayMessages"
           :key="msg.id"
           :message="msg"
         />
 
-        <HostbuddySuggestion
+        <InboxHostbuddySuggestion
           v-if="showSuggestion && aiSuggestion"
           :suggestion="aiSuggestion"
           @use="emit('useSuggestion', $event)"
@@ -116,7 +116,7 @@ function statusBadge(status: string) {
       </div>
     </ScrollArea>
 
-    <ReplyBox
+    <InboxReplyBox
       :channel="selectedConversation.otaSource"
       :conversation-id="selectedConversation.id"
     />

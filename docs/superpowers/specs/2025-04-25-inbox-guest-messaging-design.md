@@ -227,7 +227,7 @@ Search bar at the top filters conversations by guest name, listing name, or mess
 **Reply Box (ReplyBox.vue):**
 - Textarea for typing reply
 - Channel selector dropdown (defaults to OTA source of incoming message)
-- ElevAI toggle switch (ON = gold, OFF = gray)
+- ElevAI toggle switch (ON = gold, OFF = gray) — **per-reservation toggle** (persisted per reservation, not global)
 - Send button (gold `#C8A84B`)
 - When ElevAI is OFF: no suggestion card appears, manual reply only
 
