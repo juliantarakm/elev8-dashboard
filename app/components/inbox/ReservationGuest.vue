@@ -172,9 +172,8 @@ function handleAssign(staffId: string | null) {
                 <CommandItem
                   v-for="member of filteredStaff"
                   :key="member.id"
-                  :value="member.id"
+                  :value="member.name"
                   @select="handleAssign(member.id)"
-                  class="flex items-center gap-2 px-2 py-1.5"
                 >
                   <Avatar class="size-6 shrink-0">
                     <AvatarFallback class="text-[10px]">{{ member.initials }}</AvatarFallback>
@@ -191,7 +190,6 @@ function handleAssign(staffId: string | null) {
                 <CommandItem
                   value="__unassign__"
                   @select="handleAssign(null)"
-                  class="flex items-center gap-2 px-2 py-1.5"
                 >
                   <Icon name="lucide:user-x" class="size-4 text-muted-foreground" />
                   <span class="text-xs text-muted-foreground">Unassign</span>
