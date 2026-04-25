@@ -66,7 +66,7 @@ const dateLabel = computed(() => {
   if (isYesterday(date)) return 'Yesterday'
   const daysAgo = differenceInDays(new Date(), date)
   if (daysAgo <= 3) return `${daysAgo} days ago`
-  return format(date, 'EEEE, MMMM d yyyy')
+  return format(date, 'EEEE, d MMMM yyyy')
 })
 </script>
 
