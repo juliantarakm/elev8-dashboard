@@ -149,7 +149,7 @@ export function useInbox() {
       conversations.value[index] = {
         ...conversations.value[index],
         assignedTo: staffId,
-        isAssignedToMe: staffId === 'staff-1',
+        isAssignedToMe: staffId === 'staff-2',
       }
     }
   }
