@@ -102,23 +102,24 @@ watch(() => isMobile.value, () => {
         id="inbox-reservation-panel"
         :default-size="defaultLayout[3]"
         :min-size="20"
-        :collapsed="rightPanelCollapsed"
         collapsible
       >
-        <template v-if="selectedConversation && selectedReservation">
-          <InboxReservationPanel
-            :conversation="selectedConversation"
-            :reservation="selectedReservation"
-          />
-        </template>
-        <template v-else>
-          <div class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-            <Icon name="lucide:calendar" class="size-10" />
-            <p class="text-sm">
-              Select a conversation
-            </p>
-          </div>
-        </template>
+        <div v-show="!rightPanelCollapsed" class="h-full">
+          <template v-if="selectedConversation && selectedReservation">
+            <InboxReservationPanel
+              :conversation="selectedConversation"
+              :reservation="selectedReservation"
+            />
+          </template>
+          <template v-else>
+            <div class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+              <Icon name="lucide:calendar" class="size-10" />
+              <p class="text-sm">
+                Select a conversation
+              </p>
+            </div>
+          </template>
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   </TooltipProvider>
