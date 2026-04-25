@@ -86,7 +86,7 @@ function handleAssign(staffId: string | null) {
       <div class="flex items-center">
         <div class="flex-1 text-center">
           <div class="text-[10px] text-muted-foreground mb-0.5">Check-in</div>
-          <div class="font-semibold text-sm">{{ format(checkInDate!, 'EEEE, d MMMM yyyy') }}</div>
+          <div class="font-semibold text-sm">{{ format(checkInDate!, 'EEEE, d MMM yyyy') }}</div>
           <div class="text-[10px] text-muted-foreground">{{ format(checkInDate!, 'h:mm a') }}</div>
         </div>
         <div class="flex flex-col items-center gap-0.5 px-3">
@@ -99,7 +99,7 @@ function handleAssign(staffId: string | null) {
         </div>
         <div class="flex-1 text-center">
           <div class="text-[10px] text-muted-foreground mb-0.5">Check-out</div>
-          <div class="font-semibold text-sm">{{ format(checkOutDate!, 'EEEE, d MMMM yyyy') }}</div>
+          <div class="font-semibold text-sm">{{ format(checkOutDate!, 'EEEE, d MMM yyyy') }}</div>
           <div class="text-[10px] text-muted-foreground">{{ format(checkOutDate!, 'h:mm a') }}</div>
         </div>
       </div>
