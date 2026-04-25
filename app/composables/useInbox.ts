@@ -236,8 +236,7 @@ export function useInbox() {
     if (listingSearchText.value) {
       const q = listingSearchText.value.toLowerCase()
       convs = convs.filter(c =>
-        c.propertyName.toLowerCase().includes(q)
-        || c.listingName.toLowerCase().includes(q),
+        c.listingName.toLowerCase().includes(q),
       )
     }
 
