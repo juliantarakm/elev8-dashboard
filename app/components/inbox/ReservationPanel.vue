@@ -93,7 +93,6 @@ function handleDisable() {
       <Tabs default-value="summary" class="flex flex-col">
         <TabsList class="w-full justify-start rounded-none border-b bg-transparent px-2 h-9 overflow-x-auto">
           <TabsTrigger value="summary" class="text-xs shrink-0">Summary</TabsTrigger>
-          <TabsTrigger value="listing" class="text-xs shrink-0">Listing</TabsTrigger>
           <TabsTrigger value="tasks" class="text-xs shrink-0">Tasks</TabsTrigger>
           <TabsTrigger value="activity" class="text-xs shrink-0">Activity</TabsTrigger>
         </TabsList>
@@ -105,12 +104,6 @@ function handleDisable() {
               :sentiment-note="conversation.sentimentNote"
               :smart-actions="reservation.smartActions"
             />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="listing">
-          <div class="p-4">
-            <InboxReservationListing :listing="reservation.listingDetails" />
           </div>
         </TabsContent>
 
