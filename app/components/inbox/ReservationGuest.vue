@@ -35,8 +35,22 @@ const checkOutDate = computed(() => hasDates.value ? new Date(props.reservation.
 
 const assignedStaff = computed(() => getAssignedStaff(props.conversation))
 
+const assignSearch = ref('')
+
+const filteredStaff = computed(() => {
+  const q = assignSearch.value.toLowerCase()
+  if (!q) return staffMembers
+  return staffMembers.filter(s =>
+    s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q),
+  )
+})
+
+const assignOpen = ref(false)
+
 function handleAssign(staffId: string | null) {
   assignTo(props.conversation.id, staffId)
+  assignOpen.value = false
+  assignSearch.value = ''
   if (staffId) {
     const staff = staffMembers.find(s => s.id === staffId)
     toast.success(`Assigned to ${staff?.name ?? 'staff'}`)
@@ -131,48 +145,67 @@ function handleAssign(staffId: string | null) {
 
     <!-- Assign To -->
     <div class="rounded-lg border bg-muted/50 p-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <Icon name="lucide:user-check" class="size-3.5 text-muted-foreground" />
-          <span class="text-sm font-medium">Assigned to</span>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="sm" class="h-7 gap-1.5 text-xs">
-              <template v-if="assignedStaff">
-                <Avatar class="size-5">
-                  <AvatarFallback class="text-[9px]">{{ assignedStaff.initials }}</AvatarFallback>
-                </Avatar>
-                {{ assignedStaff.name }}
-              </template>
-              <template v-else>
-                Unassigned
-              </template>
-              <Icon name="lucide:chevron-down" class="size-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-52">
-            <DropdownMenuItem @click="handleAssign('staff-1')">
-              <Icon name="lucide:crown" class="size-4 mr-2" />
-              You (Admin)
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              v-for="member of staffMembers.filter(s => s.id !== 'staff-1')"
-              :key="member.id"
-              @click="handleAssign(member.id)"
-            >
-              {{ member.name }}
-              <span class="ml-1 text-muted-foreground">· {{ member.role }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handleAssign(null)">
-              <Icon name="lucide:user-x" class="size-4 mr-2" />
-              Unassign
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div class="flex items-center gap-2 mb-2">
+        <Icon name="lucide:user-check" class="size-3.5 text-muted-foreground" />
+        <span class="text-sm font-medium">Assigned to</span>
       </div>
+      <Popover v-model:open="assignOpen">
+        <PopoverTrigger as-child>
+          <Button variant="outline" role="combobox" :aria-expanded="assignOpen" class="w-full justify-start h-auto py-1.5 px-3">
+            <template v-if="assignedStaff">
+              <Avatar class="size-5 mr-2 shrink-0">
+                <AvatarFallback class="text-[9px]">{{ assignedStaff.initials }}</AvatarFallback>
+              </Avatar>
+              <div class="text-left">
+                <div class="text-xs font-medium">{{ assignedStaff.name }}</div>
+                <div class="text-[10px] text-muted-foreground">{{ assignedStaff.role }}</div>
+              </div>
+            </template>
+            <template v-else>
+              <Icon name="lucide:plus" class="size-4 mr-2 text-muted-foreground" />
+              <span class="text-xs text-muted-foreground">Assign staff...</span>
+            </template>
+            <Icon name="lucide:chevrons-up-down" class="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-[220px] p-0" align="start" :side-offset="4">
+          <Command>
+            <CommandInput v-model="assignSearch" placeholder="Search staff..." />
+            <CommandList>
+              <CommandEmpty>No staff found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  v-for="member of filteredStaff"
+                  :key="member.id"
+                  :value="member.id"
+                  @select="handleAssign(member.id)"
+                  class="flex items-center gap-2 px-2 py-1.5"
+                >
+                  <Avatar class="size-6 shrink-0">
+                    <AvatarFallback class="text-[10px]">{{ member.initials }}</AvatarFallback>
+                  </Avatar>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-medium truncate">{{ member.name }}</div>
+                    <div class="text-[10px] text-muted-foreground">{{ member.role }}</div>
+                  </div>
+                  <Icon v-if="conversation.assignedTo === member.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
+                  value="__unassign__"
+                  @select="handleAssign(null)"
+                  class="flex items-center gap-2 px-2 py-1.5"
+                >
+                  <Icon name="lucide:user-x" class="size-4 text-muted-foreground" />
+                  <span class="text-xs text-muted-foreground">Unassign</span>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   </div>
 </template>
