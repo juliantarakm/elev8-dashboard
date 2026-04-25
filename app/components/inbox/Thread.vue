@@ -189,20 +189,30 @@ function formatNoteDate(timestamp: string) {
                   {{ getDateLabel(item.timestamp) }}
                 </Badge>
               </div>
-              <InboxThreadMessage v-if="item.type === 'message'" :message="item.data" />
-              <div v-else class="flex justify-end">
-                <div class="max-w-[75%] rounded-lg border-l-2 border-[#C8A84B] bg-amber-50 dark:bg-amber-950/30 px-3 py-2">
-                  <div class="flex items-center gap-1.5 mb-1">
-                    <Icon name="lucide:sticky-note" class="size-3 text-[#C8A84B]" />
-                    <span class="text-xs font-medium text-amber-800 dark:text-amber-300">Internal Note</span>
-                    <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#C8A84B]">
-                      <Icon name="lucide:sparkles" class="size-3" />
-                    </span>
+              <template v-if="item.type === 'message'" :key="item.data.id">
+                <InboxThreadMessage :message="item.data" />
+              </template>
+              <template v-else :key="item.data.id">
+                <div class="flex justify-end">
+                  <div class="flex flex-col gap-1 max-w-[75%]">
+                    <div class="flex items-center gap-2">
+                      <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning/10">
+                        <Icon name="lucide:sticky-note" class="size-4 text-warning" />
+                      </div>
+                      <span class="text-xs font-medium">Internal Note</span>
+                      <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#C8A84B]">
+                        <Icon name="lucide:sparkles" class="size-3" />
+                        ElevAI
+                      </span>
+                      <span v-if="getDateLabel(item.timestamp)" class="text-[10px] text-muted-foreground">{{ getDateLabel(item.timestamp) }} · </span>
+                      <span class="text-[10px] text-muted-foreground">{{ formatNoteDate(item.data.createdAt) }}</span>
+                    </div>
+                    <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2 text-sm">
+                      {{ item.data.content }}
+                    </div>
                   </div>
-                  <p class="text-sm leading-relaxed text-amber-900 dark:text-amber-200">{{ item.data.content }}</p>
-                  <div class="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-1">{{ item.data.authorName }} · {{ formatNoteDate(item.data.createdAt) }}</div>
                 </div>
-              </div>
+              </template>
             </template>
           </div>
         </ScrollArea>
