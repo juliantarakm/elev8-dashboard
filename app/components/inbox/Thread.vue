@@ -8,7 +8,6 @@ const { selectedConversation,
   selectedMessages,
   markAsHandled,
   markAsUnread,
-  assignTo,
   getAssignedStaff,
   isElevaiEnabled,
   useSuggestion,
@@ -64,17 +63,6 @@ const assignedStaff = computed(() => {
   if (!selectedConversation.value) return null
   return getAssignedStaff(selectedConversation.value)
 })
-
-function handleAssign(staffId: string | null) {
-  if (!selectedConversation.value) return
-  assignTo(selectedConversation.value.id, staffId)
-  if (staffId) {
-    const staff = staffMembers.find(s => s.id === staffId)
-    toast.success(`Assigned to ${staff?.name ?? 'staff'}`)
-  } else {
-    toast.info('Unassigned conversation')
-  }
-}
 
 function handleMarkAsHandled() {
   if (!selectedConversation.value) return
@@ -137,33 +125,6 @@ function handleMarkAsUnread() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Icon name="lucide:user-plus" class="size-4 mr-2" />
-                Assign to
-                <Icon name="lucide:chevron-right" class="size-4 ml-auto" />
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem @click="handleAssign('staff-1')">
-                  <Icon name="lucide:crown" class="size-4 mr-2" />
-                  You (Admin)
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  v-for="member of staffMembers.filter(s => s.id !== 'staff-1')"
-                  :key="member.id"
-                  @click="handleAssign(member.id)"
-                >
-                  {{ member.name }}
-                  <span class="ml-1 text-muted-foreground">· {{ member.role }}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="handleAssign(null)">
-                  <Icon name="lucide:user-x" class="size-4 mr-2" />
-                  Unassign
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
             <DropdownMenuItem>Archive</DropdownMenuItem>
             <DropdownMenuItem>Mute</DropdownMenuItem>
             <DropdownMenuSeparator />

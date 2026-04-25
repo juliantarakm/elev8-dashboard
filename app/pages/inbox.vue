@@ -2,9 +2,14 @@
 import { useSidebar } from '~/components/ui/sidebar'
 
 const { setOpen } = useSidebar()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter } = useInbox()
 
 onMounted(() => {
   setOpen(false)
+  showActionNeeded.value = false
+  unreadFilter.value = false
+  assignedToMeFilter.value = false
+  activeStayFilter.value = 'all'
 })
 </script>
 

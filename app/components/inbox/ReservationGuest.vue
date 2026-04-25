@@ -1,16 +1,20 @@
 <script lang="ts" setup>
-import type { GuestDetails, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { otaSources } from '~/components/inbox/data/conversations'
+import type { Conversation, GuestDetails, Reservation, StayStatus } from '~/components/inbox/data/conversations'
+import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format } from 'date-fns'
 import { cn } from '~/lib/utils'
+import { toast } from 'vue-sonner'
 
 interface ReservationGuestProps {
   guest: GuestDetails
   reservation: Reservation
   stayStatus: StayStatus
+  conversation: Conversation
 }
 
 const props = defineProps<ReservationGuestProps>()
+
+const { assignTo, getAssignedStaff } = useInbox()
 
 const initials = computed(() =>
   props.guest.name.split(' ').map(n => n[0]).join(''),
@@ -28,6 +32,18 @@ const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s =
 const hasDates = computed(() => !!props.reservation.checkIn && !!props.reservation.checkOut)
 const checkInDate = computed(() => hasDates.value ? new Date(props.reservation.checkIn) : null)
 const checkOutDate = computed(() => hasDates.value ? new Date(props.reservation.checkOut) : null)
+
+const assignedStaff = computed(() => getAssignedStaff(props.conversation))
+
+function handleAssign(staffId: string | null) {
+  assignTo(props.conversation.id, staffId)
+  if (staffId) {
+    const staff = staffMembers.find(s => s.id === staffId)
+    toast.success(`Assigned to ${staff?.name ?? 'staff'}`)
+  } else {
+    toast.info('Unassigned conversation')
+  }
+}
 </script>
 
 <template>
@@ -111,6 +127,52 @@ const checkOutDate = computed(() => hasDates.value ? new Date(props.reservation.
         <span class="text-sm font-medium">Notes</span>
       </div>
       <p class="text-xs text-muted-foreground leading-relaxed">{{ guest.notes }}</p>
+    </div>
+
+    <!-- Assign To -->
+    <div class="rounded-lg border bg-muted/50 p-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Icon name="lucide:user-check" class="size-3.5 text-muted-foreground" />
+          <span class="text-sm font-medium">Assigned to</span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="sm" class="h-7 gap-1.5 text-xs">
+              <template v-if="assignedStaff">
+                <Avatar class="size-5">
+                  <AvatarFallback class="text-[9px]">{{ assignedStaff.initials }}</AvatarFallback>
+                </Avatar>
+                {{ assignedStaff.name }}
+              </template>
+              <template v-else>
+                Unassigned
+              </template>
+              <Icon name="lucide:chevron-down" class="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-52">
+            <DropdownMenuItem @click="handleAssign('staff-1')">
+              <Icon name="lucide:crown" class="size-4 mr-2" />
+              You (Admin)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              v-for="member of staffMembers.filter(s => s.id !== 'staff-1')"
+              :key="member.id"
+              @click="handleAssign(member.id)"
+            >
+              {{ member.name }}
+              <span class="ml-1 text-muted-foreground">· {{ member.role }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="handleAssign(null)">
+              <Icon name="lucide:user-x" class="size-4 mr-2" />
+              Unassign
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   </div>
 </template>

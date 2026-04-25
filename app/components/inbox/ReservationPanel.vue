@@ -85,7 +85,7 @@ function handleDisable() {
 
     <ScrollArea class="flex-1 min-h-0">
       <div class="px-4 pt-2 pb-2">
-        <InboxReservationGuest :guest="reservation.guestDetails" :reservation="reservation" :stay-status="conversation.stayStatus" />
+        <InboxReservationGuest :guest="reservation.guestDetails" :reservation="reservation" :stay-status="conversation.stayStatus" :conversation="conversation" />
       </div>
 
       <Separator />
