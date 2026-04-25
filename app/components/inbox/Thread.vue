@@ -16,8 +16,6 @@ const { selectedConversation,
   toggleRightPanel,
 } = useInbox()
 
-const isReservationPanelCollapsed = computed(() => rightPanelCollapsed.value)
-
 const activeThreadTab = ref<'messages' | 'notes'>('messages')
 
 const newNoteContent = ref('')
@@ -157,11 +155,11 @@ function formatNoteDate(timestamp: string) {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger as-child>
-            <Button variant="ghost" size="icon" @click="toggleReservationPanel">
-              <Icon :name="isReservationPanelCollapsed ? 'lucide:panel-right' : 'lucide:panel-right-close'" class="size-4" />
+            <Button variant="ghost" size="icon" @click="toggleRightPanel">
+              <Icon :name="rightPanelCollapsed ? 'lucide:panel-right' : 'lucide:panel-right-close'" class="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{{ isReservationPanelCollapsed ? 'Show' : 'Hide' }} reservation panel</TooltipContent>
+          <TooltipContent>{{ rightPanelCollapsed ? 'Show' : 'Hide' }} reservation panel</TooltipContent>
         </Tooltip>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
