@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
+import { otaSources } from '~/components/inbox/data/conversations'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
@@ -14,11 +15,6 @@ interface ListItemEmits {
 
 const props = defineProps<ListItemProps>()
 const emit = defineEmits<ListItemEmits>()
-
-const otaColorMap: Record<string, string> = {
-  Airbnb: '#FF5A5F',
-  'Booking.com': '#003580',
-}
 
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   needs_reply: 'default',
@@ -39,7 +35,7 @@ const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
   past: { label: 'Past', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
 }
 
-const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#888')
+const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 const stayConfig = computed(() => stayStatusConfig[props.conversation.stayStatus])
 const stayDateLabel = computed(() => {
   const checkIn = new Date(props.conversation.checkIn)
@@ -90,12 +86,7 @@ const stayDateLabel = computed(() => {
     </div>
 
     <div class="w-full flex items-center gap-1.5">
-      <Badge
-        :style="{ backgroundColor: `${otaColor}20`, color: otaColor }"
-        class="text-[10px] shrink-0"
-      >
-        {{ conversation.otaSource }}
-      </Badge>
+      <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
       <span class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
       <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
         {{ stayConfig.label }}

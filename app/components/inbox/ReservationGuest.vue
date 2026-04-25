@@ -16,9 +16,6 @@ const initials = computed(() =>
   props.guest.name.split(' ').map(n => n[0]).join(''),
 )
 
-const otaColorMap = Object.fromEntries(otaSources.map(s => [s.name, s.color]))
-const otaColor = computed(() => otaColorMap[props.reservation.otaSource] ?? '#888')
-
 const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
   inquiry: { label: 'Inquiry', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   current: { label: 'Current', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
@@ -27,6 +24,8 @@ const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
 }
 
 const stayCfg = computed(() => stayStatusConfig[props.stayStatus])
+
+const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 </script>
 
 <template>
@@ -44,12 +43,7 @@ const stayCfg = computed(() => stayStatusConfig[props.stayStatus])
           </span>
         </div>
       </div>
-      <span
-        class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium shrink-0"
-        :style="{ backgroundColor: `${otaColor}20`, color: otaColor }"
-      >
-        {{ reservation.otaSource }}
-      </span>
+      <Icon :name="otaIconMap[reservation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
     </div>
 
     <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
