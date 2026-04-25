@@ -46,7 +46,7 @@ function getDateLabel(timestamp: string) {
 }
 
 const showSuggestion = computed(() => {
-  if (aiSuggestion.value) return false
+  if (!aiSuggestion.value) return false
   if (dismissedSuggestions.value.includes(aiSuggestion.value.id)) return false
   return selectedConversation.value ? isElevaiEnabled(selectedConversation.value.id) : false
 })
