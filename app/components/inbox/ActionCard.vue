@@ -5,13 +5,7 @@ interface ActionCardProps {
   action: SmartAction
 }
 
-interface ActionCardEmits {
-  act: [action: SmartAction]
-  dismiss: [action: SmartAction]
-}
-
-const props = defineProps<ActionCardProps>()
-const emit = defineEmits<ActionCardEmits>()
+defineProps<ActionCardProps>()
 </script>
 
 <template>
