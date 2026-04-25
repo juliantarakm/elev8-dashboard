@@ -26,8 +26,8 @@ export interface StaffMember {
 export const staffMembers: StaffMember[] = [
   { id: 'staff-1', name: 'You', initials: 'YO', role: 'Admin' },
   { id: 'staff-2', name: 'Komang Juliantara', initials: 'KJ', role: 'Guest Relations' },
-  { id: 'staff-3', name: 'Made Surya', initials: 'MS', role: 'Housekeeping' },
-  { id: 'staff-4', name: 'Wayan Adi', initials: 'WA', role: 'Maintenance' },
+  { id: 'staff-3', name: 'Made Surya', initials: 'MS', role: 'Listing Manager' },
+  { id: 'staff-4', name: 'Wayan Adi', initials: 'WA', role: 'Listing Manager' },
 ]
 
 export interface Conversation {
