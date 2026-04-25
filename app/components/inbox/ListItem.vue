@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
 import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
 interface ListItemProps {

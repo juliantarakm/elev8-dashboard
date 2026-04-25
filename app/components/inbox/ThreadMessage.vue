@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
+import { format, isToday, isYesterday, differenceInDays, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
 interface ThreadMessageProps {
@@ -54,15 +54,18 @@ const systemBubbleClass = 'bg-muted/50 text-muted-foreground'
 
 const timeLabel = computed(() => {
   const date = new Date(props.message.timestamp)
+  if (isToday(date)) {
+    return formatDistanceToNow(date, { addSuffix: true })
+  }
   return format(date, 'h:mm a')
 })
 
 const dateLabel = computed(() => {
   const date = new Date(props.message.timestamp)
-  if (isToday(date)) return 'Today'
+  if (isToday(date)) return ''
   if (isYesterday(date)) return 'Yesterday'
   const daysAgo = differenceInDays(new Date(), date)
-  if (daysAgo <= 3) return format(date, 'EEEE')
+  if (daysAgo <= 3) return `${daysAgo} days ago`
   return format(date, 'MMM d')
 })
 </script>
@@ -87,6 +90,7 @@ const dateLabel = computed(() => {
             <Icon name="lucide:sparkles" class="size-3" />
             AI
           </span>
+          <span v-if="dateLabel" class="text-[10px] text-muted-foreground">{{ dateLabel }} · </span>
           <span class="text-[10px] text-muted-foreground">{{ timeLabel }}</span>
         </div>
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">

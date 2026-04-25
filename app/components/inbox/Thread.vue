@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
+import { otaSources } from '~/components/inbox/data/conversations'
 import { isToday, isYesterday, differenceInDays, format } from 'date-fns'
 import { toast } from 'vue-sonner'
 

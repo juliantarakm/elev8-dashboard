@@ -80,12 +80,6 @@ watch(() => isMobile.value, () => {
             <h1 class="text-xl font-bold">
               Inbox
             </h1>
-            <span
-              v-if="totalUnread > 0"
-              class="ml-2 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-xs font-semibold"
-            >
-              {{ totalUnread }}
-            </span>
           </template>
         </div>
         <Separator />

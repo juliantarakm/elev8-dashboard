@@ -9,7 +9,7 @@ interface NavProps {
 
 defineProps<NavProps>()
 
-const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter, activeListingFilter, activeTagFilters, listingSearchText, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters } = useInbox()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter, activeListingFilter, activeTagFilters, listingSearchText, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters, totalCount } = useInbox()
 
 const stayFilters = computed(() => [
   { key: 'current' as StayStatus, label: 'Current', icon: 'lucide:home', count: stayCountByStatus('current') },
@@ -68,6 +68,7 @@ function clearAll() {
           </TooltipTrigger>
           <TooltipContent side="right" class="flex items-center gap-4">
             All
+            <span class="ml-auto text-muted-foreground">{{ totalCount() }}</span>
           </TooltipContent>
         </Tooltip>
         <a
@@ -75,13 +76,18 @@ function clearAll() {
           href="#"
           :class="cn(
             buttonVariants({ variant: activeStayFilter === 'all' && !showActionNeeded && !unreadFilter && !assignedToMeFilter ? 'default' : 'ghost', size: 'sm' }),
-            activeStayFilter === 'all' && !showActionNeeded && !unreadFilter && !assignedToMeFilter && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
             'justify-start',
           )"
           @click.prevent="clearAll()"
         >
           <Icon name="lucide:inbox" class="mr-2 size-4" />
           All
+          <span
+            v-if="totalCount() > 0"
+            class="ml-auto text-muted-foreground"
+          >
+            {{ totalCount() }}
+          </span>
         </a>
 
         <template v-for="filter of stayFilters" :key="filter.key">
@@ -122,11 +128,7 @@ function clearAll() {
             {{ filter.label }}
             <span
               v-if="filter.count > 0"
-              :class="cn(
-                'ml-auto',
-                activeStayFilter === filter.key
-                  && 'text-background dark:text-white',
-              )"
+              class="ml-auto text-muted-foreground"
             >
               {{ filter.count }}
             </span>

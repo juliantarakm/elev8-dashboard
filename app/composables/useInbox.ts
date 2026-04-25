@@ -167,6 +167,10 @@ export function useInbox() {
     return conversations.value.filter(c => c.isAssignedToMe).length
   }
 
+  function totalCount(): number {
+    return conversations.value.length
+  }
+
   function stayCountByStatus(status: StayStatus): number {
     return conversations.value.filter(c => c.stayStatus === status).length
   }
@@ -291,6 +295,7 @@ export function useInbox() {
     getAssignedStaff,
     actionNeededCount,
     assignedToMeCount,
+    totalCount,
     stayCountByStatus,
     allListingOptions,
     listingOptions,
