@@ -15,49 +15,50 @@ const props = defineProps<ReservationPanelProps>()
       <h2 class="font-semibold text-sm">Reservation</h2>
     </div>
 
-    <Tabs default-value="summary" class="flex flex-col flex-1 min-h-0">
-      <TabsList class="w-full justify-start rounded-none border-b bg-transparent px-4 h-9">
-        <TabsTrigger value="summary" class="text-xs">Summary</TabsTrigger>
-        <TabsTrigger value="guest" class="text-xs">Guest</TabsTrigger>
-        <TabsTrigger value="listing" class="text-xs">Listing</TabsTrigger>
-        <TabsTrigger value="tasks" class="text-xs">Tasks</TabsTrigger>
-        <TabsTrigger value="activity" class="text-xs">Activity</TabsTrigger>
-      </TabsList>
+    <ScrollArea class="flex-1 min-h-0">
+      <div class="px-4 pt-2 pb-2">
+        <InboxReservationGuest :guest="reservation.guestDetails" />
+      </div>
 
-      <TabsContent value="summary" class="flex-1 min-h-0">
-        <ScrollArea class="h-full p-4">
-          <InboxReservationSummary
-            :reservation="reservation"
-            :sentiment="conversation.sentiment"
-            :sentiment-note="conversation.sentimentNote"
-            :smart-actions="reservation.smartActions"
-          />
-        </ScrollArea>
-      </TabsContent>
+      <Separator />
 
-      <TabsContent value="guest" class="flex-1 min-h-0">
-        <ScrollArea class="h-full p-4">
-          <InboxReservationGuest :guest="reservation.guestDetails" />
-        </ScrollArea>
-      </TabsContent>
+      <Tabs default-value="summary" class="flex flex-col">
+        <TabsList class="w-full justify-start rounded-none border-b bg-transparent px-4 h-9">
+          <TabsTrigger value="summary" class="text-xs">Summary</TabsTrigger>
+          <TabsTrigger value="listing" class="text-xs">Listing</TabsTrigger>
+          <TabsTrigger value="tasks" class="text-xs">Tasks</TabsTrigger>
+          <TabsTrigger value="activity" class="text-xs">Activity</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="listing" class="flex-1 min-h-0">
-        <ScrollArea class="h-full p-4">
-          <InboxReservationListing :listing="reservation.listingDetails" />
-        </ScrollArea>
-      </TabsContent>
+        <TabsContent value="summary">
+          <div class="p-4">
+            <InboxReservationSummary
+              :reservation="reservation"
+              :sentiment="conversation.sentiment"
+              :sentiment-note="conversation.sentimentNote"
+              :smart-actions="reservation.smartActions"
+            />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="tasks" class="flex-1 min-h-0">
-        <ScrollArea class="h-full p-4">
-          <InboxReservationTasks :tasks="reservation.tasks" />
-        </ScrollArea>
-      </TabsContent>
+        <TabsContent value="listing">
+          <div class="p-4">
+            <InboxReservationListing :listing="reservation.listingDetails" />
+          </div>
+        </TabsContent>
 
-      <TabsContent value="activity" class="flex-1 min-h-0">
-        <ScrollArea class="h-full p-4">
-          <InboxReservationActivity :activity="reservation.activity" />
-        </ScrollArea>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="tasks">
+          <div class="p-4">
+            <InboxReservationTasks :tasks="reservation.tasks" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <div class="p-4">
+            <InboxReservationActivity :activity="reservation.activity" />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </ScrollArea>
   </div>
 </template>
