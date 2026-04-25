@@ -100,26 +100,30 @@ function statusBadge(status: string) {
       </div>
     </div>
 
-    <ScrollArea class="flex-1 p-4">
-      <div class="flex flex-col gap-4">
-        <InboxThreadMessage
-          v-for="msg of displayMessages"
-          :key="msg.id"
-          :message="msg"
-        />
+    <div class="flex-1 min-h-0">
+      <ScrollArea class="h-full p-4">
+        <div class="flex flex-col gap-4">
+          <InboxThreadMessage
+            v-for="msg of displayMessages"
+            :key="msg.id"
+            :message="msg"
+          />
 
-        <InboxHostbuddySuggestion
-          v-if="showSuggestion && aiSuggestion"
-          :suggestion="aiSuggestion"
-          @use="emit('useSuggestion', $event)"
-          @dismiss="dismissSuggestion"
-        />
-      </div>
-    </ScrollArea>
+          <InboxHostbuddySuggestion
+            v-if="showSuggestion && aiSuggestion"
+            :suggestion="aiSuggestion"
+            @use="emit('useSuggestion', $event)"
+            @dismiss="dismissSuggestion"
+          />
+        </div>
+      </ScrollArea>
+    </div>
 
-    <InboxReplyBox
-      :channel="selectedConversation.otaSource"
-      :conversation-id="selectedConversation.id"
-    />
+    <div class="shrink-0 border-t bg-background">
+      <InboxReplyBox
+        :channel="selectedConversation.otaSource"
+        :conversation-id="selectedConversation.id"
+      />
+    </div>
   </div>
 </template>
