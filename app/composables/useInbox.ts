@@ -219,7 +219,7 @@ export function useInbox() {
   const allListingOptions = computed(() => {
     const map = new Map<string, number>()
     for (const c of conversations.value) {
-      map.set(c.propertyName, (map.get(c.propertyName) ?? 0) + 1)
+      map.set(c.listingName, (map.get(c.listingName) ?? 0) + 1)
     }
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
   })
