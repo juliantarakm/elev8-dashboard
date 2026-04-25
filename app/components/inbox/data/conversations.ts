@@ -1,10 +1,25 @@
-export type ConversationStatus = 'needs_reply' | 'waiting_on_guest' | 'done'
+export type ConversationStatus = 'action_needed'
 export type GuestSentiment = 'positive' | 'neutral' | 'negative'
 export type MessageSender = 'guest' | 'host' | 'system' | 'ai'
 export type ActionSeverity = 'warning' | 'urgent' | 'info'
 export type ActivityEventColor = 'gold' | 'green' | 'blue' | 'gray'
 
 export type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
+
+export interface StaffMember {
+  id: string
+  name: string
+  initials: string
+  role: string
+  avatarUrl?: string
+}
+
+export const staffMembers: StaffMember[] = [
+  { id: 'staff-1', name: 'You', initials: 'YO', role: 'Admin' },
+  { id: 'staff-2', name: 'Komang Juliantara', initials: 'KJ', role: 'Guest Relations' },
+  { id: 'staff-3', name: 'Made Surya', initials: 'MS', role: 'Housekeeping' },
+  { id: 'staff-4', name: 'Wayan Adi', initials: 'WA', role: 'Maintenance' },
+]
 
 export interface Conversation {
   id: string
@@ -15,11 +30,13 @@ export interface Conversation {
   propertyName: string
   otaSource: string
   reservationId: string
-  status: ConversationStatus
+  status: ConversationStatus | null
   lastMessage: string
   lastMessageAt: string
   unreadCount: number
   isAssignedToMe: boolean
+  assignedTo?: string | null
+  tags: string[]
   labels: string[]
   sentiment: GuestSentiment
   sentimentNote: string
@@ -39,6 +56,8 @@ export interface Message {
   isAISuggestion?: boolean
   intentDetected?: string
   sendStatus?: 'sending' | 'sent' | 'failed'
+  aiWritten?: boolean
+  senderRole?: string
 }
 
 export interface SmartAction {
@@ -115,11 +134,13 @@ export const conversations: Conversation[] = [
     propertyName: 'Canggu Properties',
     otaSource: 'Airbnb',
     reservationId: 'res-1',
-    status: 'needs_reply',
+    status: 'action_needed',
     lastMessage: 'What time is check-in? We arrive at 3 PM.',
     lastMessageAt: '2025-04-25T09:15:00Z',
     unreadCount: 2,
     isAssignedToMe: true,
+    assignedTo: 'staff-1',
+    tags: ['Canggu', 'Pool', '4BR'],
     labels: ['check-in-today'],
     sentiment: 'positive',
     sentimentNote: 'Guest is excited about the stay',
@@ -136,11 +157,13 @@ export const conversations: Conversation[] = [
     propertyName: 'Seminyak Suites',
     otaSource: 'Booking.com',
     reservationId: 'res-2',
-    status: 'waiting_on_guest',
+    status: null,
     lastMessage: 'Thanks for the info! I\'ll confirm soon.',
     lastMessageAt: '2025-04-24T16:30:00Z',
     unreadCount: 0,
     isAssignedToMe: true,
+    assignedTo: 'staff-1',
+    tags: ['Seminyak', 'Rooftop'],
     labels: [],
     sentiment: 'positive',
     sentimentNote: 'Polite and responsive',
@@ -157,11 +180,13 @@ export const conversations: Conversation[] = [
     propertyName: 'Canggu Properties',
     otaSource: 'Airbnb',
     reservationId: 'res-3',
-    status: 'needs_reply',
+    status: 'action_needed',
     lastMessage: 'Is there parking available at the property?',
     lastMessageAt: '2025-04-25T07:45:00Z',
     unreadCount: 1,
     isAssignedToMe: false,
+    assignedTo: null,
+    tags: ['Canggu', 'Beachfront', 'Pool'],
     labels: ['unassigned'],
     sentiment: 'neutral',
     sentimentNote: 'Standard inquiry',
@@ -178,17 +203,42 @@ export const conversations: Conversation[] = [
     propertyName: 'Umalas Villas',
     otaSource: 'Airbnb',
     reservationId: 'res-4',
-    status: 'done',
+    status: null,
     lastMessage: 'Everything was great, thank you!',
     lastMessageAt: '2025-04-23T11:00:00Z',
     unreadCount: 0,
     isAssignedToMe: true,
+    assignedTo: 'staff-2',
+    tags: ['Umalas', 'Pool', 'Private'],
     labels: [],
     sentiment: 'positive',
     sentimentNote: 'Happy guest, left 5-star review',
     stayStatus: 'past',
     checkIn: '2025-04-18T15:00:00Z',
     checkOut: '2025-04-23T11:00:00Z',
+  },
+  {
+    id: 'conv-6',
+    guestName: 'Liam Tanaka',
+    guestAvatar: undefined,
+    guestInitials: 'LT',
+    listingName: 'Rice Terrace Lodge',
+    propertyName: 'Ubud Retreats',
+    otaSource: 'Airbnb',
+    reservationId: 'res-6',
+    status: 'action_needed',
+    lastMessage: 'Hi, is your place available for a 2-night stay next weekend?',
+    lastMessageAt: '2025-04-25T10:30:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: ['Ubud', 'Rice Terrace', 'Yoga'],
+    labels: ['new-inquiry'],
+    sentiment: 'neutral',
+    sentimentNote: 'Potential guest asking about availability',
+    stayStatus: 'inquiry',
+    checkIn: '',
+    checkOut: '',
   },
   {
     id: 'conv-5',
@@ -199,11 +249,13 @@ export const conversations: Conversation[] = [
     propertyName: 'Ubud Retreats',
     otaSource: 'Booking.com',
     reservationId: 'res-5',
-    status: 'needs_reply',
+    status: 'action_needed',
     lastMessage: 'The AC is not working and the wifi keeps disconnecting. This is unacceptable!',
     lastMessageAt: '2025-04-25T08:20:00Z',
     unreadCount: 3,
     isAssignedToMe: true,
+    assignedTo: 'staff-4',
+    tags: ['Ubud', 'Garden', 'Yoga'],
     labels: ['complaint', 'urgent'],
     sentiment: 'negative',
     sentimentNote: 'Frustrated about amenities not working',
@@ -244,6 +296,16 @@ export const messages: Record<string, Message[]> = {
       channel: 'Airbnb',
       timestamp: '2025-04-25T09:15:00Z',
     },
+    {
+      id: 'msg-1-4',
+      sender: 'host',
+      conversationId: 'conv-1',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Sarah! Check-in is at 3 PM. Our team will be ready to welcome you at the villa. If you arrive early, feel free to drop your bags and we can store them for you.',
+      channel: 'Airbnb',
+      timestamp: '2025-04-25T09:30:00Z',
+    },
   ],
   'conv-2': [
     {
@@ -251,9 +313,11 @@ export const messages: Record<string, Message[]> = {
       sender: 'host',
       conversationId: 'conv-2',
       senderName: 'You',
+      senderRole: 'Owner',
       content: 'Hi James, just wanted to confirm your check-in date is April 28th. Let us know if you need an early check-in!',
       channel: 'Booking.com',
       timestamp: '2025-04-24T14:00:00Z',
+      aiWritten: true,
     },
     {
       id: 'msg-2-2',
@@ -284,6 +348,17 @@ export const messages: Record<string, Message[]> = {
       channel: 'Airbnb',
       timestamp: '2025-04-25T07:45:00Z',
     },
+    {
+      id: 'msg-3-3',
+      sender: 'host',
+      conversationId: 'conv-3',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Emily! Yes, we have free private parking on the premises. You\'ll find the parking spot right next to the Beach House entrance.',
+      channel: 'Airbnb',
+      timestamp: '2025-04-25T08:00:00Z',
+      aiWritten: true,
+    },
   ],
   'conv-4': [
     {
@@ -300,9 +375,11 @@ export const messages: Record<string, Message[]> = {
       sender: 'host',
       conversationId: 'conv-4',
       senderName: 'You',
+      senderRole: 'Owner',
       content: 'Thank you Alex! We\'re so glad you enjoyed your stay. Hope to welcome you back soon!',
       channel: 'Airbnb',
       timestamp: '2025-04-23T10:45:00Z',
+      aiWritten: true,
     },
     {
       id: 'msg-4-3',
@@ -343,6 +420,36 @@ export const messages: Record<string, Message[]> = {
       timestamp: '2025-04-25T08:15:00Z',
       isAISuggestion: true,
       intentDetected: 'complaint',
+    },
+    {
+      id: 'msg-5-4',
+      sender: 'host',
+      conversationId: 'conv-5',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Priya, I\'m really sorry about the inconvenience. I\'ve already dispatched our maintenance team to your unit — they should arrive within 30 minutes. We\'ll get this sorted out for you right away.',
+      channel: 'Booking.com',
+      timestamp: '2025-04-25T08:30:00Z',
+    },
+  ],
+  'conv-6': [
+    {
+      id: 'msg-6-1',
+      sender: 'guest',
+      conversationId: 'conv-6',
+      senderName: 'Liam Tanaka',
+      content: 'Hi, I\'m interested in booking your place. Is it available for a 2-night stay next weekend for 2 guests?',
+      channel: 'Airbnb',
+      timestamp: '2025-04-25T10:15:00Z',
+    },
+    {
+      id: 'msg-6-2',
+      sender: 'guest',
+      conversationId: 'conv-6',
+      senderName: 'Liam Tanaka',
+      content: 'Also, is early check-in possible? Our flight lands around noon.',
+      channel: 'Airbnb',
+      timestamp: '2025-04-25T10:30:00Z',
     },
   ],
 }
@@ -584,6 +691,46 @@ export const reservations: Record<string, Reservation> = {
       },
     ],
   },
+  'res-6': {
+    id: 'res-6',
+    propertyName: 'Ubud Retreats',
+    roomName: 'Rice Terrace Lodge',
+    listingName: 'Rice Terrace Lodge',
+    otaSource: 'Airbnb',
+    checkIn: '',
+    checkOut: '',
+    nights: 0,
+    guestCount: 2,
+    totalPrice: 0,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: {
+      name: 'Liam Tanaka',
+      email: 'liam.tanaka@email.com',
+      phone: '+1 555-0211',
+      previousStays: 0,
+      notes: 'New inquiry. No booking yet.',
+    },
+    listingDetails: {
+      name: 'Rice Terrace Lodge',
+      property: 'Ubud Retreats',
+      room: 'Entire Lodge',
+      amenities: ['Rice Terrace View', 'WiFi', 'AC', 'Breakfast Included', 'Yoga Deck'],
+    },
+    tasks: [],
+    activity: [
+      {
+        id: 'act-6-1',
+        type: 'message',
+        title: 'New Inquiry',
+        description: 'Liam asked about availability for next weekend',
+        actor: 'Liam Tanaka',
+        timestamp: '2025-04-25T10:15:00Z',
+        channel: 'Airbnb',
+        colorDot: 'blue',
+      },
+    ],
+  },
   'res-5': {
     id: 'res-5',
     propertyName: 'Ubud Retreats',
@@ -662,5 +809,5 @@ export const reservations: Record<string, Reservation> = {
 
 export const otaSources = [
   { name: 'Airbnb', color: '#FF5A5F', icon: 'logos:airbnb' },
-  { name: 'Booking.com', color: '#003580', icon: 'lucide:calendar-check' },
+  { name: 'Booking.com', color: '#003580', icon: 'simple-icons:bookingdotcom' },
 ]

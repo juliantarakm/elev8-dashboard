@@ -5,7 +5,7 @@ interface ReplyBoxProps {
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, toggleElevai, pendingSuggestion, clearSuggestion } = useInbox()
+const { isElevaiEnabled, pendingSuggestion, clearSuggestion } = useInbox()
 
 const replyText = ref('')
 const isRewriting = ref(false)
@@ -19,10 +19,6 @@ const rewrites = [
   'We\'re so glad you\'re staying with us! I\'ve noted your request and our team will make sure everything is taken care of.',
   'Thanks for letting us know! We want to make sure your stay is perfect. I\'ll have our team address this immediately.',
 ]
-
-function toggleElevaiState() {
-  toggleElevai(props.conversationId)
-}
 
 function send() {
   if (!replyText.value.trim()) return
@@ -79,26 +75,6 @@ watch(pendingSuggestion, (val) => {
     </div>
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button
-          class="flex items-center gap-2 text-xs"
-          @click="toggleElevaiState"
-        >
-          <span
-            :class="[
-              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors',
-              elevaiOn ? 'bg-[#C8A84B]' : 'bg-muted-foreground/30',
-            ]"
-          >
-            <span
-              :class="[
-                'pointer-events-none inline-block size-4 rounded-full bg-white shadow-lg ring-0 transition-transform',
-                elevaiOn ? 'translate-x-4' : 'translate-x-0.5',
-              ]"
-              style="margin-top: 2px;"
-            />
-          </span>
-          <span class="text-xs text-muted-foreground">ElevAI Assist</span>
-        </button>
         <Badge variant="secondary" class="text-xs">
           via {{ channel }}
         </Badge>

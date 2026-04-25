@@ -31,16 +31,6 @@ const teams: {
   },
 ]
 
-const user: {
-  name: string
-  email: string
-  avatar: string
-} = {
-  name: 'Dian Pratama',
-  email: 'dianpratama2@gmail.com',
-  avatar: '/avatars/avatartion.png',
-}
-
 const { sidebar } = useAppSettings()
 </script>
 
@@ -61,9 +51,6 @@ const { sidebar } = useAppSettings()
         <component :is="resolveNavItemComponent(item)" v-for="(item, index) in navMenuBottom" :key="index" :item="item" size="sm" />
       </SidebarGroup>
     </SidebarContent>
-    <SidebarFooter>
-      <LayoutSidebarNavFooter :user="user" />
-    </SidebarFooter>
     <SidebarRail />
   </Sidebar>
 </template>

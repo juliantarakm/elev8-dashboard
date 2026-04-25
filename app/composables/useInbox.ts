@@ -1,32 +1,41 @@
 import type { Conversation, ConversationStatus, Message, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { conversations, messages, reservations } from '~/components/inbox/data/conversations'
+import { conversations as conversationsData, messages, reservations, staffMembers } from '~/components/inbox/data/conversations'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
 
 export function useInbox() {
+  const conversations = useState<Conversation[]>('inbox-conversations', () => conversationsData)
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
-  const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'needs_reply')
+  const showActionNeeded = useState<boolean>('inbox-show-action-needed', () => true)
+  const assignedToMeFilter = useState<boolean>('inbox-assigned-to-me-filter', () => false)
   const activeStayFilter = useState<StayStatus | 'all'>('inbox-active-stay-filter', () => 'all')
-  const activeListingFilter = useState<string>('inbox-active-listing-filter', () => 'all')
-  const elevaiEnabled = useState<Record<string, boolean>>('inbox-elevai-enabled', () => ({}))
+  const activeListingFilter = useState<string[]>('inbox-active-listing-filter', () => [])
+  const activeTagFilters = useState<string[]>('inbox-active-tag-filters', () => [])
+  const listingSearchText = useState<string>('inbox-listing-search-text', () => '')
+  interface ElevaiConvState { on: boolean, pausedUntil?: number }
+  const elevaiState = useState<Record<string, ElevaiConvState>>('inbox-elevai-state', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
   const sortBy = useState<SortOption>('inbox-sort-by', () => 'newest')
   const pendingSuggestion = useState<string>('inbox-pending-suggestion', () => '')
 
   const filteredConversations = computed(() => {
-    let result = conversations
+    let result = conversations.value
 
-    if (activeFilter.value !== 'all') {
-      result = result.filter(c => c.status === activeFilter.value)
+    if (showActionNeeded.value) {
+      result = result.filter(c => c.status === 'action_needed')
+    }
+
+    if (assignedToMeFilter.value) {
+      result = result.filter(c => c.isAssignedToMe)
     }
 
     if (activeStayFilter.value !== 'all') {
       result = result.filter(c => c.stayStatus === activeStayFilter.value)
     }
 
-    if (activeListingFilter.value !== 'all') {
-      result = result.filter(c => c.propertyName === activeListingFilter.value)
+    if (activeListingFilter.value.length > 0) {
+      result = result.filter(c => activeListingFilter.value.includes(c.propertyName))
     }
 
     if (searchValue.value) {
@@ -38,6 +47,7 @@ export function useInbox() {
           || c.propertyName.toLowerCase().includes(q)
           || c.lastMessage.toLowerCase().includes(q)
           || c.labels.some(l => l.toLowerCase().includes(q))
+          || c.tags.some(t => t.toLowerCase().includes(q))
           || c.stayStatus.toLowerCase().includes(q)
           || c.otaSource.toLowerCase().includes(q),
       )
@@ -62,7 +72,11 @@ export function useInbox() {
   const selectedConversation = computed<Conversation | undefined>(() => {
     if (!selectedConversationId.value)
       return undefined
-    return conversations.find(c => c.id === selectedConversationId.value)
+    const conv = conversations.value.find(c => c.id === selectedConversationId.value)
+    if (conv && conv.unreadCount > 0) {
+      conv.unreadCount = 0
+    }
+    return conv
   })
 
   const selectedMessages = computed<Message[]>(() => {
@@ -83,41 +97,152 @@ export function useInbox() {
   })
 
   function isElevaiEnabled(conversationId: string): boolean {
-    return elevaiEnabled.value[conversationId] !== false
+    const s = elevaiState.value[conversationId]
+    if (!s) return true
+    if (s.pausedUntil !== undefined) return Date.now() > s.pausedUntil
+    return s.on
   }
 
-  function toggleElevai(conversationId: string) {
-    elevaiEnabled.value = {
-      ...elevaiEnabled.value,
-      [conversationId]: !isElevaiEnabled(conversationId),
+  function getElevaiState(conversationId: string) {
+    return elevaiState.value[conversationId] ?? { on: true }
+  }
+
+  function enableElevai(conversationId: string) {
+    elevaiState.value = { ...elevaiState.value, [conversationId]: { on: true } }
+  }
+
+  function pauseElevai(conversationId: string, minutes: number) {
+    elevaiState.value = {
+      ...elevaiState.value,
+      [conversationId]: { on: false, pausedUntil: Date.now() + minutes * 60 * 1000 },
     }
   }
 
-  function markAsDone(conversationId: string) {
-    const conv = conversations.find(c => c.id === conversationId)
-    if (conv)
-      conv.status = 'done'
+  function disableElevai(conversationId: string) {
+    elevaiState.value = { ...elevaiState.value, [conversationId]: { on: false } }
   }
 
-  function unreadCountByStatus(status: ConversationStatus): number {
-    return conversations.filter(c => c.status === status).length
+  function markAsHandled(conversationId: string) {
+    const index = conversations.value.findIndex(c => c.id === conversationId)
+    if (index !== -1)
+      conversations.value[index] = { ...conversations.value[index], status: null }
   }
 
-  function unreadNeedsReply(): number {
-    return conversations.filter(c => c.status === 'needs_reply').length
+  function markAsUnread(conversationId: string) {
+    const index = conversations.value.findIndex(c => c.id === conversationId)
+    if (index !== -1 && conversations.value[index].unreadCount === 0)
+      conversations.value[index] = { ...conversations.value[index], unreadCount: 1 }
+  }
+
+  function assignTo(conversationId: string, staffId: string | null) {
+    const index = conversations.value.findIndex(c => c.id === conversationId)
+    if (index !== -1) {
+      conversations.value[index] = {
+        ...conversations.value[index],
+        assignedTo: staffId,
+        isAssignedToMe: staffId === 'staff-1',
+      }
+    }
+  }
+
+  function getAssignedStaff(conv: Conversation) {
+    if (!conv.assignedTo) return null
+    return staffMembers.find(s => s.id === conv.assignedTo) ?? null
+  }
+
+  function actionNeededCount(): number {
+    return conversations.value.filter(c => c.status === 'action_needed').length
+  }
+
+  function assignedToMeCount(): number {
+    return conversations.value.filter(c => c.isAssignedToMe).length
   }
 
   function stayCountByStatus(status: StayStatus): number {
-    return conversations.filter(c => c.stayStatus === status).length
+    return conversations.value.filter(c => c.stayStatus === status).length
   }
 
-  const listingOptions = computed(() => {
+  const allListingOptions = computed(() => {
     const map = new Map<string, number>()
-    for (const c of conversations) {
+    for (const c of conversations.value) {
       map.set(c.propertyName, (map.get(c.propertyName) ?? 0) + 1)
     }
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
   })
+
+  const listingOptions = computed(() => {
+    let convs = conversations.value
+
+    if (activeTagFilters.value.length > 0) {
+      convs = convs.filter(c =>
+        activeTagFilters.value.every(tag => c.tags.includes(tag)),
+      )
+    }
+
+    if (listingSearchText.value) {
+      const q = listingSearchText.value.toLowerCase()
+      convs = convs.filter(c =>
+        c.propertyName.toLowerCase().includes(q)
+        || c.listingName.toLowerCase().includes(q),
+      )
+    }
+
+    const map = new Map<string, number>()
+    for (const c of convs) {
+      map.set(c.propertyName, (map.get(c.propertyName) ?? 0) + 1)
+    }
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
+  })
+
+  const listingTags = computed(() => {
+    const map = new Map<string, number>()
+    for (const c of conversations.value) {
+      for (const tag of c.tags) {
+        map.set(tag, (map.get(tag) ?? 0) + 1)
+      }
+    }
+    return Array.from(map.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+  })
+
+  function toggleListingFilter(name: string) {
+    const current = [...activeListingFilter.value]
+    const idx = current.indexOf(name)
+    if (idx !== -1) {
+      current.splice(idx, 1)
+    }
+    else {
+      current.push(name)
+    }
+    activeListingFilter.value = current
+  }
+
+  function clearListingFilters() {
+    activeListingFilter.value = []
+  }
+
+  function toggleTagFilter(tag: string) {
+    const current = [...activeTagFilters.value]
+    const idx = current.indexOf(tag)
+    if (idx !== -1) {
+      current.splice(idx, 1)
+    }
+    else {
+      current.push(tag)
+    }
+    activeTagFilters.value = current
+  }
+
+  function clearTagFilters() {
+    activeTagFilters.value = []
+  }
+
+  function clearAllListingFilters() {
+    activeListingFilter.value = []
+    activeTagFilters.value = []
+    listingSearchText.value = ''
+  }
 
   function useSuggestion(content: string) {
     pendingSuggestion.value = content
@@ -129,10 +254,12 @@ export function useInbox() {
 
   return {
     selectedConversationId,
-    activeFilter,
+    showActionNeeded,
+    assignedToMeFilter,
     activeStayFilter,
     activeListingFilter,
-    elevaiEnabled,
+    activeTagFilters,
+    listingSearchText,
     searchValue,
     rightPanelCollapsed,
     sortBy,
@@ -144,12 +271,25 @@ export function useInbox() {
     selectedReservation,
     selectedHasAISuggestion,
     isElevaiEnabled,
-    toggleElevai,
-    markAsDone,
-    unreadCountByStatus,
+    getElevaiState,
+    enableElevai,
+    pauseElevai,
+    disableElevai,
+    markAsHandled,
+    markAsUnread,
+    assignTo,
+    getAssignedStaff,
+    actionNeededCount,
+    assignedToMeCount,
     stayCountByStatus,
+    allListingOptions,
     listingOptions,
-    unreadNeedsReply,
+    listingTags,
+    toggleListingFilter,
+    clearListingFilters,
+    toggleTagFilter,
+    clearTagFilters,
+    clearAllListingFilters,
     useSuggestion,
     clearSuggestion,
   }

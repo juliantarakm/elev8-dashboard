@@ -11,17 +11,33 @@ const props = defineProps<ThreadMessageProps>()
 
 const senderTypeLabel: Record<string, string> = {
   guest: 'Guest',
-  host: 'You',
+  host: 'Staff',
   system: 'System',
   ai: 'ElevAI',
 }
+
+const isFromMe = computed(() => props.message.sender === 'host' && props.message.senderName === 'You')
+
+const isAiWritten = computed(() => props.message.aiWritten === true)
+
+const displayName = computed(() => {
+  if (isAiWritten.value) return 'ElevAI'
+  return props.message.senderName
+})
+
+const displayLabel = computed(() => {
+  if (isAiWritten.value) return null
+  if (isFromMe.value) return 'You'
+  if (props.message.senderRole) return props.message.senderRole
+  return senderTypeLabel[props.message.sender]
+})
 
 const bubbleClass = computed(() => {
   if (props.message.sender === 'guest') {
     return 'bg-muted'
   }
   if (props.message.sender === 'host') {
-    return 'bg-muted'
+    return 'bg-warning text-warning-foreground'
   }
   return ''
 })
@@ -45,11 +61,18 @@ const systemBubbleClass = 'bg-muted/50 text-muted-foreground'
           {{ message.senderName.split(' ').map(n => n[0]).join('') }}
         </AvatarFallback>
       </Avatar>
+      <div v-if="isAiWritten" class="flex size-8 shrink-0 mt-1 items-center justify-center rounded-full bg-[#C8A84B]/10">
+        <Icon name="lucide:sparkles" class="size-4 text-[#C8A84B]" />
+      </div>
 
       <div class="flex flex-col gap-1 max-w-[75%]">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-medium">{{ message.senderName }}</span>
-          <span class="text-[10px] text-muted-foreground">{{ senderTypeLabel[message.sender] }}</span>
+          <span class="text-xs font-medium">{{ displayName }}</span>
+          <span v-if="displayLabel" class="text-[10px] text-muted-foreground">{{ displayLabel }}</span>
+          <span v-if="isAiWritten" class="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Icon name="lucide:sparkles" class="size-3" />
+            AI
+          </span>
           <span class="text-[10px] text-muted-foreground">{{ format(new Date(message.timestamp), 'h:mm a') }}</span>
         </div>
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">

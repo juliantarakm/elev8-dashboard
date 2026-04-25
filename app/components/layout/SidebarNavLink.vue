@@ -2,6 +2,7 @@
 import type { SidebarMenuButtonVariants } from '~/components/ui/sidebar'
 import type { NavLink } from '~/types/nav'
 import { useSidebar } from '~/components/ui/sidebar'
+import { conversations as conversationsData } from '~/components/inbox/data/conversations'
 
 withDefaults(defineProps<{
   item: NavLink
@@ -11,6 +12,8 @@ withDefaults(defineProps<{
 })
 
 const { setOpenMobile } = useSidebar()
+
+const unreadConversations = computed(() => conversationsData.filter(c => c.unreadCount > 0).length)
 </script>
 
 <template>
@@ -23,6 +26,13 @@ const { setOpenMobile } = useSidebar()
           <span v-if="item.new" class="rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs text-black leading-none no-underline group-hover:no-underline">
             New
           </span>
+          <Badge
+            v-if="item.link === '/inbox' && unreadConversations > 0"
+            class="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs"
+            variant="default"
+          >
+            {{ unreadConversations }}
+          </Badge>
         </NuxtLink>
       </SidebarMenuButton>
     </SidebarMenuItem>

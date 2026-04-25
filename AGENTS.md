@@ -1,0 +1,59 @@
+# AGENTS.md
+
+This file provides context for AI agents working on this project.
+
+## Project Overview
+
+**Elev8** — A web dashboard for property management (Bali vacation rentals). Built with **Nuxt 3**, **Vue 3**, **shadcn-vue**, and **Tailwind CSS**.
+
+## Key Documentation
+
+- **Inbox Module Changelog** → [`docs/superpowers/changelogs/2025-04-25-inbox-module.md`](docs/superpowers/changelogs/2025-04-25-inbox-module.md)
+  - Full history of all changes, types, component structure, composables, and mock data for the 4-panel guest messaging inbox
+- **Inbox Quick Reference** → [`docs/superpowers/changelogs/2025-04-25-inbox-quick-ref.md`](docs/superpowers/changelogs/2025-04-25-inbox-quick-ref.md)
+  - Condensed reference: files, features, types, staff members, deviations from spec
+
+## Architecture Quick Reference
+
+### Inbox Module (`app/components/inbox/`)
+
+- **Data + types**: `app/components/inbox/data/conversations.ts`
+  - `Conversation` type (with `status: ConversationStatus | null`, `assignedTo?: string | null`, `tags: string[]`)
+  - `Message` type (with `aiWritten?: boolean`, `senderRole?: string`)
+  - `StaffMember` list (You/Admin, Komang Juliantara/Guest Relations, Made Surya/Housekeeping, Wayan Adi/Maintenance)
+  - `Reservation` type, mock data (6 conversations)
+- **Shared state**: `app/composables/useInbox.ts`
+  - **Reactive**: `conversations` uses `useState<Conversation[]>` — mutations use spread syntax to trigger Vue reactivity
+  - Filters: `showActionNeeded`, `assignedToMeFilter`, `activeStayFilter`, `activeListingFilter` (multi-select `string[]`), `activeTagFilters`, `listingSearchText`, `searchValue`, `sortBy`
+  - Listing filter: Multi-select — `activeListingFilter` is `string[]` (empty = no filter). Checkboxes in sidebar. Selected listings shown as removable chips.
+  - Tag filter: Multi-select via searchable Popover — `activeTagFilters` is `string[]` (AND logic). Tags button opens popover with search + checkboxes. Selected tags shown as removable chips.
+  - Actions: `markAsHandled()`, `markAsUnread()`, `assignTo()`, `getAssignedStaff()`, `toggleListingFilter()`, `clearListingFilters()`, `toggleTagFilter()`, `clearTagFilters()`, `clearAllListingFilters()`, ElevAI toggle functions
+  - Auto-read: Selecting a conversation sets `unreadCount = 0`
+  - Key type: `ConversationStatus = 'action_needed'` (nullable — `null` = no action needed)
+
+### Layout
+
+- **Topbar**: `app/components/layout/Header.vue` — SidebarTrigger + user menu (no breadcrumb)
+- **User menu**: `app/components/layout/HeaderUserMenu.vue` — Komang Juliantara + "Guest Relations" role dropdown
+- **Sidebar**: `app/components/layout/AppSidebar.vue` — No footer (user menu moved to topbar)
+- **Sidebar nav**: `app/components/layout/SidebarNavLink.vue` — Unread count badge on Inbox link
+
+### UI Patterns
+
+- **Toast notifications**: Uses `vue-sonner` (already in `app.vue`). Call `toast.success()` / `toast.info()` for user action feedback.
+- **Unread badges**: `Badge` component with `variant="default"` showing count. On sidebar Inbox link and per-conversation in list.
+- **AI-written messages**: `aiWritten: true` on host messages → shows "ElevAI" as sender name, sparkle avatar, "AI" label instead of user name
+- **Action Needed status**: Only `action_needed` or `null` (no `needs_reply`, `waiting_on_guest`, `done`). Badge shown only when `status === 'action_needed'` (destructive variant).
+
+### Current User Context
+
+The logged-in user is **Komang Juliantara** (Guest Relations role), not "You" (Admin). The `staff-1` / "You" in data represents the property owner; Komang is the active staff member viewing the dashboard.
+
+## Conventions
+
+- **shadcn-vue components**: Use existing shadcn components from `app/components/ui/`
+- **Semantic colors**: Use theme tokens (`bg-muted`, `text-muted-foreground`, `bg-warning`, etc.) — no hardcoded colors except ElevAI gold
+- **ElevAI gold**: `bg-[#C8A84B]` only for ElevAI branding; `bg-warning` for host chat bubbles and toggle
+- **Icons**: Use `lucide:` prefix (e.g. `lucide:user-check`); OTA icons use `logos:airbnb` and `simple-icons:bookingdotcom`
+- **CSS framework**: Tailwind CSS v4
+- **State mutations**: Always use spread syntax (`{ ...conv, field: value }`) when modifying conversation properties to ensure Vue reactivity triggers

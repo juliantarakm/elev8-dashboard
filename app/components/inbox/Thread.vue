@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { otaSources } from '~/components/inbox/data/conversations'
+import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
+import { toast } from 'vue-sonner'
 
-const {
-  selectedConversation,
+const { selectedConversation,
   selectedMessages,
-  markAsDone,
+  markAsHandled,
+  markAsUnread,
+  assignTo,
+  getAssignedStaff,
   isElevaiEnabled,
   useSuggestion,
 } = useInbox()
@@ -28,6 +31,7 @@ const showSuggestion = computed(() => {
 
 function handleUseSuggestion(content: string) {
   useSuggestion(content)
+  toast.success('Suggestion applied to reply box')
 }
 
 function dismissSuggestion() {
@@ -39,15 +43,39 @@ function dismissSuggestion() {
 const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  needs_reply: 'default',
-  waiting_on_guest: 'secondary',
-  done: 'outline',
+  action_needed: 'destructive',
 }
 
 const statusLabelMap: Record<string, string> = {
-  needs_reply: 'Needs Reply',
-  waiting_on_guest: 'Waiting',
-  done: 'Done',
+  action_needed: 'Action Needed',
+}
+
+const assignedStaff = computed(() => {
+  if (!selectedConversation.value) return null
+  return getAssignedStaff(selectedConversation.value)
+})
+
+function handleAssign(staffId: string | null) {
+  if (!selectedConversation.value) return
+  assignTo(selectedConversation.value.id, staffId)
+  if (staffId) {
+    const staff = staffMembers.find(s => s.id === staffId)
+    toast.success(`Assigned to ${staff?.name ?? 'staff'}`)
+  } else {
+    toast.info('Unassigned conversation')
+  }
+}
+
+function handleMarkAsHandled() {
+  if (!selectedConversation.value) return
+  markAsHandled(selectedConversation.value.id)
+  toast.success('Marked as handled')
+}
+
+function handleMarkAsUnread() {
+  if (!selectedConversation.value) return
+  markAsUnread(selectedConversation.value.id)
+  toast.info('Marked as unread')
 }
 </script>
 
@@ -64,22 +92,30 @@ const statusLabelMap: Record<string, string> = {
         <div class="flex items-center gap-1.5">
           <span class="text-xs text-muted-foreground truncate">{{ selectedConversation.listingName }}</span>
           <Icon :name="otaIconMap[selectedConversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
-          <Badge :variant="statusVariantMap[selectedConversation.status] ?? 'outline'" class="text-[10px]">
-            {{ statusLabelMap[selectedConversation.status] ?? selectedConversation.status }}
+          <Badge v-if="selectedConversation.status === 'action_needed'" :variant="statusVariantMap[selectedConversation.status]" class="text-[10px]">
+            {{ statusLabelMap[selectedConversation.status] }}
           </Badge>
+          <span v-if="assignedStaff" class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Icon name="lucide:user-check" class="size-3" />
+            {{ assignedStaff.name }}
+          </span>
+          <span v-else class="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Icon name="lucide:user-x" class="size-3" />
+            Unassigned
+          </span>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button
-              v-if="selectedConversation.status !== 'done'"
+              v-if="selectedConversation.status === 'action_needed'"
               variant="outline"
               size="sm"
-              @click="markAsDone(selectedConversation.id)"
+              @click="handleMarkAsHandled"
             >
               <Icon name="lucide:check-circle" class="size-4 mr-1" />
-              Mark as Done
+              Mark as Handled
             </Button>
           </TooltipTrigger>
           <TooltipContent>Mark conversation as done</TooltipContent>
@@ -91,9 +127,40 @@ const statusLabelMap: Record<string, string> = {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Assign</DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Icon name="lucide:user-plus" class="size-4 mr-2" />
+                Assign to
+                <Icon name="lucide:chevron-right" class="size-4 ml-auto" />
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem @click="handleAssign('staff-1')">
+                  <Icon name="lucide:crown" class="size-4 mr-2" />
+                  You (Admin)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  v-for="member of staffMembers.filter(s => s.id !== 'staff-1')"
+                  :key="member.id"
+                  @click="handleAssign(member.id)"
+                >
+                  {{ member.name }}
+                  <span class="ml-1 text-muted-foreground">· {{ member.role }}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="handleAssign(null)">
+                  <Icon name="lucide:user-x" class="size-4 mr-2" />
+                  Unassign
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuItem>Archive</DropdownMenuItem>
             <DropdownMenuItem>Mute</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="handleMarkAsUnread">
+              <Icon name="lucide:mail" class="size-4 mr-2" />
+              Mark as Unread
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

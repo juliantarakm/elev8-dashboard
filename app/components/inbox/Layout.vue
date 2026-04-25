@@ -27,7 +27,7 @@ const isCollapsed = ref(props.defaultCollapsed)
 const debouncedSearch = refDebounced(searchValue, 250)
 
 const totalUnread = computed(() =>
-  conversations.reduce((sum, c) => sum + c.unreadCount, 0),
+  conversations.filter(c => c.unreadCount > 0).length,
 )
 
 function onCollapse() {

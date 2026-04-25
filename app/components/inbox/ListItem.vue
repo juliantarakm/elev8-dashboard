@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
-import { otaSources } from '~/components/inbox/data/conversations'
+import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
@@ -17,15 +17,11 @@ const props = defineProps<ListItemProps>()
 const emit = defineEmits<ListItemEmits>()
 
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  needs_reply: 'default',
-  waiting_on_guest: 'secondary',
-  done: 'outline',
+  action_needed: 'destructive',
 }
 
 const statusLabelMap: Record<string, string> = {
-  needs_reply: 'Needs Reply',
-  waiting_on_guest: 'Waiting',
-  done: 'Done',
+  action_needed: 'Action Needed',
 }
 
 const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
@@ -37,7 +33,12 @@ const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
 
 const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 const stayConfig = computed(() => stayStatusConfig[props.conversation.stayStatus])
+const assignedStaff = computed(() => {
+  if (!props.conversation.assignedTo) return null
+  return staffMembers.find(s => s.id === props.conversation.assignedTo) ?? null
+})
 const stayDateLabel = computed(() => {
+  if (!props.conversation.checkIn || !props.conversation.checkOut) return ''
   const checkIn = new Date(props.conversation.checkIn)
   const checkOut = new Date(props.conversation.checkOut)
   return `${format(checkIn, 'MMM d')} – ${format(checkOut, 'MMM d')}`
@@ -62,10 +63,15 @@ const stayDateLabel = computed(() => {
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             <span class="font-semibold truncate">{{ conversation.guestName }}</span>
-            <div v-if="conversation.unreadCount > 0" class="h-2 w-2 flex rounded-full bg-blue-600" />
+            <Badge v-if="conversation.unreadCount > 0" class="ml-auto h-5 min-w-5 rounded-full px-1.5 text-[10px]" variant="default">
+              {{ conversation.unreadCount }}
+            </Badge>
           </div>
-          <div class="text-xs text-muted-foreground truncate">
-            {{ conversation.listingName }}
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs text-muted-foreground truncate">{{ conversation.listingName }}</span>
+            <span v-if="assignedStaff" class="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              · {{ assignedStaff.name.split(' ')[0] }}
+            </span>
           </div>
         </div>
       </div>
@@ -73,8 +79,8 @@ const stayDateLabel = computed(() => {
         <div class="text-xs text-muted-foreground">
           {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
         </div>
-        <Badge :variant="statusVariantMap[conversation.status] ?? 'outline'" class="text-[10px]">
-          {{ statusLabelMap[conversation.status] ?? conversation.status }}
+        <Badge v-if="conversation.status === 'action_needed'" :variant="statusVariantMap[conversation.status]" class="text-[10px]">
+          {{ statusLabelMap[conversation.status] }}
         </Badge>
       </div>
     </div>
@@ -87,7 +93,7 @@ const stayDateLabel = computed(() => {
 
     <div class="w-full flex items-center gap-1.5">
       <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
-      <span class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
+      <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
       <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
         {{ stayConfig.label }}
       </span>

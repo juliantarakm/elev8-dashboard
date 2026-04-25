@@ -8,10 +8,10 @@ interface ListProps {
 defineProps<ListProps>()
 const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
-const { activeFilter } = useInbox()
+const { showActionNeeded } = useInbox()
 
-function setAllFilter() {
-  activeFilter.value = 'all'
+function clearFilter() {
+  showActionNeeded.value = false
 }
 </script>
 
@@ -25,7 +25,7 @@ function setAllFilter() {
         </p>
         <button
           class="text-sm text-muted-foreground hover:underline"
-          @click="setAllFilter"
+          @click="clearFilter"
         >
           View all conversations
         </button>
