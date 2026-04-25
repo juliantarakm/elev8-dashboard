@@ -50,7 +50,7 @@ watch(() => isMobile.value, () => {
     <ResizablePanelGroup
       id="inbox-panel-group"
       direction="horizontal"
-      class="h-full max-h-[calc(100dvh-54px-3rem)] items-stretch"
+      class="h-full items-stretch"
     >
       <ResizablePanel
         id="inbox-filter-panel"
