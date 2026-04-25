@@ -1,6 +1,10 @@
 <script setup lang="ts">
-definePageMeta({
-  layout: 'default',
+import { useSidebar } from '~/components/ui/sidebar'
+
+const { setOpen } = useSidebar()
+
+onMounted(() => {
+  setOpen(false)
 })
 </script>
 
