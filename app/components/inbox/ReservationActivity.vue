@@ -9,7 +9,7 @@ interface ReservationActivityProps {
 defineProps<ReservationActivityProps>()
 
 const dotColorMap: Record<string, string> = {
-  gold: 'bg-[#C8A84B]',
+  gold: 'bg-foreground',
   green: 'bg-green-500',
   blue: 'bg-blue-500',
   gray: 'bg-muted-foreground',

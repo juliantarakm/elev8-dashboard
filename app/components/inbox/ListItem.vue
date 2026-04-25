@@ -20,13 +20,18 @@ const otaColorMap: Record<string, string> = {
   'Booking.com': '#003580',
 }
 
-const statusConfig: Record<string, { label: string, class: string }> = {
-  needs_reply: { label: 'Needs Reply', class: 'bg-[#C8A84B]/20 text-[#C8A84B]' },
-  waiting_on_guest: { label: 'Waiting', class: 'bg-green-500/20 text-green-600' },
-  done: { label: 'Done', class: 'bg-muted text-muted-foreground' },
+const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  needs_reply: 'default',
+  waiting_on_guest: 'secondary',
+  done: 'outline',
 }
 
-const statusCfg = computed(() => statusConfig[props.conversation.status] ?? { label: 'Done', class: 'bg-muted text-muted-foreground' })
+const statusLabelMap: Record<string, string> = {
+  needs_reply: 'Needs Reply',
+  waiting_on_guest: 'Waiting',
+  done: 'Done',
+}
+
 const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#888')
 </script>
 
@@ -34,7 +39,7 @@ const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#8
   <button
     :class="cn(
       'flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent',
-      isSelected && 'border-l-2 border-l-[#C8A84B] bg-accent',
+      isSelected && 'bg-muted',
     )"
     @click="emit('select')"
   >
@@ -48,12 +53,7 @@ const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#8
         <div class="min-w-0">
           <div class="flex items-center gap-2">
             <span class="font-semibold truncate">{{ conversation.guestName }}</span>
-            <span
-              class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-              :style="{ backgroundColor: `${otaColor}20`, color: otaColor }"
-            >
-              {{ conversation.otaSource }}
-            </span>
+            <div v-if="conversation.unreadCount > 0" class="h-2 w-2 flex rounded-full bg-blue-600" />
           </div>
           <div class="text-xs text-muted-foreground truncate">
             {{ conversation.listingName }}
@@ -64,11 +64,9 @@ const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#8
         <div class="text-xs text-muted-foreground">
           {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
         </div>
-        <span
-          :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', statusCfg.class)"
-        >
-          {{ statusCfg.label }}
-        </span>
+        <Badge :variant="statusVariantMap[conversation.status] ?? 'outline'" class="text-[10px]">
+          {{ statusLabelMap[conversation.status] ?? conversation.status }}
+        </Badge>
       </div>
     </div>
 
@@ -76,12 +74,12 @@ const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#8
       <p class="line-clamp-1 text-xs text-muted-foreground flex-1">
         {{ conversation.lastMessage }}
       </p>
-      <span
-        v-if="conversation.unreadCount > 0"
-        class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-[#C8A84B] text-white text-[10px] font-bold shrink-0"
+      <Badge
+        :style="{ backgroundColor: `${otaColor}20`, color: otaColor }"
+        class="text-[10px] shrink-0"
       >
-        {{ conversation.unreadCount }}
-      </span>
+        {{ conversation.otaSource }}
+      </Badge>
     </div>
   </button>
 </template>

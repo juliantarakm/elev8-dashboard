@@ -21,7 +21,7 @@ const bubbleClass = computed(() => {
     return 'bg-muted'
   }
   if (props.message.sender === 'host') {
-    return 'bg-[#C8A84B]/15'
+    return 'bg-muted'
   }
   return ''
 })
@@ -33,6 +33,8 @@ const alignClass = computed(() => {
 })
 
 const isSystemMessage = computed(() => props.message.sender === 'system' || props.message.sender === 'ai')
+
+const systemBubbleClass = 'bg-muted/50 text-muted-foreground'
 </script>
 
 <template>
@@ -57,7 +59,7 @@ const isSystemMessage = computed(() => props.message.sender === 'system' || prop
     </template>
 
     <template v-else>
-      <div class="text-xs italic text-muted-foreground text-center max-w-[75%]">
+      <div class="text-xs italic text-center max-w-[75%] bg-muted/50 text-muted-foreground rounded-lg px-3 py-2">
         {{ message.content }}
       </div>
     </template>

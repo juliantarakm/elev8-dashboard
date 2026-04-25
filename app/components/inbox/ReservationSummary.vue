@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import type { Reservation, SmartAction } from '~/components/inbox/data/conversations'
+import type { Reservation, SmartAction, GuestSentiment } from '~/components/inbox/data/conversations'
 import { otaSources } from '~/components/inbox/data/conversations'
 import { format } from 'date-fns'
 
 interface ReservationSummaryProps {
   reservation: Reservation
-  sentiment: string
+  sentiment: GuestSentiment
   sentimentNote: string
   smartActions: SmartAction[]
 }
@@ -67,7 +67,7 @@ function handleDismiss(action: SmartAction) {
           <Icon name="lucide:users" class="size-4" />
           <span>{{ reservation.guestCount }} guest{{ reservation.guestCount !== 1 ? 's' : '' }}</span>
         </div>
-        <div class="text-sm font-bold text-[#C8A84B]">
+        <div class="text-sm font-bold">
           {{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}
         </div>
       </div>

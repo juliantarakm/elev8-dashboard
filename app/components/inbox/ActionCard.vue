@@ -21,26 +21,28 @@ const iconMap: Record<string, string> = {
   extra_item: 'lucide:user-plus',
 }
 
-const severityConfig: Record<string, { border: string, bg: string }> = {
-  warning: { border: 'border-[#C8A84B]/40', bg: 'bg-[#C8A84B]/5' },
-  urgent: { border: 'border-red-500/40', bg: 'bg-red-500/5' },
-  info: { border: 'border-blue-500/40', bg: 'bg-blue-500/5' },
+const severityDotColor: Record<string, string> = {
+  warning: 'bg-[#C8A84B]',
+  urgent: 'bg-red-500',
+  info: 'bg-blue-500',
 }
 
-const severityStyle = computed(() => severityConfig[props.action.severity] ?? severityConfig.info!)
+const dotColor = computed(() => severityDotColor[props.action.severity] ?? 'bg-muted-foreground')
 </script>
 
 <template>
-  <div :class="cn('rounded-lg border p-3', severityStyle.border, severityStyle.bg)">
+  <div class="rounded-lg border bg-muted p-3">
     <div class="flex items-start gap-2">
-      <Icon :name="iconMap[action.type] ?? 'lucide:alert-circle'" class="size-4 mt-0.5 shrink-0" />
+      <div class="flex items-center gap-2">
+        <Icon :name="iconMap[action.type] ?? 'lucide:alert-circle'" class="size-4 mt-0.5 shrink-0" />
+        <div :class="['size-2 rounded-full shrink-0 mt-1.5', dotColor]" />
+      </div>
       <div class="flex-1 min-w-0">
         <div class="text-sm font-medium">{{ action.title }}</div>
         <div class="text-xs text-muted-foreground mt-0.5">{{ action.description }}</div>
         <div class="flex items-center gap-2 mt-2">
           <Button
             size="sm"
-            class="bg-[#C8A84B] text-[#0a0a0f] hover:bg-[#C8A84B]/90"
             @click="emit('act', action)"
           >
             {{ action.primaryAction }}

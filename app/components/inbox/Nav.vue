@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ConversationStatus } from '~/components/inbox/data/conversations'
+import { buttonVariants } from '~/components/ui/button'
 import { cn } from '~/lib/utils'
 
 interface NavProps {
@@ -46,18 +47,19 @@ function setFilter(key: ConversationStatus | 'all') {
       <template v-for="filter of statusFilters" :key="filter.key + filter.label">
         <Tooltip v-if="isCollapsed" :delay-duration="0">
           <TooltipTrigger as-child>
-            <button
+            <a
+              href="#"
               :class="cn(
-                'inline-flex items-center justify-center rounded-md h-9 w-9 transition-colors',
+                buttonVariants({ variant: activeFilter === filter.key ? 'default' : 'ghost', size: 'icon' }),
+                'h-9 w-9',
                 activeFilter === filter.key
-                  ? 'bg-[#C8A84B]/15 text-[#C8A84B]'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  && 'dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white',
               )"
-              @click="setFilter(filter.key)"
+              @click.prevent="setFilter(filter.key)"
             >
               <Icon :name="filter.icon" class="size-4" />
               <span class="sr-only">{{ filter.label }}</span>
-            </button>
+            </a>
           </TooltipTrigger>
           <TooltipContent side="right" class="flex items-center gap-4">
             {{ filter.label }}
@@ -65,20 +67,30 @@ function setFilter(key: ConversationStatus | 'all') {
           </TooltipContent>
         </Tooltip>
 
-        <button
+        <a
           v-else
+          href="#"
           :class="cn(
-            'inline-flex items-center gap-2 rounded-md px-3 h-9 text-sm font-medium transition-colors border-l-2',
+            buttonVariants({ variant: activeFilter === filter.key ? 'default' : 'ghost', size: 'sm' }),
             activeFilter === filter.key
-              ? 'border-[#C8A84B] bg-[#C8A84B]/10 text-[#C8A84B]'
-              : 'border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
+            'justify-start',
           )"
-          @click="setFilter(filter.key)"
+          @click.prevent="setFilter(filter.key)"
         >
-          <Icon :name="filter.icon" class="size-4" />
+          <Icon :name="filter.icon" class="mr-2 size-4" />
           {{ filter.label }}
-          <span class="ml-auto">{{ filter.count }}</span>
-        </button>
+          <span
+            v-if="filter.count > 0"
+            :class="cn(
+              'ml-auto',
+              activeFilter === filter.key
+                && 'text-background dark:text-white',
+            )"
+          >
+            {{ filter.count }}
+          </span>
+        </a>
       </template>
     </nav>
 
@@ -88,29 +100,39 @@ function setFilter(key: ConversationStatus | 'all') {
       <template v-for="filter of quickFilters" :key="'quick-' + filter.label">
         <Tooltip v-if="isCollapsed" :delay-duration="0">
           <TooltipTrigger as-child>
-            <button
-              class="inline-flex items-center justify-center rounded-md h-9 w-9 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              @click="setFilter(filter.key)"
+            <a
+              href="#"
+              :class="cn(
+                buttonVariants({ variant: 'ghost', size: 'icon' }),
+                'h-9 w-9',
+              )"
+              @click.prevent="setFilter(filter.key)"
             >
               <Icon :name="filter.icon" class="size-4" />
               <span class="sr-only">{{ filter.label }}</span>
-            </button>
+            </a>
           </TooltipTrigger>
-          <TooltipContent side="right">
+          <TooltipContent side="right" class="flex items-center gap-4">
             {{ filter.label }}
             <span class="ml-auto text-muted-foreground">{{ filter.count }}</span>
           </TooltipContent>
         </Tooltip>
 
-        <button
+        <a
           v-else
-          class="inline-flex items-center gap-2 rounded-md px-3 h-9 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-          @click="setFilter(filter.key)"
+          href="#"
+          :class="cn(
+            buttonVariants({ variant: 'ghost', size: 'sm' }),
+            'justify-start',
+          )"
+          @click.prevent="setFilter(filter.key)"
         >
-          <Icon :name="filter.icon" class="size-4" />
+          <Icon :name="filter.icon" class="mr-2 size-4" />
           {{ filter.label }}
-          <span class="ml-auto">{{ filter.count }}</span>
-        </button>
+          <span v-if="filter.count > 0" class="ml-auto text-muted-foreground">
+            {{ filter.count }}
+          </span>
+        </a>
       </template>
     </nav>
   </div>

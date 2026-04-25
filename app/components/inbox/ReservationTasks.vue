@@ -10,7 +10,7 @@ defineProps<ReservationTasksProps>()
 
 const statusConfig: Record<string, { label: string, class: string }> = {
   todo: { label: 'To Do', class: 'bg-muted text-muted-foreground' },
-  in_progress: { label: 'In Progress', class: 'bg-[#C8A84B]/20 text-[#C8A84B]' },
+  in_progress: { label: 'In Progress', class: 'bg-secondary text-secondary-foreground' },
   done: { label: 'Done', class: 'bg-green-500/20 text-green-600' },
 }
 </script>

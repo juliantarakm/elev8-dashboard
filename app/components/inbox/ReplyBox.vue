@@ -50,13 +50,13 @@ function send() {
           </span>
           <span class="text-xs text-muted-foreground">ElevAI Assist</span>
         </button>
-        <span class="text-xs text-muted-foreground">
+        <Badge variant="secondary" class="text-xs">
           via {{ channel }}
-        </span>
+        </Badge>
       </div>
       <Button
+        variant="default"
         size="sm"
-        class="bg-[#C8A84B] text-[#0a0a0f] hover:bg-[#C8A84B]/90"
         :disabled="!replyText.trim()"
         @click="send"
       >

@@ -30,7 +30,7 @@ function setAllFilter() {
           You're all caught up!
         </p>
         <button
-          class="text-sm text-[#C8A84B] hover:underline"
+          class="text-sm text-muted-foreground hover:underline"
           @click="setAllFilter"
         >
           View all conversations

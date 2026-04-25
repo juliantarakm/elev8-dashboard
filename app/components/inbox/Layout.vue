@@ -50,7 +50,7 @@ watch(() => isMobile.value, () => {
     <ResizablePanelGroup
       id="inbox-panel-group"
       direction="horizontal"
-      class="h-full items-stretch"
+      class="h-full max-h-[calc(100dvh-54px-3rem)] items-stretch"
     >
       <ResizablePanel
         id="inbox-filter-panel"
@@ -65,15 +65,15 @@ watch(() => isMobile.value, () => {
       >
         <div :class="cn('flex h-[56px] items-center px-4', isCollapsed && 'justify-center px-2')">
           <template v-if="isCollapsed">
-            <Icon name="lucide:inbox" class="size-5 text-[#C8A84B]" />
+            <Icon name="lucide:inbox" class="size-5 text-muted-foreground" />
           </template>
           <template v-else>
-            <h1 class="text-lg font-semibold">
+            <h1 class="text-xl font-bold">
               Inbox
             </h1>
             <span
               v-if="totalUnread > 0"
-              class="ml-2 inline-flex items-center justify-center rounded-full bg-[#C8A84B]/15 px-2 py-0.5 text-xs font-semibold text-[#C8A84B]"
+              class="ml-2 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-xs font-semibold"
             >
               {{ totalUnread }}
             </span>
@@ -85,10 +85,21 @@ watch(() => isMobile.value, () => {
       <ResizableHandle id="inbox-handle-1" with-handle />
       <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20">
         <div class="flex items-center px-4 py-2">
-          <div class="relative w-full">
-            <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-            <Input v-model="searchValue" placeholder="Search conversations..." class="pl-8" />
-          </div>
+          <h1 class="text-xl font-bold">
+            Messages
+          </h1>
+          <Badge variant="secondary" class="ml-2 text-xs">
+            {{ filteredConversations.length }}
+          </Badge>
+        </div>
+        <Separator />
+        <div class="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <form>
+            <div class="relative">
+              <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
+              <Input v-model="searchValue" placeholder="Search conversations..." class="pl-8" />
+            </div>
+          </form>
         </div>
         <Separator />
         <InboxList

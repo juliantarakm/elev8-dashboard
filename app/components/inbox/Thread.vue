@@ -1,7 +1,5 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { cn } from '~/lib/utils'
-import type { Conversation } from '~/components/inbox/data/conversations'
 import { otaSources } from '~/components/inbox/data/conversations'
 
 interface ThreadEmits {
@@ -41,13 +39,16 @@ function dismissSuggestion() {
 
 const otaColorMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.color]))
 
-function statusBadge(status: string) {
-  const map: Record<string, { label: string, class: string }> = {
-    needs_reply: { label: 'Needs Reply', class: 'bg-[#C8A84B]/20 text-[#C8A84B]' },
-    waiting_on_guest: { label: 'Waiting', class: 'bg-green-500/20 text-green-600' },
-    done: { label: 'Done', class: 'bg-muted text-muted-foreground' },
-  }
-  return map[status] ?? { label: status, class: 'bg-muted text-muted-foreground' }
+const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  needs_reply: 'default',
+  waiting_on_guest: 'secondary',
+  done: 'outline',
+}
+
+const statusLabelMap: Record<string, string> = {
+  needs_reply: 'Needs Reply',
+  waiting_on_guest: 'Waiting',
+  done: 'Done',
 }
 </script>
 
@@ -58,47 +59,49 @@ function statusBadge(status: string) {
   </div>
 
   <div v-else class="flex flex-col h-full">
-    <div class="border-b px-4 py-3">
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-sm">{{ selectedConversation.guestName }}</h2>
-        <div class="flex items-center gap-1">
-          <Button
-            v-if="selectedConversation.status !== 'done'"
-            variant="ghost"
-            size="sm"
-            @click="markAsDone(selectedConversation.id)"
-          >
-            <Icon name="lucide:check-circle" class="size-4 mr-1" />
-            Mark as Done
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="icon-sm">
-                <Icon name="lucide:more-vertical" class="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Assign</DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-              <DropdownMenuItem>Mute</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 mt-1">
-        <span class="text-xs text-muted-foreground">{{ selectedConversation.listingName }}</span>
-        <span
-          class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+    <div class="flex items-center p-2">
+      <div class="flex items-center gap-2">
+        <h2 class="font-semibold text-sm px-2">{{ selectedConversation.guestName }}</h2>
+        <Badge
           :style="{ backgroundColor: `${otaColorMap[selectedConversation.otaSource] ?? '#888'}20`, color: otaColorMap[selectedConversation.otaSource] ?? '#888' }"
+          class="text-[10px]"
         >
           {{ selectedConversation.otaSource }}
-        </span>
-        <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', statusBadge(selectedConversation.status).class)">
-          {{ statusBadge(selectedConversation.status).label }}
-        </span>
+        </Badge>
+        <Badge :variant="statusVariantMap[selectedConversation.status] ?? 'outline'" class="text-[10px]">
+          {{ statusLabelMap[selectedConversation.status] ?? selectedConversation.status }}
+        </Badge>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              v-if="selectedConversation.status !== 'done'"
+              variant="outline"
+              size="sm"
+              @click="markAsDone(selectedConversation.id)"
+            >
+              <Icon name="lucide:check-circle" class="size-4 mr-1" />
+              Mark as Done
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Mark conversation as done</TooltipContent>
+        </Tooltip>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="icon">
+              <Icon name="lucide:more-vertical" class="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>Assign</DropdownMenuItem>
+            <DropdownMenuItem>Archive</DropdownMenuItem>
+            <DropdownMenuItem>Mute</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
+    <Separator />
 
     <div class="flex-1 min-h-0">
       <ScrollArea class="h-full p-4">
