@@ -117,7 +117,7 @@ const statusLabelMap: Record<string, string> = {
       </ScrollArea>
     </div>
 
-    <div v-if="showSuggestion && aiSuggestion" class="shrink-0 px-4 pt-3">
+    <div v-if="showSuggestion && aiSuggestion" class="shrink-0 px-4 py-2">
       <InboxHostbuddySuggestion
         :suggestion="aiSuggestion"
         @use="handleUseSuggestion"
