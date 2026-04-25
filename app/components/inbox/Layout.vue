@@ -84,14 +84,11 @@ watch(() => isMobile.value, () => {
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
       <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20">
-        
-        <div class="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <form>
-            <div class="relative">
-              <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-              <Input v-model="searchValue" placeholder="Search conversations..." class="pl-8" />
-            </div>
-          </form>
+        <div class="flex h-[56px] items-center px-4">
+          <div class="relative flex-1">
+            <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
+            <Input v-model="searchValue" placeholder="Search conversations..." class="pl-8" />
+          </div>
         </div>
         <Separator />
         <InboxList
