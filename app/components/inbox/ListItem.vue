@@ -69,9 +69,6 @@ const stayDateLabel = computed(() => {
           </div>
           <div class="flex items-center gap-1.5">
             <span class="text-xs text-muted-foreground truncate">{{ conversation.listingName }}</span>
-            <span v-if="assignedStaff" class="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              · {{ assignedStaff.name.split(' ')[0] }}
-            </span>
           </div>
         </div>
       </div>
@@ -85,10 +82,19 @@ const stayDateLabel = computed(() => {
       </div>
     </div>
 
-    <div class="w-full flex items-center gap-2">
-      <p class="line-clamp-1 text-xs text-muted-foreground flex-1">
-        {{ conversation.lastMessage }}
-      </p>
+<div class="w-full flex items-center gap-2">
+      <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
+      <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
+      <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
+        {{ stayConfig.label }}
+      </span>
+    </div>
+
+    <div v-if="assignedStaff" class="w-full flex items-center gap-1.5">
+      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-warning text-[8px] font-medium text-white">
+        {{ assignedStaff.name.split(' ').map(n => n[0]).join('') }}
+      </div>
+      <span class="text-[10px] text-muted-foreground">{{ assignedStaff.name }}</span>
     </div>
 
     <div class="w-full flex items-center gap-1.5">
