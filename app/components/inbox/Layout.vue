@@ -24,6 +24,7 @@ const {
   selectedConversation,
   selectedReservation,
   conversations,
+  rightPanelCollapsed,
 } = useInbox()
 
 const sortOptions = [
@@ -101,6 +102,7 @@ watch(() => isMobile.value, () => {
         id="inbox-reservation-panel"
         :default-size="defaultLayout[3]"
         :min-size="20"
+        :collapsed="rightPanelCollapsed"
         collapsible
       >
         <template v-if="selectedConversation && selectedReservation">

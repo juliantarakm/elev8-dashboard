@@ -17,6 +17,10 @@ export function useInbox() {
   const elevaiState = useState<Record<string, ElevaiConvState>>('inbox-elevai-state', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
+
+  function toggleRightPanel() {
+    rightPanelCollapsed.value = !rightPanelCollapsed.value
+  }
   const sortBy = useState<SortOption>('inbox-sort-by', () => 'newest')
   const pendingSuggestion = useState<string>('inbox-pending-suggestion', () => '')
 
@@ -316,6 +320,7 @@ export function useInbox() {
     listingSearchText,
     searchValue,
     rightPanelCollapsed,
+    toggleRightPanel,
     sortBy,
     pendingSuggestion,
     filteredConversations,
