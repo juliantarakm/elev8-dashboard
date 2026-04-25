@@ -84,7 +84,7 @@ watch(() => isMobile.value, () => {
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
       <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20">
-        <div class="flex items-center px-4 py-2">
+        <div class="flex h-[56px] items-center px-4">
           <h1 class="text-xl font-bold">
             Messages
           </h1>

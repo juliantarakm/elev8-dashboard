@@ -59,20 +59,23 @@ const statusLabelMap: Record<string, string> = {
   </div>
 
   <div v-else class="flex flex-col h-full">
-    <div class="flex items-center p-2">
-      <div class="flex items-center gap-2">
-        <h2 class="font-semibold text-sm px-2">{{ selectedConversation.guestName }}</h2>
-        <Badge
-          :style="{ backgroundColor: `${otaColorMap[selectedConversation.otaSource] ?? '#888'}20`, color: otaColorMap[selectedConversation.otaSource] ?? '#888' }"
-          class="text-[10px]"
-        >
-          {{ selectedConversation.otaSource }}
-        </Badge>
-        <Badge :variant="statusVariantMap[selectedConversation.status] ?? 'outline'" class="text-[10px]">
-          {{ statusLabelMap[selectedConversation.status] ?? selectedConversation.status }}
-        </Badge>
+    <div class="flex items-center px-4 h-[56px]">
+      <div class="flex flex-col justify-center min-w-0 flex-1">
+        <span class="font-semibold text-sm truncate">{{ selectedConversation.guestName }}</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-muted-foreground truncate">{{ selectedConversation.listingName }}</span>
+          <Badge
+            :style="{ backgroundColor: `${otaColorMap[selectedConversation.otaSource] ?? '#888'}20`, color: otaColorMap[selectedConversation.otaSource] ?? '#888' }"
+            class="text-[10px]"
+          >
+            {{ selectedConversation.otaSource }}
+          </Badge>
+          <Badge :variant="statusVariantMap[selectedConversation.status] ?? 'outline'" class="text-[10px]">
+            {{ statusLabelMap[selectedConversation.status] ?? selectedConversation.status }}
+          </Badge>
+        </div>
       </div>
-      <div class="ml-auto flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <Tooltip>
           <TooltipTrigger as-child>
             <Button

@@ -11,7 +11,7 @@ const props = defineProps<ReservationPanelProps>()
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="border-b px-4 py-3">
+    <div class="flex h-[56px] items-center px-4">
       <h2 class="font-semibold text-sm">Reservation</h2>
     </div>
 
