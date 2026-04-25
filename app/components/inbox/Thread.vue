@@ -130,8 +130,10 @@ function formatNoteDate(timestamp: string) {
           </Badge>
         </div>
         <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span class="truncate">{{ selectedConversation.listingName }}</span>
+          <Icon v-if="stayDateLabel" name="lucide:calendar" class="size-3 shrink-0" />
           <span v-if="stayDateLabel" class="shrink-0">{{ stayDateLabel }}</span>
+          <span v-if="stayDateLabel" class="shrink-0">·</span>
+          <span class="truncate">{{ selectedConversation.listingName }}</span>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
