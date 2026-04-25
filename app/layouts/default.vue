@@ -1,8 +1,18 @@
 <script setup lang="ts">
+import { useSidebar } from '~/components/ui/sidebar'
+
+const route = useRoute()
+
+onMounted(() => {
+  const { setOpen } = useSidebar()
+  if (route.path.startsWith('/inbox')) {
+    setOpen(false)
+  }
+})
 </script>
 
 <template>
-  <SidebarProvider>
+  <SidebarProvider :default-open="false">
     <LayoutAppSidebar />
     <SidebarInset>
       <LayoutHeader />
