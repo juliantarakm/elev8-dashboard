@@ -29,19 +29,6 @@ function handleDismiss(action: SmartAction) {
 
 <template>
   <div class="space-y-4">
-    <InboxGuestSentiment :sentiment="sentiment" :note="sentimentNote" />
-
-    <div v-if="smartActions.length > 0" class="space-y-2">
-      <div class="text-sm font-medium">Action Needed</div>
-      <InboxActionCard
-        v-for="action of smartActions"
-        :key="action.id"
-        :action="action"
-        @act="handleAct"
-        @dismiss="handleDismiss"
-      />
-    </div>
-
     <div class="space-y-2">
       <div class="text-sm font-medium">Reservation Details</div>
       <div class="rounded-lg border bg-card p-3 space-y-2">
@@ -71,6 +58,19 @@ function handleDismiss(action: SmartAction) {
           {{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}
         </div>
       </div>
+    </div>
+
+    <InboxGuestSentiment :sentiment="sentiment" :note="sentimentNote" />
+
+    <div v-if="smartActions.length > 0" class="space-y-2">
+      <div class="text-sm font-medium">Action Needed</div>
+      <InboxActionCard
+        v-for="action of smartActions"
+        :key="action.id"
+        :action="action"
+        @act="handleAct"
+        @dismiss="handleDismiss"
+      />
     </div>
 
     <div class="space-y-2">
