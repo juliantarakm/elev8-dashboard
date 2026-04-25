@@ -43,9 +43,6 @@ function clearStayFilter() {
     class="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2"
   >
     <div>
-      <div v-if="!isCollapsed" class="px-3 pb-1.5 text-xs font-medium text-muted-foreground">
-        Status
-      </div>
       <nav class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         <Tooltip v-if="isCollapsed" :delay-duration="0">
           <TooltipTrigger as-child>
@@ -130,9 +127,6 @@ function clearStayFilter() {
     <Separator />
 
     <div>
-      <div v-if="!isCollapsed" class="px-3 pb-1.5 text-xs font-medium text-muted-foreground">
-        Stay
-      </div>
       <nav class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         <template v-for="filter of stayFilters" :key="filter.key">
           <Tooltip v-if="isCollapsed" :delay-duration="0">
