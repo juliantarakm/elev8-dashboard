@@ -16,7 +16,7 @@ const defaultAppSettings: AppSettings = {
     variant: 'sidebar',
   },
   theme: {
-    color: 'default',
+    color: 'yellow',
     type: 'default',
   },
 }
@@ -26,8 +26,9 @@ export function useAppSettings() {
 
   const processedConfig = customDefu(appSettings, defaultAppSettings)
 
-  const cookieAppSettings = useCookie<AppSettings>('app_settings', {
+  const cookieAppSettings = useCookie<AppSettings>('elev8_settings', {
     default: () => processedConfig,
+    path: '/',
   })
 
   const updateAppSettings = (settings: AppSettings) => {

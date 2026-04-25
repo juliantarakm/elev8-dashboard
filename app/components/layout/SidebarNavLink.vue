@@ -2,7 +2,6 @@
 import type { SidebarMenuButtonVariants } from '~/components/ui/sidebar'
 import type { NavLink } from '~/types/nav'
 import { useSidebar } from '~/components/ui/sidebar'
-import { conversations as conversationsData } from '~/components/inbox/data/conversations'
 
 withDefaults(defineProps<{
   item: NavLink
@@ -13,7 +12,9 @@ withDefaults(defineProps<{
 
 const { setOpenMobile } = useSidebar()
 
-const unreadConversations = computed(() => conversationsData.filter(c => c.unreadCount > 0).length)
+const { conversations } = useInbox()
+
+const unreadConversations = computed(() => conversations.value.filter(c => c.unreadCount > 0).length)
 </script>
 
 <template>

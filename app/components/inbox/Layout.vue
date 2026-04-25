@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { useMediaQuery } from '@vueuse/core'
-import { Search } from 'lucide-vue-next'
 import { cn } from '~/lib/utils'
-import { conversations } from '~/components/inbox/data/conversations'
 
 const props = withDefaults(defineProps<InboxLayoutProps>(), {
   defaultCollapsed: false,
@@ -18,16 +16,27 @@ interface InboxLayoutProps {
 const {
   selectedConversationId,
   searchValue,
+  sortBy,
+  unreadFilter,
+  showActionNeeded,
+  actionNeededCount,
   filteredConversations,
   selectedConversation,
   selectedReservation,
+  conversations,
 } = useInbox()
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'unread', label: 'Unread' },
+]
 
 const isCollapsed = ref(props.defaultCollapsed)
 const debouncedSearch = refDebounced(searchValue, 250)
 
 const totalUnread = computed(() =>
-  conversations.filter(c => c.unreadCount > 0).length,
+  conversations.value.filter(c => c.unreadCount > 0).length,
 )
 
 function onCollapse() {
@@ -83,21 +92,14 @@ watch(() => isMobile.value, () => {
         <InboxNav :is-collapsed="isCollapsed" />
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
-      <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20">
-        <div class="flex h-[56px] items-center px-4">
-          <div class="relative flex-1">
-            <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-            <Input v-model="searchValue" placeholder="Search guests, listings, tags..." class="pl-8" />
-          </div>
-        </div>
-        <Separator />
+      <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20" class="flex flex-col overflow-hidden">
         <InboxList
           v-model:selected-conversation-id="selectedConversationId"
           :items="filteredConversations"
         />
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-2" with-handle />
-      <ResizablePanel id="inbox-thread-panel" :default-size="defaultLayout[2]" :min-size="30">
+      <ResizablePanel id="inbox-thread-panel" :default-size="defaultLayout[2]" :min-size="30" class="flex flex-col overflow-hidden">
         <InboxThread />
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-3" with-handle />

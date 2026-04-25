@@ -8,6 +8,7 @@ export function useInbox() {
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
   const showActionNeeded = useState<boolean>('inbox-show-action-needed', () => true)
   const assignedToMeFilter = useState<boolean>('inbox-assigned-to-me-filter', () => false)
+  const unreadFilter = useState<boolean>('inbox-unread-filter', () => false)
   const activeStayFilter = useState<StayStatus | 'all'>('inbox-active-stay-filter', () => 'all')
   const activeListingFilter = useState<string[]>('inbox-active-listing-filter', () => [])
   const activeTagFilters = useState<string[]>('inbox-active-tag-filters', () => [])
@@ -28,6 +29,10 @@ export function useInbox() {
 
     if (assignedToMeFilter.value) {
       result = result.filter(c => c.isAssignedToMe)
+    }
+
+    if (unreadFilter.value) {
+      result = result.filter(c => c.unreadCount > 0)
     }
 
     if (activeStayFilter.value !== 'all') {
@@ -72,11 +77,15 @@ export function useInbox() {
   const selectedConversation = computed<Conversation | undefined>(() => {
     if (!selectedConversationId.value)
       return undefined
-    const conv = conversations.value.find(c => c.id === selectedConversationId.value)
-    if (conv && conv.unreadCount > 0) {
-      conv.unreadCount = 0
+    return conversations.value.find(c => c.id === selectedConversationId.value)
+  })
+
+  watch(selectedConversationId, (id) => {
+    if (!id) return
+    const index = conversations.value.findIndex(c => c.id === id)
+    if (index !== -1 && conversations.value[index].unreadCount > 0) {
+      conversations.value[index] = { ...conversations.value[index], unreadCount: 0 }
     }
-    return conv
   })
 
   const selectedMessages = computed<Message[]>(() => {
@@ -256,6 +265,7 @@ export function useInbox() {
     selectedConversationId,
     showActionNeeded,
     assignedToMeFilter,
+    unreadFilter,
     activeStayFilter,
     activeListingFilter,
     activeTagFilters,

@@ -9,7 +9,7 @@ interface NavProps {
 
 defineProps<NavProps>()
 
-const { showActionNeeded, assignedToMeFilter, activeStayFilter, activeListingFilter, activeTagFilters, listingSearchText, actionNeededCount, assignedToMeCount, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters } = useInbox()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter, activeListingFilter, activeTagFilters, listingSearchText, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters } = useInbox()
 
 const stayFilters = computed(() => [
   { key: 'current' as StayStatus, label: 'Current', icon: 'lucide:home', count: stayCountByStatus('current') },
@@ -32,19 +32,18 @@ const hasAnyListingFilter = computed(() =>
   || listingSearchText.value,
 )
 
-function toggleActionNeeded() {
-  showActionNeeded.value = !showActionNeeded.value
-}
-
-function toggleAssignedToMe() {
-  assignedToMeFilter.value = !assignedToMeFilter.value
-}
-
 function setStayFilter(key: StayStatus | 'all') {
   activeStayFilter.value = key
 }
 
 function clearStayFilter() {
+  activeStayFilter.value = 'all'
+}
+
+function clearAll() {
+  showActionNeeded.value = false
+  unreadFilter.value = false
+  assignedToMeFilter.value = false
   activeStayFilter.value = 'all'
 }
 </script>
@@ -60,85 +59,8 @@ function clearStayFilter() {
           <TooltipTrigger as-child>
             <a
               href="#"
-              :class="cn(buttonVariants({ variant: showActionNeeded ? 'default' : 'ghost', size: 'icon' }), 'h-9 w-9')"
-              @click.prevent="toggleActionNeeded()"
-            >
-              <Icon name="lucide:circle-alert" class="size-4" />
-              <span class="sr-only">Action Needed</span>
-            </a>
-          </TooltipTrigger>
-          <TooltipContent side="right" class="flex items-center gap-4">
-            Action Needed
-          </TooltipContent>
-        </Tooltip>
-        <a
-          v-else
-          href="#"
-          :class="cn(
-            buttonVariants({ variant: showActionNeeded ? 'default' : 'ghost', size: 'sm' }),
-            showActionNeeded && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
-            'justify-start',
-          )"
-          @click.prevent="toggleActionNeeded()"
-        >
-          <Icon name="lucide:circle-alert" class="mr-2 size-4" />
-          Action Needed
-          <span
-            v-if="actionNeededCount() > 0"
-            :class="cn(
-              'ml-auto',
-              showActionNeeded && 'text-background dark:text-white',
-            )"
-          >
-            {{ actionNeededCount() }}
-          </span>
-        </a>
-
-        <Tooltip v-if="isCollapsed" :delay-duration="0">
-          <TooltipTrigger as-child>
-            <a
-              href="#"
-              :class="cn(buttonVariants({ variant: assignedToMeFilter ? 'default' : 'ghost', size: 'icon' }), 'h-9 w-9')"
-              @click.prevent="toggleAssignedToMe()"
-            >
-              <Icon name="lucide:user-check" class="size-4" />
-              <span class="sr-only">Assigned to You</span>
-            </a>
-          </TooltipTrigger>
-          <TooltipContent side="right" class="flex items-center gap-4">
-            Assigned to You
-            <span class="ml-auto text-muted-foreground">{{ assignedToMeCount() }}</span>
-          </TooltipContent>
-        </Tooltip>
-        <a
-          v-else
-          href="#"
-          :class="cn(
-            buttonVariants({ variant: assignedToMeFilter ? 'default' : 'ghost', size: 'sm' }),
-            assignedToMeFilter && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
-            'justify-start',
-          )"
-          @click.prevent="toggleAssignedToMe()"
-        >
-          <Icon name="lucide:user-check" class="mr-2 size-4" />
-          Assigned to You
-          <span
-            v-if="assignedToMeCount() > 0"
-            :class="cn(
-              'ml-auto',
-              assignedToMeFilter && 'text-background dark:text-white',
-            )"
-          >
-            {{ assignedToMeCount() }}
-          </span>
-        </a>
-
-        <Tooltip v-if="isCollapsed" :delay-duration="0">
-          <TooltipTrigger as-child>
-            <a
-              href="#"
-              :class="cn(buttonVariants({ variant: !showActionNeeded && !assignedToMeFilter ? 'default' : 'ghost', size: 'icon' }), 'h-9 w-9')"
-              @click.prevent="showActionNeeded = false; assignedToMeFilter = false"
+              :class="cn(buttonVariants({ variant: activeStayFilter === 'all' && !showActionNeeded && !unreadFilter && !assignedToMeFilter ? 'default' : 'ghost', size: 'icon' }), 'h-9 w-9')"
+              @click.prevent="clearAll()"
             >
               <Icon name="lucide:inbox" class="size-4" />
               <span class="sr-only">All</span>
@@ -152,22 +74,16 @@ function clearStayFilter() {
           v-else
           href="#"
           :class="cn(
-            buttonVariants({ variant: !showActionNeeded && !assignedToMeFilter ? 'default' : 'ghost', size: 'sm' }),
-            !showActionNeeded && !assignedToMeFilter && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
+            buttonVariants({ variant: activeStayFilter === 'all' && !showActionNeeded && !unreadFilter && !assignedToMeFilter ? 'default' : 'ghost', size: 'sm' }),
+            activeStayFilter === 'all' && !showActionNeeded && !unreadFilter && !assignedToMeFilter && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
             'justify-start',
           )"
-          @click.prevent="showActionNeeded = false; assignedToMeFilter = false"
+          @click.prevent="clearAll()"
         >
           <Icon name="lucide:inbox" class="mr-2 size-4" />
           All
         </a>
-      </nav>
-    </div>
 
-    <Separator />
-
-    <div>
-      <nav class="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         <template v-for="filter of stayFilters" :key="filter.key">
           <Tooltip v-if="isCollapsed" :delay-duration="0">
             <TooltipTrigger as-child>
@@ -343,15 +259,6 @@ function clearStayFilter() {
               <Icon v-if="activeListingFilter.includes(listing.name)" name="lucide:check" class="size-2.5" />
             </div>
             <span class="truncate">{{ listing.name }}</span>
-            <span
-              :class="cn(
-                'ml-auto',
-                activeListingFilter.includes(listing.name)
-                  && 'text-background dark:text-white',
-              )"
-            >
-              {{ listing.count }}
-            </span>
           </button>
         </template>
       </nav>

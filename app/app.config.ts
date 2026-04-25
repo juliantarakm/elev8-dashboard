@@ -5,9 +5,13 @@ export default defineAppConfig({
   },
   appSettings: {
     sidebar: {
-      collapsible: 'offcanvas', // 'offcanvas' | 'icon' | 'none'
-      side: 'left', // 'left' | 'right'
-      variant: 'inset', // 'sidebar' | 'floating' | 'inset'
+      collapsible: 'offcanvas',
+      side: 'left',
+      variant: 'inset',
+    },
+    theme: {
+      color: 'yellow',
+      type: 'default',
     },
   },
 })
