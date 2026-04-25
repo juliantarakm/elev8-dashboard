@@ -12,9 +12,19 @@ const { selectedConversation,
   getAssignedStaff,
   isElevaiEnabled,
   useSuggestion,
+  getNotes,
+  addNote,
 } = useInbox()
 
 const activeThreadTab = ref<'messages' | 'notes'>('messages')
+
+const newNoteContent = ref('')
+const newNoteVisibleToAI = ref(false)
+
+const conversationNotes = computed(() => {
+  if (!selectedConversation.value) return []
+  return getNotes(selectedConversation.value.id)
+})
 
 const dismissedSuggestions = ref<string[]>([])
 
@@ -77,6 +87,19 @@ function handleMarkAsUnread() {
   if (!selectedConversation.value) return
   markAsUnread(selectedConversation.value.id)
   toast.info('Marked as unread')
+}
+
+function handleAddNote() {
+  if (!selectedConversation.value || !newNoteContent.value.trim()) return
+  addNote(selectedConversation.value.id, newNoteContent.value.trim(), newNoteVisibleToAI.value)
+  newNoteContent.value = ''
+  newNoteVisibleToAI.value = false
+  toast.success('Note added')
+}
+
+function formatNoteDate(timestamp: string) {
+  const date = new Date(timestamp)
+  return format(date, 'MMM d, h:mm a')
 }
 </script>
 
@@ -177,22 +200,42 @@ function handleMarkAsUnread() {
         </div>
       </TabsContent>
 
-      <TabsContent value="notes" class="flex-1 min-h-0">
-        <ScrollArea class="h-full">
-          <div v-if="selectedReservation?.guestDetails?.notes" class="p-4">
-            <div class="rounded-lg border bg-muted/50 p-3">
-              <div class="flex items-center gap-2 mb-1.5">
-                <Icon name="lucide:pencil-line" class="size-3.5 text-muted-foreground" />
-                <span class="text-sm font-medium">Guest Notes</span>
+      <TabsContent value="notes" class="flex-1 min-h-0 flex flex-col">
+        <ScrollArea class="flex-1">
+          <div class="p-4 space-y-3">
+            <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
+              <p class="text-sm leading-relaxed">{{ note.content }}</p>
+              <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                <span>{{ note.authorName }}</span>
+                <span>·</span>
+                <span>{{ formatNoteDate(note.createdAt) }}</span>
+                <span v-if="note.visibleToAI" class="inline-flex items-center gap-0.5 text-[#C8A84B]">
+                  <Icon name="lucide:sparkles" class="size-3" />
+                  ElevAI
+                </span>
               </div>
-              <p class="text-sm text-muted-foreground leading-relaxed">{{ selectedReservation.guestDetails.notes }}</p>
+            </div>
+            <div v-if="!conversationNotes.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Icon name="lucide:sticky-note" class="size-10 mb-2" />
+              <p class="text-sm">No notes yet</p>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
-            <Icon name="lucide:sticky-note" class="size-10 mb-2" />
-            <p class="text-sm">No notes for this conversation</p>
-          </div>
         </ScrollArea>
+        <div class="shrink-0 border-t bg-background p-3">
+          <div class="space-y-2">
+            <Textarea v-model="newNoteContent" placeholder="Add a note..." class="min-h-[60px] text-sm resize-none" />
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <Checkbox v-model:checked="newNoteVisibleToAI" class="size-3.5" />
+                <Icon name="lucide:sparkles" class="size-3 text-[#C8A84B]" />
+                Let ElevAI read this note
+              </label>
+              <Button size="sm" :disabled="!newNoteContent.trim()" @click="handleAddNote">
+                Add Note
+              </Button>
+            </div>
+          </div>
+        </div>
       </TabsContent>
     </Tabs>
   </div>

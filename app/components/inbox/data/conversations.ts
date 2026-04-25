@@ -6,6 +6,15 @@ export type ActivityEventColor = 'gold' | 'green' | 'blue' | 'gray'
 
 export type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
 
+export interface Note {
+  id: string
+  content: string
+  authorId: string
+  authorName: string
+  createdAt: string
+  visibleToAI: boolean
+}
+
 export interface StaffMember {
   id: string
   name: string

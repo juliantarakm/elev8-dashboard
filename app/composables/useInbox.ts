@@ -1,4 +1,4 @@
-import type { Conversation, ConversationStatus, Message, Reservation, StayStatus } from '~/components/inbox/data/conversations'
+import type { Conversation, ConversationStatus, Message, Note, Reservation, StayStatus } from '~/components/inbox/data/conversations'
 import { conversations as conversationsData, messages, reservations, staffMembers } from '~/components/inbox/data/conversations'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
@@ -19,6 +19,8 @@ export function useInbox() {
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
   const sortBy = useState<SortOption>('inbox-sort-by', () => 'newest')
   const pendingSuggestion = useState<string>('inbox-pending-suggestion', () => '')
+
+  const notes = useState<Record<string, Note[]>>('inbox-notes', () => ({}))
 
   const filteredConversations = computed(() => {
     let result = conversations.value
@@ -157,6 +159,40 @@ export function useInbox() {
   function getAssignedStaff(conv: Conversation) {
     if (!conv.assignedTo) return null
     return staffMembers.find(s => s.id === conv.assignedTo) ?? null
+  }
+
+  function getNotes(conversationId: string): Note[] {
+    const convNotes = notes.value[conversationId]
+    if (convNotes) return convNotes
+    const conv = conversations.value.find(c => c.id === conversationId)
+    if (!conv) return []
+    const resId = conv.reservationId
+    const res = reservations[resId]
+    const guestNotes = res?.guestDetails?.notes
+    if (!guestNotes) return []
+    const initial: Note[] = [{
+      id: `note-guest-${conversationId}`,
+      content: guestNotes,
+      authorId: 'guest',
+      authorName: conv.guestName,
+      createdAt: conv.lastMessageAt,
+      visibleToAI: true,
+    }]
+    notes.value = { ...notes.value, [conversationId]: initial }
+    return initial
+  }
+
+  function addNote(conversationId: string, content: string, visibleToAI: boolean) {
+    const convNotes = getNotes(conversationId)
+    const newNote: Note = {
+      id: `note-${Date.now()}`,
+      content,
+      authorId: 'staff-2',
+      authorName: 'Komang Juliantara',
+      createdAt: new Date().toISOString(),
+      visibleToAI,
+    }
+    notes.value = { ...notes.value, [conversationId]: [...convNotes, newNote] }
   }
 
   function actionNeededCount(): number {
@@ -307,5 +343,7 @@ export function useInbox() {
     clearAllListingFilters,
     useSuggestion,
     clearSuggestion,
+    getNotes,
+    addNote,
   }
 }
