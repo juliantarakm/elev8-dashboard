@@ -30,7 +30,11 @@ export function useInbox() {
         c =>
           c.guestName.toLowerCase().includes(q)
           || c.listingName.toLowerCase().includes(q)
-          || c.lastMessage.toLowerCase().includes(q),
+          || c.propertyName.toLowerCase().includes(q)
+          || c.lastMessage.toLowerCase().includes(q)
+          || c.labels.some(l => l.toLowerCase().includes(q))
+          || c.stayStatus.toLowerCase().includes(q)
+          || c.otaSource.toLowerCase().includes(q),
       )
     }
 

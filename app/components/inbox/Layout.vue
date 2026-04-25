@@ -87,7 +87,7 @@ watch(() => isMobile.value, () => {
         <div class="flex h-[56px] items-center px-4">
           <div class="relative flex-1">
             <Search class="absolute left-2 top-2.5 size-4 text-muted-foreground" />
-            <Input v-model="searchValue" placeholder="Search conversations..." class="pl-8" />
+            <Input v-model="searchValue" placeholder="Search guests, listings, tags..." class="pl-8" />
           </div>
         </div>
         <Separator />
