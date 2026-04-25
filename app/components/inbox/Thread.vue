@@ -164,7 +164,7 @@ function formatNoteDate(timestamp: string) {
     </div>
     <Separator />
 
-    <Tabs v-model="activeThreadTab" class="flex flex-col min-h-0 flex-1">
+    <Tabs default-value="messages" class="flex flex-col min-h-0 flex-1">
       <TabsList class="w-full justify-start rounded-none border-b bg-transparent h-8 px-4">
         <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
         <TabsTrigger value="notes" class="text-xs">Notes</TabsTrigger>
