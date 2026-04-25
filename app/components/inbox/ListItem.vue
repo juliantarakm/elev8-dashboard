@@ -83,6 +83,12 @@ const stayDateLabel = computed(() => {
     </div>
 
 <div class="w-full flex items-center gap-3">
+      <p class="line-clamp-1 text-xs text-muted-foreground flex-1">
+        {{ conversation.lastMessage }}
+      </p>
+    </div>
+
+    <div class="w-full flex items-center gap-3">
       <div class="flex items-center gap-1.5">
         <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
         <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
