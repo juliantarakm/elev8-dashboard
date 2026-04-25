@@ -59,8 +59,8 @@ const stayDateLabel = computed(() => {
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="font-semibold truncate">{{ conversation.guestName }}</span>
-            <Badge v-if="conversation.unreadCount > 0" class="ml-auto h-5 min-w-5 rounded-full px-1.5 text-[10px] flex justify-center" variant="default">
+            <span class="font-semibold truncate flex-1">{{ conversation.guestName }}</span>
+            <Badge v-if="conversation.unreadCount > 0" class="h-5 min-w-5 rounded px-1 text-[10px]" variant="default">
               {{ conversation.unreadCount }}
             </Badge>
           </div>
