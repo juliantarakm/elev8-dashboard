@@ -58,9 +58,35 @@ function statusBadge(status: string) {
   </div>
 
   <div v-else class="flex flex-col h-full">
-    <div class="flex items-center justify-between border-b px-4 py-3">
-      <div class="flex items-center gap-2">
+    <div class="border-b px-4 py-3">
+      <div class="flex items-center justify-between">
         <h2 class="font-semibold text-sm">{{ selectedConversation.guestName }}</h2>
+        <div class="flex items-center gap-1">
+          <Button
+            v-if="selectedConversation.status !== 'done'"
+            variant="ghost"
+            size="sm"
+            @click="markAsDone(selectedConversation.id)"
+          >
+            <Icon name="lucide:check-circle" class="size-4 mr-1" />
+            Mark as Done
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" size="icon-sm">
+                <Icon name="lucide:more-vertical" class="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Assign</DropdownMenuItem>
+              <DropdownMenuItem>Archive</DropdownMenuItem>
+              <DropdownMenuItem>Mute</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-1">
         <span class="text-xs text-muted-foreground">{{ selectedConversation.listingName }}</span>
         <span
           class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -71,31 +97,6 @@ function statusBadge(status: string) {
         <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', statusBadge(selectedConversation.status).class)">
           {{ statusBadge(selectedConversation.status).label }}
         </span>
-      </div>
-
-      <div class="flex items-center gap-1">
-        <Button
-          v-if="selectedConversation.status !== 'done'"
-          variant="ghost"
-          size="sm"
-          @click="markAsDone(selectedConversation.id)"
-        >
-          <Icon name="lucide:check-circle" class="size-4 mr-1" />
-          Mark as Done
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon-sm">
-              <Icon name="lucide:more-vertical" class="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>Assign</DropdownMenuItem>
-            <DropdownMenuItem>Archive</DropdownMenuItem>
-            <DropdownMenuItem>Mute</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
 
