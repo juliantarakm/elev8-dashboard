@@ -6,7 +6,7 @@ interface ListProps {
 }
 
 defineProps<ListProps>()
-const selectedConversationId = defineModel<string>('selectedConversationId', { required: false })
+const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
 const { activeFilter } = useInbox()
 

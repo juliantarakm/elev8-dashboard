@@ -23,11 +23,6 @@ const {
   selectedReservation,
 } = useInbox()
 
-const selectedId = computed({
-  get: () => selectedConversationId.value ?? undefined,
-  set: (val: string | undefined) => { selectedConversationId.value = val ?? null },
-})
-
 const isCollapsed = ref(props.defaultCollapsed)
 const debouncedSearch = refDebounced(searchValue, 250)
 
@@ -97,7 +92,7 @@ watch(() => isMobile.value, () => {
         </div>
         <Separator />
         <InboxList
-          v-model:selected-conversation-id="selectedId"
+          v-model:selected-conversation-id="selectedConversationId"
           :items="filteredConversations"
         />
       </ResizablePanel>

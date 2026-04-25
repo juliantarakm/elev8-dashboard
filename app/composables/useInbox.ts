@@ -2,8 +2,8 @@ import type { Conversation, ConversationStatus, Message, Reservation } from '~/c
 import { conversations, messages, reservations } from '~/components/inbox/data/conversations'
 
 export function useInbox() {
-  const selectedConversationId = useState<string | null>('inbox-selected-conversation', () => null)
-  const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'all')
+  const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
+  const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'needs_reply')
   const elevaiEnabled = useState<Record<string, boolean>>('inbox-elevai-enabled', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
@@ -28,10 +28,10 @@ export function useInbox() {
     return result
   })
 
-  const selectedConversation = computed<Conversation | null>(() => {
+  const selectedConversation = computed<Conversation | undefined>(() => {
     if (!selectedConversationId.value)
-      return null
-    return conversations.find(c => c.id === selectedConversationId.value) ?? null
+      return undefined
+    return conversations.find(c => c.id === selectedConversationId.value)
   })
 
   const selectedMessages = computed<Message[]>(() => {
@@ -40,11 +40,11 @@ export function useInbox() {
     return messages[selectedConversationId.value] ?? []
   })
 
-  const selectedReservation = computed<Reservation | null>(() => {
+  const selectedReservation = computed<Reservation | undefined>(() => {
     const conv = selectedConversation.value
     if (!conv)
-      return null
-    return reservations[conv.reservationId] ?? null
+      return undefined
+    return reservations[conv.reservationId]
   })
 
   const selectedHasAISuggestion = computed<boolean>(() => {
@@ -69,11 +69,11 @@ export function useInbox() {
   }
 
   function unreadCountByStatus(status: ConversationStatus): number {
-    return conversations.filter(c => c.status === status).reduce((sum, c) => sum + c.unreadCount, 0)
+    return conversations.filter(c => c.status === status).length
   }
 
   function unreadNeedsReply(): number {
-    return conversations.filter(c => c.status === 'needs_reply').reduce((sum, c) => sum + c.unreadCount, 0)
+    return conversations.filter(c => c.status === 'needs_reply').length
   }
 
   return {
