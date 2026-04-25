@@ -136,7 +136,7 @@ export const conversations: Conversation[] = [
     reservationId: 'res-1',
     status: 'action_needed',
     lastMessage: 'What time is check-in? We arrive at 3 PM.',
-    lastMessageAt: '2026-04-26T00:05:00Z',
+    lastMessageAt: '2026-04-26T10:30:00Z',
     unreadCount: 2,
     isAssignedToMe: true,
     assignedTo: 'staff-1',

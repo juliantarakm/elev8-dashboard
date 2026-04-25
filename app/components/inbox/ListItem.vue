@@ -75,10 +75,10 @@ const stayDateLabel = computed(() => {
           </div>
         </div>
       </div>
-      <div class="shrink-0 text-right">
-        <div class="text-xs text-muted-foreground">
-          {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
-        </div>
+<div class="shrink-0 text-right">
+          <div class="text-xs text-muted-foreground">
+            {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
+          </div>
         <Badge v-if="conversation.status === 'action_needed'" :variant="statusVariantMap[conversation.status]" class="text-[10px]">
           {{ statusLabelMap[conversation.status] }}
         </Badge>
