@@ -1,4 +1,4 @@
-import type { Conversation, ConversationStatus, Message, Reservation } from '~/components/inbox/data/conversations'
+import type { Conversation, ConversationStatus, Message, Reservation, StayStatus } from '~/components/inbox/data/conversations'
 import { conversations, messages, reservations } from '~/components/inbox/data/conversations'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
@@ -6,6 +6,7 @@ export type SortOption = 'newest' | 'oldest' | 'unread'
 export function useInbox() {
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
   const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'needs_reply')
+  const activeStayFilter = useState<StayStatus | 'all'>('inbox-active-stay-filter', () => 'all')
   const elevaiEnabled = useState<Record<string, boolean>>('inbox-elevai-enabled', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
@@ -17,6 +18,10 @@ export function useInbox() {
 
     if (activeFilter.value !== 'all') {
       result = result.filter(c => c.status === activeFilter.value)
+    }
+
+    if (activeStayFilter.value !== 'all') {
+      result = result.filter(c => c.stayStatus === activeStayFilter.value)
     }
 
     if (searchValue.value) {
@@ -93,6 +98,10 @@ export function useInbox() {
     return conversations.filter(c => c.status === 'needs_reply').length
   }
 
+  function stayCountByStatus(status: StayStatus): number {
+    return conversations.filter(c => c.stayStatus === status).length
+  }
+
   function useSuggestion(content: string) {
     pendingSuggestion.value = content
   }
@@ -104,6 +113,7 @@ export function useInbox() {
   return {
     selectedConversationId,
     activeFilter,
+    activeStayFilter,
     elevaiEnabled,
     searchValue,
     rightPanelCollapsed,
@@ -118,6 +128,7 @@ export function useInbox() {
     toggleElevai,
     markAsDone,
     unreadCountByStatus,
+    stayCountByStatus,
     unreadNeedsReply,
     useSuggestion,
     clearSuggestion,
