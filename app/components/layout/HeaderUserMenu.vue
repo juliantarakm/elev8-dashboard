@@ -69,7 +69,7 @@ const showModalTheme = ref(false)
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem as-child>
-          <NuxtLink to="https://github.com/dianprata/nuxt-shadcn-dashboard" external target="_blank">
+          <NuxtLink to="" external target="_blank">
             <Icon name="i-lucide-github" />
             Github Repository
           </NuxtLink>
