@@ -662,5 +662,5 @@ export const reservations: Record<string, Reservation> = {
 
 export const otaSources = [
   { name: 'Airbnb', color: '#FF5A5F', icon: 'logos:airbnb' },
-  { name: 'Booking.com', color: '#003580', icon: 'logos:booking' },
+  { name: 'Booking.com', color: '#003580', icon: 'lucide:calendar-check' },
 ]
