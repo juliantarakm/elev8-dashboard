@@ -32,10 +32,6 @@ function getDateLabel(timestamp: string) {
   return format(date, 'MMM d')
 }
 
-const aiSuggestion = computed(() =>
-  selectedMessages.value.find(m => m.isAISuggestion),
-)
-
 const showSuggestion = computed(() => {
   if (!aiSuggestion.value) return false
   if (dismissedSuggestions.value.includes(aiSuggestion.value.id)) return false
