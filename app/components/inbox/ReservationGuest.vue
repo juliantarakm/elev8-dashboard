@@ -144,13 +144,8 @@ function handleAssign(staffId: string | null) {
     </div>
 
     <!-- Assign To -->
-    <div class="rounded-lg border bg-muted/50 p-3">
-      <div class="flex items-center gap-2 mb-2">
-        <Icon name="lucide:user-check" class="size-3.5 text-muted-foreground" />
-        <span class="text-sm font-medium">Assigned to</span>
-      </div>
-      <Popover v-model:open="assignOpen">
-        <PopoverTrigger as-child>
+    <Popover v-model:open="assignOpen">
+      <PopoverTrigger as-child>
           <Button variant="outline" role="combobox" :aria-expanded="assignOpen" class="w-full justify-start h-auto py-1.5 px-3">
             <template v-if="assignedStaff">
               <Avatar class="size-5 mr-2 shrink-0">
@@ -206,6 +201,5 @@ function handleAssign(staffId: string | null) {
           </Command>
         </PopoverContent>
       </Popover>
-    </div>
   </div>
 </template>
