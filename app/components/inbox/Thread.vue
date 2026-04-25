@@ -2,17 +2,12 @@
 import type { Message } from '~/components/inbox/data/conversations'
 import { otaSources } from '~/components/inbox/data/conversations'
 
-interface ThreadEmits {
-  useSuggestion: [content: string]
-}
-
-const emit = defineEmits<ThreadEmits>()
-
 const {
   selectedConversation,
   selectedMessages,
   markAsDone,
   isElevaiEnabled,
+  useSuggestion,
 } = useInbox()
 
 const dismissedSuggestions = ref<string[]>([])
@@ -30,6 +25,10 @@ const showSuggestion = computed(() => {
   if (dismissedSuggestions.value.includes(aiSuggestion.value.id)) return false
   return selectedConversation.value ? isElevaiEnabled(selectedConversation.value.id) : false
 })
+
+function handleUseSuggestion(content: string) {
+  useSuggestion(content)
+}
 
 function dismissSuggestion() {
   if (aiSuggestion.value) {
@@ -114,15 +113,16 @@ const statusLabelMap: Record<string, string> = {
             :key="msg.id"
             :message="msg"
           />
-
-          <InboxHostbuddySuggestion
-            v-if="showSuggestion && aiSuggestion"
-            :suggestion="aiSuggestion"
-            @use="emit('useSuggestion', $event)"
-            @dismiss="dismissSuggestion"
-          />
         </div>
       </ScrollArea>
+    </div>
+
+    <div v-if="showSuggestion && aiSuggestion" class="shrink-0 px-4 pt-3">
+      <InboxHostbuddySuggestion
+        :suggestion="aiSuggestion"
+        @use="handleUseSuggestion"
+        @dismiss="dismissSuggestion"
+      />
     </div>
 
     <div class="shrink-0 border-t bg-background">

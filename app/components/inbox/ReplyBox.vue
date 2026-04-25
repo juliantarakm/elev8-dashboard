@@ -5,7 +5,7 @@ interface ReplyBoxProps {
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, toggleElevai } = useInbox()
+const { isElevaiEnabled, toggleElevai, pendingSuggestion, clearSuggestion } = useInbox()
 
 const replyText = ref('')
 const elevaiOn = computed(() => isElevaiEnabled(props.conversationId))
@@ -18,6 +18,13 @@ function send() {
   if (!replyText.value.trim()) return
   replyText.value = ''
 }
+
+watch(pendingSuggestion, (val) => {
+  if (val) {
+    replyText.value = val
+    clearSuggestion()
+  }
+})
 </script>
 
 <template>

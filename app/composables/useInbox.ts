@@ -10,6 +10,7 @@ export function useInbox() {
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
   const sortBy = useState<SortOption>('inbox-sort-by', () => 'newest')
+  const pendingSuggestion = useState<string>('inbox-pending-suggestion', () => '')
 
   const filteredConversations = computed(() => {
     let result = conversations
@@ -92,6 +93,14 @@ export function useInbox() {
     return conversations.filter(c => c.status === 'needs_reply').length
   }
 
+  function useSuggestion(content: string) {
+    pendingSuggestion.value = content
+  }
+
+  function clearSuggestion() {
+    pendingSuggestion.value = ''
+  }
+
   return {
     selectedConversationId,
     activeFilter,
@@ -99,6 +108,7 @@ export function useInbox() {
     searchValue,
     rightPanelCollapsed,
     sortBy,
+    pendingSuggestion,
     filteredConversations,
     selectedConversation,
     selectedMessages,
@@ -109,5 +119,7 @@ export function useInbox() {
     markAsDone,
     unreadCountByStatus,
     unreadNeedsReply,
+    useSuggestion,
+    clearSuggestion,
   }
 }
