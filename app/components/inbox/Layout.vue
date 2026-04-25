@@ -84,15 +84,7 @@ watch(() => isMobile.value, () => {
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
       <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20">
-        <div class="flex h-[56px] items-center px-4">
-          <h1 class="text-xl font-bold">
-            Messages
-          </h1>
-          <Badge variant="secondary" class="ml-2 text-xs">
-            {{ filteredConversations.length }}
-          </Badge>
-        </div>
-        <Separator />
+        
         <div class="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <form>
             <div class="relative">
