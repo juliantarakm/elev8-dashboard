@@ -42,7 +42,7 @@ export function useInbox() {
     }
 
     if (activeListingFilter.value.length > 0) {
-      result = result.filter(c => activeListingFilter.value.includes(c.propertyName))
+      result = result.filter(c => activeListingFilter.value.includes(c.listingName))
     }
 
     if (searchValue.value) {
@@ -242,7 +242,7 @@ export function useInbox() {
 
     const map = new Map<string, number>()
     for (const c of convs) {
-      map.set(c.propertyName, (map.get(c.propertyName) ?? 0) + 1)
+      map.set(c.listingName, (map.get(c.listingName) ?? 0) + 1)
     }
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }))
   })
