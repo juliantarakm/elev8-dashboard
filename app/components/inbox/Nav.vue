@@ -248,7 +248,7 @@ function clearAll() {
               buttonVariants({ variant: activeListingFilter.includes(listing.name) ? 'default' : 'ghost', size: 'sm' }),
               activeListingFilter.includes(listing.name)
                 && 'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
-              'w-full justify-start gap-2',
+              'w-full justify-start gap-2 min-w-0',
             )"
             @click="toggleListingFilter(listing.name)"
           >
