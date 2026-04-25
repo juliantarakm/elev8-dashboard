@@ -119,7 +119,6 @@ function handleAssign(staffId: string | null) {
         <Icon name="lucide:home" class="size-3.5 shrink-0 text-muted-foreground mt-0.5" />
         <div class="min-w-0">
           <div class="text-sm font-medium truncate">{{ reservation.listingName }}</div>
-          <div class="text-xs text-muted-foreground">{{ reservation.propertyName }}</div>
         </div>
       </div>
       <div class="p-3 space-y-2">
