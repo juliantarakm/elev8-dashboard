@@ -183,36 +183,32 @@ function formatNoteDate(timestamp: string) {
       <TabsContent value="messages" class="flex-1 min-h-0 flex flex-col">
         <ScrollArea class="flex-1 p-4">
           <div class="flex flex-col gap-4">
-            <template v-for="(item, index) of threadItems" :key="item.type === 'message' ? item.data.id : item.data.id">
+            <template v-for="(item, index) of threadItems" :key="item.data.id">
               <div v-if="index === 0 || getDateLabel(item.timestamp) !== getDateLabel(threadItems[index - 1].timestamp)" class="flex items-center justify-center">
                 <Badge variant="outline" class="text-xs text-muted-foreground">
                   {{ getDateLabel(item.timestamp) }}
                 </Badge>
               </div>
-              <template v-if="item.type === 'message'" :key="item.data.id">
-                <InboxThreadMessage :message="item.data" />
-              </template>
-              <template v-else :key="item.data.id">
-                <div class="flex justify-end">
-                  <div class="flex flex-col gap-1 max-w-[75%]">
-                    <div class="flex items-center gap-2">
-                      <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning/10">
-                        <Icon name="lucide:sticky-note" class="size-4 text-warning" />
-                      </div>
-                      <span class="text-xs font-medium">Internal Note</span>
-                      <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#C8A84B]">
-                        <Icon name="lucide:sparkles" class="size-3" />
-                        ElevAI
-                      </span>
-                      <span v-if="getDateLabel(item.timestamp)" class="text-[10px] text-muted-foreground">{{ getDateLabel(item.timestamp) }} · </span>
-                      <span class="text-[10px] text-muted-foreground">{{ formatNoteDate(item.data.createdAt) }}</span>
+              <InboxThreadMessage v-if="item.type === 'message'" :message="item.data" />
+              <div v-else class="flex justify-end">
+                <div class="flex flex-col gap-1 max-w-[75%]">
+                  <div class="flex items-center gap-2">
+                    <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning/10">
+                      <Icon name="lucide:sticky-note" class="size-4 text-warning" />
                     </div>
-                    <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2 text-sm">
-                      {{ item.data.content }}
-                    </div>
+                    <span class="text-xs font-medium">Internal Note</span>
+                    <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#C8A84B]">
+                      <Icon name="lucide:sparkles" class="size-3" />
+                      ElevAI
+                    </span>
+                    <span v-if="getDateLabel(item.timestamp)" class="text-[10px] text-muted-foreground">{{ getDateLabel(item.timestamp) }} · </span>
+                    <span class="text-[10px] text-muted-foreground">{{ formatNoteDate(item.data.createdAt) }}</span>
+                  </div>
+                  <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2 text-sm">
+                    {{ item.data.content }}
                   </div>
                 </div>
-              </template>
+              </div>
             </template>
           </div>
         </ScrollArea>
