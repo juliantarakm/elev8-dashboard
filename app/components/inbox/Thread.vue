@@ -149,7 +149,7 @@ function formatNoteDate(timestamp: string) {
               @click="handleMarkAsHandled"
             >
               <Icon name="lucide:check-circle" class="size-4 mr-1" />
-              Mark as Handled
+              Mark as Resolved
             </Button>
           </TooltipTrigger>
           <TooltipContent>Mark conversation as done</TooltipContent>

@@ -9,15 +9,10 @@ interface ReservationSummaryProps {
 
 const props = defineProps<ReservationSummaryProps>()
 
-function handleAct(action: SmartAction) {
-  const idx = props.smartActions.indexOf(action)
-  if (idx > -1) props.smartActions.splice(idx, 1)
+function handleResolveAll() {
+  props.smartActions.splice(0, props.smartActions.length)
 }
-
-function handleDismiss(action: SmartAction) {
-  const idx = props.smartActions.indexOf(action)
-  if (idx > -1) props.smartActions.splice(idx, 1)
-}
+</script>
 </script>
 
 <template>
@@ -25,16 +20,20 @@ function handleDismiss(action: SmartAction) {
     <InboxGuestSentiment :sentiment="sentiment" :note="sentimentNote" />
 
     <div v-if="smartActions.length > 0" class="space-y-2">
-      <div class="flex items-center gap-2 text-sm font-medium">
-        Action Needed
-        <Badge variant="destructive" class="text-[10px]">{{ smartActions.length }}</Badge>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm font-medium">
+          Action Needed
+          <Badge variant="destructive" class="text-[10px]">{{ smartActions.length }}</Badge>
+        </div>
+        <Button variant="outline" size="sm" @click="handleResolveAll">
+          <Icon name="lucide:check" class="size-4 mr-1" />
+          Mark as Resolved
+        </Button>
       </div>
       <InboxActionCard
         v-for="action of smartActions"
         :key="action.id"
         :action="action"
-        @act="handleAct"
-        @dismiss="handleDismiss"
       />
     </div>
 

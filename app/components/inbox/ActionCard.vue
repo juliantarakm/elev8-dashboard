@@ -15,10 +15,7 @@ const emit = defineEmits<ActionCardEmits>()
 </script>
 
 <template>
-  <div class="rounded-lg border p-3 flex items-start justify-between gap-2">
-    <p class="text-sm text-muted-foreground">{{ action.description }}</p>
-    <Button variant="ghost" size="icon" class="size-7 shrink-0" @click="emit('act', action)">
-      <Icon name="lucide:check" class="size-4" />
-    </Button>
+  <div class="rounded-lg border p-3 text-sm text-muted-foreground">
+    {{ action.description }}
   </div>
 </template>
