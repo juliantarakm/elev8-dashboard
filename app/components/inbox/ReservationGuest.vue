@@ -174,6 +174,7 @@ function handleAssign(staffId: string | null) {
                   :key="member.id"
                   :value="member.name"
                   @select="handleAssign(member.id)"
+                  class="cursor-pointer hover:bg-accent"
                 >
                   <Avatar class="size-6 shrink-0">
                     <AvatarFallback class="text-[10px]">{{ member.initials }}</AvatarFallback>
@@ -190,6 +191,7 @@ function handleAssign(staffId: string | null) {
                 <CommandItem
                   value="__unassign__"
                   @select="handleAssign(null)"
+                  class="cursor-pointer hover:bg-accent"
                 >
                   <Icon name="lucide:user-x" class="size-4 text-muted-foreground" />
                   <span class="text-xs text-muted-foreground">Unassign</span>
