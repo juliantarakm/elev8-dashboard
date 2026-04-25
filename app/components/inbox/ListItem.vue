@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
 import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
-import { format } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
 interface ListItemProps {
@@ -77,7 +77,7 @@ const stayDateLabel = computed(() => {
       </div>
 <div class="shrink-0 text-right">
           <div class="text-xs text-muted-foreground">
-            {{ format(new Date(conversation.lastMessageAt), 'h:mm a') }}
+            {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
           </div>
         <Badge v-if="conversation.status === 'action_needed'" :variant="statusVariantMap[conversation.status]" class="text-[10px]">
           {{ statusLabelMap[conversation.status] }}

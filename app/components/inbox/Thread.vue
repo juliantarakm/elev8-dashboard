@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
+import { isToday, isYesterday, differenceInDays, format } from 'date-fns'
 import { toast } from 'vue-sonner'
 
 const { selectedConversation,
@@ -18,6 +18,19 @@ const dismissedSuggestions = ref<string[]>([])
 const displayMessages = computed(() =>
   selectedMessages.value.filter(m => !m.isAISuggestion),
 )
+
+const aiSuggestion = computed(() =>
+  selectedMessages.value.find(m => m.isAISuggestion),
+)
+
+function getDateLabel(timestamp: string) {
+  const date = new Date(timestamp)
+  if (isToday(date)) return 'Today'
+  if (isYesterday(date)) return 'Yesterday'
+  const daysAgo = differenceInDays(new Date(), date)
+  if (daysAgo <= 3) return format(date, 'EEEE')
+  return format(date, 'MMM d')
+}
 
 const aiSuggestion = computed(() =>
   selectedMessages.value.find(m => m.isAISuggestion),
@@ -170,11 +183,14 @@ function handleMarkAsUnread() {
     <div class="flex-1 min-h-0">
       <ScrollArea class="h-full p-4">
         <div class="flex flex-col gap-4">
-          <InboxThreadMessage
-            v-for="msg of displayMessages"
-            :key="msg.id"
-            :message="msg"
-          />
+          <template v-for="(msg, index) of displayMessages" :key="msg.id">
+            <div v-if="index === 0 || getDateLabel(msg.timestamp) !== getDateLabel(displayMessages[index - 1].timestamp)" class="flex items-center justify-center">
+              <Badge variant="outline" class="text-xs text-muted-foreground">
+                {{ getDateLabel(msg.timestamp) }}
+              </Badge>
+            </div>
+            <InboxThreadMessage :message="msg" />
+          </template>
         </div>
       </ScrollArea>
     </div>
