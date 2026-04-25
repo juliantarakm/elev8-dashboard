@@ -38,7 +38,7 @@ const stayDateLabel = computed(() => {
   if (!props.conversation.checkIn || !props.conversation.checkOut) return ''
   const checkIn = new Date(props.conversation.checkIn)
   const checkOut = new Date(props.conversation.checkOut)
-  return `${format(checkIn, 'MMM d')} – ${format(checkOut, 'MMM d')}`
+  return `${format(checkIn, 'MMM d yyyy')} – ${format(checkOut, 'MMM d yyyy')}`
 })
 </script>
 

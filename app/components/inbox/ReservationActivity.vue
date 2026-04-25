@@ -20,7 +20,7 @@ function formatTimestamp(ts: string) {
   if (isToday(date)) {
     return `Today, ${format(date, 'h:mm a')}`
   }
-  return format(date, 'MMM d, h:mm a')
+  return format(date, 'EEEE, MMMM d yyyy, h:mm a')
 }
 </script>
 

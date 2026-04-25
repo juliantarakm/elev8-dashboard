@@ -50,7 +50,7 @@ function getDateLabel(timestamp: string) {
   if (isYesterday(date)) return 'Yesterday'
   const daysAgo = differenceInDays(new Date(), date)
   if (daysAgo <= 3) return format(date, 'EEEE')
-  return format(date, 'MMM d')
+  return format(date, 'EEEE, MMMM d yyyy')
 }
 
 const showSuggestion = computed(() => {
@@ -85,7 +85,7 @@ const statusLabelMap: Record<string, string> = {
 const stayDateLabel = computed(() => {
   const res = selectedReservation.value
   if (!res?.checkIn || !res?.checkOut) return ''
-  return `${format(new Date(res.checkIn), 'MMM d')} – ${format(new Date(res.checkOut), 'MMM d')}`
+  return `${format(new Date(res.checkIn), 'MMM d')} – ${format(new Date(res.checkOut), 'MMM d yyyy')}`
 })
 
 function handleMarkAsHandled() {
@@ -110,7 +110,7 @@ function handleAddNote() {
 
 function formatNoteDate(timestamp: string) {
   const date = new Date(timestamp)
-  return format(date, 'MMM d, h:mm a')
+  return format(date, 'EEEE, MMMM d yyyy, h:mm a')
 }
 </script>
 
