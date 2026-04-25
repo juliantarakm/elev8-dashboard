@@ -1,12 +1,15 @@
 import type { Conversation, ConversationStatus, Message, Reservation } from '~/components/inbox/data/conversations'
 import { conversations, messages, reservations } from '~/components/inbox/data/conversations'
 
+export type SortOption = 'newest' | 'oldest' | 'unread'
+
 export function useInbox() {
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
   const activeFilter = useState<ConversationStatus | 'all'>('inbox-active-filter', () => 'needs_reply')
   const elevaiEnabled = useState<Record<string, boolean>>('inbox-elevai-enabled', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
+  const sortBy = useState<SortOption>('inbox-sort-by', () => 'newest')
 
   const filteredConversations = computed(() => {
     let result = conversations
@@ -25,7 +28,20 @@ export function useInbox() {
       )
     }
 
-    return result
+    return result.sort((a, b) => {
+      if (sortBy.value === 'newest') {
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      }
+      if (sortBy.value === 'oldest') {
+        return new Date(a.lastMessageAt).getTime() - new Date(b.lastMessageAt).getTime()
+      }
+      if (sortBy.value === 'unread') {
+        if (a.unreadCount > 0 && b.unreadCount === 0) return -1
+        if (a.unreadCount === 0 && b.unreadCount > 0) return 1
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      }
+      return 0
+    })
   })
 
   const selectedConversation = computed<Conversation | undefined>(() => {
@@ -82,6 +98,7 @@ export function useInbox() {
     elevaiEnabled,
     searchValue,
     rightPanelCollapsed,
+    sortBy,
     filteredConversations,
     selectedConversation,
     selectedMessages,

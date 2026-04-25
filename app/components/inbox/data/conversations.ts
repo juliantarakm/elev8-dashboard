@@ -4,6 +4,8 @@ export type MessageSender = 'guest' | 'host' | 'system' | 'ai'
 export type ActionSeverity = 'warning' | 'urgent' | 'info'
 export type ActivityEventColor = 'gold' | 'green' | 'blue' | 'gray'
 
+export type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
+
 export interface Conversation {
   id: string
   guestName: string
@@ -21,6 +23,9 @@ export interface Conversation {
   labels: string[]
   sentiment: GuestSentiment
   sentimentNote: string
+  stayStatus: StayStatus
+  checkIn: string
+  checkOut: string
 }
 
 export interface Message {
@@ -118,6 +123,9 @@ export const conversations: Conversation[] = [
     labels: ['check-in-today'],
     sentiment: 'positive',
     sentimentNote: 'Guest is excited about the stay',
+    stayStatus: 'current',
+    checkIn: '2025-04-25T15:00:00Z',
+    checkOut: '2025-04-30T11:00:00Z',
   },
   {
     id: 'conv-2',
@@ -136,6 +144,9 @@ export const conversations: Conversation[] = [
     labels: [],
     sentiment: 'positive',
     sentimentNote: 'Polite and responsive',
+    stayStatus: 'future',
+    checkIn: '2025-04-28T15:00:00Z',
+    checkOut: '2025-05-01T11:00:00Z',
   },
   {
     id: 'conv-3',
@@ -154,6 +165,9 @@ export const conversations: Conversation[] = [
     labels: ['unassigned'],
     sentiment: 'neutral',
     sentimentNote: 'Standard inquiry',
+    stayStatus: 'future',
+    checkIn: '2025-04-26T15:00:00Z',
+    checkOut: '2025-04-29T11:00:00Z',
   },
   {
     id: 'conv-4',
@@ -172,6 +186,9 @@ export const conversations: Conversation[] = [
     labels: [],
     sentiment: 'positive',
     sentimentNote: 'Happy guest, left 5-star review',
+    stayStatus: 'past',
+    checkIn: '2025-04-18T15:00:00Z',
+    checkOut: '2025-04-23T11:00:00Z',
   },
   {
     id: 'conv-5',
@@ -190,6 +207,9 @@ export const conversations: Conversation[] = [
     labels: ['complaint', 'urgent'],
     sentiment: 'negative',
     sentimentNote: 'Frustrated about amenities not working',
+    stayStatus: 'current',
+    checkIn: '2025-04-24T15:00:00Z',
+    checkOut: '2025-04-28T11:00:00Z',
   },
 ]
 

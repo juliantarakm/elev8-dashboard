@@ -8,7 +8,7 @@ interface ListProps {
 defineProps<ListProps>()
 const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
-const { activeFilter } = useInbox()
+const { activeFilter, sortBy } = useInbox()
 
 function setAllFilter() {
   activeFilter.value = 'all'
@@ -17,10 +17,26 @@ function setAllFilter() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-2">
-      <span class="text-sm text-muted-foreground">
+    <div class="flex items-center justify-between px-4 py-1.5">
+      <span class="text-xs text-muted-foreground">
         {{ items.length }} conversation{{ items.length !== 1 ? 's' : '' }}
       </span>
+      <Select v-model="sortBy">
+        <SelectTrigger class="h-7 w-auto gap-1 border-none px-2 text-xs shadow-none">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">
+            Newest first
+          </SelectItem>
+          <SelectItem value="oldest">
+            Oldest first
+          </SelectItem>
+          <SelectItem value="unread">
+            Unread first
+          </SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
     <ScrollArea class="flex-1">

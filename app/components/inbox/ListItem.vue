@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { Conversation } from '~/components/inbox/data/conversations'
-import { formatDistanceToNow } from 'date-fns'
+import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
+import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
 
 interface ListItemProps {
@@ -32,7 +32,20 @@ const statusLabelMap: Record<string, string> = {
   done: 'Done',
 }
 
+const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
+  inquiry: { label: 'Inquiry', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+  current: { label: 'Current', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+  future: { label: 'Future', class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+  past: { label: 'Past', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+}
+
 const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#888')
+const stayConfig = computed(() => stayStatusConfig[props.conversation.stayStatus])
+const stayDateLabel = computed(() => {
+  const checkIn = new Date(props.conversation.checkIn)
+  const checkOut = new Date(props.conversation.checkOut)
+  return `${format(checkIn, 'MMM d')} – ${format(checkOut, 'MMM d')}`
+})
 </script>
 
 <template>
@@ -74,12 +87,19 @@ const otaColor = computed(() => otaColorMap[props.conversation.otaSource] ?? '#8
       <p class="line-clamp-1 text-xs text-muted-foreground flex-1">
         {{ conversation.lastMessage }}
       </p>
+    </div>
+
+    <div class="w-full flex items-center gap-1.5">
       <Badge
         :style="{ backgroundColor: `${otaColor}20`, color: otaColor }"
         class="text-[10px] shrink-0"
       >
         {{ conversation.otaSource }}
       </Badge>
+      <span class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
+      <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
+        {{ stayConfig.label }}
+      </span>
     </div>
   </button>
 </template>
