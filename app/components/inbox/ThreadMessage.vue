@@ -16,6 +16,23 @@ const senderTypeLabel: Record<string, string> = {
   ai: 'ElevAI',
 }
 
+const { retryMessage } = useInbox()
+
+const isRetrying = ref(false)
+
+function handleRetry() {
+  if (props.message.conversationId && props.message.sendStatus === 'failed') {
+    isRetrying.value = true
+    retryMessage(props.message.conversationId, props.message.id)
+  }
+}
+
+watch(() => props.message.sendStatus, (status) => {
+  if (status !== 'sending') {
+    isRetrying.value = false
+  }
+})
+
 const isFromMe = computed(() => props.message.sender === 'host' && props.message.senderName === 'You')
 
 const isAiWritten = computed(() => props.message.aiWritten === true)
@@ -96,6 +113,15 @@ const dateLabel = computed(() => {
         </div>
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">
           {{ message.content }}
+        </div>
+        <div v-if="message.sendStatus === 'sending'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Icon name="lucide:loader-2" class="size-2.5 animate-spin" />
+          {{ isRetrying ? 'Retrying...' : 'Sending...' }}
+        </div>
+        <div v-else-if="message.sendStatus === 'failed'" class="flex items-center gap-1 text-[10px] text-destructive">
+          <Icon name="lucide:alert-circle" class="size-2.5" />
+          Failed to send
+          <button :disabled="isRetrying" class="underline ml-1 hover:text-destructive/80 disabled:opacity-50 disabled:no-underline" @click="handleRetry">{{ isRetrying ? 'Retrying...' : 'Retry' }}</button>
         </div>
       </div>
     </template>

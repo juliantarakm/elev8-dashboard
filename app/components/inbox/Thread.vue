@@ -118,7 +118,7 @@ function formatNoteDate(timestamp: string) {
     <p class="text-sm">Select a conversation</p>
   </div>
 
-  <div v-else class="flex flex-col h-full">
+  <div v-else class="flex flex-col h-full overflow-hidden">
     <div class="flex items-center px-4 h-[56px]">
       <div class="flex flex-col justify-center min-w-0 flex-1">
         <div class="flex items-center gap-2">
@@ -177,15 +177,28 @@ function formatNoteDate(timestamp: string) {
     </div>
     <Separator />
 
-    <Tabs default-value="messages" class="flex flex-col min-h-0 flex-1">
-      <TabsList class="w-full justify-start rounded-none border-b bg-transparent h-8 px-4">
-        <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
-        <TabsTrigger value="notes" class="text-xs">Notes</TabsTrigger>
-      </TabsList>
+    <div class="flex flex-col flex-1 overflow-hidden">
+      <div class="flex items-center border-b h-8 px-4 shrink-0">
+        <button
+          :class="['text-xs px-3 py-1 font-medium transition-colors relative', activeThreadTab === 'messages' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground']"
+          @click="activeThreadTab = 'messages'"
+        >
+          Messages
+          <span v-if="activeThreadTab === 'messages'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+        </button>
+        <button
+          :class="['text-xs px-3 py-1 font-medium transition-colors relative', activeThreadTab === 'notes' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground']"
+          @click="activeThreadTab = 'notes'"
+        >
+          Notes
+          <Badge v-if="conversationNotes.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">{{ conversationNotes.length }}</Badge>
+          <span v-if="activeThreadTab === 'notes'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+        </button>
+      </div>
 
-      <TabsContent value="messages" class="flex-1 min-h-0 flex flex-col">
-        <ScrollArea class="flex-1 p-4">
-          <div class="flex flex-col gap-4">
+      <div v-if="activeThreadTab === 'messages'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <ScrollArea class="flex-1 min-h-0">
+          <div class="flex flex-col gap-4 p-4 pb-32">
             <template v-for="(item, index) of threadItems" :key="item.data.id">
               <div v-if="index === 0 || getDateLabel(item.timestamp) !== getDateLabel(threadItems[index - 1].timestamp)" class="flex items-center justify-center">
                 <Badge variant="outline" class="text-xs text-muted-foreground">
@@ -231,11 +244,11 @@ function formatNoteDate(timestamp: string) {
             :stay-status="selectedConversation.stayStatus"
           />
         </div>
-      </TabsContent>
+      </div>
 
-      <TabsContent value="notes" class="flex-1 min-h-0 flex flex-col">
-        <ScrollArea class="flex-1">
-          <div class="p-4 space-y-3">
+      <div v-if="activeThreadTab === 'notes'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <ScrollArea class="flex-1 min-h-0">
+          <div class="p-4 space-y-3 pb-32">
             <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
               <p class="text-sm leading-relaxed">{{ note.content }}</p>
               <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
@@ -269,7 +282,7 @@ function formatNoteDate(timestamp: string) {
             </div>
           </div>
         </div>
-      </TabsContent>
-    </Tabs>
+      </div>
+    </div>
   </div>
 </template>

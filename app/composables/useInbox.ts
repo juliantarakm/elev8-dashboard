@@ -1,11 +1,41 @@
 import type { Conversation, ConversationStatus, Message, Note, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { conversations as conversationsData, messages, reservations, staffMembers } from '~/components/inbox/data/conversations'
+import { conversations as conversationsData, messages as messagesData, reservations, staffMembers } from '~/components/inbox/data/conversations'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
 
 export function useInbox() {
   const conversations = useState<Conversation[]>('inbox-conversations', () => conversationsData)
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
+  const messages = useState<Record<string, Message[]>>('inbox-messages', () => JSON.parse(JSON.stringify(messagesData)))
+
+  const selectedMessages = ref<Message[]>([])
+
+  watch(
+    [selectedConversationId, messages],
+    ([id]) => {
+      if (!id) {
+        selectedMessages.value = []
+        return
+      }
+      const msgs = messages.value[id]
+      selectedMessages.value = msgs ? [...msgs] : []
+    },
+    { immediate: true }
+  )
+
+  watch(
+    messages,
+    () => {
+      const id = selectedConversationId.value
+      if (!id) return
+      const msgs = messages.value[id]
+      if (msgs) {
+        selectedMessages.value = [...msgs]
+      }
+    },
+    { deep: true }
+  )
+
   const showActionNeeded = useState<boolean>('inbox-show-action-needed', () => true)
   const assignedToMeFilter = useState<boolean>('inbox-assigned-to-me-filter', () => false)
   const unreadFilter = useState<boolean>('inbox-unread-filter', () => false)
@@ -97,12 +127,6 @@ export function useInbox() {
     if (index !== -1 && conversations.value[index].unreadCount > 0) {
       conversations.value[index] = { ...conversations.value[index], unreadCount: 0 }
     }
-  })
-
-  const selectedMessages = computed<Message[]>(() => {
-    if (!selectedConversationId.value)
-      return []
-    return messages[selectedConversationId.value] ?? []
   })
 
   const selectedReservation = computed<Reservation | undefined>(() => {
@@ -329,6 +353,81 @@ export function useInbox() {
     pendingSuggestion.value = content
   }
 
+  function sendMessage(conversationId: string, content: string, channel: string) {
+    const conv = conversations.value.find(c => c.id === conversationId)
+    if (!conv || !content.trim()) return
+
+    const tempId = `msg-${conversationId}-${Date.now()}`
+    const newMessage: Message = {
+      id: tempId,
+      conversationId,
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: content.trim(),
+      channel,
+      timestamp: new Date().toISOString(),
+      sendStatus: 'sending',
+    }
+
+    const currentMessages = messages.value[conversationId] ?? []
+    messages.value = { ...messages.value, [conversationId]: [...currentMessages, newMessage] }
+
+    setTimeout(() => {
+      const msgs = messages.value[conversationId] ?? []
+      const msgIndex = msgs.findIndex(m => m.id === tempId)
+      if (msgIndex === -1) return
+
+      const shouldFail = content.toLowerCase().includes('error') || Math.random() < 0.1
+      const updatedMsg = { ...msgs[msgIndex], sendStatus: shouldFail ? 'failed' as const : 'sent' as const }
+      const updatedMessages = [...msgs]
+      updatedMessages[msgIndex] = updatedMsg
+      messages.value = { ...messages.value, [conversationId]: updatedMessages }
+
+      if (shouldFail) {
+        toast.error('Failed to send message. Please try again.')
+      }
+    }, 1000)
+
+    const convIndex = conversations.value.findIndex(c => c.id === conversationId)
+    if (convIndex !== -1) {
+      conversations.value[convIndex] = {
+        ...conversations.value[convIndex],
+        lastMessage: newMessage.content,
+        lastMessageAt: newMessage.timestamp,
+        status: null,
+      }
+    }
+  }
+
+  function retryMessage(conversationId: string, messageId: string) {
+    const msgs = messages.value[conversationId] ?? []
+    const msgIndex = msgs.findIndex(m => m.id === messageId)
+    if (msgIndex === -1) return
+    const msg = msgs[msgIndex]
+    if (!msg || msg.sendStatus !== 'failed') return
+
+    const updatedMsg = { ...msg, sendStatus: 'sending' as const }
+    const updatedMessages = [...msgs]
+    updatedMessages[msgIndex] = updatedMsg
+    messages.value = { ...messages.value, [conversationId]: updatedMessages }
+
+    setTimeout(() => {
+      const currentMsgs = messages.value[conversationId] ?? []
+      const currentMsgIndex = currentMsgs.findIndex(m => m.id === messageId)
+      if (currentMsgIndex === -1) return
+      const shouldFail = Math.random() < 0.1
+      const retriedMsg = { ...currentMsgs[currentMsgIndex], sendStatus: shouldFail ? 'failed' as const : 'sent' as const }
+      const retriedMessages = [...currentMsgs]
+      retriedMessages[currentMsgIndex] = retriedMsg
+      messages.value = { ...messages.value, [conversationId]: retriedMessages }
+
+      if (shouldFail) {
+        toast.error('Failed to send message. Please try again.')
+      }
+    }, 1000)
+  }
+
   function clearSuggestion() {
     pendingSuggestion.value = ''
   }
@@ -382,5 +481,7 @@ export function useInbox() {
     clearSuggestion,
     getNotes,
     addNote,
+    sendMessage,
+    retryMessage,
   }
 }

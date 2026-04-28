@@ -9,7 +9,7 @@ interface ReplyBoxProps {
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation } = useInbox()
+const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage } = useInbox()
 
 const replyText = ref('')
 const isRewriting = ref(false)
@@ -51,7 +51,9 @@ const rewrites = [
 
 function send() {
   if (!replyText.value.trim()) return
+  sendMessage(props.conversationId, replyText.value, sendChannel.value === 'ota' ? props.channel : sendChannel.value)
   replyText.value = ''
+  toast.success('Message sent')
 }
 
 async function rewriteWithAI() {
@@ -124,7 +126,7 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
       <Textarea
         v-model="replyText"
         placeholder="Type your reply..."
-        class="min-h-[80px] resize-none pr-10"
+        class="min-h-[80px] max-h-[200px] resize-none pr-10"
         @keydown.enter.meta="send"
       />
       <Transition
