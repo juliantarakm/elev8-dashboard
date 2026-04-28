@@ -114,6 +114,15 @@ export interface ActivityEvent {
   colorDot: ActivityEventColor
 }
 
+export interface ScheduledTemplate {
+  id: string
+  label: string
+  icon: string
+  scheduledFor: string
+  status: 'pending' | 'sent' | 'cancelled'
+  content: string
+}
+
 export interface Reservation {
   id: string
   propertyName: string
@@ -131,6 +140,7 @@ export interface Reservation {
   listingDetails: ListingDetails
   tasks: Task[]
   activity: ActivityEvent[]
+  scheduledTemplates?: ScheduledTemplate[]
 }
 
 export const conversations: Conversation[] = [
@@ -1129,6 +1139,24 @@ export const reservations: Record<string, Reservation> = {
         timestamp: '2026-04-25T09:00:00Z',
         channel: 'Airbnb',
         colorDot: 'gold',
+      },
+    ],
+    scheduledTemplates: [
+      {
+        id: 'tpl-sent-welcome-1',
+        label: 'Welcome Message',
+        icon: 'lucide:message-circle',
+        scheduledFor: '2026-04-25T10:00:00Z',
+        status: 'sent',
+        content: 'Hi Sarah! Welcome to Canggu Properties. We hope you have a wonderful stay!',
+      },
+      {
+        id: 'tpl-pending-checkout-1',
+        label: 'Check-out Reminder',
+        icon: 'lucide:log-out',
+        scheduledFor: '2026-04-29T18:00:00Z',
+        status: 'pending',
+        content: 'Hi Sarah, just a friendly reminder that check-out is at 11 AM tomorrow.',
       },
     ],
   },

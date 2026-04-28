@@ -115,7 +115,7 @@ function handleDisable() {
 
         <TabsContent value="activity">
           <div class="p-4">
-            <InboxReservationActivity :activity="reservation.activity" />
+            <InboxReservationActivity :activity="reservation.activity" :reservation="reservation" />
           </div>
         </TabsContent>
       </Tabs>

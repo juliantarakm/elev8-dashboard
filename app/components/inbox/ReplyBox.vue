@@ -1,16 +1,45 @@
 <script lang="ts" setup>
+import type { ScheduledTemplate, StayStatus } from '~/components/inbox/data/conversations'
+import { toast } from 'vue-sonner'
+
 interface ReplyBoxProps {
   channel: string
   conversationId: string
+  stayStatus?: StayStatus
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, pendingSuggestion, clearSuggestion } = useInbox()
+const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation } = useInbox()
 
 const replyText = ref('')
 const isRewriting = ref(false)
 const elevaiOn = computed(() => isElevaiEnabled(props.conversationId))
 const showRewrite = computed(() => replyText.value.trim().length > 0)
+
+const sendChannel = ref('ota')
+
+const isNotInquiry = computed(() => props.stayStatus !== 'inquiry')
+
+const channelOptions = computed(() => {
+  const opts = [
+    { value: 'ota', label: props.channel, icon: props.channel === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom' },
+    { value: 'email', label: 'Email', icon: 'lucide:mail' },
+  ]
+  if (isNotInquiry.value) {
+    opts.push({ value: 'guide', label: 'Guest Guide', icon: 'lucide:book-open' })
+  }
+  return opts
+})
+
+const channelIcon = computed(() => {
+  const selected = channelOptions.value.find(o => o.value === sendChannel.value)
+  return selected?.icon ?? 'lucide:send'
+})
+
+const channelLabel = computed(() => {
+  const selected = channelOptions.value.find(o => o.value === sendChannel.value)
+  return selected?.label ?? ''
+})
 
 const rewrites = [
   'Thanks for reaching out! I\'d be happy to help with that. Let me look into it and get back to you shortly.',
@@ -39,6 +68,54 @@ watch(pendingSuggestion, (val) => {
     clearSuggestion()
   }
 })
+
+const dynamicTemplates = [
+  {
+    id: 'tpl-checkin',
+    label: 'Check-in Instructions',
+    icon: 'lucide:key',
+    content: `Hi {{guestName}}! Welcome to {{propertyName}}. Check-in is at 3 PM. Our team will greet you at the villa. Here's what you need to know:\n\n• Address: {{propertyAddress}}\n• WiFi: {{wifiName}} / {{wifiPassword}}\n• Parking: Available on-site\n\nLet us know if you need anything!`,
+  },
+  {
+    id: 'tpl-welcome',
+    label: 'Welcome Message',
+    icon: 'lucide:message-circle',
+    content: `Hi {{guestName}}! Welcome to Bali! We hope you have a wonderful stay at {{propertyName}}. If you need any recommendations or assistance, don't hesitate to reach out. Enjoy your trip!`,
+  },
+  {
+    id: 'tpl-checkout',
+    label: 'Check-out Reminder',
+    icon: 'lucide:log-out',
+    content: `Hi {{guestName}}, just a friendly reminder that check-out is at 11 AM tomorrow. Please leave keys on the counter and let us know if you need help with luggage. Safe travels!`,
+  },
+  {
+    id: 'tpl-maintenance',
+    label: 'Maintenance Update',
+    icon: 'lucide:wrench',
+    content: `Hi {{guestName}}, our maintenance team has been dispatched and should arrive within 30 minutes. We apologize for the inconvenience and appreciate your patience.`,
+  },
+]
+
+const scheduledTemplates = computed<ScheduledTemplate[]>(() => selectedReservation.value?.scheduledTemplates ?? [])
+
+function useTemplate(template: typeof dynamicTemplates[number]) {
+  replyText.value = template.content
+  toast.info(`Template "${template.label}" loaded`)
+}
+
+function handleSendNow(template: ScheduledTemplate) {
+  replyText.value = template.content
+  toast.info(`"${template.label}" loaded`)
+}
+
+const templateStatusBadge = (status: ScheduledTemplate['status']) => {
+  const map = {
+    pending: { label: 'Scheduled', class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+    sent: { label: 'Sent', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+    cancelled: { label: 'Cancelled', class: 'bg-muted text-muted-foreground' },
+  }
+  return map[status]
+}
 </script>
 
 <template>
@@ -74,10 +151,74 @@ watch(pendingSuggestion, (val) => {
       </div>
     </div>
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <Badge variant="secondary" class="text-xs">
-          via {{ channel }}
-        </Badge>
+      <div class="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="sm" class="h-7 gap-1.5 text-xs">
+              <Icon :name="channelIcon" class="size-3.5" />
+              {{ channelLabel }}
+              <Icon name="lucide:chevron-down" class="size-3 ml-0.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" class="w-48">
+            <DropdownMenuItem
+              v-for="opt of channelOptions"
+              :key="opt.value"
+              :class="{ 'bg-accent': sendChannel === opt.value }"
+              @click="sendChannel = opt.value"
+            >
+              <Icon :name="opt.icon" class="mr-2 size-4" />
+              {{ opt.label }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs text-muted-foreground">
+              <Icon name="lucide:file-text" class="size-3.5" />
+              Templates
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" class="w-64 p-0">
+            <div class="p-2">
+              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">Quick Templates</div>
+              <button
+                v-for="tpl of dynamicTemplates"
+                :key="tpl.id"
+                type="button"
+                class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                @click="useTemplate(tpl)"
+              >
+                <Icon :name="tpl.icon" class="size-3.5 text-muted-foreground" />
+                <span class="flex-1 text-left truncate">{{ tpl.label }}</span>
+                <Icon name="lucide:arrow-down-to-line" class="size-3 text-muted-foreground" />
+              </button>
+            </div>
+            <Separator v-if="scheduledTemplates.length > 0" />
+            <div v-if="scheduledTemplates.length > 0" class="p-2">
+              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">Scheduled</div>
+              <div
+                v-for="tpl of scheduledTemplates"
+                :key="tpl.id"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5"
+              >
+                <Icon :name="tpl.icon" class="size-3.5 text-muted-foreground" />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs truncate">{{ tpl.label }}</span>
+                    <span :class="['inline-flex items-center rounded-full px-1 py-0 text-[9px] font-medium', templateStatusBadge(tpl.status).class]">
+                      {{ templateStatusBadge(tpl.status).label }}
+                    </span>
+                  </div>
+                </div>
+                <Button v-if="tpl.status === 'pending'" variant="ghost" size="sm" class="h-5 px-1.5 text-[10px] gap-1 shrink-0" @click="handleSendNow(tpl)">
+                  <Icon name="lucide:send" class="size-2.5" />
+                  Send
+                </Button>
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <Button
         variant="default"

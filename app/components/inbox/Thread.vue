@@ -72,8 +72,6 @@ function dismissSuggestion() {
   }
 }
 
-
-
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   action_needed: 'destructive',
 }
@@ -81,8 +79,6 @@ const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'de
 const statusLabelMap: Record<string, string> = {
   action_needed: 'Action Needed',
 }
-
-
 
 const stayDateLabel = computed(() => {
   const res = selectedReservation.value
@@ -232,6 +228,7 @@ function formatNoteDate(timestamp: string) {
           <InboxReplyBox
             :channel="selectedConversation.otaSource"
             :conversation-id="selectedConversation.id"
+            :stay-status="selectedConversation.stayStatus"
           />
         </div>
       </TabsContent>

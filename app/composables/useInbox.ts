@@ -12,6 +12,7 @@ export function useInbox() {
   const activeStayFilter = useState<StayStatus | 'all'>('inbox-active-stay-filter', () => 'all')
   const activeListingFilter = useState<string[]>('inbox-active-listing-filter', () => [])
   const activeTagFilters = useState<string[]>('inbox-active-tag-filters', () => [])
+  const activeChannelFilter = useState<string | null>('inbox-active-channel-filter', () => null)
   const listingSearchText = useState<string>('inbox-listing-search-text', () => '')
   interface ElevaiConvState { on: boolean, pausedUntil?: number }
   const elevaiState = useState<Record<string, ElevaiConvState>>('inbox-elevai-state', () => ({}))
@@ -47,6 +48,10 @@ export function useInbox() {
 
     if (activeListingFilter.value.length > 0) {
       result = result.filter(c => activeListingFilter.value.includes(c.listingName))
+    }
+
+    if (activeChannelFilter.value) {
+      result = result.filter(c => c.otaSource === activeChannelFilter.value)
     }
 
     if (searchValue.value) {
@@ -263,6 +268,16 @@ export function useInbox() {
       .sort((a, b) => b.count - a.count)
   })
 
+  const channelOptions = computed(() => {
+    const map = new Map<string, number>()
+    for (const c of conversations.value) {
+      map.set(c.otaSource, (map.get(c.otaSource) ?? 0) + 1)
+    }
+    return Array.from(map.entries())
+      .map(([channel, count]) => ({ channel, count }))
+      .sort((a, b) => b.count - a.count)
+  })
+
   function toggleListingFilter(name: string) {
     const current = [...activeListingFilter.value]
     const idx = current.indexOf(name)
@@ -295,9 +310,18 @@ export function useInbox() {
     activeTagFilters.value = []
   }
 
+  function setChannelFilter(channel: string | null) {
+    activeChannelFilter.value = channel
+  }
+
+  function clearChannelFilter() {
+    activeChannelFilter.value = null
+  }
+
   function clearAllListingFilters() {
     activeListingFilter.value = []
     activeTagFilters.value = []
+    activeChannelFilter.value = null
     listingSearchText.value = ''
   }
 
@@ -317,6 +341,7 @@ export function useInbox() {
     activeStayFilter,
     activeListingFilter,
     activeTagFilters,
+    activeChannelFilter,
     listingSearchText,
     searchValue,
     rightPanelCollapsed,
@@ -345,10 +370,13 @@ export function useInbox() {
     allListingOptions,
     listingOptions,
     listingTags,
+    channelOptions,
     toggleListingFilter,
     clearListingFilters,
     toggleTagFilter,
     clearTagFilters,
+    setChannelFilter,
+    clearChannelFilter,
     clearAllListingFilters,
     useSuggestion,
     clearSuggestion,

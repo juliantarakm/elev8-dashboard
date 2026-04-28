@@ -90,7 +90,8 @@ const dateLabel = computed(() => {
             <Icon name="lucide:sparkles" class="size-3" />
             AI
           </span>
-          <span v-if="dateLabel" class="text-[10px] text-muted-foreground">{{ dateLabel }} · </span>
+          <span v-if="message.channel" class="text-[10px] text-muted-foreground">via {{ message.channel }}</span>
+          <span v-if="dateLabel" class="text-[10px] text-muted-foreground">· {{ dateLabel }}</span>
           <span class="text-[10px] text-muted-foreground">{{ timeLabel }}</span>
         </div>
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">
