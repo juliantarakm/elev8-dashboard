@@ -92,6 +92,23 @@ export interface GuestDetails {
   notes: string
 }
 
+export interface BookingReview {
+  rating: number
+  text: string
+}
+
+export interface GuestBookingHistoryItem {
+  id: string
+  checkIn: string
+  nights: number
+  listingName: string
+  totalPrice: number
+  currency: string
+  bookingUrl: string
+  hostReviewOfGuest?: BookingReview
+  guestReviewOfProperty?: BookingReview
+}
+
 export interface ListingDetails {
   name: string
   property: string
@@ -156,6 +173,7 @@ export interface Reservation {
   activity: ActivityEvent[]
   scheduledTemplates?: ScheduledTemplate[]
   upsells?: UpsellItem[]
+  bookingHistory?: GuestBookingHistoryItem[]
 }
 
 export const conversations: Conversation[] = [
@@ -1381,6 +1399,30 @@ export const reservations: Record<string, Reservation> = {
       { id: 'ups-1', name: 'Airport Pickup', description: 'Private car from Ngurah Rai Airport', price: 350000, currency: 'IDR', purchasedAt: '2026-04-24T10:00:00Z', status: 'confirmed' },
       { id: 'ups-2', name: 'Late Checkout', description: 'Extended checkout until 2 PM', price: 25, currency: 'USD', purchasedAt: '2026-04-28T09:00:00Z', status: 'confirmed' },
     ],
+    bookingHistory: [
+      {
+        id: 'hist-1-1',
+        checkIn: '2025-12-20T15:00:00Z',
+        nights: 7,
+        listingName: '5BR Pool the R Villa Luwa – Serene near Canggu',
+        totalPrice: 1050,
+        currency: 'USD',
+        bookingUrl: 'https://www.airbnb.com/reservations/abc123',
+        hostReviewOfGuest: { rating: 5, text: 'Sarah and her family were wonderful guests. Very respectful of the property, left everything in great condition. Would happily host again!' },
+        guestReviewOfProperty: { rating: 5, text: 'Absolutely stunning villa! The pool was amazing and the staff were incredibly helpful. Already planning our next trip back.' },
+      },
+      {
+        id: 'hist-1-2',
+        checkIn: '2025-08-10T15:00:00Z',
+        nights: 4,
+        listingName: 'The R Pererenan Mezzanine Studio + Plunge Pool',
+        totalPrice: 520,
+        currency: 'USD',
+        bookingUrl: 'https://www.airbnb.com/reservations/def456',
+        hostReviewOfGuest: { rating: 4, text: 'Good guests overall. Communication could have been a bit faster but the property was well looked after.' },
+        guestReviewOfProperty: { rating: 4, text: 'Beautiful studio with a lovely plunge pool. A bit smaller than expected but perfect for a couple. Great location near the beach.' },
+      },
+    ],
   },
   'res-2': {
     id: 'res-2',
@@ -1522,6 +1564,41 @@ export const reservations: Record<string, Reservation> = {
         actor: 'System',
         timestamp: '2026-04-23T11:00:00Z',
         colorDot: 'gray',
+      },
+    ],
+    bookingHistory: [
+      {
+        id: 'hist-4-1',
+        checkIn: '2026-01-15T15:00:00Z',
+        nights: 6,
+        listingName: 'The R Villa Merapi',
+        totalPrice: 1080,
+        currency: 'USD',
+        bookingUrl: 'https://www.airbnb.com/reservations/ar789',
+        hostReviewOfGuest: { rating: 5, text: 'Alex is an amazing guest! This is their third stay with us. Always leaves the villa in pristine condition. A true pleasure to host.' },
+        guestReviewOfProperty: { rating: 5, text: 'Third time staying here and it never disappoints. The private pool is heavenly and the staff remembers our preferences. Like a home away from home.' },
+      },
+      {
+        id: 'hist-4-2',
+        checkIn: '2025-09-05T15:00:00Z',
+        nights: 4,
+        listingName: 'The R Villa Merapi',
+        totalPrice: 720,
+        currency: 'USD',
+        bookingUrl: 'https://www.airbnb.com/reservations/ar456',
+        hostReviewOfGuest: { rating: 5, text: 'Another wonderful stay from Alex. Very considerate and easy to communicate with.' },
+        guestReviewOfProperty: { rating: 5, text: 'Love this place! The garden is so peaceful and the villa has everything you need. Will be back for sure.' },
+      },
+      {
+        id: 'hist-4-3',
+        checkIn: '2025-04-20T15:00:00Z',
+        nights: 5,
+        listingName: 'Nomad Mansion Pool',
+        totalPrice: 650,
+        currency: 'USD',
+        bookingUrl: 'https://www.airbnb.com/reservations/ar123',
+        hostReviewOfGuest: { rating: 4, text: 'Great first-time guest. Left a minor mess in the kitchen but overall very pleasant.' },
+        guestReviewOfProperty: { rating: 4, text: 'Great property in Ubud. The shared pool area was lovely. A bit far from restaurants but perfect for a quiet retreat.' },
       },
     ],
   },

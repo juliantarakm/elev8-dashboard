@@ -70,8 +70,8 @@ function handleChangeDirection(dir: 'ltr' | 'rtl') {
 
   <Sheet v-if="isDesktop" v-model:open="isOpen">
     <SheetTrigger as-child>
-      <Button class="fixed top-1/2 z-50" :class="direction === 'rtl' ? '-left-3 pl-6' : '-right-3 pr-6'">
-        <Icon name="i-lucide-settings" class="animate-spin-slow" size="18" />
+      <Button class="fixed bottom-4 right-4 z-50 size-9 rounded-full" size="icon">
+        <Icon name="i-lucide-settings" class="animate-spin-slow" size="16" />
       </Button>
     </SheetTrigger>
     <SheetContent :side="direction === 'rtl' ? 'left' : 'right'">
@@ -94,8 +94,8 @@ function handleChangeDirection(dir: 'ltr' | 'rtl') {
 
   <Drawer v-else v-model:open="isOpen">
     <DrawerTrigger as-child>
-      <Button class="fixed top-1/2 z-50 pr-6 -right-3">
-        <Icon name="i-lucide-settings" class="animate-spin-slow" size="18" />
+      <Button class="fixed bottom-4 right-4 z-50 size-9 rounded-full" size="icon">
+        <Icon name="i-lucide-settings" class="animate-spin-slow" size="16" />
       </Button>
     </DrawerTrigger>
     <DrawerContent class="max-h-[97%]">

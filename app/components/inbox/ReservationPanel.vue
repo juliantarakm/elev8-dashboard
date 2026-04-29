@@ -99,6 +99,10 @@ function handleDisable() {
             Upsell
             <Badge v-if="reservation.upsells?.length" class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ reservation.upsells.length }}</Badge>
           </TabsTrigger>
+          <TabsTrigger v-if="reservation.bookingHistory?.length" value="history" class="text-xs shrink-0">
+            History
+            <Badge class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ reservation.bookingHistory.length }}</Badge>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary">
@@ -126,6 +130,12 @@ function handleDisable() {
         <TabsContent value="upsells">
           <div class="p-4">
             <InboxReservationUpsells :upsells="reservation.upsells ?? []" />
+          </div>
+        </TabsContent>
+
+        <TabsContent v-if="reservation.bookingHistory?.length" value="history">
+          <div class="p-4">
+            <InboxGuestBookingHistory :bookings="reservation.bookingHistory" />
           </div>
         </TabsContent>
       </Tabs>

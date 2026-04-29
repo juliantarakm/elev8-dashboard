@@ -200,7 +200,7 @@ const activeFilterCount = computed(() => {
       </div>
 
       <div v-else class="flex flex-col gap-2 px-4 pt-3 pb-4">
-        <TransitionGroup name="list" appear>
+        <TransitionGroup name="list">
           <InboxListItem
             v-for="item of items"
             :key="item.id"
@@ -225,9 +225,5 @@ const activeFilterCount = computed(() => {
 .list-leave-to {
   opacity: 0;
   transform: translateY(15px);
-}
-
-.list-leave-active {
-  position: absolute;
 }
 </style>

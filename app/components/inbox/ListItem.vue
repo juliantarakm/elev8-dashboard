@@ -107,26 +107,26 @@ const stayDateLabel = computed(() => {
           </div>
         </div>
       </div>
-<div class="shrink-0 text-right">
-          <div class="text-xs text-muted-foreground">
-            {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
-          </div>
+      <div class="shrink-0 text-right">
+        <div class="text-xs text-muted-foreground">
+          {{ formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) }}
+        </div>
         <Badge v-if="conversation.status === 'action_needed'" :variant="statusVariantMap[conversation.status]" class="text-[10px]">
           {{ statusLabelMap[conversation.status] }}
         </Badge>
       </div>
     </div>
 
-<div class="w-full flex items-center gap-3">
-      <p class="line-clamp-1 text-xs text-muted-foreground flex-1">
+    <div class="w-full flex items-center gap-3 min-w-0">
+      <p class="line-clamp-1 text-xs text-muted-foreground flex-1 min-w-0">
         {{ conversation.lastMessage }}
       </p>
     </div>
 
     <div class="w-full flex items-center justify-between gap-3">
       <Icon :name="otaIconMap[conversation.otaSource] ?? 'lucide:globe'" class="size-4 shrink-0" />
-      <div class="flex items-center gap-1.5">
-        <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground">{{ stayDateLabel }}</span>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span v-if="stayDateLabel" class="text-[10px] text-muted-foreground truncate">{{ stayDateLabel }}</span>
         <span :class="cn('inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium', stayConfig.class)">
           {{ stayConfig.label }}
         </span>
