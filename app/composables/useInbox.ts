@@ -43,6 +43,7 @@ export function useInbox() {
   const activeListingFilter = useState<string[]>('inbox-active-listing-filter', () => [])
   const activeTagFilters = useState<string[]>('inbox-active-tag-filters', () => [])
   const activeChannelFilter = useState<string | null>('inbox-active-channel-filter', () => null)
+  const activeStaffFilter = useState<string[]>('inbox-active-staff-filter', () => [])
   const activeDateFilter = useState<string | null>('inbox-active-date-filter', () => null)
   const listingSearchText = useState<string>('inbox-listing-search-text', () => '')
   interface ElevaiConvState { on: boolean, pausedUntil?: number }
@@ -112,6 +113,15 @@ export function useInbox() {
 
     if (activeChannelFilter.value) {
       result = result.filter(c => c.otaSource === activeChannelFilter.value)
+    }
+
+    if (activeStaffFilter.value.length > 0) {
+      result = result.filter(c => {
+        if (activeStaffFilter.value.includes('unassigned')) {
+          if (!c.assignedTo) return true
+        }
+        return activeStaffFilter.value.some(id => id !== 'unassigned' && c.assignedTo === id)
+      })
     }
 
     if (searchValue.value) {
@@ -372,6 +382,22 @@ export function useInbox() {
     activeChannelFilter.value = null
   }
 
+  function toggleStaffFilter(staffId: string) {
+    const current = [...activeStaffFilter.value]
+    const idx = current.indexOf(staffId)
+    if (idx !== -1) {
+      current.splice(idx, 1)
+    }
+    else {
+      current.push(staffId)
+    }
+    activeStaffFilter.value = current
+  }
+
+  function clearStaffFilter() {
+    activeStaffFilter.value = []
+  }
+
   function clearDateFilter() {
     activeDateFilter.value = null
   }
@@ -384,6 +410,7 @@ export function useInbox() {
     activeListingFilter.value = []
     activeTagFilters.value = []
     activeChannelFilter.value = null
+    activeStaffFilter.value = []
     listingSearchText.value = ''
   }
 
@@ -480,6 +507,7 @@ export function useInbox() {
     activeListingFilter,
     activeTagFilters,
     activeChannelFilter,
+    activeStaffFilter,
     listingSearchText,
     searchValue,
     rightPanelCollapsed,
@@ -515,6 +543,9 @@ export function useInbox() {
     clearTagFilters,
     setChannelFilter,
     clearChannelFilter,
+    toggleStaffFilter,
+    clearStaffFilter,
+    staffMembers,
     clearDateFilter,
     clearAllListingFilters,
     useSuggestion,

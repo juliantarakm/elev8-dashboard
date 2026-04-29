@@ -10,7 +10,7 @@ interface ListProps {
 defineProps<ListProps>()
 const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
-const { showActionNeeded, unreadFilter, assignedToMeFilter, activeChannelFilter, activeStayFilter, activeDateFilter, searchValue, sortBy, channelOptions, setChannelFilter, clearChannelFilter } = useInbox()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeChannelFilter, activeStaffFilter, activeStayFilter, activeDateFilter, searchValue, sortBy, channelOptions, setChannelFilter, clearChannelFilter, staffMembers, toggleStaffFilter, clearStaffFilter } = useInbox()
 
 const dateSubFilters = computed(() => {
   if (activeStayFilter.value === 'future') {
@@ -44,6 +44,7 @@ const activeFilterCount = computed(() => {
   if (unreadFilter.value) count++
   if (assignedToMeFilter.value) count++
   if (activeChannelFilter.value) count++
+  if (activeStaffFilter.value.length > 0) count++
   return count
 })
 </script>
@@ -163,6 +164,64 @@ const activeFilterCount = computed(() => {
               </button>
             </div>
           </div>
+
+          <Separator />
+
+          <div class="p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-xs font-medium text-muted-foreground">Staff</div>
+              <button
+                v-if="activeStaffFilter.length > 0"
+                type="button"
+                class="text-[10px] text-muted-foreground hover:text-foreground"
+                @click="clearStaffFilter()"
+              >
+                Clear
+              </button>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button
+                v-for="staff of staffMembers"
+                :key="staff.id"
+                type="button"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                :class="activeStaffFilter.includes(staff.id) ? 'bg-accent' : ''"
+                @click="toggleStaffFilter(staff.id)"
+              >
+                <div :class="cn(
+                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                  activeStaffFilter.includes(staff.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                )">
+                  <Icon v-if="activeStaffFilter.includes(staff.id)" name="lucide:check" class="size-3" />
+                </div>
+                <div class="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium">
+                  {{ staff.initials }}
+                </div>
+                {{ staff.name }}
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                :class="activeStaffFilter.includes('unassigned') ? 'bg-accent' : ''"
+                @click="toggleStaffFilter('unassigned')"
+              >
+                <div :class="cn(
+                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                  activeStaffFilter.includes('unassigned') ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                )">
+                  <Icon v-if="activeStaffFilter.includes('unassigned')" name="lucide:check" class="size-3" />
+                </div>
+                <Icon name="lucide:user-x" class="size-3.5 text-muted-foreground" />
+                Unassigned
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeFilterCount > 0" class="border-t px-3 py-2">
+            <Button variant="ghost" size="sm" class="w-full h-7 text-xs text-muted-foreground" @click="showActionNeeded = false; unreadFilter = false; assignedToMeFilter = false; clearChannelFilter(); clearStaffFilter()">
+              Clear all filters
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
@@ -193,7 +252,7 @@ const activeFilterCount = computed(() => {
         </p>
         <button
           class="text-sm text-muted-foreground hover:underline"
-          @click="showActionNeeded = false; unreadFilter = false; assignedToMeFilter = false; clearChannelFilter()"
+          @click="showActionNeeded = false; unreadFilter = false; assignedToMeFilter = false; clearChannelFilter(); clearStaffFilter()"
         >
           View all conversations
         </button>
