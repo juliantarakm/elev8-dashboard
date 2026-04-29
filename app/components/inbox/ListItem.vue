@@ -90,13 +90,13 @@ const stayDateLabel = computed(() => {
           <div class="flex items-center gap-1.5">
             <Tooltip v-if="conversation.cleaningStatus" :delay-duration="0">
               <TooltipTrigger as-child>
-                <button
-                  type="button"
+                <span
+                  role="button"
                   :class="cn('inline-flex items-center', conversation.cleaningStatus === 'cleaning_finished' && 'cursor-pointer hover:opacity-70')"
                   @click.stop="conversation.cleaningStatus === 'cleaning_finished' && handleCleaningClick(conversation)"
                 >
                   <Icon name="lucide:spray-can" :class="cn('size-3 shrink-0', cleaningIconColor[conversation.cleaningStatus])" />
-                </button>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="top" class="text-xs">
                 {{ cleaningLabel[conversation.cleaningStatus] }}

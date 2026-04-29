@@ -7,37 +7,13 @@ onMounted(() => {
   assignedToMeFilter.value = false
   activeStayFilter.value = 'all'
 
-  // Clean up orphaned elements from SSR hydration
+  // Clean up any orphaned elements from SSR hydration
   nextTick(() => {
-    // Remove body-level orphans
     const keepIds = new Set(['__nuxt', 'teleports', '__NUXT_DATA__', 'vue-tracer-overlay', 'nuxt-devtools-container'])
     const keepTags = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'NOSCRIPT', 'NUXT-DEVTOOLS-INSPECT-PANEL'])
     Array.from(document.body.children).forEach(el => {
       if (keepIds.has(el.id) || keepTags.has(el.tagName)) return
       el.remove()
-    })
-    // Remove orphans inside #__nuxt that are siblings of #app
-    const nuxtEl = document.getElementById('__nuxt')
-    if (nuxtEl) {
-      Array.from(nuxtEl.children).forEach(el => {
-        if (el.id === 'app' || el.tagName === 'SCRIPT' || el.tagName === 'SECTION' || el.id === 'teleports') return
-        el.remove()
-      })
-    }
-    // Remove orphans inside #app that are siblings of sidebar-wrapper
-    const appEl = document.getElementById('app')
-    if (appEl) {
-      Array.from(appEl.children).forEach(el => {
-        if (el.getAttribute('data-slot') === 'sidebar-wrapper' || el.getAttribute('data-slot') === 'sheet-trigger') return
-        if (el.tagName === 'SCRIPT') return
-        el.remove()
-      })
-    }
-    // Fix SSR-wrapped list items that got tooltip-trigger attribute
-    document.querySelectorAll('[data-slot="scroll-area-viewport"] > div > div > button[data-slot="tooltip-trigger"]').forEach(btn => {
-      btn.removeAttribute('data-slot')
-      btn.removeAttribute('data-state')
-      btn.removeAttribute('data-grace-area-trigger')
     })
   })
 })
