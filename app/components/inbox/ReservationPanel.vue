@@ -95,6 +95,10 @@ function handleDisable() {
           <TabsTrigger value="summary" class="text-xs shrink-0">Summary</TabsTrigger>
           <TabsTrigger value="tasks" class="text-xs shrink-0">Tasks</TabsTrigger>
           <TabsTrigger value="activity" class="text-xs shrink-0">Activity</TabsTrigger>
+          <TabsTrigger value="upsells" class="text-xs shrink-0">
+            Upsell
+            <Badge v-if="reservation.upsells?.length" class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ reservation.upsells.length }}</Badge>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary">
@@ -116,6 +120,12 @@ function handleDisable() {
         <TabsContent value="activity">
           <div class="p-4">
             <InboxReservationActivity :activity="reservation.activity" :reservation="reservation" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="upsells">
+          <div class="p-4">
+            <InboxReservationUpsells :upsells="reservation.upsells ?? []" />
           </div>
         </TabsContent>
       </Tabs>

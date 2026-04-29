@@ -10,7 +10,25 @@ interface ListProps {
 defineProps<ListProps>()
 const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
-const { showActionNeeded, unreadFilter, assignedToMeFilter, activeChannelFilter, searchValue, sortBy, channelOptions, setChannelFilter, clearChannelFilter } = useInbox()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeChannelFilter, activeStayFilter, activeDateFilter, searchValue, sortBy, channelOptions, setChannelFilter, clearChannelFilter } = useInbox()
+
+const dateSubFilters = computed(() => {
+  if (activeStayFilter.value === 'future') {
+    return [
+      { key: 'today', label: 'Today' },
+      { key: 'next-3-days', label: 'Next 3 Days' },
+      { key: 'next-week', label: 'Next Week' },
+    ]
+  }
+  if (activeStayFilter.value === 'current') {
+    return [
+      { key: 'today', label: 'Today' },
+      { key: 'next-3-days', label: 'Next 3 Days' },
+      { key: 'next-week', label: 'Next Week' },
+    ]
+  }
+  return []
+})
 
 const sortOptions = [
   { value: 'newest', label: 'Newest' },
@@ -147,6 +165,22 @@ const activeFilterCount = computed(() => {
           </div>
         </PopoverContent>
       </Popover>
+    </div>
+
+    <!-- Date sub-filters for Current/Future -->
+    <div v-if="activeStayFilter === 'current' || activeStayFilter === 'future'" class="flex items-center gap-1.5 px-4 py-2 border-b">
+      <span class="text-[10px] text-muted-foreground shrink-0">
+        {{ activeStayFilter === 'future' ? 'Check-in' : 'Check-out' }}:
+      </span>
+      <Badge
+        v-for="df in dateSubFilters"
+        :key="df.key"
+        :variant="activeDateFilter === df.key ? 'default' : 'outline'"
+        class="cursor-pointer select-none text-[10px] px-2 py-0.5"
+        @click="activeDateFilter = activeDateFilter === df.key ? null : df.key"
+      >
+        {{ df.label }}
+      </Badge>
     </div>
 
     <Separator />

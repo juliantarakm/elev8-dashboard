@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import type { Conversation, StayStatus } from '~/components/inbox/data/conversations'
+import type { CleaningStatus, Conversation, StayStatus } from '~/components/inbox/data/conversations'
 import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '~/lib/utils'
+import { toast } from 'vue-sonner'
 
 interface ListItemProps {
   conversation: Conversation
@@ -25,10 +26,32 @@ const statusLabelMap: Record<string, string> = {
 }
 
 const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
-  inquiry: { label: 'Inquiry', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+  inquiry: { label: 'Inquiry', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
   current: { label: 'Current', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-  future: { label: 'Future', class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+  future: { label: 'Future', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   past: { label: 'Past', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+}
+
+const cleaningIconColor: Record<CleaningStatus, string> = {
+  need_cleaning: 'text-red-500',
+  in_progress: 'text-yellow-500',
+  cleaning_finished: 'text-green-500',
+}
+
+const cleaningLabel: Record<CleaningStatus, string> = {
+  need_cleaning: 'Need Cleaning',
+  in_progress: 'In Progress',
+  cleaning_finished: 'Cleaning Finished',
+}
+
+function handleCleaningClick(conv: Conversation) {
+  // Mark as need_cleaning when clicking finished
+  const { conversations } = useInbox()
+  const idx = conversations.value.findIndex(c => c.id === conv.id)
+  if (idx !== -1) {
+    conversations.value[idx] = { ...conversations.value[idx], cleaningStatus: 'need_cleaning' }
+    toast.info('Marked as Need Cleaning')
+  }
 }
 
 const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
@@ -65,6 +88,21 @@ const stayDateLabel = computed(() => {
             </Badge>
           </div>
           <div class="flex items-center gap-1.5">
+            <Tooltip v-if="conversation.cleaningStatus" :delay-duration="0">
+              <TooltipTrigger as-child>
+                <button
+                  type="button"
+                  :class="cn('inline-flex items-center', conversation.cleaningStatus === 'cleaning_finished' && 'cursor-pointer hover:opacity-70')"
+                  @click.stop="conversation.cleaningStatus === 'cleaning_finished' && handleCleaningClick(conversation)"
+                >
+                  <Icon name="lucide:spray-can" :class="cn('size-3 shrink-0', cleaningIconColor[conversation.cleaningStatus])" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" class="text-xs">
+                {{ cleaningLabel[conversation.cleaningStatus] }}
+                <span v-if="conversation.cleaningStatus === 'cleaning_finished'" class="text-muted-foreground"> · Click to mark</span>
+              </TooltipContent>
+            </Tooltip>
             <span class="text-xs text-muted-foreground truncate">{{ conversation.listingName }}</span>
           </div>
         </div>

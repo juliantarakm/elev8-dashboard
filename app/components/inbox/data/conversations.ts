@@ -5,6 +5,8 @@ export type ActionSeverity = 'warning' | 'urgent' | 'info'
 export type ActivityEventColor = 'gold' | 'green' | 'blue' | 'gray'
 
 export type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
+export type GuestVerification = 'unverified' | 'verified' | 'check_in' | 'check_out'
+export type CleaningStatus = 'need_cleaning' | 'in_progress' | 'cleaning_finished'
 
 export interface Note {
   id: string
@@ -52,6 +54,8 @@ export interface Conversation {
   stayStatus: StayStatus
   checkIn: string
   checkOut: string
+  verification?: GuestVerification
+  cleaningStatus?: CleaningStatus
 }
 
 export interface Message {
@@ -123,6 +127,16 @@ export interface ScheduledTemplate {
   content: string
 }
 
+export interface UpsellItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  currency: string
+  purchasedAt: string
+  status: 'confirmed' | 'pending' | 'cancelled'
+}
+
 export interface Reservation {
   id: string
   propertyName: string
@@ -141,6 +155,7 @@ export interface Reservation {
   tasks: Task[]
   activity: ActivityEvent[]
   scheduledTemplates?: ScheduledTemplate[]
+  upsells?: UpsellItem[]
 }
 
 export const conversations: Conversation[] = [
@@ -166,6 +181,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-25T15:00:00Z',
     checkOut: '2026-04-30T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-2',
@@ -189,6 +206,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-04-28T15:00:00Z',
     checkOut: '2026-05-01T11:00:00Z',
+    verification: 'verified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-3',
@@ -212,6 +231,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-04-26T15:00:00Z',
     checkOut: '2026-04-29T11:00:00Z',
+    verification: 'unverified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-4',
@@ -235,6 +256,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'past',
     checkIn: '2026-04-18T15:00:00Z',
     checkOut: '2026-04-23T11:00:00Z',
+    verification: 'check_out',
+    cleaningStatus: 'need_cleaning',
   },
   {
     id: 'conv-6',
@@ -258,6 +281,7 @@ export const conversations: Conversation[] = [
     stayStatus: 'inquiry',
     checkIn: '',
     checkOut: '',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-5',
@@ -281,6 +305,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-24T15:00:00Z',
     checkOut: '2026-04-28T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-7',
@@ -303,6 +329,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-05-02T15:00:00Z',
     checkOut: '2026-05-06T11:00:00Z',
+    verification: 'verified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-8',
@@ -325,6 +353,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-22T15:00:00Z',
     checkOut: '2026-04-27T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-9',
@@ -347,6 +377,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-05-02T15:00:00Z',
     checkOut: '2026-05-05T11:00:00Z',
+    verification: 'unverified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-10',
@@ -369,6 +401,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'past',
     checkIn: '2026-04-19T15:00:00Z',
     checkOut: '2026-04-25T11:00:00Z',
+    verification: 'check_out',
+    cleaningStatus: 'need_cleaning',
   },
   {
     id: 'conv-11',
@@ -391,6 +425,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-05-10T15:00:00Z',
     checkOut: '2026-05-15T11:00:00Z',
+    verification: 'unverified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-12',
@@ -413,6 +449,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-23T15:00:00Z',
     checkOut: '2026-04-27T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-13',
@@ -435,6 +473,7 @@ export const conversations: Conversation[] = [
     stayStatus: 'inquiry',
     checkIn: '',
     checkOut: '',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-14',
@@ -457,6 +496,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-24T15:00:00Z',
     checkOut: '2026-04-28T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'in_progress',
   },
   {
     id: 'conv-15',
@@ -479,6 +520,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'future',
     checkIn: '2026-05-08T15:00:00Z',
     checkOut: '2026-05-11T11:00:00Z',
+    verification: 'unverified',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-16',
@@ -501,6 +544,7 @@ export const conversations: Conversation[] = [
     stayStatus: 'inquiry',
     checkIn: '',
     checkOut: '',
+    cleaningStatus: 'cleaning_finished',
   },
   {
     id: 'conv-17',
@@ -523,6 +567,7 @@ export const conversations: Conversation[] = [
     stayStatus: 'past',
     checkIn: '2026-04-20T15:00:00Z',
     checkOut: '2026-04-25T11:00:00Z',
+    cleaningStatus: 'need_cleaning',
   },
   {
     id: 'conv-18',
@@ -545,6 +590,8 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-25T15:00:00Z',
     checkOut: '2026-04-30T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
   },
 ]
 
@@ -1330,6 +1377,10 @@ export const reservations: Record<string, Reservation> = {
         content: 'Hi Sarah, just a friendly reminder that check-out is at 11 AM tomorrow.',
       },
     ],
+    upsells: [
+      { id: 'ups-1', name: 'Airport Pickup', description: 'Private car from Ngurah Rai Airport', price: 350000, currency: 'IDR', purchasedAt: '2026-04-24T10:00:00Z', status: 'confirmed' },
+      { id: 'ups-2', name: 'Late Checkout', description: 'Extended checkout until 2 PM', price: 25, currency: 'USD', purchasedAt: '2026-04-28T09:00:00Z', status: 'confirmed' },
+    ],
   },
   'res-2': {
     id: 'res-2',
@@ -1587,6 +1638,9 @@ export const reservations: Record<string, Reservation> = {
         colorDot: 'gold',
       },
     ],
+    upsells: [
+      { id: 'ups-3', name: 'Yoga Session', description: 'Private sunrise yoga class', price: 45, currency: 'USD', purchasedAt: '2026-04-25T06:00:00Z', status: 'confirmed' },
+    ],
   },
   'res-7': {
     id: 'res-7',
@@ -1692,6 +1746,10 @@ export const reservations: Record<string, Reservation> = {
         timestamp: '2026-04-25T13:50:00Z',
         colorDot: 'gold',
       },
+    ],
+    upsells: [
+      { id: 'ups-4', name: 'Floating Breakfast', description: 'Instagram-worthy poolside breakfast', price: 25, currency: 'USD', purchasedAt: '2026-04-23T07:00:00Z', status: 'confirmed' },
+      { id: 'ups-5', name: 'Spa Treatment', description: 'Balinese massage for 2', price: 60, currency: 'USD', purchasedAt: '2026-04-24T14:00:00Z', status: 'pending' },
     ],
   },
   'res-9': {
@@ -1906,6 +1964,9 @@ export const reservations: Record<string, Reservation> = {
         timestamp: '2026-04-18T12:00:00Z',
         colorDot: 'green',
       },
+    ],
+    upsells: [
+      { id: 'ups-6', name: 'Airport Drop-off', description: 'Private car to Ngurah Rai Airport', price: 350000, currency: 'IDR', purchasedAt: '2026-04-26T16:00:00Z', status: 'confirmed' },
     ],
   },
   'res-14': {

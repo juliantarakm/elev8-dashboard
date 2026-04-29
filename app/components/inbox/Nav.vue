@@ -45,6 +45,7 @@ function clearAll() {
   unreadFilter.value = false
   assignedToMeFilter.value = false
   activeStayFilter.value = 'all'
+  activeDateFilter.value = null
 }
 </script>
 
@@ -135,6 +136,8 @@ function clearAll() {
           </a>
         </template>
       </nav>
+
+
     </div>
 
     <Separator />

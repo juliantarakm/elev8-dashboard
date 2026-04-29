@@ -43,6 +43,7 @@ export function useInbox() {
   const activeListingFilter = useState<string[]>('inbox-active-listing-filter', () => [])
   const activeTagFilters = useState<string[]>('inbox-active-tag-filters', () => [])
   const activeChannelFilter = useState<string | null>('inbox-active-channel-filter', () => null)
+  const activeDateFilter = useState<string | null>('inbox-active-date-filter', () => null)
   const listingSearchText = useState<string>('inbox-listing-search-text', () => '')
   interface ElevaiConvState { on: boolean, pausedUntil?: number }
   const elevaiState = useState<Record<string, ElevaiConvState>>('inbox-elevai-state', () => ({}))
@@ -74,6 +75,35 @@ export function useInbox() {
 
     if (activeStayFilter.value !== 'all') {
       result = result.filter(c => c.stayStatus === activeStayFilter.value)
+    }
+
+    if (activeDateFilter.value && activeStayFilter.value !== 'all') {
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+
+      const getDateRange = (filter: string): [Date, Date] => {
+        const start = new Date(now)
+        const end = new Date(now)
+        if (filter === 'today') {
+          end.setHours(23, 59, 59, 999)
+        } else if (filter === 'next-3-days') {
+          end.setDate(end.getDate() + 2)
+          end.setHours(23, 59, 59, 999)
+        } else if (filter === 'next-week') {
+          end.setDate(end.getDate() + 6)
+          end.setHours(23, 59, 59, 999)
+        }
+        return [start, end]
+      }
+
+      const [rangeStart, rangeEnd] = getDateRange(activeDateFilter.value)
+
+      result = result.filter(c => {
+        const dateField = activeStayFilter.value === 'future' ? c.checkIn : c.checkOut
+        if (!dateField) return false
+        const date = new Date(dateField)
+        return date >= rangeStart && date <= rangeEnd
+      })
     }
 
     if (activeListingFilter.value.length > 0) {
@@ -342,6 +372,14 @@ export function useInbox() {
     activeChannelFilter.value = null
   }
 
+  function clearDateFilter() {
+    activeDateFilter.value = null
+  }
+
+  watch(activeStayFilter, () => {
+    activeDateFilter.value = null
+  })
+
   function clearAllListingFilters() {
     activeListingFilter.value = []
     activeTagFilters.value = []
@@ -438,6 +476,7 @@ export function useInbox() {
     assignedToMeFilter,
     unreadFilter,
     activeStayFilter,
+    activeDateFilter,
     activeListingFilter,
     activeTagFilters,
     activeChannelFilter,
@@ -476,6 +515,7 @@ export function useInbox() {
     clearTagFilters,
     setChannelFilter,
     clearChannelFilter,
+    clearDateFilter,
     clearAllListingFilters,
     useSuggestion,
     clearSuggestion,

@@ -31,16 +31,12 @@ const props = defineProps<ReservationSummaryProps>()
       <div class="text-sm font-medium">Quick Actions</div>
       <div class="flex flex-wrap gap-2">
         <Button variant="outline" size="sm">
-          <Icon name="lucide:layout-dashboard" class="size-4" />
-          View in Cockpit
+          <Icon name="lucide:pencil" class="size-4" />
+          Edit Reservation
         </Button>
         <Button variant="outline" size="sm">
-          <Icon name="lucide:sparkles" class="size-4" />
-          Create Cleaning Task
-        </Button>
-        <Button variant="outline" size="sm">
-          <Icon name="lucide:list" class="size-4" />
-          View Activity Log
+          <Icon name="lucide:external-link" class="size-4" />
+          Detail Reservation
         </Button>
       </div>
     </div>

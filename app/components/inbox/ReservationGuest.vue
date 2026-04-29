@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Conversation, GuestDetails, Reservation, StayStatus } from '~/components/inbox/data/conversations'
+import type { CleaningStatus, Conversation, GuestDetails, GuestVerification, Reservation, StayStatus } from '~/components/inbox/data/conversations'
 import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format } from 'date-fns'
 import { cn } from '~/lib/utils'
@@ -21,13 +21,28 @@ const initials = computed(() =>
 )
 
 const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
-  inquiry: { label: 'Inquiry', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+  inquiry: { label: 'Inquiry', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
   current: { label: 'Current Stay', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-  future: { label: 'Upcoming', class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+  future: { label: 'Upcoming', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   past: { label: 'Checked Out', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
 }
 
+const verificationConfig: Record<GuestVerification, { label: string, icon: string, class: string }> = {
+  unverified: { label: 'Unverified', icon: 'lucide:circle-dot', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  verified: { label: 'Verified', icon: 'lucide:shield-check', class: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' },
+  check_in: { label: 'Checked In', icon: 'lucide:log-in', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
+  check_out: { label: 'Checked Out', icon: 'lucide:log-out', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+}
+
+const cleaningStatusConfig: Record<CleaningStatus, { label: string, icon: string, class: string }> = {
+  need_cleaning: { label: 'Need Cleaning', icon: 'lucide:spray-can', class: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
+  in_progress: { label: 'In Progress', icon: 'lucide:spray-can', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
+  cleaning_finished: { label: 'Cleaning Finished', icon: 'lucide:spray-can', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+}
+
 const stayCfg = computed(() => stayStatusConfig[props.stayStatus])
+const verificationCfg = computed(() => props.conversation.verification ? verificationConfig[props.conversation.verification] : null)
+const cleaningCfg = computed(() => props.conversation.cleaningStatus ? cleaningStatusConfig[props.conversation.cleaningStatus] : null)
 const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 const hasDates = computed(() => !!props.reservation.checkIn && !!props.reservation.checkOut)
 const checkInDate = computed(() => hasDates.value ? new Date(props.reservation.checkIn) : null)
@@ -77,6 +92,10 @@ function handleAssign(staffId: string | null) {
             <Icon :name="otaIconMap[reservation.otaSource] ?? 'lucide:globe'" class="size-3" />
             {{ reservation.otaSource }}
           </span>
+          <span v-if="verificationCfg" :class="cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium gap-1', verificationCfg.class)">
+            <Icon :name="verificationCfg.icon" class="size-3" />
+            {{ verificationCfg.label }}
+          </span>
         </div>
       </div>
     </div>
@@ -117,8 +136,14 @@ function handleAssign(staffId: string | null) {
     <div class="rounded-lg border bg-muted/50 divide-y">
       <div class="p-3 flex items-start gap-2.5">
         <Icon name="lucide:home" class="size-3.5 shrink-0 text-muted-foreground mt-0.5" />
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
           <div class="text-sm font-medium truncate">{{ reservation.listingName }}</div>
+          <div v-if="cleaningCfg" class="mt-1.5">
+            <span :class="cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', cleaningCfg.class)">
+              <Icon :name="cleaningCfg.icon" class="size-3" />
+              {{ cleaningCfg.label }}
+            </span>
+          </div>
         </div>
       </div>
       <div class="p-3 space-y-2">
