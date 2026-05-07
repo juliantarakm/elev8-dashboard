@@ -48,19 +48,5 @@ const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimen
         @dismiss="$props.smartActions.splice($props.smartActions.findIndex(a => a.id === action.id), 1)"
       />
     </div>
-
-    <div class="space-y-2">
-      <div class="text-sm font-medium">Quick Actions</div>
-      <div class="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm">
-          <Icon name="lucide:pencil" class="size-4" />
-          Edit Reservation
-        </Button>
-        <Button variant="outline" size="sm">
-          <Icon name="lucide:external-link" class="size-4" />
-          Detail Reservation
-        </Button>
-      </div>
-    </div>
   </div>
 </template>
