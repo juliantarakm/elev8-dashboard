@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { Alert } from '~/components/notifications/data/alerts'
 import type { SeverityFilter } from '~/composables/useNotifications'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+
+const popoverOpen = ref(false)
 
 const {
   unreadCount,
@@ -24,19 +28,27 @@ const tabs: { label: string; value: SeverityFilter }[] = [
   { label: 'Critical', value: 'critical' },
   { label: 'Warning', value: 'warning' },
 ]
+
+function handleNavigate(alert: Alert) {
+  navigateToAlert(alert)
+  popoverOpen.value = false
+}
+
+
 </script>
 
 <template>
-  <Popover>
+  <Popover v-model:open="popoverOpen">
     <PopoverTrigger as-child>
-      <Button variant="ghost" size="icon" class="relative size-8">
+      <Button variant="ghost" size="icon" class="relative size-8" aria-label="Notifications" aria-haspopup="true">
         <Icon name="i-lucide-bell" class="size-5" />
-        <span
+        <Badge
           v-if="unreadCount > 0"
-          class="absolute -top-0.5 -right-0.5 flex items-center justify-center size-4 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none"
+          class="absolute -top-1.5 -right-1.5 h-4 min-w-4 rounded-full px-1 text-[10px] leading-none"
+          variant="default"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
-        </span>
+        </Badge>
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-[380px] p-0" align="end" side-offset="8">
@@ -84,7 +96,7 @@ const tabs: { label: string; value: SeverityFilter }[] = [
           v-for="alert in filteredAlerts"
           :key="alert.alert_id"
           :alert="alert"
-          @click="navigateToAlert(alert)"
+          @click="handleNavigate(alert)"
           @dismiss="dismiss"
         />
       </ScrollArea>
