@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { CleaningStatus, Conversation, GuestDetails, GuestVerification, Reservation, StayStatus } from '~/components/inbox/data/conversations'
+import type { CleaningStatus, Conversation, GuestDetails, GuestSentiment, GuestVerification, Reservation, StayStatus } from '~/components/inbox/data/conversations'
 import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format } from 'date-fns'
 import { cn } from '~/lib/utils'
@@ -10,9 +10,31 @@ interface ReservationGuestProps {
   reservation: Reservation
   stayStatus: StayStatus
   conversation: Conversation
+  sentiment: GuestSentiment
+  sentimentNote: string
 }
 
 const props = defineProps<ReservationGuestProps>()
+
+const sentimentConfig: Record<string, { emoji: string, label: string, class: string }> = {
+  positive: {
+    emoji: '😊',
+    label: 'Positive',
+    class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  },
+  neutral: {
+    emoji: '😐',
+    label: 'Neutral',
+    class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  },
+  negative: {
+    emoji: '😠',
+    label: 'Negative',
+    class: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  },
+}
+
+const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimentConfig.neutral!)
 
 const { assignTo, getAssignedStaff } = useInbox()
 
@@ -83,7 +105,23 @@ function handleAssign(staffId: string | null) {
         <AvatarFallback class="text-sm font-semibold">{{ initials }}</AvatarFallback>
       </Avatar>
       <div class="flex-1 min-w-0 pt-0.5">
-        <div class="font-semibold text-sm leading-tight">{{ guest.name }}</div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm leading-tight">{{ guest.name }}</span>
+          <TooltipProvider :delay-duration="300">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <span :class="cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium cursor-default', sentimentCfg.class)">
+                  <span class="text-xs leading-none">{{ sentimentCfg.emoji }}</span>
+                  {{ sentimentCfg.label }}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" class="max-w-[200px] text-xs">
+                <span class="font-medium">ElevAI Sentiment</span>
+                <p class="text-muted-foreground mt-0.5">{{ sentimentNote }}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <div class="flex items-center gap-1.5 mt-1 flex-wrap">
           <span :class="cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', stayCfg.class)">
             {{ stayCfg.label }}
