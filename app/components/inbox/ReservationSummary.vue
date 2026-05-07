@@ -1,9 +1,7 @@
 <script lang="ts" setup>
-import type { SmartAction, GuestSentiment } from '~/components/inbox/data/conversations'
+import type { SmartAction } from '~/components/inbox/data/conversations'
 
 interface ReservationSummaryProps {
-  sentiment: GuestSentiment
-  sentimentNote: string
   smartActions: SmartAction[]
 }
 
@@ -12,8 +10,6 @@ const props = defineProps<ReservationSummaryProps>()
 
 <template>
   <div class="space-y-4">
-    <InboxGuestSentiment :sentiment="sentiment" :note="sentimentNote" />
-
     <div v-if="smartActions.length > 0" class="space-y-2">
       <div class="flex items-center gap-2 text-sm font-medium">
         Action Needed

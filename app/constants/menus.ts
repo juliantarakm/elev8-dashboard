@@ -36,6 +36,12 @@ export const navMenu: NavMenu[] = [
         link: '/kanban',
         new: true,
       },
+      {
+        title: 'Website Builder',
+        icon: 'i-lucide-globe',
+        link: '/website-builder',
+        new: true,
+      },
     ],
   },
   {

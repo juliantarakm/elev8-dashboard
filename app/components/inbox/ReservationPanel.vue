@@ -84,8 +84,10 @@ function handleDisable() {
     </div>
 
     <ScrollArea class="flex-1 min-h-0">
-      <div class="px-4 pt-2 pb-2">
+      <div class="px-4 pt-2 pb-2 space-y-3">
         <InboxReservationGuest :guest="reservation.guestDetails" :reservation="reservation" :stay-status="conversation.stayStatus" :conversation="conversation" />
+
+        <InboxGuestSentiment :sentiment="conversation.sentiment" :note="conversation.sentimentNote" />
       </div>
 
       <Separator />
@@ -108,8 +110,6 @@ function handleDisable() {
         <TabsContent value="summary">
           <div class="p-4">
             <InboxReservationSummary
-              :sentiment="conversation.sentiment"
-              :sentiment-note="conversation.sentimentNote"
               :smart-actions="reservation.smartActions"
             />
           </div>
