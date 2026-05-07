@@ -56,20 +56,35 @@ export function useNotifications() {
     return formatDistanceToNow(new Date(isoString), { addSuffix: true })
   }
 
+  const autoResolveTimeouts: ReturnType<typeof setTimeout>[] = []
+
   function startAutoResolveSimulation() {
+    clearAutoResolveTimeouts()
     const autoAlerts = alerts.value.filter(a => a.status === 'ACTIVE' && a.auto_resolve)
     autoAlerts.forEach((alert, index) => {
-      setTimeout(() => {
+      const id = setTimeout(() => {
         const current = alerts.value.find(a => a.alert_id === alert.alert_id)
         if (current && current.status === 'ACTIVE') {
           markAsRead(alert.alert_id)
         }
       }, 10000 + index * 3000)
+      autoResolveTimeouts.push(id)
     })
+  }
+
+  function clearAutoResolveTimeouts() {
+    autoResolveTimeouts.forEach(clearTimeout)
+    autoResolveTimeouts.length = 0
   }
 
   function getDescription(type: Alert['type'], context: Alert['context']): string {
     return getDesc(type, context)
+  }
+
+  if (import.meta.client) {
+    onUnmounted(() => {
+      clearAutoResolveTimeouts()
+    })
   }
 
   return {
@@ -84,6 +99,7 @@ export function useNotifications() {
     navigateToAlert,
     getTimeAgo,
     startAutoResolveSimulation,
+    clearAutoResolveTimeouts,
     getDescription,
   }
 }
