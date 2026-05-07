@@ -18,12 +18,7 @@ const {
   markAllAsRead,
   dismiss,
   navigateToAlert,
-  startAutoResolveSimulation,
 } = useNotifications()
-
-onMounted(() => {
-  startAutoResolveSimulation()
-})
 
 const tabs: { label: string; value: SeverityFilter }[] = [
   { label: 'All', value: 'all' },

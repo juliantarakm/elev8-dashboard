@@ -54,7 +54,7 @@ function getTimeAgo(isoString: string): string {
   <div
     role="button"
     tabindex="0"
-    class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
+    class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-border/50 last:border-b-0"
     :class="[severityClasses.bg, severityClasses.border]"
     @click="handleClick"
     @keydown="handleKeydown"
