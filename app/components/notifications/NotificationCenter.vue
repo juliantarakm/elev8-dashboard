@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'vue-sonner'
+import NotificationItem from './NotificationItem.vue'
 
 const popoverOpen = ref(false)
 
