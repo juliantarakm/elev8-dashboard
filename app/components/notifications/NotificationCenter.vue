@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { toast } from 'vue-sonner'
 
 const popoverOpen = ref(false)
 
@@ -34,7 +35,15 @@ function handleNavigate(alert: Alert) {
   popoverOpen.value = false
 }
 
+function handleMarkAllRead() {
+  markAllAsRead()
+  toast.success('All notifications marked as read')
+}
 
+function handleDismiss(alertId: string) {
+  dismiss(alertId)
+  toast.info('Notification dismissed')
+}
 </script>
 
 <template>
@@ -51,14 +60,14 @@ function handleNavigate(alert: Alert) {
         </Badge>
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-[380px] p-0" align="end" side-offset="8">
+    <PopoverContent class="w-[380px] p-0" align="end" :side-offset="8">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3">
         <h3 class="text-sm font-semibold">Notifications</h3>
         <button
           v-if="unreadCount > 0"
           class="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          @click="markAllAsRead()"
+          @click="handleMarkAllRead"
         >
           Mark All Read
         </button>
@@ -97,7 +106,7 @@ function handleNavigate(alert: Alert) {
           :key="alert.alert_id"
           :alert="alert"
           @click="handleNavigate(alert)"
-          @dismiss="dismiss"
+          @dismiss="handleDismiss"
         />
       </ScrollArea>
 
