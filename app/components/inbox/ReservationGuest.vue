@@ -228,12 +228,6 @@ function handleElevaiDisable() {
       </div>
     </div>
 
-    <!-- Detail Reservation -->
-    <Button variant="outline" size="sm" class="w-full">
-      <Icon name="lucide:external-link" class="size-3.5 mr-1.5" />
-      Detail Reservation
-    </Button>
-
     <!-- Assign To -->
     <Popover v-model:open="assignOpen">
       <PopoverTrigger as-child>

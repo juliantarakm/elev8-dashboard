@@ -11,8 +11,12 @@ const props = defineProps<ReservationPanelProps>()
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex h-[56px] items-center px-4">
+    <div class="flex h-[56px] items-center justify-between px-4">
       <h2 class="font-semibold text-sm">Reservation</h2>
+      <Button variant="ghost" size="sm" class="h-7 gap-1.5 text-xs text-muted-foreground">
+        <Icon name="lucide:external-link" class="size-3.5" />
+        Detail
+      </Button>
     </div>
 
     <ScrollArea class="flex-1 min-h-0">
