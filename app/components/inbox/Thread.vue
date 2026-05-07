@@ -213,7 +213,7 @@ function formatNoteDate(timestamp: string) {
                       <Icon name="lucide:sticky-note" class="size-4 text-warning" />
                     </div>
                     <span class="text-xs font-medium">Internal Note</span>
-                    <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#C8A84B]">
+                    <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
                       <Icon name="lucide:sparkles" class="size-3" />
                       ElevAI
                     </span>
@@ -255,7 +255,7 @@ function formatNoteDate(timestamp: string) {
                 <span>{{ note.authorName }}</span>
                 <span>·</span>
                 <span>{{ formatNoteDate(note.createdAt) }}</span>
-                <span v-if="note.visibleToAI" class="inline-flex items-center gap-0.5 text-[#C8A84B]">
+                <span v-if="note.visibleToAI" class="inline-flex items-center gap-0.5 text-[#FBC800]">
                   <Icon name="lucide:sparkles" class="size-3" />
                   ElevAI
                 </span>
@@ -273,7 +273,7 @@ function formatNoteDate(timestamp: string) {
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
                 <Checkbox v-model:checked="newNoteVisibleToAI" class="size-3.5" />
-                <Icon name="lucide:sparkles" class="size-3 text-[#C8A84B]" />
+                <Icon name="lucide:sparkles" class="size-3 text-[#FBC800]" />
                 Let ElevAI read this note
               </label>
               <Button size="sm" :disabled="!newNoteContent.trim()" @click="handleAddNote">

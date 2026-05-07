@@ -137,7 +137,7 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
       >
         <button
           v-if="showRewrite && elevaiOn && !isRewriting"
-          class="absolute right-2 bottom-2 flex items-center justify-center size-7 rounded-md text-[#C8A84B] hover:bg-[#C8A84B]/10 transition-colors"
+          class="absolute right-2 bottom-2 flex items-center justify-center size-7 rounded-md text-[#FBC800] hover:bg-[#FBC800]/10 transition-colors"
           title="Rewrite with ElevAI"
           @click="rewriteWithAI"
         >
@@ -148,7 +148,7 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
         v-if="isRewriting"
         class="absolute right-2 bottom-2 flex items-center gap-1 text-[10px] text-muted-foreground"
       >
-        <Icon name="lucide:loader-2" class="size-3.5 animate-spin text-[#C8A84B]" />
+        <Icon name="lucide:loader-2" class="size-3.5 animate-spin text-[#FBC800]" />
         Rewriting
       </div>
     </div>

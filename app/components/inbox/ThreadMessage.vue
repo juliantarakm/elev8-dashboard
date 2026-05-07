@@ -95,8 +95,8 @@ const dateLabel = computed(() => {
           {{ message.senderName.split(' ').map(n => n[0]).join('') }}
         </AvatarFallback>
       </Avatar>
-      <div v-if="isAiWritten" class="flex size-8 shrink-0 mt-1 items-center justify-center rounded-full bg-[#C8A84B]/10">
-        <Icon name="lucide:sparkles" class="size-4 text-[#C8A84B]" />
+      <div v-if="isAiWritten" class="flex size-8 shrink-0 mt-1 items-center justify-center rounded-full bg-[#FBC800]/10">
+        <Icon name="lucide:sparkles" class="size-4 text-[#FBC800]" />
       </div>
 
       <div class="flex flex-col gap-1 max-w-[75%]">

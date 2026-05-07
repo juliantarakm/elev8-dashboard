@@ -33,7 +33,7 @@ const cfg = computed(() => sentimentConfig[props.sentiment] ?? sentimentConfig.n
   <div class="rounded-lg border bg-muted/50 p-3 space-y-2">
     <div class="flex items-center justify-between">
       <span class="text-sm font-medium">Sentiment</span>
-      <Badge class="text-[10px] bg-[#C8A84B]/10 text-[#C8A84B] border-[#C8A84B]/30">ElevAI</Badge>
+      <Badge class="text-[10px] bg-[#FBC800]/10 text-[#FBC800] border-[#FBC800]/30">ElevAI</Badge>
     </div>
     <div class="flex items-center gap-2">
       <span class="text-base leading-none">{{ cfg.emoji }}</span>
