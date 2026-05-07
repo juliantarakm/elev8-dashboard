@@ -111,14 +111,6 @@ function handleDismiss(alertId: string) {
         />
       </ScrollArea>
 
-      <Separator />
-
-      <!-- Footer -->
-      <div class="px-4 py-2.5">
-        <button class="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center">
-          View all notifications
-        </button>
-      </div>
     </PopoverContent>
   </Popover>
 </template>
