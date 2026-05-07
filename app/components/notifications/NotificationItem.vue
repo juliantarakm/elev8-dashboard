@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Alert } from '~/components/notifications/data/alerts'
-import { alertDisplayLabels } from '~/components/notifications/data/alerts'
+import { alertDisplayLabels, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
+import { formatDistanceToNow } from 'date-fns'
 
 const props = defineProps<{
   alert: Alert
@@ -10,8 +11,6 @@ const emit = defineEmits<{
   click: [alert: Alert]
   dismiss: [alertId: string]
 }>()
-
-const { getTimeAgo, getDescription } = useNotifications()
 
 const severityClasses = computed(() => {
   return props.alert.severity === 'CRITICAL'
@@ -31,20 +30,34 @@ function handleClick() {
   emit('click', props.alert)
 }
 
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    emit('click', props.alert)
+  }
+}
+
 function handleDismiss(e: MouseEvent) {
   e.stopPropagation()
   emit('dismiss', props.alert.alert_id)
 }
 
 const displayLabel = computed(() => alertDisplayLabels[props.alert.type])
-const description = computed(() => getDescription(props.alert.type, props.alert.context))
+const description = computed(() => getAlertDescription(props.alert.type, props.alert.context))
+
+function getTimeAgo(isoString: string): string {
+  return formatDistanceToNow(new Date(isoString), { addSuffix: true })
+}
 </script>
 
 <template>
   <div
+    role="button"
+    tabindex="0"
     class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
     :class="[severityClasses.bg, severityClasses.border]"
     @click="handleClick"
+    @keydown="handleKeydown"
   >
     <Icon
       name="i-lucide-circle"
@@ -62,6 +75,7 @@ const description = computed(() => getDescription(props.alert.type, props.alert.
       </p>
     </div>
     <button
+      aria-label="Dismiss alert"
       class="shrink-0 size-5 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
       @click="handleDismiss"
     >
