@@ -56,7 +56,7 @@ function handleDismiss(alertId: string) {
         </Badge>
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-[380px] p-0" align="end" :side-offset="8">
+    <PopoverContent class="w-[380px] p-0 overflow-hidden" align="end" :side-offset="8">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3">
         <h3 class="text-sm font-semibold">Notifications</h3>
