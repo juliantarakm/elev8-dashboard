@@ -88,7 +88,7 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
     case 'CHANNEL_DISCONNECTED':
       return `${context.channel_name || 'Channel'} — ${context.affected_listing_names?.length || 0} listing(s) affected`
     case 'DOUBLE_BOOKING':
-      return `${context.listing_name || 'Property'} — ${context.reservation_a_guest} / ${context.reservation_b_guest}`
+      return `${context.listing_name || 'Property'} — ${context.reservation_a_guest || 'Guest A'} / ${context.reservation_b_guest || 'Guest B'}`
     case 'CLEANING_NOT_STARTED_IMMINENT':
     case 'CLEANING_NOT_DONE_CHECKIN_PASSED':
       return `${context.listing_name || 'Property'}${context.assigned_to ? ` — assigned to ${context.assigned_to}` : ' — unassigned'}`
