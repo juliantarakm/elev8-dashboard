@@ -36,7 +36,7 @@ const sentimentConfig: Record<string, { emoji: string, label: string, class: str
 
 const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimentConfig.neutral!)
 
-const { assignTo, getAssignedStaff } = useInbox()
+const { assignTo, getAssignedStaff, isElevaiEnabled, getElevaiState, enableElevai, pauseElevai, disableElevai } = useInbox()
 
 const initials = computed(() =>
   props.guest.name.split(' ').map(n => n[0]).join(''),
@@ -94,6 +94,38 @@ function handleAssign(staffId: string | null) {
   } else {
     toast.info('Unassigned conversation')
   }
+}
+
+// ElevAI toggle
+const elevaiOn = computed(() => isElevaiEnabled(props.conversation.id))
+
+const now = ref(Date.now())
+let ticker: ReturnType<typeof setInterval>
+onMounted(() => { ticker = setInterval(() => { now.value = Date.now() }, 15000) })
+onUnmounted(() => clearInterval(ticker))
+
+const elevaiPausedMins = computed(() => {
+  const s = getElevaiState(props.conversation.id)
+  if (!s.on && s.pausedUntil !== undefined) {
+    const remaining = s.pausedUntil - now.value
+    return remaining > 0 ? Math.ceil(remaining / 60000) : null
+  }
+  return null
+})
+
+function handleElevaiEnable() {
+  enableElevai(props.conversation.id)
+  toast.success('ElevAI enabled')
+}
+
+function handleElevaiPause() {
+  pauseElevai(props.conversation.id, 15)
+  toast.info('ElevAI paused for 15 minutes')
+}
+
+function handleElevaiDisable() {
+  disableElevai(props.conversation.id)
+  toast.info('ElevAI turned off')
 }
 </script>
 
@@ -254,5 +286,40 @@ function handleAssign(staffId: string | null) {
           </Command>
         </PopoverContent>
       </Popover>
+
+    <!-- ElevAI Toggle -->
+    <div class="flex items-center justify-between rounded-lg border bg-muted/50 px-3 py-2">
+      <div class="flex items-center gap-2">
+        <Icon name="lucide:sparkles" class="size-3.5 text-[#C8A84B]" />
+        <div>
+          <div class="text-xs font-medium">ElevAI</div>
+          <div v-if="elevaiPausedMins" class="text-[10px] text-amber-500 font-medium">Paused · {{ elevaiPausedMins }}m left</div>
+        </div>
+      </div>
+      <DropdownMenu v-if="elevaiOn">
+        <DropdownMenuTrigger as-child>
+          <button class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full bg-warning transition-colors">
+            <span class="pointer-events-none inline-block size-4 rounded-full bg-white shadow-lg ring-0 transition-transform translate-x-4" style="margin-top: 2px;" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-48">
+          <DropdownMenuItem @click="handleElevaiPause">
+            <Icon name="lucide:clock" class="size-4 mr-2" />
+            Pause for 15 minutes
+          </DropdownMenuItem>
+          <DropdownMenuItem @click="handleElevaiDisable">
+            <Icon name="lucide:power-off" class="size-4 mr-2" />
+            Turn off
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <button
+        v-else
+        class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full bg-muted-foreground/30 transition-colors"
+        @click="handleElevaiEnable"
+      >
+        <span class="pointer-events-none inline-block size-4 rounded-full bg-white shadow-lg ring-0 transition-transform translate-x-0.5" style="margin-top: 2px;" />
+      </button>
+    </div>
   </div>
 </template>
