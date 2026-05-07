@@ -84,6 +84,18 @@ export interface SmartAction {
   detectedBy: 'elevai' | 'system'
 }
 
+export interface PhoneCall {
+  id: string
+  conversationId: string
+  direction: 'inbound' | 'outbound'
+  status: 'completed' | 'missed' | 'voicemail'
+  duration: number // seconds
+  timestamp: string
+  from: string
+  to: string
+  note?: string
+}
+
 export interface GuestDetails {
   name: string
   email: string
@@ -608,6 +620,56 @@ export const conversations: Conversation[] = [
     stayStatus: 'current',
     checkIn: '2026-04-25T15:00:00Z',
     checkOut: '2026-04-30T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'cleaning_finished',
+  },
+  {
+    id: 'conv-19',
+    guestName: 'Nina Petrova',
+    guestAvatar: undefined,
+    guestInitials: 'NP',
+    listingName: 'The R Villa Merapi',
+    propertyName: 'Umalas Villas',
+    otaSource: 'Phone',
+    reservationId: 'res-19',
+    status: 'action_needed',
+    lastMessage: '📞 Missed call from guest — regarding early check-in request',
+    lastMessageAt: '2026-04-26T09:15:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: ['Umalas', 'Pool', 'Private'],
+    labels: ['missed-call'],
+    sentiment: 'neutral',
+    sentimentNote: 'Guest tried calling about early check-in',
+    stayStatus: 'future',
+    checkIn: '2026-04-28T15:00:00Z',
+    checkOut: '2026-05-02T11:00:00Z',
+    verification: 'verified',
+    cleaningStatus: 'cleaning_finished',
+  },
+  {
+    id: 'conv-20',
+    guestName: 'Carlos Mendez',
+    guestAvatar: undefined,
+    guestInitials: 'CM',
+    listingName: '5BR Pool the R Villa Luwa – Serene near Canggu',
+    propertyName: 'Canggu Properties',
+    otaSource: 'Phone',
+    reservationId: 'res-20',
+    status: null,
+    lastMessage: '📞 Outbound call — confirmed late checkout arrangement',
+    lastMessageAt: '2026-04-25T16:00:00Z',
+    unreadCount: 0,
+    isAssignedToMe: true,
+    assignedTo: 'staff-2',
+    tags: ['Canggu', 'Pool', '4BR'],
+    labels: [],
+    sentiment: 'positive',
+    sentimentNote: 'Friendly call, confirmed late checkout',
+    stayStatus: 'current',
+    checkIn: '2026-04-23T15:00:00Z',
+    checkOut: '2026-04-27T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
   },
@@ -1280,6 +1342,47 @@ export const messages: Record<string, Message[]> = {
       timestamp: '2026-04-25T15:35:00Z',
       isAISuggestion: true,
       intentDetected: 'complaint',
+    },
+  ],
+  'conv-19': [
+    {
+      id: 'msg-19-1',
+      sender: 'system',
+      conversationId: 'conv-19',
+      senderName: 'System',
+      content: '📞 Missed call from guest (+7 495 123-45-67) — duration 0s',
+      channel: 'Phone',
+      timestamp: '2026-04-26T09:15:00Z',
+    },
+    {
+      id: 'msg-19-2',
+      sender: 'system',
+      conversationId: 'conv-19',
+      senderName: 'System',
+      content: 'Guest called about early check-in. Voicemail: "Hi, this is Nina. We land at 11 AM, is it possible to check in early? Please call back."',
+      channel: 'Phone',
+      timestamp: '2026-04-26T09:15:30Z',
+    },
+  ],
+  'conv-20': [
+    {
+      id: 'msg-20-1',
+      sender: 'system',
+      conversationId: 'conv-20',
+      senderName: 'System',
+      content: '📞 Outbound call to guest (+52 55 1234 5678) — 4m 12s',
+      channel: 'Phone',
+      timestamp: '2026-04-25T16:00:00Z',
+    },
+    {
+      id: 'msg-20-2',
+      sender: 'host',
+      conversationId: 'conv-20',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Called Carlos to confirm late checkout. He requested 2 PM instead of 11 AM — approved. He was very friendly and appreciated the flexibility.',
+      channel: 'Phone',
+      timestamp: '2026-04-25T16:05:00Z',
     },
   ],
 }
@@ -2306,9 +2409,165 @@ export const reservations: Record<string, Reservation> = {
       },
     ],
   },
+  'res-19': {
+    id: 'res-19',
+    propertyName: 'Umalas Villas',
+    roomName: 'Villa Merapi',
+    listingName: 'The R Villa Merapi',
+    otaSource: 'Phone',
+    checkIn: '2026-04-28T15:00:00Z',
+    checkOut: '2026-05-02T11:00:00Z',
+    nights: 4,
+    guestCount: 2,
+    totalPrice: 960,
+    currency: 'USD',
+    smartActions: [
+      {
+        id: 'action-19-1',
+        type: 'callback',
+        title: 'Return Missed Call',
+        description: 'Guest left voicemail requesting early check-in. Needs callback.',
+        severity: 'warning',
+        primaryAction: 'Call Guest',
+        dismissLabel: 'Mark as Noted',
+        detectedBy: 'system',
+      },
+    ],
+    guestDetails: {
+      name: 'Nina Petrova',
+      email: 'nina.petrova@email.com',
+      phone: '+7 495 123-45-67',
+      previousStays: 1,
+      notes: 'Returning guest. Prefers phone communication. Previously stayed in Dec 2025.',
+    },
+    listingDetails: {
+      name: 'Villa Merapi',
+      property: 'Umalas Villas',
+      room: 'Private Villa',
+      amenities: ['Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden'],
+    },
+    tasks: [
+      {
+        id: 'task-19-1',
+        title: 'Call back guest regarding early check-in',
+        status: 'todo',
+        assignee: 'Komang Juliantara',
+        dueDate: '2026-04-26T12:00:00Z',
+      },
+    ],
+    activity: [
+      {
+        id: 'act-19-1',
+        type: 'reservation',
+        title: 'Reservation Confirmed',
+        description: 'Booking for 4 nights via phone',
+        actor: 'System',
+        timestamp: '2026-04-20T10:00:00Z',
+        colorDot: 'green',
+      },
+      {
+        id: 'act-19-2',
+        type: 'message',
+        title: 'Missed Call',
+        description: 'Guest called about early check-in',
+        actor: 'Nina Petrova',
+        timestamp: '2026-04-26T09:15:00Z',
+        channel: 'Phone',
+        colorDot: 'gold',
+      },
+    ],
+  },
+  'res-20': {
+    id: 'res-20',
+    propertyName: 'Canggu Properties',
+    roomName: 'Villa Luwa',
+    listingName: '5BR Pool the R Villa Luwa – Serene near Canggu',
+    otaSource: 'Phone',
+    checkIn: '2026-04-23T15:00:00Z',
+    checkOut: '2026-04-27T11:00:00Z',
+    nights: 4,
+    guestCount: 6,
+    totalPrice: 1800,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: {
+      name: 'Carlos Mendez',
+      email: 'carlos.m@email.com',
+      phone: '+52 55 1234 5678',
+      previousStays: 2,
+      notes: 'Loyal repeat guest. Always requests late checkout. Family of 6.',
+    },
+    listingDetails: {
+      name: 'Villa Luwa',
+      property: 'Canggu Properties',
+      room: '5BR Villa',
+      amenities: ['Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'BBQ'],
+    },
+    tasks: [],
+    activity: [
+      {
+        id: 'act-20-1',
+        type: 'reservation',
+        title: 'Reservation Confirmed',
+        description: 'Booking for 4 nights via phone',
+        actor: 'System',
+        timestamp: '2026-04-15T10:00:00Z',
+        colorDot: 'green',
+      },
+      {
+        id: 'act-20-2',
+        type: 'message',
+        title: 'Outbound Call',
+        description: 'Confirmed late checkout at 2 PM',
+        actor: 'Komang Juliantara',
+        timestamp: '2026-04-25T16:00:00Z',
+        channel: 'Phone',
+        colorDot: 'blue',
+      },
+    ],
+  },
 }
 
 export const otaSources = [
   { name: 'Airbnb', color: '#FF5A5F', icon: 'logos:airbnb' },
   { name: 'Booking.com', color: '#003580', icon: 'simple-icons:bookingdotcom' },
+  { name: 'Phone', color: '#22C55E', icon: 'lucide:phone' },
 ]
+
+export const phoneCalls: Record<string, PhoneCall[]> = {
+  'conv-1': [
+    { id: 'call-1-1', conversationId: 'conv-1', direction: 'outbound', status: 'completed', duration: 185, timestamp: '2026-04-26T08:30:00Z', from: 'Komang', to: '+1 555-0142', note: 'Confirmed early check-in arrangement' },
+    { id: 'call-1-2', conversationId: 'conv-1', direction: 'inbound', status: 'completed', duration: 62, timestamp: '2026-04-25T14:15:00Z', from: '+1 555-0142', to: 'Komang' },
+    { id: 'call-1-3', conversationId: 'conv-1', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-25T09:00:00Z', from: '+1 555-0142', to: 'Komang' },
+  ],
+  'conv-2': [
+    { id: 'call-2-1', conversationId: 'conv-2', direction: 'outbound', status: 'completed', duration: 340, timestamp: '2026-04-24T16:45:00Z', from: 'Komang', to: '+44 7700 900123', note: 'Discussed airport transfer options' },
+  ],
+  'conv-3': [
+    { id: 'call-3-1', conversationId: 'conv-3', direction: 'inbound', status: 'voicemail', duration: 23, timestamp: '2026-04-25T07:30:00Z', from: '+61 4 1234 5678', to: 'Komang', note: 'Asking about parking availability' },
+  ],
+  'conv-5': [
+    { id: 'call-5-1', conversationId: 'conv-5', direction: 'outbound', status: 'completed', duration: 412, timestamp: '2026-04-25T09:00:00Z', from: 'Komang', to: '+91 98765 43210', note: 'AC repair scheduled, WiFi router reset remotely' },
+    { id: 'call-5-2', conversationId: 'conv-5', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-25T08:25:00Z', from: '+91 98765 43210', to: 'Komang' },
+    { id: 'call-5-3', conversationId: 'conv-5', direction: 'inbound', status: 'completed', duration: 95, timestamp: '2026-04-24T18:30:00Z', from: '+91 98765 43210', to: 'Komang' },
+  ],
+  'conv-8': [
+    { id: 'call-8-1', conversationId: 'conv-8', direction: 'outbound', status: 'completed', duration: 128, timestamp: '2026-04-25T14:00:00Z', from: 'Komang', to: '+34 612 345 678', note: 'Pest control team dispatched' },
+    { id: 'call-8-2', conversationId: 'conv-8', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-25T13:50:00Z', from: '+34 612 345 678', to: 'Komang' },
+  ],
+  'conv-9': [
+    { id: 'call-9-1', conversationId: 'conv-9', direction: 'outbound', status: 'completed', duration: 210, timestamp: '2026-04-25T12:30:00Z', from: 'Komang', to: '+82 10 1234 5678', note: 'Airport pickup confirmed for Friday 2 PM' },
+  ],
+  'conv-12': [
+    { id: 'call-12-1', conversationId: 'conv-12', direction: 'outbound', status: 'completed', duration: 275, timestamp: '2026-04-25T11:15:00Z', from: 'Komang', to: '+86 138 0013 8000', note: 'Extension availability confirmed, sent offer via app' },
+    { id: 'call-12-2', conversationId: 'conv-12', direction: 'inbound', status: 'completed', duration: 48, timestamp: '2026-04-25T10:55:00Z', from: '+86 138 0013 8000', to: 'Komang' },
+  ],
+  'conv-19': [
+    { id: 'call-19-1', conversationId: 'conv-19', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-26T09:15:00Z', from: '+7 495 123-45-67', to: 'Komang' },
+    { id: 'call-19-2', conversationId: 'conv-19', direction: 'inbound', status: 'voicemail', duration: 15, timestamp: '2026-04-26T09:16:00Z', from: '+7 495 123-45-67', to: 'Komang', note: 'Guest asking about early check-in, requesting callback' },
+  ],
+  'conv-20': [
+    { id: 'call-20-1', conversationId: 'conv-20', direction: 'outbound', status: 'completed', duration: 252, timestamp: '2026-04-25T16:00:00Z', from: 'Komang', to: '+52 55 1234 5678', note: 'Confirmed late checkout at 2 PM, guest was happy' },
+    { id: 'call-20-2', conversationId: 'conv-20', direction: 'inbound', status: 'completed', duration: 85, timestamp: '2026-04-24T10:30:00Z', from: '+52 55 1234 5678', to: 'Komang' },
+  ],
+}
