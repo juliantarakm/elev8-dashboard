@@ -217,30 +217,27 @@ function formatCallDate(timestamp: string): string {
     </div>
     <Separator />
 
-    <div class="flex flex-col flex-1 overflow-hidden">
-      <div class="flex items-center border-b h-8 px-4 shrink-0">
-        <button
-          :class="['text-xs px-3 py-1 font-medium transition-colors relative', activeThreadTab === 'messages' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground']"
-          @click="activeThreadTab = 'messages'"
-        >
-          Messages
-          <span v-if="activeThreadTab === 'messages'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-        </button>
-        <button
-          :class="['text-xs px-3 py-1 font-medium transition-colors relative', activeThreadTab === 'notes' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground']"
-          @click="activeThreadTab = 'notes'"
-        >
+      <div class="flex flex-col flex-1 overflow-hidden">
+        <div class="flex items-center h-8 px-4 shrink-0 border-b">
+          <button
+            :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'messages' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
+            @click="activeThreadTab = 'messages'"
+          >
+            Messages
+          </button>
+          <button
+            :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'notes' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
+            @click="activeThreadTab = 'notes'"
+          >
           Notes
           <Badge v-if="conversationNotes.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">{{ conversationNotes.length }}</Badge>
-          <span v-if="activeThreadTab === 'notes'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
         </button>
         <button
-          :class="['text-xs px-3 py-1 font-medium transition-colors relative', activeThreadTab === 'phone' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground']"
+          :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'phone' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
           @click="activeThreadTab = 'phone'"
         >
           Phone
           <Badge v-if="conversationPhoneCalls.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">{{ conversationPhoneCalls.length }}</Badge>
-          <span v-if="activeThreadTab === 'phone'" class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
         </button>
       </div>
 
