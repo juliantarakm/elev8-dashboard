@@ -11,7 +11,8 @@
 **Elev8** is a web dashboard for managing Bali vacation rental properties. Built with **Nuxt 3**, **Vue 3**, **shadcn-vue**, and **Tailwind CSS v4**.
 
 ### Main Modules
-- **Inbox** — Guest messaging system (4-panel layout)
+- **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
+- **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
 - **Kanban** — Task board
 - **Tasks** — Data table with filtering (TanStack table)
 - **Settings** — Profile, appearance, notifications, account
@@ -35,6 +36,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 
 - **Inbox Module Changelog** → `docs/superpowers/changelogs/2025-04-25-inbox-module.md`
 - **Inbox Quick Reference** → `docs/superpowers/changelogs/2025-04-25-inbox-quick-ref.md`
+- **Notification Center Spec** → `docs/superpowers/specs/2026-05-07-notification-center-design.md`
+- **Notification Center Plan** → `docs/superpowers/plans/2026-05-07-notification-center-plan.md`
 
 ---
 
@@ -60,6 +63,31 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Actions**: `markAsHandled()`, `markAsUnread()`, `assignTo()`, `getAssignedStaff()`, `toggleListingFilter()`, `clearListingFilters()`, `toggleTagFilter()`, `clearTagFilters()`, `clearAllListingFilters()`, ElevAI toggle functions
 - **Auto-read**: Selecting a conversation sets `unreadCount = 0`
 - **Key type**: `ConversationStatus = 'action_needed'` (nullable — `null` = no action needed)
+- **Phone**: `getPhoneCalls(conversationId)` returns `PhoneCall[]` for the conversation
+
+#### Phone Call Features
+- `PhoneCall` interface with `direction`, `status`, `duration`, `transcript`, `summary`, `recording_url`
+- Phone tab in Thread.vue — call history with transcript expand/collapse, download recording
+- Call summaries in Notes tab (tagged ElevAI for AI consumption)
+- Phone call entries in Activity timeline with Send button for unsent templates
+
+### Notification Center Module (`app/components/notifications/`)
+
+#### Data + Types (`app/components/notifications/data/alerts.ts`)
+- `AlertType` — 18 alert types (SMART_LOCK_DEAD, CLEANING_NOT_STARTED_IMMINENT, STRIPE_DISCONNECTED, etc.)
+- `AlertSeverity` — `'CRITICAL' | 'WARNING'`
+- `Alert` interface with `alert_id`, `type`, `severity`, `status`, `triggered_at`, `auto_resolve`, `context`
+- `alertDisplayLabels`, `alertRouteMap`, `getDescription()`, `mockAlerts` (7 mock alerts)
+
+#### Shared State (`app/composables/useNotifications.ts`)
+- `alerts` — `useState<Alert[]>` with spread syntax for reactivity
+- Computed: `activeAlerts`, `unreadCount`, `filteredAlerts` (by severity)
+- Actions: `markAsRead()`, `markAllAsRead()`, `dismiss()`, `navigateToAlert()`
+- Severity filter: `selectedSeverity` ref (`'all' | 'critical' | 'warning'`)
+
+#### Components
+- **NotificationCenter.vue** — Bell icon in Header with unread Badge, Popover dropdown with filter tabs (All/Critical/Warning), ScrollArea list
+- **NotificationItem.vue** — Single alert row with severity-based coloring (red/amber), keyboard accessible, dismiss + navigate actions
 
 ### Layout (`app/components/layout/`)
 - **Header.vue** — SidebarTrigger + user menu (no breadcrumb)
@@ -339,7 +367,8 @@ const table = useVueTable({
 
 | Composable | File | Usage | Key Exports |
 |-----------|------|-------|-------------|
-| `useInbox` | `app/composables/useInbox.ts` | Inbox module state | `conversations`, filters, `markAsHandled()`, `assignTo()`, `toggleListingFilter()`, `clearTagFilters()` |
+| `useInbox` | `app/composables/useInbox.ts` | Inbox module state | `conversations`, filters, `markAsHandled()`, `assignTo()`, `toggleListingFilter()`, `clearTagFilters()`, `getPhoneCalls()` |
+| `useNotifications` | `app/composables/useNotifications.ts` | Notification Center | `alerts`, `unreadCount`, `filteredAlerts`, `markAsRead()`, `markAllAsRead()`, `dismiss()`, `navigateToAlert()` |
 | `useKanban` | `app/composables/useKanban.ts` | Kanban board state | columns, cards, drag handlers |
 | `useAppSettings` | `app/composables/useAppSettings.ts` | Theme/settings | dark mode, sidebar state, settings preferences |
 | `useShortcuts` | `app/composables/useShortcuts.ts` | Keyboard shortcuts | `defineShortcuts` wrapper |
@@ -412,10 +441,14 @@ app/
 │   │   ├── ReservationPanel.vue
 │   │   ├── ReservationSummary.vue
 │   │   ├── ReservationTasks.vue
-│   │   ├── Thread.vue
-│   │   ├── ThreadMessage.vue
+│   │   ├── Thread.vue          ← Phone tab with call history
 │   │   └── data/
-│   │       └── conversations.ts
+│   │       └── conversations.ts ← PhoneCall, phoneCalls data
+│   ├── notifications/          ← Notification Center (new)
+│   │   ├── NotificationCenter.vue
+│   │   ├── NotificationItem.vue
+│   │   └── data/
+│   │       └── alerts.ts       ← Alert types + mock data
 │   ├── kanban/
 │   │   └── KanbanBoard.vue
 │   ├── layout/
@@ -463,6 +496,7 @@ app/
 │   ├── useAppSettings.ts
 │   ├── useInbox.ts
 │   ├── useKanban.ts
+│   ├── useNotifications.ts  ← Notification Center state
 │   └── useShortcuts.ts
 ├── layouts/
 │   ├── blank.vue              # Auth pages
