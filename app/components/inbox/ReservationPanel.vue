@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import type { Conversation, Reservation } from '~/components/inbox/data/conversations'
+import type { Conversation, Reservation, PhoneCall } from '~/components/inbox/data/conversations'
+import { phoneCalls as phoneCallsData } from '~/components/inbox/data/conversations'
 
 interface ReservationPanelProps {
   conversation: Conversation
@@ -7,6 +8,10 @@ interface ReservationPanelProps {
 }
 
 const props = defineProps<ReservationPanelProps>()
+
+const conversationPhoneCalls = computed((): PhoneCall[] =>
+  phoneCallsData[props.conversation.id] ?? []
+)
 </script>
 
 <template>
@@ -60,7 +65,7 @@ const props = defineProps<ReservationPanelProps>()
 
         <TabsContent value="activity">
           <div class="p-4">
-            <InboxReservationActivity :activity="reservation.activity" :reservation="reservation" />
+            <InboxReservationActivity :activity="reservation.activity" :reservation="reservation" :phone-calls="conversationPhoneCalls" />
           </div>
         </TabsContent>
 
