@@ -310,6 +310,39 @@ function formatCallDate(timestamp: string): string {
               </div>
             </div>
 
+            <!-- Call notes from phone calls -->
+            <template v-for="call of conversationPhoneCalls" :key="'call-note-' + call.id">
+              <div v-if="call.note" class="rounded-lg border bg-muted/50 p-3">
+                <div class="flex items-center gap-2 mb-1.5">
+                  <div class="flex size-6 shrink-0 items-center justify-center rounded-full"
+                    :class="{
+                      'bg-green-100 dark:bg-green-900': call.status === 'completed' && call.direction === 'outbound',
+                      'bg-blue-100 dark:bg-blue-900': call.status === 'completed' && call.direction === 'inbound',
+                      'bg-red-100 dark:bg-red-900': call.status === 'missed',
+                      'bg-purple-100 dark:bg-purple-900': call.status === 'voicemail',
+                    }"
+                  >
+                    <Icon name="lucide:phone" class="size-3" :class="{
+                      'text-green-600 dark:text-green-400': call.status === 'completed' && call.direction === 'outbound',
+                      'text-blue-600 dark:text-blue-400': call.status === 'completed' && call.direction === 'inbound',
+                      'text-red-600 dark:text-red-400': call.status === 'missed',
+                      'text-purple-600 dark:text-purple-400': call.status === 'voicemail',
+                    }" />
+                  </div>
+                  <span class="text-xs font-medium">Phone call — {{ call.direction === 'outbound' ? 'Outgoing' : call.status === 'missed' ? 'Missed' : call.status === 'voicemail' ? 'Voicemail' : 'Incoming' }}</span>
+                  <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
+                    <Icon name="lucide:sparkles" class="size-3" />
+                    ElevAI
+                  </span>
+                  <span class="text-[10px] text-muted-foreground ml-auto">{{ formatCallTime(call.timestamp) }}</span>
+                </div>
+                <p class="text-sm leading-relaxed">{{ call.note }}</p>
+                <div v-if="call.duration > 0" class="text-[10px] text-muted-foreground mt-1">
+                  Duration: {{ formatCallDuration(call.duration) }}
+                </div>
+              </div>
+            </template>
+
             <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
               <p class="text-sm leading-relaxed">{{ note.content }}</p>
               <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
@@ -322,7 +355,7 @@ function formatCallDate(timestamp: string): string {
                 </span>
               </div>
             </div>
-            <div v-if="!conversationNotes.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <div v-if="!conversationNotes.length && !conversationPhoneCalls.filter(c => c.note).length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Icon name="lucide:sticky-note" class="size-10 mb-2" />
               <p class="text-sm">No notes yet</p>
             </div>
