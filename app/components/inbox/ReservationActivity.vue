@@ -68,13 +68,7 @@ const allActivities = computed(() =>
         </div>
 
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <div class="text-sm font-medium">{{ event.title }}</div>
-            <span v-if="event.type === 'phone_call'" class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
-              <Icon name="lucide:sparkles" class="size-3" />
-              ElevAI
-            </span>
-          </div>
+          <div class="text-sm font-medium">{{ event.title }}</div>
           <div class="text-xs text-muted-foreground">{{ event.description }}</div>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[10px] text-muted-foreground">{{ formatTimestamp(event.timestamp) }}</span>
