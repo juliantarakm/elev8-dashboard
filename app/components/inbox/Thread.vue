@@ -355,14 +355,6 @@ function formatCallDate(timestamp: string): string {
                     <div v-if="call.note" class="mt-2 text-sm leading-relaxed">
                       {{ call.note }}
                     </div>
-                    <div v-if="call.recording_url" class="mt-2">
-                      <a :href="call.recording_url" download target="_blank">
-                        <Button variant="ghost" size="sm" class="h-6 px-1.5 text-[10px] gap-1">
-                          <Icon name="lucide:download" class="size-3" />
-                          Download recording
-                        </Button>
-                      </a>
-                    </div>
                   </div>
                 </div>
               </div>
