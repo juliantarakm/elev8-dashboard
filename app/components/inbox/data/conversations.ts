@@ -1417,7 +1417,7 @@ export const reservations: Record<string, Reservation> = {
       {
         id: 'action-1-2',
         type: 'missing_guide',
-        title: 'Digital Guide Not Sent',
+        title: 'Guest Guide Not Sent',
         description: 'The property digital guide has not been sent to this guest yet.',
         severity: 'urgent',
         primaryAction: 'Send Guide Now',
@@ -1466,7 +1466,7 @@ export const reservations: Record<string, Reservation> = {
       {
         id: 'act-1-2',
         type: 'guide_sent',
-        title: 'Digital Guide Sent',
+        title: 'Guest Guide Sent',
         description: 'Property guide sent to guest',
         actor: 'System',
         timestamp: '2026-04-21T08:00:00Z',
