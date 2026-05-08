@@ -1500,6 +1500,14 @@ export const reservations: Record<string, Reservation> = {
         status: 'pending',
         content: 'Hi Sarah, just a friendly reminder that check-out is at 11 AM tomorrow.',
       },
+      {
+        id: 'tpl-cancelled-review-1',
+        label: 'Review Request',
+        icon: 'lucide:star',
+        scheduledFor: '2026-05-01T14:00:00Z',
+        status: 'cancelled',
+        content: 'We\'d love to hear about your stay! Please leave a review.',
+      },
     ],
     upsells: [
       { id: 'ups-1', name: 'Airport Pickup', description: 'Private car from Ngurah Rai Airport', price: 350000, currency: 'IDR', purchasedAt: '2026-04-24T10:00:00Z', status: 'confirmed' },

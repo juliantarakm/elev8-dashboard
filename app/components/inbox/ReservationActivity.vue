@@ -68,6 +68,33 @@ const generatedEvents = computed(() => {
     })
   }
 
+  if (props.reservation.scheduledTemplates) {
+    for (const tpl of props.reservation.scheduledTemplates) {
+      if (tpl.status === 'pending') {
+        events.push({
+          id: `tpl-${tpl.id}`,
+          title: `Scheduled — ${tpl.label}`,
+          description: `Will be sent ${new Date(tpl.scheduledFor).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric' })}`,
+          timestamp: tpl.scheduledFor,
+          type: 'system',
+          colorDot: 'gray',
+          channel: undefined,
+        })
+      }
+      else if (tpl.status === 'cancelled') {
+        events.push({
+          id: `tpl-${tpl.id}`,
+          title: `Cancelled — ${tpl.label}`,
+          description: 'Already covered in previous conversation — not sending duplicate',
+          timestamp: tpl.scheduledFor,
+          type: 'system',
+          colorDot: 'gray',
+          channel: undefined,
+        })
+      }
+    }
+  }
+
   return events
 })
 
