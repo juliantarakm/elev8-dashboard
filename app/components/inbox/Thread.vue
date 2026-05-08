@@ -177,11 +177,6 @@ function formatNoteDate(timestamp: string) {
     </div>
     <Separator />
 
-    <div v-if="selectedReservation?.guestDetails?.phone" class="flex items-center gap-2 px-4 py-1.5 bg-muted/30 border-b">
-      <Icon name="lucide:phone" class="size-3 text-muted-foreground shrink-0" />
-      <span class="text-xs text-muted-foreground">{{ selectedReservation.guestDetails.phone }}</span>
-    </div>
-
     <div class="flex flex-col flex-1 overflow-hidden">
       <div class="flex items-center border-b h-8 px-4 shrink-0">
         <button
