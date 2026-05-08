@@ -312,9 +312,9 @@ function formatCallDate(timestamp: string): string {
 
             <!-- Call notes from phone calls -->
             <template v-for="call of conversationPhoneCalls" :key="'call-note-' + call.id">
-              <div v-if="call.note" class="rounded-lg border bg-muted/50 p-3">
-                <div class="flex items-center gap-2 mb-1.5">
-                  <div class="flex size-6 shrink-0 items-center justify-center rounded-full"
+              <div class="rounded-lg border bg-muted/50 p-3">
+                <div class="flex items-start gap-3">
+                  <div class="flex size-7 shrink-0 items-center justify-center rounded-full mt-0.5"
                     :class="{
                       'bg-green-100 dark:bg-green-900': call.status === 'completed' && call.direction === 'outbound',
                       'bg-blue-100 dark:bg-blue-900': call.status === 'completed' && call.direction === 'inbound',
@@ -322,23 +322,48 @@ function formatCallDate(timestamp: string): string {
                       'bg-purple-100 dark:bg-purple-900': call.status === 'voicemail',
                     }"
                   >
-                    <Icon name="lucide:phone" class="size-3" :class="{
-                      'text-green-600 dark:text-green-400': call.status === 'completed' && call.direction === 'outbound',
-                      'text-blue-600 dark:text-blue-400': call.status === 'completed' && call.direction === 'inbound',
-                      'text-red-600 dark:text-red-400': call.status === 'missed',
-                      'text-purple-600 dark:text-purple-400': call.status === 'voicemail',
-                    }" />
+                    <Icon
+                      :name="{
+                        outbound: 'lucide:phone-outgoing',
+                        inbound: call.status === 'missed' ? 'lucide:phone-missed' : 'lucide:phone-incoming',
+                        voicemail: 'lucide:voicemail',
+                      }[call.direction === 'outbound' ? 'outbound' : call.status === 'voicemail' ? 'voicemail' : 'inbound'] ?? 'lucide:phone'"
+                      class="size-3.5"
+                      :class="{
+                        'text-green-600 dark:text-green-400': call.status === 'completed' && call.direction === 'outbound',
+                        'text-blue-600 dark:text-blue-400': call.status === 'completed' && call.direction === 'inbound',
+                        'text-red-600 dark:text-red-400': call.status === 'missed',
+                        'text-purple-600 dark:text-purple-400': call.status === 'voicemail',
+                      }"
+                    />
                   </div>
-                  <span class="text-xs font-medium">Phone call — {{ call.direction === 'outbound' ? 'Outgoing' : call.status === 'missed' ? 'Missed' : call.status === 'voicemail' ? 'Voicemail' : 'Incoming' }}</span>
-                  <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
-                    <Icon name="lucide:sparkles" class="size-3" />
-                    ElevAI
-                  </span>
-                  <span class="text-[10px] text-muted-foreground ml-auto">{{ formatCallTime(call.timestamp) }}</span>
-                </div>
-                <p class="text-sm leading-relaxed">{{ call.note }}</p>
-                <div v-if="call.duration > 0" class="text-[10px] text-muted-foreground mt-1">
-                  Duration: {{ formatCallDuration(call.duration) }}
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-medium">
+                        {{ call.direction === 'outbound' ? 'Outgoing call' : call.status === 'missed' ? 'Missed call' : call.status === 'voicemail' ? 'Voicemail' : 'Incoming call' }}
+                      </span>
+                      <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
+                        <Icon name="lucide:sparkles" class="size-3" />
+                        ElevAI
+                      </span>
+                      <span class="text-[10px] text-muted-foreground ml-auto">{{ formatCallTime(call.timestamp) }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                      <span>{{ call.direction === 'outbound' ? `To ${call.to}` : `From ${call.from}` }}</span>
+                      <span v-if="call.duration > 0">· {{ formatCallDuration(call.duration) }}</span>
+                    </div>
+                    <div v-if="call.note" class="mt-2 text-sm leading-relaxed">
+                      {{ call.note }}
+                    </div>
+                    <div v-if="call.recording_url" class="mt-2">
+                      <a :href="call.recording_url" download target="_blank">
+                        <Button variant="ghost" size="sm" class="h-6 px-1.5 text-[10px] gap-1">
+                          <Icon name="lucide:download" class="size-3" />
+                          Download recording
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
@@ -355,7 +380,7 @@ function formatCallDate(timestamp: string): string {
                 </span>
               </div>
             </div>
-            <div v-if="!conversationNotes.length && !conversationPhoneCalls.filter(c => c.note).length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <div v-if="!conversationNotes.length && !conversationPhoneCalls.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Icon name="lucide:sticky-note" class="size-10 mb-2" />
               <p class="text-sm">No notes yet</p>
             </div>
