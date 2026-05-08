@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { ActivityEvent, PhoneCall, Reservation } from '~/components/inbox/data/conversations'
 import { format, isToday } from 'date-fns'
+import { toast } from 'vue-sonner'
 
 interface ReservationActivityProps {
   activity: ActivityEvent[]
@@ -40,6 +41,9 @@ const generatedEvents = computed(() => {
     type: string
     colorDot: string
     channel: string | undefined
+    _canSend?: boolean
+    _templateLabel?: string
+    _templateContent?: string
   }[] = []
 
   const hasExistingGuideSent = props.activity.some(e => e.type === 'guide_sent')
@@ -68,6 +72,16 @@ const generatedEvents = computed(() => {
     })
   }
 
+  events.push({
+    id: 'sys-checkout',
+    title: 'Check-out',
+    description: `Guest checks out at ${new Date(props.reservation.checkOut).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}`,
+    timestamp: props.reservation.checkOut,
+    type: 'system',
+    colorDot: 'gray',
+    channel: undefined,
+  })
+
   if (props.reservation.scheduledTemplates) {
     for (const tpl of props.reservation.scheduledTemplates) {
       if (tpl.status === 'pending') {
@@ -85,11 +99,14 @@ const generatedEvents = computed(() => {
         events.push({
           id: `tpl-${tpl.id}`,
           title: `Already covered — ${tpl.label}`,
-          description: 'Already discussed in previous conversation — not sending duplicate',
+          description: 'Already discussed in previous conversation',
           timestamp: tpl.scheduledFor,
           type: 'system',
           colorDot: 'gray',
           channel: undefined,
+          _canSend: true,
+          _templateLabel: tpl.label,
+          _templateContent: tpl.content,
         })
       }
     }
@@ -97,6 +114,13 @@ const generatedEvents = computed(() => {
 
   return events
 })
+
+const sentTemplates = ref(new Set<string>())
+
+function sendTemplate(event: any) {
+  sentTemplates.value = new Set([...sentTemplates.value, event.id])
+  toast.success(`${event._templateLabel} sent to guest`)
+}
 
 const allActivities = computed(() => {
   const items = [
@@ -138,6 +162,19 @@ const allActivities = computed(() => {
             <span class="text-[10px] text-muted-foreground">{{ formatTimestamp(event.timestamp) }}</span>
             <span v-if="event.channel" class="text-[10px] text-muted-foreground">via {{ event.channel }}</span>
           </div>
+          <button
+            v-if="event._canSend && !sentTemplates.has(event.id)"
+            class="mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
+            @click="sendTemplate(event)"
+          >
+            Send now
+          </button>
+          <span
+            v-else-if="event._canSend && sentTemplates.has(event.id)"
+            class="mt-2 block text-xs text-green-600"
+          >
+            Sent ✓
+          </span>
         </div>
       </div>
 
