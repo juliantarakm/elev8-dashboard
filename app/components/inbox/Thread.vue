@@ -297,69 +297,18 @@ function formatCallDate(timestamp: string): string {
       <div v-if="activeThreadTab === 'notes'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <ScrollArea class="flex-1 min-h-0">
           <div class="p-4 space-y-3 pb-32">
-            <!-- Call summary in notes -->
-            <div v-if="conversationPhoneCalls.length" class="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-              <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon name="lucide:phone" class="size-3.5" />
-                <span>{{ conversationPhoneCalls.length }} calls</span>
-              </div>
-              <span class="text-muted-foreground/30">|</span>
-              <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon name="lucide:clock" class="size-3.5" />
-                <span>{{ formatTotalDuration(conversationPhoneCalls) }}</span>
-              </div>
-            </div>
-
             <!-- Call notes from phone calls -->
             <template v-for="call of conversationPhoneCalls" :key="'call-note-' + call.id">
-              <div class="rounded-lg border bg-muted/50 p-3">
-                <div class="flex items-start gap-3">
-                  <div class="flex size-7 shrink-0 items-center justify-center rounded-full mt-0.5"
-                    :class="{
-                      'bg-green-100 dark:bg-green-900': call.status === 'completed' && call.direction === 'outbound',
-                      'bg-blue-100 dark:bg-blue-900': call.status === 'completed' && call.direction === 'inbound',
-                      'bg-red-100 dark:bg-red-900': call.status === 'missed',
-                      'bg-purple-100 dark:bg-purple-900': call.status === 'voicemail',
-                    }"
-                  >
-                    <Icon
-                      :name="{
-                        outbound: 'lucide:phone-outgoing',
-                        inbound: call.status === 'missed' ? 'lucide:phone-missed' : 'lucide:phone-incoming',
-                        voicemail: 'lucide:voicemail',
-                      }[call.direction === 'outbound' ? 'outbound' : call.status === 'voicemail' ? 'voicemail' : 'inbound'] ?? 'lucide:phone'"
-                      class="size-3.5"
-                      :class="{
-                        'text-green-600 dark:text-green-400': call.status === 'completed' && call.direction === 'outbound',
-                        'text-blue-600 dark:text-blue-400': call.status === 'completed' && call.direction === 'inbound',
-                        'text-red-600 dark:text-red-400': call.status === 'missed',
-                        'text-purple-600 dark:text-purple-400': call.status === 'voicemail',
-                      }"
-                    />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs font-medium">
-                        {{ call.direction === 'outbound' ? 'Outgoing call' : call.status === 'missed' ? 'Missed call' : call.status === 'voicemail' ? 'Voicemail' : 'Incoming call' }}
-                      </span>
-                      <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
-                        <Icon name="lucide:sparkles" class="size-3" />
-                        ElevAI
-                      </span>
-                      <span class="text-[10px] text-muted-foreground ml-auto">{{ formatCallTime(call.timestamp) }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                      <span>{{ call.direction === 'outbound' ? `To ${call.to}` : `From ${call.from}` }}</span>
-                      <span v-if="call.duration > 0">· {{ formatCallDuration(call.duration) }}</span>
-                    </div>
-                    <div v-if="call.transcript" class="mt-2 text-sm leading-relaxed whitespace-pre-line">
-                      {{ call.transcript }}
-                    </div>
-                    <div v-else-if="call.note" class="mt-2 text-sm leading-relaxed">
-                      {{ call.note }}
-                    </div>
-                  </div>
+              <div v-if="call.summary" class="rounded-lg border bg-muted/50 p-3">
+                <div class="flex items-center gap-2 mb-2">
+                  <Icon name="lucide:phone" class="size-3.5 text-muted-foreground" />
+                  <span class="text-xs font-medium">Call summary</span>
+                  <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
+                    <Icon name="lucide:sparkles" class="size-3" />
+                    ElevAI
+                  </span>
                 </div>
+                <p class="text-sm leading-relaxed whitespace-pre-line">{{ call.summary }}</p>
               </div>
             </template>
 
