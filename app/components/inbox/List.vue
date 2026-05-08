@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Conversation } from '~/components/inbox/data/conversations'
+import { otaSources } from '~/components/inbox/data/conversations'
 import { Search } from 'lucide-vue-next'
 import { cn } from '~/lib/utils'
 
@@ -11,6 +12,8 @@ defineProps<ListProps>()
 const selectedConversationId = defineModel<string | undefined>('selectedConversationId', { required: false })
 
 const { showActionNeeded, unreadFilter, assignedToMeFilter, activeChannelFilter, activeStaffFilter, activeStayFilter, activeDateFilter, searchValue, sortBy, channelOptions, setChannelFilter, clearChannelFilter, staffMembers, toggleStaffFilter, clearStaffFilter } = useInbox()
+
+const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s => [s.name, s.icon]))
 
 const dateSubFilters = computed(() => {
   if (activeStayFilter.value === 'future') {
@@ -158,7 +161,7 @@ const activeFilterCount = computed(() => {
                 :class="activeChannelFilter === ch.channel ? 'bg-accent' : ''"
                 @click="setChannelFilter(ch.channel)"
               >
-                <Icon :name="ch.channel === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'" class="size-3.5" />
+                <Icon :name="otaIconMap[ch.channel] ?? 'lucide:globe'" class="size-3.5" />
                 {{ ch.channel }}
                 <span class="ml-auto text-muted-foreground text-xs">{{ ch.count }}</span>
               </button>

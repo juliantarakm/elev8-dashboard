@@ -1,5 +1,5 @@
-import type { Conversation, ConversationStatus, Message, Note, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { conversations as conversationsData, messages as messagesData, reservations, staffMembers } from '~/components/inbox/data/conversations'
+import type { Conversation, ConversationStatus, Message, Note, PhoneCall, Reservation, StayStatus } from '~/components/inbox/data/conversations'
+import { conversations as conversationsData, messages as messagesData, phoneCalls as phoneCallsData, reservations, staffMembers } from '~/components/inbox/data/conversations'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
 
@@ -497,6 +497,10 @@ export function useInbox() {
     pendingSuggestion.value = ''
   }
 
+  function getPhoneCalls(conversationId: string): PhoneCall[] {
+    return phoneCallsData[conversationId] ?? []
+  }
+
   return {
     selectedConversationId,
     showActionNeeded,
@@ -554,5 +558,6 @@ export function useInbox() {
     addNote,
     sendMessage,
     retryMessage,
+    getPhoneCalls,
   }
 }
