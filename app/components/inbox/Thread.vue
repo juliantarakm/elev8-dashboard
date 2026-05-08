@@ -352,7 +352,10 @@ function formatCallDate(timestamp: string): string {
                       <span>{{ call.direction === 'outbound' ? `To ${call.to}` : `From ${call.from}` }}</span>
                       <span v-if="call.duration > 0">· {{ formatCallDuration(call.duration) }}</span>
                     </div>
-                    <div v-if="call.note" class="mt-2 text-sm leading-relaxed">
+                    <div v-if="call.transcript" class="mt-2 text-sm leading-relaxed whitespace-pre-line">
+                      {{ call.transcript }}
+                    </div>
+                    <div v-else-if="call.note" class="mt-2 text-sm leading-relaxed">
                       {{ call.note }}
                     </div>
                   </div>
