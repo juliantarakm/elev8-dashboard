@@ -297,6 +297,19 @@ function formatCallDate(timestamp: string): string {
       <div v-if="activeThreadTab === 'notes'" class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <ScrollArea class="flex-1 min-h-0">
           <div class="p-4 space-y-3 pb-32">
+            <!-- Call summary in notes -->
+            <div v-if="conversationPhoneCalls.length" class="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <Icon name="lucide:phone" class="size-3.5" />
+                <span>{{ conversationPhoneCalls.length }} calls</span>
+              </div>
+              <span class="text-muted-foreground/30">|</span>
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                <Icon name="lucide:clock" class="size-3.5" />
+                <span>{{ formatTotalDuration(conversationPhoneCalls) }}</span>
+              </div>
+            </div>
+
             <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
               <p class="text-sm leading-relaxed">{{ note.content }}</p>
               <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
