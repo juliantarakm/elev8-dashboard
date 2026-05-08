@@ -163,14 +163,14 @@ const allActivities = computed(() => {
             <span v-if="event.channel" class="text-[10px] text-muted-foreground">via {{ event.channel }}</span>
           </div>
           <button
-            v-if="event._canSend && !sentTemplates.has(event.id)"
+            v-if="(event as any)._canSend && !sentTemplates.has(event.id)"
             class="mt-2 text-xs text-primary hover:text-primary/80 transition-colors"
             @click="sendTemplate(event)"
           >
             Send now
           </button>
           <span
-            v-else-if="event._canSend && sentTemplates.has(event.id)"
+            v-else-if="(event as any)._canSend && sentTemplates.has(event.id)"
             class="mt-2 block text-xs text-green-600"
           >
             Sent ✓
