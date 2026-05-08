@@ -84,8 +84,8 @@ const generatedEvents = computed(() => {
       else if (tpl.status === 'cancelled') {
         events.push({
           id: `tpl-${tpl.id}`,
-          title: `Cancelled — ${tpl.label}`,
-          description: 'Already covered in previous conversation — not sending duplicate',
+          title: `Already covered — ${tpl.label}`,
+          description: 'Already discussed in previous conversation — not sending duplicate',
           timestamp: tpl.scheduledFor,
           type: 'system',
           colorDot: 'gray',
