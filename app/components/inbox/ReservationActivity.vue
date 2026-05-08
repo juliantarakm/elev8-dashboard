@@ -31,10 +31,46 @@ const reversedActivity = computed(() =>
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
 )
 
-const callActivities = computed(() =>
-  (props.phoneCalls ?? [])
-    .filter(c => c.summary)
-    .map(c => ({
+const generatedEvents = computed(() => {
+  const events: {
+    id: string
+    title: string
+    description: string
+    timestamp: string
+    type: string
+    colorDot: string
+    channel: string | undefined
+  }[] = []
+
+  if (props.reservation.guestDetails?.phone) {
+    events.push({
+      id: 'sys-verified',
+      title: 'Guest is Verified',
+      description: 'Guest has completed their information',
+      timestamp: props.reservation.checkIn,
+      type: 'system',
+      colorDot: 'green',
+      channel: undefined,
+    })
+  }
+
+  events.push({
+    id: 'sys-guide-sent',
+    title: 'Guest Guide Sent',
+    description: 'Property guide and house rules have been sent to guest',
+    timestamp: props.reservation.checkIn,
+    type: 'guide_sent',
+    colorDot: 'blue',
+    channel: undefined,
+  })
+
+  return events
+})
+
+const allActivities = computed(() => {
+  const items = [
+    ...reversedActivity.value,
+    ...(props.phoneCalls ?? []).filter(c => c.summary).map(c => ({
       id: c.id,
       title: 'Phone call',
       description: c.summary!,
@@ -42,14 +78,11 @@ const callActivities = computed(() =>
       type: 'phone_call' as const,
       colorDot: 'green' as const,
       channel: 'Phone' as const,
-    }))
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-)
-
-const allActivities = computed(() =>
-  [...reversedActivity.value, ...callActivities.value]
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-)
+    })),
+    ...generatedEvents.value,
+  ]
+  return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+})
 </script>
 
 <template>
