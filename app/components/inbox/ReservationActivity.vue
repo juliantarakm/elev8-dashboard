@@ -42,6 +42,8 @@ const generatedEvents = computed(() => {
     channel: string | undefined
   }[] = []
 
+  const hasExistingGuideSent = props.activity.some(e => e.type === 'guide_sent')
+
   if (props.reservation.guestDetails?.phone) {
     events.push({
       id: 'sys-verified',
@@ -54,15 +56,17 @@ const generatedEvents = computed(() => {
     })
   }
 
-  events.push({
-    id: 'sys-guide-sent',
-    title: 'Guest Guide Sent',
-    description: 'Property guide and house rules have been sent to guest',
-    timestamp: props.reservation.checkIn,
-    type: 'guide_sent',
-    colorDot: 'blue',
-    channel: undefined,
-  })
+  if (!hasExistingGuideSent) {
+    events.push({
+      id: 'sys-guide-sent',
+      title: 'Guest Guide Sent',
+      description: 'Property guide and house rules have been sent to guest',
+      timestamp: props.reservation.checkIn,
+      type: 'guide_sent',
+      colorDot: 'blue',
+      channel: undefined,
+    })
+  }
 
   return events
 })
