@@ -2531,7 +2531,6 @@ export const reservations: Record<string, Reservation> = {
 export const otaSources = [
   { name: 'Airbnb', color: '#FF5A5F', icon: 'logos:airbnb' },
   { name: 'Booking.com', color: '#003580', icon: 'simple-icons:bookingdotcom' },
-  { name: 'Phone', color: '#22C55E', icon: 'lucide:phone' },
 ]
 
 export const phoneCalls: Record<string, PhoneCall[]> = {
