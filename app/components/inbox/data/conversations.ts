@@ -94,6 +94,8 @@ export interface PhoneCall {
   from: string
   to: string
   note?: string
+  transcript?: string
+  recording_url?: string
 }
 
 export interface GuestDetails {
@@ -2535,8 +2537,8 @@ export const otaSources = [
 
 export const phoneCalls: Record<string, PhoneCall[]> = {
   'conv-1': [
-    { id: 'call-1-1', conversationId: 'conv-1', direction: 'outbound', status: 'completed', duration: 185, timestamp: '2026-04-26T08:30:00Z', from: 'Komang', to: '+1 555-0142', note: 'Confirmed early check-in arrangement' },
-    { id: 'call-1-2', conversationId: 'conv-1', direction: 'inbound', status: 'completed', duration: 62, timestamp: '2026-04-25T14:15:00Z', from: '+1 555-0142', to: 'Komang' },
+    { id: 'call-1-1', conversationId: 'conv-1', direction: 'outbound', status: 'completed', duration: 185, timestamp: '2026-04-26T08:30:00Z', from: 'Komang', to: '+1 555-0142', note: 'Confirmed early check-in arrangement', transcript: 'Komang: Hi, this is Komang from Elev8. Just calling to confirm your early check-in request for tomorrow.\nGuest: Yes, thank you! We\'d love to check in around 1 PM instead of 3 PM.\nKomang: That\'s no problem at all. I\'ve updated the reservation. Your villa will be ready by 1 PM.\nGuest: Perfect, thank you so much!\nKomang: You\'re welcome. Have a great stay!', recording_url: 'https://example.com/recordings/call-1-1.mp3' },
+    { id: 'call-1-2', conversationId: 'conv-1', direction: 'inbound', status: 'completed', duration: 62, timestamp: '2026-04-25T14:15:00Z', from: '+1 555-0142', to: 'Komang', transcript: 'Guest: Hi, I was wondering if early check-in is possible tomorrow?\nKomang: Let me check for you. Which villa are you at?\nGuest: Villa Kayu.\nKomang: Yes, that should be fine. I\'ll confirm with the housekeeping team and call you back.\nGuest: Great, thanks!', recording_url: 'https://example.com/recordings/call-1-2.mp3' },
     { id: 'call-1-3', conversationId: 'conv-1', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-25T09:00:00Z', from: '+1 555-0142', to: 'Komang' },
   ],
   'conv-2': [
