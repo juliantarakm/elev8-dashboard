@@ -37,12 +37,14 @@ const statusBgClass = (status: string) => ({
 
 const typeDotClass = (type: string) => ({
   'bg-slate-500': type === 'Manual',
-  'bg-purple-500': type === 'Labor',
+  'bg-teal-500': type === 'Cleaning',
+  'bg-purple-500': type === 'Activity',
 })
 
 const typeBgClass = (type: string) => ({
   'text-slate-700 bg-slate-100': type === 'Manual',
-  'text-purple-700 bg-purple-50': type === 'Labor',
+  'text-teal-700 bg-teal-50': type === 'Cleaning',
+  'text-purple-700 bg-purple-50': type === 'Activity',
 })
 </script>
 

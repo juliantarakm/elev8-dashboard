@@ -1,4 +1,4 @@
-export type CostType = 'Manual' | 'Labor'
+export type CostType = 'Manual' | 'Cleaning' | 'Activity'
 export type CostStatus = 'Pending' | 'Approved' | 'Rejected'
 export type CostSource = 'Manual' | 'Cleaning' | 'Activity'
 export type CostCategory = 'Cleaning Supplies' | 'Maintenance' | 'Consumables' | 'Other'
@@ -59,14 +59,14 @@ export const mockCosts: CostEntry[] = [
     id: 'cost-2',
     date: '2026-05-07',
     listing: 'The Layar 1',
-    type: 'Labor',
+    type: 'Cleaning',
     source: 'Cleaning',
     category: 'Other',
     amount: 93750,
     currency: 'IDR',
     staff: 'Made Surya',
     staffId: 'staff-2',
-    status: 'Pending',
+    status: 'Approved',
     duration: 150,
     linkedCleaningId: 'clean-42',
     linkedReservation: 'res-7',
@@ -90,7 +90,7 @@ export const mockCosts: CostEntry[] = [
     id: 'cost-4',
     date: '2026-05-05',
     listing: 'Villa Mana',
-    type: 'Labor',
+    type: 'Activity',
     source: 'Activity',
     category: 'Other',
     amount: 62500,
@@ -122,7 +122,7 @@ export const mockCosts: CostEntry[] = [
     id: 'cost-6',
     date: '2026-05-03',
     listing: 'Alaya Ubud',
-    type: 'Labor',
+    type: 'Cleaning',
     source: 'Cleaning',
     category: 'Other',
     amount: 112500,
@@ -152,7 +152,7 @@ export const mockCosts: CostEntry[] = [
     id: 'cost-8',
     date: '2026-05-01',
     listing: 'Jungle House',
-    type: 'Labor',
+    type: 'Cleaning',
     source: 'Cleaning',
     category: 'Other',
     amount: 75000,

@@ -45,8 +45,11 @@ const emit = defineEmits<{ clear: [] }>()
           <SelectItem value="Manual">
             Manual
           </SelectItem>
-          <SelectItem value="Labor">
-            Labor
+          <SelectItem value="Cleaning">
+            Cleaning
+          </SelectItem>
+          <SelectItem value="Activity">
+            Activity
           </SelectItem>
         </SelectContent>
       </Select>

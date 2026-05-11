@@ -1,6 +1,12 @@
 import { computed, ref } from 'vue'
 import { mockCosts, type CostEntry, type CostStatus, type CostType } from '@/components/finance/data/costs'
 
+// Cleaning labor costs are auto-approved — no admin review required.
+// Manual and Activity entries go through Pending → approval flow.
+function initialStatus(entry: Omit<CostEntry, 'status'>): CostStatus {
+  return entry.type === 'Cleaning' ? 'Approved' : 'Pending'
+}
+
 export function useCosts() {
   const costs = useState<CostEntry[]>('costs', () => mockCosts)
 

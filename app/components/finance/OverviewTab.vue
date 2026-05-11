@@ -18,7 +18,8 @@ function formatIDR(amount: number) {
 
 const typeBgClass: Record<string, string> = {
   Manual: 'text-slate-700 bg-slate-100',
-  Labor: 'text-purple-700 bg-purple-50',
+  Cleaning: 'text-teal-700 bg-teal-50',
+  Activity: 'text-purple-700 bg-purple-50',
 }
 </script>
 
