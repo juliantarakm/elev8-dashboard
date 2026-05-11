@@ -28,6 +28,17 @@ export const navMenu: NavMenu[] = [
     ],
   },
   {
+    heading: 'Finance',
+    items: [
+      {
+        title: 'Finance',
+        icon: 'i-lucide-receipt',
+        link: '/finance',
+        new: true,
+      },
+    ],
+  },
+  {
     heading: 'Apps',
     items: [
       {

@@ -1,0 +1,118 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { integrations, type Integration } from '@/components/finance/data/integrations'
+
+const selected = ref<Integration | null>(null)
+const sheetOpen = ref(false)
+
+function openIntegration(integration: Integration) {
+  selected.value = integration
+  sheetOpen.value = true
+}
+
+const byCategory = computed(() => {
+  const map: Record<string, Integration[]> = {}
+  for (const i of integrations) {
+    if (!map[i.category]) map[i.category] = [] as Integration[]
+    map[i.category]!.push(i)
+  }
+  return map
+})
+
+const statusLabel: Record<string, string> = {
+  connected: 'Connected',
+  available: 'Not connected',
+  coming_soon: 'Coming soon',
+}
+
+const statusClass: Record<string, string> = {
+  connected: 'text-green-700 bg-green-50',
+  available: 'text-slate-600 bg-slate-100',
+  coming_soon: 'text-slate-400 bg-slate-50',
+}
+
+const statusDot: Record<string, string> = {
+  connected: 'bg-green-500',
+  available: 'bg-slate-400',
+  coming_soon: 'bg-slate-300',
+}
+
+const componentMap: Record<string, ReturnType<typeof resolveComponent>> = {
+  FinanceJurnalIntegration: resolveComponent('FinanceJurnalIntegration'),
+  FinanceBexioIntegration: resolveComponent('FinanceBexioIntegration'),
+}
+
+const activeComponent = computed(() =>
+  selected.value?.component ? componentMap[selected.value.component] : null,
+)
+</script>
+
+<template>
+  <div class="flex flex-col gap-8">
+    <div v-for="(items, category) in byCategory" :key="category">
+      <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {{ category }}
+      </p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="integration in items"
+          :key="integration.id"
+          class="flex flex-col rounded-lg border bg-card p-4 transition-colors"
+          :class="integration.status === 'coming_soon' ? 'opacity-60' : 'hover:border-border/80'"
+        >
+          <div class="mb-3 flex items-start justify-between">
+            <div class="flex h-9 w-9 items-center justify-center rounded-md border bg-muted">
+              <Icon :name="integration.icon" class="h-4 w-4 text-muted-foreground" />
+            </div>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
+              :class="statusClass[integration.status]"
+            >
+              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot[integration.status]" />
+              {{ statusLabel[integration.status] }}
+            </span>
+          </div>
+          <p class="mb-1 text-sm font-medium">{{ integration.name }}</p>
+          <p class="mb-4 flex-1 text-xs text-muted-foreground leading-relaxed">
+            {{ integration.description }}
+          </p>
+          <Button
+            v-if="integration.status !== 'coming_soon'"
+            variant="outline"
+            size="sm"
+            class="self-start"
+            @click="openIntegration(integration)"
+          >
+            {{ integration.status === 'connected' ? 'Manage' : 'Connect' }}
+          </Button>
+          <span v-else class="text-xs text-muted-foreground">Available soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Integration config sheet -->
+  <Sheet v-model:open="sheetOpen">
+    <SheetContent class="flex w-full flex-col gap-0 p-0 sm:max-w-xl" side="right">
+      <SheetHeader class="border-b px-6 py-4">
+        <div class="flex items-center gap-3">
+          <div class="flex h-8 w-8 items-center justify-center rounded-md border bg-muted">
+            <Icon v-if="selected" :name="selected.icon" class="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <SheetTitle class="text-base">{{ selected?.name }}</SheetTitle>
+            <SheetDescription class="text-xs">{{ selected?.category }}</SheetDescription>
+          </div>
+        </div>
+      </SheetHeader>
+      <ScrollArea class="flex-1">
+        <div class="p-6">
+          <component :is="activeComponent" v-if="activeComponent" />
+          <p v-else class="text-sm text-muted-foreground">
+            Configuration not available.
+          </p>
+        </div>
+      </ScrollArea>
+    </SheetContent>
+  </Sheet>
+</template>
