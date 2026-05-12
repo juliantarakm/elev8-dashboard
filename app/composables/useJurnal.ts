@@ -4,11 +4,11 @@ import { recentReservations } from '@/components/finance/data/revenue'
 import { useCosts } from '@/composables/useCosts'
 
 export function useJurnal() {
-  const isConnected = ref(true)
-  const apiKey = ref('sk-jurnal-••••••••••••••••••••••••')
+  const isConnected = useState<boolean>('jurnal-connected', () => true)
+  const apiKey = useState<string>('jurnal-api-key', () => 'sk-jurnal-••••••••••••••••••••••••')
   const apiKeyInput = ref('')
-  const companyName = ref('Elev8 Suite Bali')
-  const lastConnected = ref('2026-05-01')
+  const companyName = useState<string>('jurnal-company', () => 'Elev8 Suite Bali')
+  const lastConnected = useState<string>('jurnal-last-connected', () => '2026-05-01')
   const isTesting = ref(false)
   const isSaving = ref(false)
   const isPushingCosts = ref(false)
@@ -55,6 +55,10 @@ export function useJurnal() {
   function disconnect() {
     isConnected.value = false
     apiKey.value = ''
+    // Let the sheet close animation finish, then navigate to Costs tab
+    setTimeout(() => {
+      useState<string>('finance-active-tab').value = 'costs'
+    }, 350)
   }
 
   async function pushCosts() {

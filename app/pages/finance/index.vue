@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { revenueStats } from '@/components/finance/data/revenue'
 
-const activeTab = ref('overview')
+const activeTab = useState<string>('finance-active-tab', () => 'overview')
 
 function formatCHF(amount: number) {
   return `CHF ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`

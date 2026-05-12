@@ -108,5 +108,10 @@ const emit = defineEmits<{ clear: [] }>()
     <Button variant="ghost" size="sm" class="h-8 self-end" @click="emit('clear')">
       Clear filters
     </Button>
+
+    <!-- Actions slot (e.g. Export CSV) -->
+    <div class="ml-auto self-end">
+      <slot />
+    </div>
   </div>
 </template>

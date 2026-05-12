@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { integrations, type Integration } from '@/components/finance/data/integrations'
+import { ref, computed, watch } from 'vue'
+import { integrations, type Integration, type IntegrationStatus } from '@/components/finance/data/integrations'
+import { useJurnal } from '@/composables/useJurnal'
+
+const { isConnected: jurnalConnected } = useJurnal()
 
 const selected = ref<Integration | null>(null)
 const sheetOpen = ref(false)
 
+// Close sheet when an integration is disconnected
+watch(jurnalConnected, (val) => {
+  if (!val) sheetOpen.value = false
+})
+
 function openIntegration(integration: Integration) {
   selected.value = integration
   sheetOpen.value = true
+}
+
+function effectiveStatus(integration: Integration): IntegrationStatus {
+  if (integration.id === 'mekari-jurnal') {
+    return jurnalConnected.value ? 'connected' : 'available'
+  }
+  return integration.status
 }
 
 const byCategory = computed(() => {
@@ -66,10 +81,10 @@ const activeComponent = computed(() =>
             </div>
             <span
               class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
-              :class="statusClass[integration.status]"
+              :class="statusClass[effectiveStatus(integration)]"
             >
-              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot[integration.status]" />
-              {{ statusLabel[integration.status] }}
+              <span class="h-1.5 w-1.5 rounded-full" :class="statusDot[effectiveStatus(integration)]" />
+              {{ statusLabel[effectiveStatus(integration)] }}
             </span>
           </div>
           <p class="mb-1 text-sm font-medium">{{ integration.name }}</p>
@@ -77,13 +92,13 @@ const activeComponent = computed(() =>
             {{ integration.description }}
           </p>
           <Button
-            v-if="integration.status !== 'coming_soon'"
+            v-if="effectiveStatus(integration) !== 'coming_soon'"
             variant="outline"
             size="sm"
             class="self-start"
             @click="openIntegration(integration)"
           >
-            {{ integration.status === 'connected' ? 'Manage' : 'Connect' }}
+            {{ effectiveStatus(integration) === 'connected' ? 'Manage' : 'Connect' }}
           </Button>
           <span v-else class="text-xs text-muted-foreground">Available soon</span>
         </div>

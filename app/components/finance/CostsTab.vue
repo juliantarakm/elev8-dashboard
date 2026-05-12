@@ -113,15 +113,7 @@ function exportCSV() {
       </p>
     </div>
 
-    <!-- Export -->
-    <div class="flex justify-end">
-      <Button variant="outline" size="sm" @click="exportCSV">
-        <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
-        Export CSV
-      </Button>
-    </div>
-
-    <!-- Filters -->
+    <!-- Filters + Export -->
     <FinanceCostFilters
       v-model:filter-listing="filterListing"
       v-model:filter-type="filterType"
@@ -130,7 +122,12 @@ function exportCSV() {
       v-model:filter-date-from="filterDateFrom"
       v-model:filter-date-to="filterDateTo"
       @clear="clearFilters"
-    />
+    >
+      <Button variant="outline" size="sm" class="h-8" @click="exportCSV">
+        <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
+        Export CSV
+      </Button>
+    </FinanceCostFilters>
 
     <!-- Table -->
     <FinanceCostTable

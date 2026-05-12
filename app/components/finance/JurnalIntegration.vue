@@ -324,8 +324,21 @@ const typeBadge: Record<string, string> = {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Disconnect Mekari Jurnal?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will remove the API key and stop all future syncs. Existing data already pushed to Jurnal will not be affected.
+          <AlertDialogDescription as="div" class="flex flex-col gap-3">
+            <p>Your API key will be removed and future entries will no longer be synced automatically.</p>
+            <div
+              v-if="pendingCostEntries > 0"
+              class="flex items-start gap-2.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5"
+            >
+              <Icon name="i-lucide-triangle-alert" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p class="text-sm text-amber-800">
+                <span class="font-medium">{{ pendingCostEntries }} {{ pendingCostEntries === 1 ? 'entry' : 'entries' }}</span>
+                not yet synced will remain unsynced until you reconnect.
+              </p>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Entries already pushed to Jurnal will remain there and are not affected.
+            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
