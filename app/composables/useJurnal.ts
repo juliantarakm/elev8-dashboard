@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
-import { mockSyncLogs, type SyncLog, type SyncType } from '@/components/finance/data/jurnal'
-import { mockCosts } from '@/components/finance/data/costs'
+import { mockSyncLogs, type SyncLog } from '@/components/finance/data/jurnal'
 import { recentReservations } from '@/components/finance/data/revenue'
+import { useCosts } from '@/composables/useCosts'
 
 export function useJurnal() {
   const isConnected = ref(true)
@@ -16,13 +16,13 @@ export function useJurnal() {
 
   const syncLogs = useState<SyncLog[]>('jurnal-sync-logs', () => mockSyncLogs)
 
-  const pendingCostEntries = computed(() =>
-    mockCosts.filter(c => c.status === 'Approved').length,
-  )
+  const { costs, markSynced } = useCosts()
 
-  const pendingRevenueEntries = computed(() =>
-    recentReservations.length,
-  )
+  const unsyncedCosts = computed(() => costs.value.filter(c => !c.synced))
+
+  const pendingCostEntries = computed(() => unsyncedCosts.value.length)
+
+  const pendingRevenueEntries = computed(() => recentReservations.length)
 
   const lastCostSync = computed(() => {
     const last = syncLogs.value.find(l => l.type === 'Cost' && l.status === 'Success')
@@ -58,14 +58,18 @@ export function useJurnal() {
   }
 
   async function pushCosts() {
+    if (unsyncedCosts.value.length === 0) return
     isPushingCosts.value = true
+    const count = unsyncedCosts.value.length
+    const ids = unsyncedCosts.value.map(c => c.id)
     await new Promise(r => setTimeout(r, 2000))
+    ids.forEach(id => markSynced(id))
     const newLog: SyncLog = {
       id: `sync-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'Cost',
-      entriesTotal: pendingCostEntries.value,
-      entriesSuccess: pendingCostEntries.value,
+      entriesTotal: count,
+      entriesSuccess: count,
       status: 'Success',
       jurnalReference: `JRN-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
       pushedBy: 'Komang Juliantara',
