@@ -46,7 +46,6 @@ const typeBgClass = (type: string) => ({
           <TableHead class="w-24">
             Type
           </TableHead>
-          <TableHead>Category</TableHead>
           <TableHead class="w-36 text-right">
             Amount
           </TableHead>
@@ -81,12 +80,6 @@ const typeBgClass = (type: string) => ({
               >
                 <span class="h-1.5 w-1.5 rounded-full" :class="typeDotClass(cost.type)" />
                 {{ cost.type }}
-              </span>
-            </TableCell>
-            <TableCell class="text-sm">
-              {{ cost.category }}
-              <span v-if="cost.duration" class="ml-1 text-xs text-muted-foreground">
-                ({{ formatDuration(cost.duration) }})
               </span>
             </TableCell>
             <TableCell class="text-right font-medium tabular-nums">
@@ -136,7 +129,7 @@ const typeBgClass = (type: string) => ({
         </template>
         <template v-else>
           <TableRow>
-            <TableCell colspan="9" class="py-16 text-center text-sm text-muted-foreground">
+            <TableCell colspan="8" class="py-16 text-center text-sm text-muted-foreground">
               No cost entries yet. Costs submitted by your staff will appear here.
             </TableCell>
           </TableRow>
