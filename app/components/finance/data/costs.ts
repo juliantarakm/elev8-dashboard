@@ -1,6 +1,4 @@
 export type CostType = 'Manual' | 'Cleaning' | 'Activity'
-export type CostStatus = 'Pending' | 'Approved' | 'Rejected'
-export type CostSource = 'Manual' | 'Cleaning' | 'Activity'
 export type CostCategory = 'Cleaning Supplies' | 'Maintenance' | 'Consumables' | 'Other'
 
 export interface CostEntry {
@@ -8,17 +6,16 @@ export interface CostEntry {
   date: string
   listing: string
   type: CostType
-  source: CostSource
   category: CostCategory
   amount: number
   currency: string
   staff: string
   staffId: string
-  status: CostStatus
+  synced: boolean
+  syncedAt?: string
   invoice?: string
   note?: string
   duration?: number
-  rejectionReason?: string
   linkedCleaningId?: string
   linkedActivityId?: string
   linkedReservation?: string
@@ -45,13 +42,12 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-08',
     listing: 'Villa Saba',
     type: 'Manual',
-    source: 'Manual',
     category: 'Cleaning Supplies',
     amount: 185000,
     currency: 'IDR',
     staff: 'Made Surya',
     staffId: 'staff-2',
-    status: 'Pending',
+    synced: false,
     invoice: 'receipt_villa_saba_may8.jpg',
     note: 'Laundry detergent and floor cleaner for deep clean.',
   },
@@ -60,13 +56,13 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-07',
     listing: 'The Layar 1',
     type: 'Cleaning',
-    source: 'Cleaning',
     category: 'Other',
     amount: 93750,
     currency: 'IDR',
     staff: 'Made Surya',
     staffId: 'staff-2',
-    status: 'Approved',
+    synced: true,
+    syncedAt: '2026-05-07T10:15:00Z',
     duration: 150,
     linkedCleaningId: 'clean-42',
     linkedReservation: 'res-7',
@@ -76,13 +72,13 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-06',
     listing: 'Jungle House',
     type: 'Manual',
-    source: 'Manual',
     category: 'Maintenance',
     amount: 320000,
     currency: 'IDR',
     staff: 'Wayan Adi',
     staffId: 'staff-3',
-    status: 'Approved',
+    synced: true,
+    syncedAt: '2026-05-06T09:30:00Z',
     invoice: 'invoice_plumbing_jungle_may6.pdf',
     note: 'Shower head replacement in main bathroom.',
   },
@@ -91,13 +87,12 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-05',
     listing: 'Villa Mana',
     type: 'Activity',
-    source: 'Activity',
     category: 'Other',
     amount: 62500,
     currency: 'IDR',
     staff: 'Ni Luh Ayu',
     staffId: 'staff-4',
-    status: 'Approved',
+    synced: false,
     duration: 100,
     linkedActivityId: 'act-18',
     note: 'Pool cleaning activity.',
@@ -107,29 +102,27 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-04',
     listing: 'Villa Saba',
     type: 'Manual',
-    source: 'Manual',
     category: 'Consumables',
     amount: 145000,
     currency: 'IDR',
     staff: 'Made Surya',
     staffId: 'staff-2',
-    status: 'Rejected',
+    synced: false,
     invoice: 'receipt_consumables_may4.jpg',
     note: 'Toiletries restock.',
-    rejectionReason: 'Amount seems too high for listed items. Please resubmit with itemized breakdown.',
   },
   {
     id: 'cost-6',
     date: '2026-05-03',
     listing: 'Alaya Ubud',
     type: 'Cleaning',
-    source: 'Cleaning',
     category: 'Other',
     amount: 112500,
     currency: 'IDR',
     staff: 'Ni Luh Ayu',
     staffId: 'staff-4',
-    status: 'Approved',
+    synced: true,
+    syncedAt: '2026-05-03T14:00:00Z',
     duration: 180,
     linkedCleaningId: 'clean-38',
     linkedReservation: 'res-5',
@@ -139,13 +132,12 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-02',
     listing: 'The Layar 1',
     type: 'Manual',
-    source: 'Manual',
     category: 'Maintenance',
     amount: 480000,
     currency: 'IDR',
     staff: 'Gede Putra',
     staffId: 'staff-5',
-    status: 'Pending',
+    synced: false,
     note: 'AC filter cleaning — all three units.',
   },
   {
@@ -153,13 +145,13 @@ export const mockCosts: CostEntry[] = [
     date: '2026-05-01',
     listing: 'Jungle House',
     type: 'Cleaning',
-    source: 'Cleaning',
     category: 'Other',
     amount: 75000,
     currency: 'IDR',
     staff: 'Made Surya',
     staffId: 'staff-2',
-    status: 'Approved',
+    synced: true,
+    syncedAt: '2026-05-01T11:45:00Z',
     duration: 120,
     linkedCleaningId: 'clean-35',
   },

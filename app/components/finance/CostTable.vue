@@ -7,8 +7,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [cost: CostEntry]
-  approve: [id: string]
-  reject: [id: string]
 }>()
 
 function formatIDR(amount: number) {
@@ -22,18 +20,6 @@ function formatDuration(minutes: number) {
   if (m === 0) return `${h}h`
   return `${h}h ${m}m`
 }
-
-const statusDotClass = (status: string) => ({
-  'bg-amber-500': status === 'Pending',
-  'bg-green-500': status === 'Approved',
-  'bg-red-500': status === 'Rejected',
-})
-
-const statusBgClass = (status: string) => ({
-  'text-amber-700 bg-amber-50': status === 'Pending',
-  'text-green-700 bg-green-50': status === 'Approved',
-  'text-red-700 bg-red-50': status === 'Rejected',
-})
 
 const typeDotClass = (type: string) => ({
   'bg-slate-500': type === 'Manual',
@@ -68,8 +54,8 @@ const typeBgClass = (type: string) => ({
           <TableHead class="w-20 text-center">
             Invoice
           </TableHead>
-          <TableHead class="w-28">
-            Status
+          <TableHead class="w-20 text-center">
+            Synced
           </TableHead>
           <TableHead class="w-12" />
         </TableRow>
@@ -117,14 +103,19 @@ const typeBgClass = (type: string) => ({
               />
               <span v-else class="text-xs text-muted-foreground">—</span>
             </TableCell>
-            <TableCell>
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                :class="statusBgClass(cost.status)"
-              >
-                <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(cost.status)" />
-                {{ cost.status }}
-              </span>
+            <TableCell class="text-center">
+              <Icon
+                v-if="cost.synced"
+                name="i-lucide-cloud-check"
+                class="mx-auto h-4 w-4 text-green-500"
+                title="Synced"
+              />
+              <Icon
+                v-else
+                name="i-lucide-cloud-off"
+                class="mx-auto h-4 w-4 text-muted-foreground"
+                title="Not synced"
+              />
             </TableCell>
             <TableCell @click.stop>
               <DropdownMenu>
@@ -138,17 +129,6 @@ const typeBgClass = (type: string) => ({
                     <Icon name="i-lucide-eye" class="mr-2 h-4 w-4" />
                     View detail
                   </DropdownMenuItem>
-                  <template v-if="cost.status === 'Pending'">
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem @click="emit('approve', cost.id)">
-                      <Icon name="i-lucide-check" class="mr-2 h-4 w-4" />
-                      Approve
-                    </DropdownMenuItem>
-                    <DropdownMenuItem class="text-destructive" @click="emit('reject', cost.id)">
-                      <Icon name="i-lucide-x" class="mr-2 h-4 w-4" />
-                      Reject
-                    </DropdownMenuItem>
-                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>

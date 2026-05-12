@@ -3,7 +3,7 @@ import { mockListings, mockStaff } from '@/components/finance/data/costs'
 
 const filterListing = defineModel<string>('filterListing', { default: 'all' })
 const filterType = defineModel<string>('filterType', { default: 'all' })
-const filterStatus = defineModel<string>('filterStatus', { default: 'all' })
+const filterSynced = defineModel<string>('filterSynced', { default: 'all' })
 const filterStaff = defineModel<string>('filterStaff', { default: 'all' })
 const filterDateFrom = defineModel<string>('filterDateFrom', { default: '' })
 const filterDateTo = defineModel<string>('filterDateTo', { default: '' })
@@ -55,25 +55,22 @@ const emit = defineEmits<{ clear: [] }>()
       </Select>
     </div>
 
-    <!-- Status -->
+    <!-- Sync status -->
     <div class="flex flex-col gap-1">
-      <label class="text-xs text-muted-foreground">Status</label>
-      <Select v-model="filterStatus">
+      <label class="text-xs text-muted-foreground">Sync</label>
+      <Select v-model="filterSynced">
         <SelectTrigger class="h-8 w-36 text-sm">
-          <SelectValue placeholder="All statuses" />
+          <SelectValue placeholder="All" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">
-            All statuses
+            All
           </SelectItem>
-          <SelectItem value="Pending">
-            Pending
+          <SelectItem value="synced">
+            Synced
           </SelectItem>
-          <SelectItem value="Approved">
-            Approved
-          </SelectItem>
-          <SelectItem value="Rejected">
-            Rejected
+          <SelectItem value="unsynced">
+            Not synced
           </SelectItem>
         </SelectContent>
       </Select>

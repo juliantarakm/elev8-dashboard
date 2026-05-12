@@ -1,23 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import type { CostEntry } from '@/components/finance/data/costs'
 import { useCosts } from '@/composables/useCosts'
+import { useJurnal } from '@/composables/useJurnal'
 
 const {
   filteredCosts,
   filterListing,
   filterType,
-  filterStatus,
+  filterSynced,
   filterStaff,
   filterDateFrom,
   filterDateTo,
-  pendingCount,
-  totalApproved,
-  approve,
-  reject,
+  unsyncedCount,
   clearFilters,
 } = useCosts()
+
+const { isConnected: jurnalConnected } = useJurnal()
+
+const hasAccountingIntegration = computed(() => jurnalConnected.value)
 
 const selectedCost = ref<CostEntry | null>(null)
 const drawerOpen = ref(false)
@@ -27,30 +29,11 @@ function openDetail(cost: CostEntry) {
   drawerOpen.value = true
 }
 
-function handleApprove(id: string) {
-  approve(id)
-  toast.success('Cost entry approved')
-  drawerOpen.value = false
-}
-
-function handleRejectFromTable(id: string) {
-  const cost = filteredCosts.value.find(c => c.id === id)
-  if (cost) openDetail(cost)
-}
-
-function handleReject(id: string, reason: string) {
-  reject(id, reason)
-}
-
-function formatIDR(amount: number) {
-  return `Rp ${amount.toLocaleString('id-ID')}`
-}
-
 function exportCSV() {
-  const headers = ['Date', 'Listing', 'Type', 'Source', 'Category', 'Amount (IDR)', 'Staff', 'Invoice', 'Status', 'Note']
+  const headers = ['Date', 'Listing', 'Type', 'Category', 'Amount (IDR)', 'Staff', 'Invoice', 'Synced', 'Note']
   const rows = filteredCosts.value.map(c => [
-    c.date, c.listing, c.type, c.source, c.category,
-    c.amount, c.staff, c.invoice ?? '', c.status, c.note ?? '',
+    c.date, c.listing, c.type, c.category,
+    c.amount, c.staff, c.invoice ?? '', c.synced ? 'Yes' : 'No', c.note ?? '',
   ])
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -66,19 +49,28 @@ function exportCSV() {
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- Compact stat row + export -->
+    <!-- Sync banner when no accounting integration connected -->
+    <div
+      v-if="!hasAccountingIntegration"
+      class="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
+    >
+      <Icon name="i-lucide-cloud-off" class="h-4 w-4 shrink-0 text-amber-600" />
+      <p class="flex-1 text-sm text-amber-800">
+        No accounting integration connected. Cost entries won't be synced until you connect Jurnal or another accounting system.
+      </p>
+      <NuxtLink to="/finance?tab=integrations">
+        <Button variant="outline" size="sm" class="h-7 border-amber-300 bg-white text-amber-800 hover:bg-amber-100">
+          Connect
+        </Button>
+      </NuxtLink>
+    </div>
+
+    <!-- Unsynced count + export -->
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-6">
-        <div class="flex items-center gap-2">
-          <span class="h-2 w-2 rounded-full bg-amber-500" />
-          <span class="text-sm text-muted-foreground">Pending review</span>
-          <span class="text-sm font-semibold">{{ pendingCount }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="h-2 w-2 rounded-full bg-green-500" />
-          <span class="text-sm text-muted-foreground">Total approved (month)</span>
-          <span class="text-sm font-semibold">{{ formatIDR(totalApproved) }}</span>
-        </div>
+      <div class="flex items-center gap-2">
+        <Icon name="i-lucide-cloud-off" class="h-4 w-4 text-muted-foreground" />
+        <span class="text-sm text-muted-foreground">Not synced</span>
+        <span class="text-sm font-semibold">{{ unsyncedCount }}</span>
       </div>
       <Button variant="outline" size="sm" @click="exportCSV">
         <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
@@ -90,7 +82,7 @@ function exportCSV() {
     <FinanceCostFilters
       v-model:filter-listing="filterListing"
       v-model:filter-type="filterType"
-      v-model:filter-status="filterStatus"
+      v-model:filter-synced="filterSynced"
       v-model:filter-staff="filterStaff"
       v-model:filter-date-from="filterDateFrom"
       v-model:filter-date-to="filterDateTo"
@@ -101,16 +93,12 @@ function exportCSV() {
     <FinanceCostTable
       :costs="filteredCosts"
       @select="openDetail"
-      @approve="handleApprove"
-      @reject="handleRejectFromTable"
     />
 
     <!-- Detail drawer -->
     <FinanceCostDetailDrawer
       v-model:open="drawerOpen"
       :cost="selectedCost"
-      @approve="handleApprove"
-      @reject="handleReject"
     />
   </div>
 </template>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { costByCategory, costByListing, monthlyRevenue } from '@/components/finance/data/overview'
-import { revenueStats } from '@/components/finance/data/revenue'
 import { mockCosts } from '@/components/finance/data/costs'
 
-const pendingEntries = computed(() =>
-  mockCosts.filter(c => c.status === 'Pending').slice(0, 5),
+const unsyncedEntries = computed(() =>
+  mockCosts.filter(c => !c.synced).slice(0, 5),
 )
 
 function formatCHF(amount: number) {
@@ -100,13 +99,13 @@ const typeBgClass: Record<string, string> = {
       </div>
     </div>
 
-    <!-- Pending cost entries -->
+    <!-- Unsynced cost entries -->
     <div class="rounded-lg border bg-card">
       <div class="border-b px-5 py-3.5">
-        <p class="text-sm font-medium">Pending Cost Entries</p>
-        <p class="text-xs text-muted-foreground">Waiting for approval</p>
+        <p class="text-sm font-medium">Unsynced Cost Entries</p>
+        <p class="text-xs text-muted-foreground">Not yet pushed to accounting</p>
       </div>
-      <div v-if="pendingEntries.length > 0" class="overflow-x-auto">
+      <div v-if="unsyncedEntries.length > 0" class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b bg-muted/40">
@@ -118,7 +117,7 @@ const typeBgClass: Record<string, string> = {
             </tr>
           </thead>
           <tbody class="divide-y">
-            <tr v-for="entry in pendingEntries" :key="entry.id" class="hover:bg-muted/30">
+            <tr v-for="entry in unsyncedEntries" :key="entry.id" class="hover:bg-muted/30">
               <td class="px-5 py-3 font-medium">{{ entry.staff }}</td>
               <td class="px-3 py-3 text-muted-foreground">{{ entry.listing }}</td>
               <td class="px-3 py-3 text-muted-foreground">{{ entry.category }}</td>
@@ -133,7 +132,7 @@ const typeBgClass: Record<string, string> = {
         </table>
       </div>
       <div v-else class="px-5 py-8 text-center text-sm text-muted-foreground">
-        No pending entries.
+        All entries are synced.
       </div>
     </div>
   </div>

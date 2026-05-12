@@ -150,7 +150,7 @@ const typeBadge: Record<string, string> = {
         <!-- Not connected state -->
         <template v-else>
           <p class="mb-4 text-sm text-muted-foreground">
-            Connect your Mekari Jurnal account to push approved cost and revenue entries directly into your accounting ledger.
+            Connect your Mekari Jurnal account to push cost and revenue entries directly into your accounting ledger.
           </p>
           <Button size="sm" @click="showApiKeyInput = true">
             <Icon name="i-lucide-plug" class="mr-2 h-3.5 w-3.5" />
@@ -198,7 +198,7 @@ const typeBadge: Record<string, string> = {
           <div>
             <p class="text-sm font-medium">Push Cost Entries</p>
             <p class="mt-0.5 text-xs text-muted-foreground">
-              Send approved cost entries to Jurnal as expense transactions.
+              Send cost entries to Jurnal as expense transactions.
             </p>
           </div>
           <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">

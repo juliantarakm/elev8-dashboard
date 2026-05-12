@@ -1,18 +1,12 @@
 import { computed, ref } from 'vue'
-import { mockCosts, type CostEntry, type CostStatus, type CostType } from '@/components/finance/data/costs'
-
-// Cleaning labor costs are auto-approved — no admin review required.
-// Manual and Activity entries go through Pending → approval flow.
-function initialStatus(entry: Omit<CostEntry, 'status'>): CostStatus {
-  return entry.type === 'Cleaning' ? 'Approved' : 'Pending'
-}
+import { mockCosts, type CostEntry, type CostType } from '@/components/finance/data/costs'
 
 export function useCosts() {
   const costs = useState<CostEntry[]>('costs', () => mockCosts)
 
   const filterListing = ref<string>('all')
   const filterType = ref<'all' | CostType>('all')
-  const filterStatus = ref<'all' | CostStatus>('all')
+  const filterSynced = ref<'all' | 'synced' | 'unsynced'>('all')
   const filterStaff = ref<string>('all')
   const filterDateFrom = ref<string>('')
   const filterDateTo = ref<string>('')
@@ -21,7 +15,8 @@ export function useCosts() {
     return costs.value.filter((c) => {
       if (filterListing.value !== 'all' && c.listing !== filterListing.value) return false
       if (filterType.value !== 'all' && c.type !== filterType.value) return false
-      if (filterStatus.value !== 'all' && c.status !== filterStatus.value) return false
+      if (filterSynced.value === 'synced' && !c.synced) return false
+      if (filterSynced.value === 'unsynced' && c.synced) return false
       if (filterStaff.value !== 'all' && c.staffId !== filterStaff.value) return false
       if (filterDateFrom.value && c.date < filterDateFrom.value) return false
       if (filterDateTo.value && c.date > filterDateTo.value) return false
@@ -37,25 +32,13 @@ export function useCosts() {
       .reduce((sum, c) => sum + c.amount, 0),
   )
 
-  const pendingCount = computed(() =>
-    costs.value.filter(c => c.status === 'Pending').length,
+  const unsyncedCount = computed(() =>
+    costs.value.filter(c => !c.synced).length,
   )
 
-  const totalApproved = computed(() =>
-    costs.value
-      .filter(c => c.status === 'Approved')
-      .reduce((sum, c) => sum + c.amount, 0),
-  )
-
-  function approve(id: string) {
+  function markSynced(id: string) {
     costs.value = costs.value.map(c =>
-      c.id === id ? { ...c, status: 'Approved' as CostStatus } : c,
-    )
-  }
-
-  function reject(id: string, reason: string) {
-    costs.value = costs.value.map(c =>
-      c.id === id ? { ...c, status: 'Rejected' as CostStatus, rejectionReason: reason } : c,
+      c.id === id ? { ...c, synced: true, syncedAt: new Date().toISOString() } : c,
     )
   }
 
@@ -69,7 +52,7 @@ export function useCosts() {
   function clearFilters() {
     filterListing.value = 'all'
     filterType.value = 'all'
-    filterStatus.value = 'all'
+    filterSynced.value = 'all'
     filterStaff.value = 'all'
     filterDateFrom.value = ''
     filterDateTo.value = ''
@@ -78,7 +61,7 @@ export function useCosts() {
   const hasActiveFilters = computed(() =>
     filterListing.value !== 'all'
     || filterType.value !== 'all'
-    || filterStatus.value !== 'all'
+    || filterSynced.value !== 'all'
     || filterStaff.value !== 'all'
     || !!filterDateFrom.value
     || !!filterDateTo.value,
@@ -89,15 +72,13 @@ export function useCosts() {
     filteredCosts,
     filterListing,
     filterType,
-    filterStatus,
+    filterSynced,
     filterStaff,
     filterDateFrom,
     filterDateTo,
     totalThisMonth,
-    pendingCount,
-    totalApproved,
-    approve,
-    reject,
+    unsyncedCount,
+    markSynced,
     formatAmount,
     clearFilters,
     hasActiveFilters,

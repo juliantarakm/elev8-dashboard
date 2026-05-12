@@ -16,7 +16,7 @@ export const integrations: Integration[] = [
   {
     id: 'mekari-jurnal',
     name: 'Mekari Jurnal',
-    description: 'Push approved costs and revenue entries to your Jurnal accounting ledger.',
+    description: 'Push cost and revenue entries to your Jurnal accounting ledger.',
     category: 'Accounting',
     icon: 'i-lucide-book-open',
     status: 'connected',
