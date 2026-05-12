@@ -37,6 +37,7 @@ const typeBadgeClass = (type: string) => ({
   'text-slate-700 bg-slate-100 border-slate-200': type === 'Manual',
   'text-teal-700 bg-teal-50 border-teal-200': type === 'Cleaning',
   'text-purple-700 bg-purple-50 border-purple-200': type === 'Activity',
+  'text-orange-700 bg-orange-50 border-orange-200': type === 'Task',
 })
 </script>
 

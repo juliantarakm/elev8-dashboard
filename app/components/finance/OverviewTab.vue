@@ -17,6 +17,7 @@ const typeBgClass: Record<string, string> = {
   Manual: 'text-slate-700 bg-slate-100',
   Cleaning: 'text-teal-700 bg-teal-50',
   Activity: 'text-purple-700 bg-purple-50',
+  Task: 'text-orange-700 bg-orange-50',
 }
 
 const statusClass: Record<string, string> = {

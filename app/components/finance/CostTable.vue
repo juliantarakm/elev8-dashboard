@@ -25,12 +25,14 @@ const typeDotClass = (type: string) => ({
   'bg-slate-500': type === 'Manual',
   'bg-teal-500': type === 'Cleaning',
   'bg-purple-500': type === 'Activity',
+  'bg-orange-500': type === 'Task',
 })
 
 const typeBgClass = (type: string) => ({
   'text-slate-700 bg-slate-100': type === 'Manual',
   'text-teal-700 bg-teal-50': type === 'Cleaning',
   'text-purple-700 bg-purple-50': type === 'Activity',
+  'text-orange-700 bg-orange-50': type === 'Task',
 })
 </script>
 
@@ -49,6 +51,7 @@ const typeBgClass = (type: string) => ({
           <TableHead class="w-36 text-right">
             Amount
           </TableHead>
+          <TableHead class="w-24 text-right">Duration</TableHead>
           <TableHead>Staff</TableHead>
           <TableHead class="w-20 text-center">
             Invoice
@@ -84,6 +87,9 @@ const typeBgClass = (type: string) => ({
             </TableCell>
             <TableCell class="text-right font-medium tabular-nums">
               {{ formatIDR(cost.amount) }}
+            </TableCell>
+            <TableCell class="text-right tabular-nums text-sm text-muted-foreground">
+              {{ cost.duration ? formatDuration(cost.duration) : '—' }}
             </TableCell>
             <TableCell class="text-sm">
               {{ cost.staff }}
@@ -129,7 +135,7 @@ const typeBgClass = (type: string) => ({
         </template>
         <template v-else>
           <TableRow>
-            <TableCell colspan="8" class="py-16 text-center text-sm text-muted-foreground">
+            <TableCell colspan="9" class="py-16 text-center text-sm text-muted-foreground">
               No cost entries yet. Costs submitted by your staff will appear here.
             </TableCell>
           </TableRow>
