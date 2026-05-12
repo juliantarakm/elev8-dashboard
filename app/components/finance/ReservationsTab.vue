@@ -27,6 +27,7 @@ function getTag(listing: string) {
 }
 
 const filterListing = ref('all')
+const filterTag = ref('all')
 const filterChannel = ref('all')
 const filterSynced = ref('all')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +47,7 @@ const uniqueListings = computed(() =>
 const filteredReservations = computed(() => {
   return reservations.value.filter((r) => {
     if (filterListing.value !== 'all' && r.listing !== filterListing.value) return false
+    if (filterTag.value !== 'all' && getTag(r.listing) !== filterTag.value) return false
     if (filterChannel.value !== 'all' && r.channel !== filterChannel.value) return false
     if (filterSynced.value === 'synced' && !r.synced) return false
     if (filterSynced.value === 'unsynced' && r.synced) return false
@@ -57,6 +59,7 @@ const filteredReservations = computed(() => {
 
 function clearFilters() {
   filterListing.value = 'all'
+  filterTag.value = 'all'
   filterChannel.value = 'all'
   filterSynced.value = 'all'
   dateRange.value = undefined
@@ -69,7 +72,7 @@ function rowKey(id: string, checkIn: string) {
   return `${id}:${checkIn}`
 }
 
-const selected = ref<Set<string>>(new Set())
+const selected = ref<string[]>([])
 
 const allFilteredKeys = computed(() =>
   filteredReservations.value.map(r => rowKey(r.id, r.checkIn)),
@@ -77,42 +80,41 @@ const allFilteredKeys = computed(() =>
 
 const allSelected = computed(
   () => allFilteredKeys.value.length > 0
-    && allFilteredKeys.value.every(k => selected.value.has(k)),
+    && allFilteredKeys.value.every(k => selected.value.includes(k)),
 )
 
 const someSelected = computed(
-  () => !allSelected.value && allFilteredKeys.value.some(k => selected.value.has(k)),
+  () => !allSelected.value && allFilteredKeys.value.some(k => selected.value.includes(k)),
 )
 
 function toggleAll() {
   if (allSelected.value) {
-    const next = new Set(selected.value)
-    allFilteredKeys.value.forEach(k => next.delete(k))
-    selected.value = next
+    selected.value = selected.value.filter(k => !allFilteredKeys.value.includes(k))
   }
   else {
-    const next = new Set(selected.value)
-    allFilteredKeys.value.forEach(k => next.add(k))
-    selected.value = next
+    const toAdd = allFilteredKeys.value.filter(k => !selected.value.includes(k))
+    selected.value = [...selected.value, ...toAdd]
   }
 }
 
 function toggleRow(id: string, checkIn: string) {
   const key = rowKey(id, checkIn)
-  const next = new Set(selected.value)
-  if (next.has(key)) next.delete(key)
-  else next.add(key)
-  selected.value = next
+  if (selected.value.includes(key)) {
+    selected.value = selected.value.filter(k => k !== key)
+  }
+  else {
+    selected.value = [...selected.value, key]
+  }
 }
 
 const selectedWithInvoice = computed(() =>
   filteredReservations.value.filter(
-    r => selected.value.has(rowKey(r.id, r.checkIn)) && r.invoice,
+    r => selected.value.includes(rowKey(r.id, r.checkIn)) && r.invoice,
   ),
 )
 
 const selectedCount = computed(() =>
-  allFilteredKeys.value.filter(k => selected.value.has(k)).length,
+  allFilteredKeys.value.filter(k => selected.value.includes(k)).length,
 )
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -251,6 +253,21 @@ const statusClass: Record<string, string> = {
         </Select>
       </div>
 
+      <!-- Tag -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-muted-foreground">Tag</label>
+        <Select v-model="filterTag">
+          <SelectTrigger class="h-8 w-36 text-sm">
+            <SelectValue placeholder="All tags" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            <SelectItem value="Switzerland">Switzerland</SelectItem>
+            <SelectItem value="Bali">Bali</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <!-- Channel -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-muted-foreground">Channel</label>
@@ -346,7 +363,7 @@ const statusClass: Record<string, string> = {
       <span v-if="selectedWithInvoice.length > 0" class="text-foreground">
         — {{ selectedWithInvoice.length }} with invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
       </span>
-      <button class="ml-2 text-xs underline hover:text-foreground" @click="selected = new Set()">
+      <button class="ml-2 text-xs underline hover:text-foreground" @click="selected = []">
         Clear selection
       </button>
     </div>
@@ -361,7 +378,7 @@ const statusClass: Record<string, string> = {
                 <Checkbox
                   :checked="allSelected ? true : someSelected ? 'indeterminate' : false"
                   aria-label="Select all"
-                  @update:checked="toggleAll"
+                  @click.stop="toggleAll"
                 />
               </TableHead>
               <TableHead>Guest</TableHead>
@@ -386,15 +403,14 @@ const statusClass: Record<string, string> = {
               v-for="res in filteredReservations"
               v-else
               :key="rowKey(res.id, res.checkIn)"
-              class="cursor-pointer hover:bg-muted/50"
-              :class="selected.has(rowKey(res.id, res.checkIn)) && 'bg-muted/40'"
-              @click="toggleRow(res.id, res.checkIn)"
+              class="hover:bg-muted/50"
+              :class="selected.includes(rowKey(res.id, res.checkIn)) && 'bg-muted/40'"
             >
-              <TableCell class="px-3" @click.stop>
+              <TableCell class="px-3">
                 <Checkbox
-                  :checked="selected.has(rowKey(res.id, res.checkIn))"
+                  :checked="selected.includes(rowKey(res.id, res.checkIn))"
                   aria-label="Select row"
-                  @update:checked="toggleRow(res.id, res.checkIn)"
+                  @click.stop="toggleRow(res.id, res.checkIn)"
                 />
               </TableCell>
               <TableCell class="font-medium">{{ res.guest }}</TableCell>

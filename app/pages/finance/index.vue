@@ -65,9 +65,6 @@ function formatCHF(amount: number) {
         <TabsTrigger value="revenue">
           Revenue
         </TabsTrigger>
-        <TabsTrigger value="reservations">
-          Reservations
-        </TabsTrigger>
         <TabsTrigger value="costs">
           Costs
         </TabsTrigger>
@@ -82,10 +79,6 @@ function formatCHF(amount: number) {
 
       <TabsContent value="revenue" class="mt-4">
         <FinanceRevenueTab />
-      </TabsContent>
-
-      <TabsContent value="reservations" class="mt-4">
-        <FinanceReservationsTab />
       </TabsContent>
 
       <TabsContent value="costs" class="mt-4">
