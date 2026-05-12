@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { mockSyncLogs, type SyncLog } from '@/components/finance/data/jurnal'
-import { recentReservations } from '@/components/finance/data/revenue'
 import { useCosts } from '@/composables/useCosts'
+import { useReservations } from '@/composables/useReservations'
 
 export function useJurnal() {
   const isConnected = useState<boolean>('jurnal-connected', () => true)
@@ -17,12 +17,13 @@ export function useJurnal() {
   const syncLogs = useState<SyncLog[]>('jurnal-sync-logs', () => mockSyncLogs)
 
   const { costs, markSynced } = useCosts()
+  const { reservations, markSynced: markReservationSynced } = useReservations()
 
   const unsyncedCosts = computed(() => costs.value.filter(c => !c.synced))
+  const unsyncedReservations = computed(() => reservations.value.filter(r => !r.synced))
 
   const pendingCostEntries = computed(() => unsyncedCosts.value.length)
-
-  const pendingRevenueEntries = computed(() => recentReservations.length)
+  const pendingRevenueEntries = computed(() => unsyncedReservations.value.length)
 
   const lastCostSync = computed(() => {
     const last = syncLogs.value.find(l => l.type === 'Cost' && l.status === 'Success')
@@ -83,14 +84,18 @@ export function useJurnal() {
   }
 
   async function pushRevenue() {
+    if (unsyncedReservations.value.length === 0) return
     isPushingRevenue.value = true
+    const count = unsyncedReservations.value.length
+    const toSync = unsyncedReservations.value.map(r => ({ id: r.id, checkIn: r.checkIn }))
     await new Promise(r => setTimeout(r, 2000))
+    toSync.forEach(({ id, checkIn }) => markReservationSynced(id, checkIn))
     const newLog: SyncLog = {
       id: `sync-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'Revenue',
-      entriesTotal: pendingRevenueEntries.value,
-      entriesSuccess: pendingRevenueEntries.value,
+      entriesTotal: count,
+      entriesSuccess: count,
       status: 'Success',
       jurnalReference: `JRN-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
       pushedBy: 'Komang Juliantara',
