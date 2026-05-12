@@ -1,10 +1,44 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { revenueStats } from '@/components/finance/data/revenue'
+import { useCosts } from '@/composables/useCosts'
+import { useReservations } from '@/composables/useReservations'
+import { useUpsells } from '@/composables/useUpsells'
 
 const activeTab = useState<string>('finance-active-tab', () => 'overview')
 
+const { costs, unsyncedCount: unsyncedCosts } = useCosts()
+const { unsyncedCount: unsyncedReservations } = useReservations()
+const { upsells, unsyncedCount: unsyncedUpsells } = useUpsells()
+
+const currentMonth = new Date().toISOString().slice(0, 7)
+
+const totalCostsIDR = computed(() =>
+  costs.value
+    .filter(c => c.date.startsWith(currentMonth))
+    .reduce((sum, c) => sum + c.amount, 0),
+)
+
+const upsellRevenueCHF = computed(() =>
+  upsells.value
+    .filter(u => u.date.startsWith(currentMonth) && u.status === 'Paid')
+    .reduce((sum, u) => sum + u.amount, 0),
+)
+
+const netRevenueCHF = computed(() =>
+  revenueStats.totalRevenue + upsellRevenueCHF.value,
+)
+
+const totalUnsynced = computed(() =>
+  unsyncedCosts.value + unsyncedReservations.value + unsyncedUpsells.value,
+)
+
 function formatCHF(amount: number) {
   return `CHF ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function formatIDR(amount: number) {
+  return `Rp ${amount.toLocaleString('id-ID')}`
 }
 </script>
 
@@ -20,38 +54,62 @@ function formatCHF(amount: number) {
       </p>
     </div>
 
-    <!-- Summary cards (page-level) -->
+    <!-- Summary cards -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <!-- Net Revenue -->
       <div class="rounded-lg border bg-card p-5">
         <p class="text-sm text-muted-foreground">
-          Total Revenue (May)
+          Net Revenue (May)
         </p>
         <p class="mt-1 text-2xl font-bold tracking-tight">
-          {{ formatCHF(revenueStats.totalRevenue) }}
+          {{ formatCHF(netRevenueCHF) }}
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          incl. {{ formatCHF(upsellRevenueCHF) }} upsells
         </p>
       </div>
+
+      <!-- Total Costs -->
       <div class="rounded-lg border bg-card p-5">
         <p class="text-sm text-muted-foreground">
-          ADR (last 30 days)
+          Total Costs (May)
         </p>
         <p class="mt-1 text-2xl font-bold tracking-tight">
-          {{ formatCHF(revenueStats.adrLast30Days) }}
+          {{ formatIDR(totalCostsIDR) }}
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          {{ costs.filter(c => c.date.startsWith(currentMonth)).length }} entries this month
         </p>
       </div>
+
+      <!-- Upsell Revenue -->
       <div class="rounded-lg border bg-card p-5">
         <p class="text-sm text-muted-foreground">
-          Occupancy Rate
+          Upsell Revenue (May)
         </p>
         <p class="mt-1 text-2xl font-bold tracking-tight">
-          {{ revenueStats.occupancyPct }}%
+          {{ formatCHF(upsellRevenueCHF) }}
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          {{ upsells.filter(u => u.date.startsWith(currentMonth) && u.status === 'Paid').length }} paid upsells
         </p>
       </div>
-      <div class="rounded-lg border bg-card p-5">
+
+      <!-- Unsynced Entries -->
+      <div class="rounded-lg border bg-card p-5" :class="totalUnsynced > 0 ? 'border-amber-200 bg-amber-50/40' : ''">
         <p class="text-sm text-muted-foreground">
-          Total Reservations
+          Unsynced Entries
         </p>
-        <p class="mt-1 text-2xl font-bold tracking-tight">
-          {{ revenueStats.totalReservations }}
+        <p class="mt-1 text-2xl font-bold tracking-tight" :class="totalUnsynced > 0 ? 'text-amber-700' : ''">
+          {{ totalUnsynced }}
+        </p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          <template v-if="totalUnsynced === 0">
+            All synced to Jurnal
+          </template>
+          <template v-else>
+            {{ unsyncedReservations }} reserv · {{ unsyncedCosts }} costs · {{ unsyncedUpsells }} upsells
+          </template>
         </p>
       </div>
     </div>
