@@ -240,7 +240,7 @@ const recentActivity = computed<ActivityRow[]>(() => {
             class="mr-1.5 h-3.5 w-3.5 animate-spin"
           />
           <Icon v-else name="i-lucide-upload-cloud" class="mr-1.5 h-3.5 w-3.5" />
-          {{ isAnyPushing ? 'Pushing…' : 'Push all to Jurnal' }}
+          {{ isAnyPushing ? 'Syncing…' : 'Sync all' }}
         </Button>
       </div>
 
