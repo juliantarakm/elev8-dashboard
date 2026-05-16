@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { CostEntry } from '@/components/finance/data/costs'
+import { useListingMappings } from '@/composables/useListingMappings'
+import { useActiveIntegration } from '@/composables/useActiveIntegration'
+import { useCosts } from '@/composables/useCosts'
 
 const props = defineProps<{
   cost: CostEntry | null
@@ -14,8 +18,43 @@ function onOpenChange(val: boolean) {
   emit('update:open', val)
 }
 
-function formatIDR(amount: number) {
-  return `Rp ${amount.toLocaleString('id-ID')}`
+const { getMappingFor } = useListingMappings()
+const { getCostAccountingAmount } = useActiveIntegration()
+const { costs } = useCosts()
+
+// For Task/Activity: find a Manual entry linked to this entry
+const linkedMaterialEntry = computed<CostEntry | null>(() => {
+  if (!props.cost) return null
+  if (props.cost.type !== 'Task' && props.cost.type !== 'Activity') return null
+  return costs.value.find(c => c.linkedTaskId === props.cost!.id) ?? null
+})
+
+// For Manual: find the Task/Activity this entry is a material cost for
+const linkedTaskEntry = computed<CostEntry | null>(() => {
+  if (!props.cost?.linkedTaskId) return null
+  return costs.value.find(c => c.id === props.cost!.linkedTaskId) ?? null
+})
+
+const integrationMeta: Record<string, { label: string, badgeClass: string, bannerClass: string, textClass: string, iconClass: string }> = {
+  jurnal: {
+    label: 'Mekari Jurnal',
+    badgeClass: 'text-blue-700 bg-blue-50',
+    bannerClass: 'border-green-200 bg-green-50',
+    textClass: 'text-green-700',
+    iconClass: 'text-green-600',
+  },
+  bexio: {
+    label: 'Bexio',
+    badgeClass: 'text-violet-700 bg-violet-50',
+    bannerClass: 'border-green-200 bg-green-50',
+    textClass: 'text-green-700',
+    iconClass: 'text-green-600',
+  },
+}
+
+function formatAmount(amount: number, currency: string) {
+  if (currency === 'IDR') return `IDR ${amount.toLocaleString('id-ID')}`
+  return `${currency} ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function formatDuration(minutes: number) {
@@ -95,7 +134,15 @@ const typeBadgeClass = (type: string) => ({
                 Amount
               </dt>
               <dd class="font-medium">
-                {{ formatIDR(props.cost.amount) }}
+                {{ formatAmount(props.cost.amount, props.cost.currency) }}
+              </dd>
+            </div>
+            <div v-if="props.cost.synced && getCostAccountingAmount(props.cost.listing, props.cost.amount, props.cost.currency)">
+              <dt class="text-muted-foreground">
+                Acctg. Amount
+              </dt>
+              <dd class="font-medium">
+                {{ getCostAccountingAmount(props.cost.listing, props.cost.amount, props.cost.currency) }}
               </dd>
             </div>
             <div>
@@ -142,10 +189,19 @@ const typeBadgeClass = (type: string) => ({
               class="h-4 w-4 shrink-0"
               :class="props.cost.synced ? 'text-green-600' : 'text-muted-foreground'"
             />
-            <div>
-              <p class="text-sm font-medium" :class="props.cost.synced ? 'text-green-700' : 'text-muted-foreground'">
-                {{ props.cost.synced ? 'Synced to accounting' : 'Not yet synced' }}
-              </p>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium" :class="props.cost.synced ? 'text-green-700' : 'text-muted-foreground'">
+                  {{ props.cost.synced ? 'Synced' : 'Not yet synced' }}
+                </p>
+                <span
+                  v-if="props.cost.synced && getMappingFor(props.cost.listing)"
+                  class="rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="integrationMeta[getMappingFor(props.cost.listing)!.integration]?.badgeClass"
+                >
+                  {{ integrationMeta[getMappingFor(props.cost.listing)!.integration]?.label }}
+                </span>
+              </div>
               <p v-if="props.cost.syncedAt" class="text-xs text-green-600">
                 {{ formatSyncedAt(props.cost.syncedAt) }}
               </p>
@@ -160,6 +216,62 @@ const typeBadgeClass = (type: string) => ({
             <p class="rounded-md bg-muted px-3 py-2 text-sm">
               {{ props.cost.note }}
             </p>
+          </div>
+
+          <!-- Linked material entry (shown on Task / Activity) -->
+          <div v-if="linkedMaterialEntry">
+            <p class="mb-2 text-xs text-muted-foreground">
+              Material Entry
+            </p>
+            <div class="rounded-md border bg-muted/40 px-3 py-2.5">
+              <div class="flex items-start gap-2">
+                <Icon name="i-lucide-package" class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium">
+                    {{ formatAmount(linkedMaterialEntry.amount, linkedMaterialEntry.currency) }}
+                  </p>
+                  <p v-if="linkedMaterialEntry.note" class="mt-0.5 text-xs text-muted-foreground truncate">
+                    {{ linkedMaterialEntry.note }}
+                  </p>
+                  <p v-if="linkedMaterialEntry.invoice" class="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    <Icon name="i-lucide-paperclip" class="h-3 w-3" />
+                    {{ linkedMaterialEntry.invoice }}
+                  </p>
+                </div>
+                <span
+                  class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="linkedMaterialEntry.synced ? 'text-green-700 bg-green-50' : 'text-amber-700 bg-amber-50'"
+                >
+                  {{ linkedMaterialEntry.synced ? 'Synced' : 'Pending' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linked task (shown on Manual material entries) -->
+          <div v-if="linkedTaskEntry">
+            <p class="mb-2 text-xs text-muted-foreground">
+              Linked {{ linkedTaskEntry.type }}
+            </p>
+            <div class="rounded-md border bg-muted/40 px-3 py-2.5">
+              <div class="flex items-start gap-2">
+                <Icon name="i-lucide-link" class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium">
+                    {{ formatAmount(linkedTaskEntry.amount, linkedTaskEntry.currency) }}
+                    <span v-if="linkedTaskEntry.duration" class="ml-1 text-xs font-normal text-muted-foreground">
+                      ({{ formatDuration(linkedTaskEntry.duration) }})
+                    </span>
+                  </p>
+                  <p v-if="linkedTaskEntry.note" class="mt-0.5 text-xs text-muted-foreground truncate">
+                    {{ linkedTaskEntry.note }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-muted-foreground">
+                    {{ linkedTaskEntry.date }} · {{ linkedTaskEntry.staff }}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Invoice -->

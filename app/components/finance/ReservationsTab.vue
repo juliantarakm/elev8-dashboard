@@ -4,6 +4,8 @@ import { toast } from 'vue-sonner'
 import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import { useReservations } from '@/composables/useReservations'
 import { useJurnal } from '@/composables/useJurnal'
+import { useBexio } from '@/composables/useBexio'
+import { useListingMappings } from '@/composables/useListingMappings'
 
 const {
   reservations,
@@ -15,10 +17,32 @@ const {
   pushSelected,
 } = useReservations()
 
-const {
-  isConnected: jurnalConnected,
-  formatDate,
-} = useJurnal()
+const { isConnected: jurnalConnected, formatDate } = useJurnal()
+const { isConnected: bexioConnected } = useBexio()
+const { getMappingFor, mappedByIntegration } = useListingMappings()
+const { showConvertedColumn, getAccountingAmount } = useActiveIntegration()
+
+const anyConnected = computed(() => jurnalConnected.value || bexioConnected.value)
+
+const syncTarget = computed(() => {
+  const { jurnal, bexio } = mappedByIntegration.value
+  const hasJurnal = jurnal > 0 && jurnalConnected.value
+  const hasBexio = bexio > 0 && bexioConnected.value
+  if (hasJurnal && hasBexio) return 'your accounting software'
+  if (hasJurnal) return 'Jurnal'
+  if (hasBexio) return 'Bexio'
+  return 'your accounting software'
+})
+
+const pushDestLabel = computed(() => {
+  const integs = new Set<string>()
+  selectedUnsynced.value.forEach((r) => {
+    const mapping = getMappingFor(r.listing)
+    if (mapping) integs.add(mapping.integration)
+  })
+  if (integs.size === 1) return [...integs][0] === 'jurnal' ? 'Jurnal' : 'Bexio'
+  return 'accounting'
+})
 
 // ── Filters ────────────────────────────────────────────────────────────────
 const df = new DateFormatter('en-GB', { day: 'numeric', month: 'short' })
@@ -33,6 +57,7 @@ const filterTag = ref('all')
 const filterChannel = ref('all')
 const filterStatus = ref('all')
 const filterSynced = ref('all')
+const filterIntegration = ref('all')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dateRange = ref<any>(undefined)
 const filterDateFrom = ref('')
@@ -57,6 +82,12 @@ const filteredReservations = computed(() => {
     if (filterSynced.value === 'unsynced' && r.synced) return false
     if (filterDateFrom.value && r.checkIn < filterDateFrom.value) return false
     if (filterDateTo.value && r.checkIn > filterDateTo.value) return false
+    if (filterIntegration.value !== 'all') {
+      const mapping = getMappingFor(r.listing)
+      if (filterIntegration.value === 'none' && mapping) return false
+      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
+      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+    }
     return true
   })
 })
@@ -67,6 +98,7 @@ function clearFilters() {
   filterChannel.value = 'all'
   filterStatus.value = 'all'
   filterSynced.value = 'all'
+  filterIntegration.value = 'all'
   dateRange.value = undefined
   filterDateFrom.value = ''
   filterDateTo.value = ''
@@ -134,13 +166,14 @@ const selectedCount = computed(() =>
 // ── Actions ────────────────────────────────────────────────────────────────
 async function handlePushNow() {
   await pushReservations()
-  toast.success('All reservations pushed to Jurnal.')
+  toast.success(`All reservations pushed to ${syncTarget.value}.`)
 }
 
 async function handlePushSelected() {
+  const dest = pushDestLabel.value
   const keys = selectedUnsynced.value.map(r => ({ id: r.id, checkIn: r.checkIn }))
   await pushSelected(keys)
-  toast.success(`${keys.length} reservation${keys.length > 1 ? 's' : ''} pushed to Jurnal.`)
+  toast.success(`${keys.length} reservation${keys.length > 1 ? 's' : ''} pushed to ${dest}.`)
 }
 
 function downloadSingleInvoice(invoice: string, guest: string) {
@@ -205,12 +238,12 @@ const statusClass: Record<string, string> = {
   <div class="flex flex-col gap-4">
     <!-- Sync banner -->
     <div
-      v-if="!jurnalConnected"
+      v-if="!anyConnected"
       class="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
     >
       <Icon name="i-lucide-cloud-off" class="h-4 w-4 shrink-0 text-amber-600" />
       <p class="flex-1 text-sm text-amber-800">
-        No accounting integration connected. Reservations won't be synced until you connect Jurnal.
+        No accounting integration connected. Reservations won't be synced until you connect an integration.
       </p>
       <NuxtLink to="/finance?tab=integrations">
         <Button variant="outline" size="sm" class="h-7 border-amber-300 bg-white text-amber-800 hover:bg-amber-100">
@@ -226,7 +259,7 @@ const statusClass: Record<string, string> = {
       <Icon name="i-lucide-cloud-upload" class="h-4 w-4 shrink-0 text-blue-600" />
       <p class="flex-1 text-sm text-blue-800">
         <span class="font-medium">{{ unsyncedCount }} {{ unsyncedCount === 1 ? 'reservation' : 'reservations' }}</span>
-        not yet synced to Jurnal.
+        not yet synced to {{ syncTarget }}.
         <span v-if="lastReservationSync" class="text-blue-600"> Last sync: {{ formatDate(lastReservationSync) }}.</span>
       </p>
       <Button
@@ -251,7 +284,7 @@ const statusClass: Record<string, string> = {
     >
       <Icon name="i-lucide-cloud-check" class="h-4 w-4 shrink-0 text-green-600" />
       <p class="flex-1 text-sm text-green-800">
-        All reservations synced to Jurnal.
+        All reservations synced to {{ syncTarget }}.
         <span v-if="lastReservationSync" class="text-green-600"> Last sync: {{ formatDate(lastReservationSync) }}.</span>
       </p>
     </div>
@@ -337,6 +370,22 @@ const statusClass: Record<string, string> = {
         </Select>
       </div>
 
+      <!-- Integration -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-muted-foreground">Integration</label>
+        <Select v-model="filterIntegration">
+          <SelectTrigger class="h-8 w-36 text-sm">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="jurnal">Jurnal</SelectItem>
+            <SelectItem value="bexio">Bexio</SelectItem>
+            <SelectItem value="none">Not mapped</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <!-- Date range -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-muted-foreground">Check-in range</label>
@@ -411,7 +460,7 @@ const statusClass: Record<string, string> = {
         Export CSV
       </Button>
       <Button
-        v-if="selectedUnsynced.length > 0 && jurnalConnected"
+        v-if="selectedUnsynced.length > 0 && anyConnected"
         size="sm"
         class="h-7 bg-blue-600 text-white hover:bg-blue-700"
         :disabled="isPushingSelected"
@@ -423,7 +472,7 @@ const statusClass: Record<string, string> = {
           class="mr-1.5 h-3.5 w-3.5 animate-spin"
         />
         <Icon v-else name="i-lucide-upload" class="mr-1.5 h-3.5 w-3.5" />
-        {{ isPushingSelected ? 'Pushing…' : `Push ${selectedUnsynced.length} to Jurnal` }}
+        {{ isPushingSelected ? 'Pushing…' : `Push ${selectedUnsynced.length} to ${pushDestLabel}` }}
       </Button>
     </div>
 
@@ -447,6 +496,9 @@ const statusClass: Record<string, string> = {
               <TableHead>Check-in</TableHead>
               <TableHead class="w-16 text-center">Nights</TableHead>
               <TableHead class="text-right">Amount</TableHead>
+              <TableHead v-if="showConvertedColumn" class="text-right text-muted-foreground">
+                Acctg. Amount
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead class="w-20 text-center">Invoice</TableHead>
               <TableHead class="w-20 text-center">Synced</TableHead>
@@ -455,7 +507,7 @@ const statusClass: Record<string, string> = {
           </TableHeader>
           <TableBody>
             <TableRow v-if="filteredReservations.length === 0">
-              <TableCell colspan="11" class="py-12 text-center text-sm text-muted-foreground">
+              <TableCell :colspan="showConvertedColumn ? 12 : 11" class="py-12 text-center text-sm text-muted-foreground">
                 No reservations match the selected filters.
               </TableCell>
             </TableRow>
@@ -487,6 +539,9 @@ const statusClass: Record<string, string> = {
               <TableCell class="tabular-nums text-muted-foreground">{{ res.checkIn }}</TableCell>
               <TableCell class="text-center tabular-nums">{{ res.nights }}</TableCell>
               <TableCell class="text-right font-semibold tabular-nums">{{ formatCHF(res.amount) }}</TableCell>
+              <TableCell v-if="showConvertedColumn" class="text-right tabular-nums text-muted-foreground text-xs">
+                {{ res.synced ? (getAccountingAmount(res.listing, res.amount) ?? '—') : '—' }}
+              </TableCell>
               <TableCell>
                 <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="statusClass[res.status]">
                   {{ res.status }}

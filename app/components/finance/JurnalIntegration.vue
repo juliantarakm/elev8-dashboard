@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useJurnal } from '@/composables/useJurnal'
+import { jurnalAccounts } from '@/components/finance/data/jurnal'
+import { allListings, useListingMappings } from '@/composables/useListingMappings'
 
 const {
   isConnected,
@@ -28,6 +30,46 @@ const {
 
 const showDisconnectConfirm = ref(false)
 const showApiKeyInput = ref(false)
+
+// ── Listing mapping ────────────────────────────────────────────────────────
+const { mappings, setMapping, clearMapping, getMappingFor } = useListingMappings()
+
+const regionFilter = ref<'all' | 'Switzerland' | 'Bali'>('all')
+const applyToAllAccount = ref('')
+
+const filteredListings = computed(() =>
+  regionFilter.value === 'all' ? allListings : allListings.filter(l => l.region === regionFilter.value),
+)
+
+const jurnalMappedCount = computed(() =>
+  allListings.filter(l => getMappingFor(l.name)?.integration === 'jurnal').length,
+)
+
+function isMappedToBexio(listingName: string): boolean {
+  return getMappingFor(listingName)?.integration === 'bexio'
+}
+
+function setJurnalMapping(listingName: string, accountId: string) {
+  if (accountId) setMapping(listingName, 'jurnal', accountId)
+  else clearMapping(listingName)
+}
+
+function applyToAll(accountId: string) {
+  if (!accountId) return
+  filteredListings.value
+    .filter(l => !isMappedToBexio(l.name))
+    .forEach(l => setMapping(l.name, 'jurnal', accountId))
+}
+
+function accountLabel(id: string) {
+  const acc = jurnalAccounts.find(a => a.id === id)
+  return acc ? `${acc.code} – ${acc.name}` : '—'
+}
+
+function getMappingValue(listingName: string): string {
+  const m = getMappingFor(listingName)
+  return m?.integration === 'jurnal' ? m.accountId : ''
+}
 
 async function handleTestConnection() {
   const ok = await testConnection()
@@ -252,6 +294,104 @@ const typeBadge: Record<string, string> = {
           <Icon v-else name="i-lucide-upload" class="mr-2 h-3.5 w-3.5" />
           {{ isPushingRevenue ? 'Pushing…' : 'Push to Jurnal' }}
         </Button>
+      </div>
+    </div>
+
+    <!-- Listing mapping -->
+    <div v-if="isConnected" class="rounded-lg border bg-card">
+      <div class="border-b px-5 py-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium">Listing Mapping</p>
+          <p class="text-xs text-muted-foreground">Map listings to Jurnal revenue accounts for automatic posting</p>
+        </div>
+        <Badge variant="secondary" class="tabular-nums shrink-0">
+          {{ jurnalMappedCount }}/{{ allListings.length }} mapped
+        </Badge>
+      </div>
+      <div class="p-5 flex flex-col gap-4">
+        <!-- Apply to all + region filter -->
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted-foreground">Apply one account to visible listings</label>
+            <div class="flex gap-2">
+              <Select v-model="applyToAllAccount">
+                <SelectTrigger class="h-8 w-72 text-sm">
+                  <SelectValue placeholder="Select Jurnal account…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="acc in jurnalAccounts" :key="acc.id" :value="acc.id">
+                    {{ acc.code }} – {{ acc.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" class="h-8" :disabled="!applyToAllAccount" @click="applyToAll(applyToAllAccount)">
+                Apply to all
+              </Button>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 self-end">
+            <Button
+              v-for="r in ['all', 'Switzerland', 'Bali']"
+              :key="r"
+              variant="ghost"
+              size="sm"
+              class="h-8 px-3 text-xs"
+              :class="regionFilter === r && 'bg-muted font-medium'"
+              @click="regionFilter = r as typeof regionFilter"
+            >
+              {{ r === 'all' ? 'All' : r }}
+            </Button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="rounded-md border overflow-hidden">
+          <ScrollArea class="h-72">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Listing</TableHead>
+                  <TableHead class="w-24">Region</TableHead>
+                  <TableHead class="w-80">Jurnal Account</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow
+                  v-for="listing in filteredListings"
+                  :key="listing.name"
+                  :class="isMappedToBexio(listing.name) ? 'opacity-60' : getMappingValue(listing.name) ? '' : 'bg-amber-50/40 dark:bg-amber-900/10'"
+                >
+                  <TableCell class="text-sm font-medium max-w-xs truncate" :title="listing.name">
+                    {{ listing.name }}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" class="text-xs font-normal">{{ listing.region }}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div v-if="isMappedToBexio(listing.name)" class="flex items-center gap-1.5">
+                      <Icon name="i-lucide-lock" class="h-3 w-3 text-muted-foreground" />
+                      <span class="text-xs text-muted-foreground">Mapped to Bexio</span>
+                    </div>
+                    <Select
+                      v-else
+                      :model-value="getMappingValue(listing.name)"
+                      @update:model-value="val => setJurnalMapping(listing.name, val)"
+                    >
+                      <SelectTrigger class="h-7 w-full text-xs">
+                        <SelectValue placeholder="Select account…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem v-for="acc in jurnalAccounts" :key="acc.id" :value="acc.id">
+                          {{ acc.code }} – {{ acc.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
       </div>
     </div>
 

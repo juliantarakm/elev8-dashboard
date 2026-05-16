@@ -46,7 +46,7 @@ function formatCHF(n: number) {
 }
 
 function formatIDR(n: number) {
-  return `Rp ${n.toLocaleString('id-ID')}`
+  return `IDR ${n.toLocaleString('id-ID')}`
 }
 
 const allPending = computed<PendingRow[]>(() => {

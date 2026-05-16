@@ -1,13 +1,16 @@
 import { computed, ref } from 'vue'
 import { mockCosts, type CostEntry, type CostType } from '@/components/finance/data/costs'
+import { useListingMappings } from '@/composables/useListingMappings'
 
 export function useCosts() {
   const costs = useState<CostEntry[]>('costs', () => mockCosts)
+  const { getMappingFor } = useListingMappings()
 
   const filterListing = ref<string>('all')
   const filterType = ref<'all' | CostType>('all')
   const filterSynced = ref<'all' | 'synced' | 'unsynced'>('all')
   const filterStaff = ref<string>('all')
+  const filterIntegration = ref<'all' | 'jurnal' | 'bexio' | 'none'>('all')
   const filterDateFrom = ref<string>('')
   const filterDateTo = ref<string>('')
 
@@ -20,6 +23,12 @@ export function useCosts() {
       if (filterStaff.value !== 'all' && c.staffId !== filterStaff.value) return false
       if (filterDateFrom.value && c.date < filterDateFrom.value) return false
       if (filterDateTo.value && c.date > filterDateTo.value) return false
+      if (filterIntegration.value !== 'all') {
+        const mapping = getMappingFor(c.listing)
+        if (filterIntegration.value === 'none' && mapping) return false
+        if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
+        if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+      }
       return true
     })
   })
@@ -44,7 +53,7 @@ export function useCosts() {
 
   function formatAmount(amount: number, currency: string) {
     if (currency === 'IDR') {
-      return `Rp ${amount.toLocaleString('id-ID')}`
+      return `IDR ${amount.toLocaleString('id-ID')}`
     }
     return `${currency} ${amount.toLocaleString()}`
   }
@@ -54,6 +63,7 @@ export function useCosts() {
     filterType.value = 'all'
     filterSynced.value = 'all'
     filterStaff.value = 'all'
+    filterIntegration.value = 'all'
     filterDateFrom.value = ''
     filterDateTo.value = ''
   }
@@ -63,6 +73,7 @@ export function useCosts() {
     || filterType.value !== 'all'
     || filterSynced.value !== 'all'
     || filterStaff.value !== 'all'
+    || filterIntegration.value !== 'all'
     || !!filterDateFrom.value
     || !!filterDateTo.value,
   )
@@ -74,6 +85,7 @@ export function useCosts() {
     filterType,
     filterSynced,
     filterStaff,
+    filterIntegration,
     filterDateFrom,
     filterDateTo,
     totalThisMonth,

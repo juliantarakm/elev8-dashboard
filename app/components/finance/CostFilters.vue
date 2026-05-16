@@ -4,6 +4,7 @@ import { mockListings, mockStaff } from '@/components/finance/data/costs'
 const filterListing = defineModel<string>('filterListing', { default: 'all' })
 const filterType = defineModel<string>('filterType', { default: 'all' })
 const filterSynced = defineModel<string>('filterSynced', { default: 'all' })
+const filterIntegration = defineModel<string>('filterIntegration', { default: 'all' })
 const filterStaff = defineModel<string>('filterStaff', { default: 'all' })
 const filterDateFrom = defineModel<string>('filterDateFrom', { default: '' })
 const filterDateTo = defineModel<string>('filterDateTo', { default: '' })
@@ -75,6 +76,22 @@ const emit = defineEmits<{ clear: [] }>()
           <SelectItem value="unsynced">
             Not synced
           </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <!-- Integration -->
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-muted-foreground">Integration</label>
+      <Select v-model="filterIntegration">
+        <SelectTrigger class="h-8 w-36 text-sm">
+          <SelectValue placeholder="All" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All</SelectItem>
+          <SelectItem value="jurnal">Jurnal</SelectItem>
+          <SelectItem value="bexio">Bexio</SelectItem>
+          <SelectItem value="none">Not mapped</SelectItem>
         </SelectContent>
       </Select>
     </div>

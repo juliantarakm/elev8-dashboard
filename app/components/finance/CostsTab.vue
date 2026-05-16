@@ -11,6 +11,7 @@ const {
   filterType,
   filterSynced,
   filterStaff,
+  filterIntegration,
   filterDateFrom,
   filterDateTo,
   unsyncedCount,
@@ -118,6 +119,7 @@ function exportCSV() {
       v-model:filter-listing="filterListing"
       v-model:filter-type="filterType"
       v-model:filter-synced="filterSynced"
+      v-model:filter-integration="filterIntegration"
       v-model:filter-staff="filterStaff"
       v-model:filter-date-from="filterDateFrom"
       v-model:filter-date-to="filterDateTo"

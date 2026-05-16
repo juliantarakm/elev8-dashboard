@@ -1,3 +1,17 @@
+export interface JurnalAccount {
+  id: string
+  code: string
+  name: string
+}
+
+export const jurnalAccounts: JurnalAccount[] = [
+  { id: 'ja-4100', code: '4-10000', name: 'Pendapatan Sewa Harian – Switzerland' },
+  { id: 'ja-4110', code: '4-10100', name: 'Pendapatan Sewa Harian – Bali' },
+  { id: 'ja-4200', code: '4-10200', name: 'Pendapatan Sewa Jangka Panjang' },
+  { id: 'ja-4300', code: '4-20000', name: 'Pendapatan Jasa Tambahan' },
+  { id: 'ja-4400', code: '4-20100', name: 'Pendapatan Transfer & Logistik' },
+]
+
 export type SyncType = 'Cost' | 'Revenue'
 export type SyncStatus = 'Success' | 'Failed' | 'Partial'
 

@@ -19,7 +19,7 @@ export function useUpsells() {
   }
 
   async function pushUpsells() {
-    const unsynced = upsells.value.filter(u => !u.synced && u.status === 'Paid')
+    const unsynced = upsells.value.filter(u => !u.synced)
     if (unsynced.length === 0) return
     isPushingUpsells.value = true
     await new Promise(r => setTimeout(r, 1600))

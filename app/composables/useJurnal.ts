@@ -9,6 +9,18 @@ export function useJurnal() {
   const apiKeyInput = ref('')
   const companyName = useState<string>('jurnal-company', () => 'Elev8 Suite Bali')
   const lastConnected = useState<string>('jurnal-last-connected', () => '2026-05-01')
+
+  // Mekari Jurnal uses IDR; exchange rate is mocked (CHF → IDR)
+  const accountingCurrency = 'IDR'
+  const exchangeRate = 18_524 // 1 CHF ≈ 18,524 IDR
+
+  function convertToAccounting(chf: number): number {
+    return Math.round(chf * exchangeRate)
+  }
+
+  function formatAccounting(amount: number): string {
+    return `IDR ${amount.toLocaleString('id-ID')}`
+  }
   const isTesting = ref(false)
   const isSaving = ref(false)
   const isPushingCosts = ref(false)
@@ -126,6 +138,10 @@ export function useJurnal() {
     pendingRevenueEntries,
     lastCostSync,
     lastRevenueSync,
+    accountingCurrency,
+    exchangeRate,
+    convertToAccounting,
+    formatAccounting,
     testConnection,
     saveApiKey,
     disconnect,

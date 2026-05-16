@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useUpsells } from '@/composables/useUpsells'
 import { useJurnal } from '@/composables/useJurnal'
+import { useListingMappings } from '@/composables/useListingMappings'
 import type { UpsellType } from '@/components/finance/data/upsells'
 
 const {
@@ -14,11 +15,14 @@ const {
 } = useUpsells()
 
 const { isConnected: jurnalConnected, formatDate } = useJurnal()
+const { showConvertedColumn, getAccountingAmount } = useActiveIntegration()
+const { getMappingFor } = useListingMappings()
 
 // ── Filters ────────────────────────────────────────────────────────────────
 const filterType = ref<'all' | UpsellType>('all')
 const filterChannel = ref('all')
 const filterSynced = ref('all')
+const filterIntegration = ref('all')
 
 const filteredUpsells = computed(() => {
   return upsells.value.filter((u) => {
@@ -26,6 +30,12 @@ const filteredUpsells = computed(() => {
     if (filterChannel.value !== 'all' && u.channel !== filterChannel.value) return false
     if (filterSynced.value === 'synced' && !u.synced) return false
     if (filterSynced.value === 'unsynced' && u.synced) return false
+    if (filterIntegration.value !== 'all') {
+      const mapping = getMappingFor(u.listing)
+      if (filterIntegration.value === 'none' && mapping) return false
+      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
+      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+    }
     return true
   })
 })
@@ -34,6 +44,7 @@ function clearFilters() {
   filterType.value = 'all'
   filterChannel.value = 'all'
   filterSynced.value = 'all'
+  filterIntegration.value = 'all'
 }
 
 // ── Selection ──────────────────────────────────────────────────────────────
@@ -240,6 +251,21 @@ const upsellTypes: UpsellType[] = [
         </Select>
       </div>
 
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-muted-foreground">Integration</label>
+        <Select v-model="filterIntegration">
+          <SelectTrigger class="h-8 w-36 text-sm">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="jurnal">Jurnal</SelectItem>
+            <SelectItem value="bexio">Bexio</SelectItem>
+            <SelectItem value="none">Not mapped</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button variant="ghost" size="sm" class="h-8 self-end" @click="clearFilters">
         Clear filters
       </Button>
@@ -294,6 +320,9 @@ const upsellTypes: UpsellType[] = [
             <TableHead class="w-28">Date</TableHead>
             <TableHead>Type</TableHead>
             <TableHead class="text-right">Amount</TableHead>
+            <TableHead v-if="showConvertedColumn" class="text-right text-muted-foreground">
+              Acctg. Amount
+            </TableHead>
             <TableHead class="w-20 text-center">Invoice</TableHead>
             <TableHead class="w-20 text-center">Synced</TableHead>
             <TableHead class="w-10" />
@@ -301,7 +330,7 @@ const upsellTypes: UpsellType[] = [
         </TableHeader>
         <TableBody>
           <TableRow v-if="filteredUpsells.length === 0">
-            <TableCell colspan="10" class="py-12 text-center text-sm text-muted-foreground">
+            <TableCell :colspan="showConvertedColumn ? 11 : 10" class="py-12 text-center text-sm text-muted-foreground">
               No upsell entries match the selected filters.
             </TableCell>
           </TableRow>
@@ -337,6 +366,9 @@ const upsellTypes: UpsellType[] = [
               </span>
             </TableCell>
             <TableCell class="text-right font-semibold tabular-nums">{{ formatCHF(u.amount) }}</TableCell>
+            <TableCell v-if="showConvertedColumn" class="text-right tabular-nums text-muted-foreground text-xs">
+              {{ u.synced ? (getAccountingAmount(u.listing, u.amount) ?? '—') : '—' }}
+            </TableCell>
             <TableCell class="text-center">
               <Icon
                 name="i-lucide-paperclip"

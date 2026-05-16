@@ -112,6 +112,28 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **IntegrationsTab.vue** — Jurnal + Bexio integration cards
 - Page: `app/pages/finance/index.vue`
 
+#### Accounting Integration System
+Two integrations supported: **Mekari Jurnal** (IDR, Indonesia) and **Bexio** (CHF, Switzerland).
+
+**Composables:**
+- `useListingMappings` (`app/composables/useListingMappings.ts`) — shared `useState<Record<string, ListingMapping>>` keyed by listing name. `initialMappings` pre-seeds all known listings: Bali + first 12 Swiss → Jurnal, last 16 Swiss → Bexio. Key exports: `getMappingFor(name)`, `setMapping(name, integration, accountId)`, `hasAnyMapping`, `mappedByIntegration`
+- `useJurnal` (`app/composables/useJurnal.ts`) — Jurnal connection state, exchange rate (CHF → IDR), `convertToAccounting(chf)`, `formatAccounting(idr)`, `pushCosts()`, `pushRevenue()`, `isPushingCosts`, `isPushingRevenue`
+- `useBexio` (`app/composables/useBexio.ts`) — Bexio connection state, CHF accounting, `availableListings` (excludes Jurnal-mapped listings), `applyAccountToAll` skips Jurnal-mapped listings
+- `useActiveIntegration` (`app/composables/useActiveIntegration.ts`) — derives column visibility and per-listing accounting amounts:
+  - `showConvertedColumn` — true if any integration is connected with mapped listings
+  - `getAccountingAmount(listingName, chfAmount)` — for reservations/upsells (CHF input)
+  - `getCostAccountingAmount(listingName, amount, currency)` — for costs (IDR or CHF input)
+
+**1 listing = 1 integration rule**: enforced at UI level — rows mapped to the other integration show a lock badge and disabled select in both `JurnalIntegration.vue` and `BexioIntegration.vue`.
+
+**Currency display**: always `IDR` prefix (not `Rp`) for Indonesian Rupiah. CHF uses `de-CH` locale with 2 decimal places.
+
+**Integration filter**: all three tabs (Reservations, Upsell, Costs) have a `filterIntegration` select — `'all' | 'jurnal' | 'bexio' | 'none'`.
+
+**Acctg. Amount column**: shown in Reservations, Upsell, and Costs tables when `showConvertedColumn` is true. Displays `—` for unsynced rows.
+
+**Synced badge**: table rows show cloud-check icon + Jurnal (blue) or Bexio (violet) badge when synced.
+
 #### Reservations Tab (`ReservationsTab.vue`)
 - Data: `app/components/finance/data/revenue.ts` — `ReservationEntry` interface + `recentReservations[]`
 - `ReservationStatus` = `'Unverified' | 'Verified' | 'Checked-in' | 'Checked-out'`
@@ -120,7 +142,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
   - `pushReservations()` — push all unsynced
   - `pushSelected(keys)` — push specific rows only
   - `isPushingSelected` ref — separate loading state for partial push
-- **Selection bar** (inline, appears on row select): `X rows selected | Clear | [Download X invoices] | [Export CSV] | [Push X to Jurnal]`
+- **Selection bar** (inline, appears on row select): `X rows selected | Clear | [Download X invoices] | [Export CSV] | [Push X to {integration}]`
+  - Push button label is smart: detects which integrations are mapped for selected rows (Jurnal / Bexio / accounting)
 - **Checkbox fix**: Reka UI `CheckboxRoot` maintains internal state — use `clearKey` ref that increments on `clearSelection()` and bind as `:key` on each `<Checkbox>` to force re-mount on clear
 
 #### Upsell Tab (`UpsellTab.vue`)
@@ -130,6 +153,21 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - Composable: `app/composables/useUpsells.ts`
 - Same checkbox `clearKey` pattern as ReservationsTab
 - **Selection bar**: `X rows selected | Clear | [Download X invoices] | [Export CSV]`
+
+#### Costs Tab (`CostsTab.vue`)
+- Data: `app/components/finance/data/costs.ts` — `CostEntry` interface + `mockCosts[]`
+- `CostType` = `'Manual' | 'Cleaning' | 'Activity' | 'Task'`
+- `CostCategory` = `'Cleaning Labor' | 'Cleaning Supplies' | 'Maintenance' | 'Consumables' | 'Other'`
+- **Currency**: IDR for Bali staff, CHF for Swiss staff — `currency` field on each entry
+- **Invoice rules**: Manual entries always have an invoice. Task and Activity entries may optionally have an invoice.
+- **Split entry pattern** (labor vs. materials): Task/Activity entries track labor only (duration × rate). If materials were purchased, a separate Manual entry is created with `linkedTaskId` pointing to the Task/Activity id. This keeps labor and material accounting clean for different GL accounts.
+  - `linkedTaskId?: string` on Manual entries → links to the Task/Activity parent
+  - `CostDetailDrawer.vue` shows "Material Entry" card when viewing a Task/Activity that has a linked Manual entry, and "Linked Task" card when viewing a linked Manual entry
+- Composable: `app/composables/useCosts.ts`
+  - `costs`, `filteredCosts`, `filterListing`, `filterType`, `filterSynced`, `filterStaff`, `filterIntegration`, `filterDateFrom`, `filterDateTo`
+  - `totalThisMonth`, `unsyncedCount`, `markSynced()`, `clearFilters()`, `hasActiveFilters`
+- Staff: Bali housekeeping/maintenance + Swiss staff (Petra Keller, Hans Müller, Markus Weber, Anna Brunner)
+- Cleaning labor rate: IDR 625/minute
 
 #### Checkbox Controlled State Pattern
 Reka UI `CheckboxRoot` ignores external `:checked` prop changes after initial render when used without `v-model`. Fix:
@@ -414,6 +452,13 @@ const table = useVueTable({
 | `useKanban` | `app/composables/useKanban.ts` | Kanban board state | columns, cards, drag handlers |
 | `useAppSettings` | `app/composables/useAppSettings.ts` | Theme/settings | dark mode, sidebar state, settings preferences |
 | `useShortcuts` | `app/composables/useShortcuts.ts` | Keyboard shortcuts | `defineShortcuts` wrapper |
+| `useListingMappings` | `app/composables/useListingMappings.ts` | Per-listing integration mapping | `getMappingFor()`, `setMapping()`, `hasAnyMapping`, `mappedByIntegration` |
+| `useJurnal` | `app/composables/useJurnal.ts` | Jurnal integration state | `isConnected`, `exchangeRate`, `convertToAccounting()`, `formatAccounting()`, `pushCosts()`, `pushRevenue()` |
+| `useBexio` | `app/composables/useBexio.ts` | Bexio integration state | `isConnected`, `availableListings`, `localSelections`, `applyAccountToAll()` |
+| `useActiveIntegration` | `app/composables/useActiveIntegration.ts` | Per-listing accounting amount resolution | `showConvertedColumn`, `getAccountingAmount()`, `getCostAccountingAmount()` |
+| `useCosts` | `app/composables/useCosts.ts` | Costs tab state + filters | `costs`, `filteredCosts`, all `filter*` refs, `markSynced()`, `clearFilters()` |
+| `useReservations` | `app/composables/useReservations.ts` | Reservations state | `reservations`, `pushReservations()`, `pushSelected()`, `isPushingSelected` |
+| `useUpsells` | `app/composables/useUpsells.ts` | Upsells state | `upsells`, `pushUpsells()`, `isPushingUpsells` |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -469,24 +514,25 @@ app/
 │   ├── dashboard/
 │   │   └── TotalVisitors.vue
 │   ├── finance/
-│   │   ├── BexioIntegration.vue
-│   │   ├── CostDetailDrawer.vue
-│   │   ├── CostFilters.vue
-│   │   ├── CostTable.vue
+│   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
+│   │   ├── CostDetailDrawer.vue  ← Shows linked material/task entries in drawer
+│   │   ├── CostFilters.vue       ← Includes integration filter select
+│   │   ├── CostTable.vue         ← Multi-currency, Acctg. Amount col, integration badge
 │   │   ├── CostsTab.vue
 │   │   ├── IntegrationsTab.vue
-│   │   ├── JurnalIntegration.vue
+│   │   ├── JurnalIntegration.vue ← Locks Bexio-mapped listings
 │   │   ├── OverviewTab.vue
-│   │   ├── ReservationsTab.vue  ← Elev8 statuses, inline selection bar, pushSelected
-│   │   ├── RevenueTab.vue       ← Sub-tabs wrapper (Reservations + Upsell)
-│   │   ├── UpsellTab.vue        ← Always Paid, invoice always required
+│   │   ├── ReservationsTab.vue   ← Smart push label, integration filter, Acctg. Amount
+│   │   ├── RevenueTab.vue        ← Sub-tabs wrapper (Reservations + Upsell)
+│   │   ├── UpsellTab.vue         ← Always Paid, integration filter, Acctg. Amount
 │   │   └── data/
-│   │       ├── costs.ts
+│   │       ├── bexio.ts          ← Bexio listing data (Swiss properties)
+│   │       ├── costs.ts          ← CostEntry interface (linkedTaskId), mockCosts (IDR + CHF)
 │   │       ├── integrations.ts
 │   │       ├── jurnal.ts
 │   │       ├── overview.ts
-│   │       ├── revenue.ts       ← ReservationEntry, ReservationStatus, recentReservations
-│   │       └── upsells.ts       ← UpsellEntry (no status), mockUpsells
+│   │       ├── revenue.ts        ← ReservationEntry, ReservationStatus, recentReservations
+│   │       └── upsells.ts        ← UpsellEntry (no status), mockUpsells
 │   ├── inbox/
 │   │   ├── ActionCard.vue
 │   │   ├── GuestSentiment.vue
@@ -554,12 +600,16 @@ app/
 │           └── schema.ts
 ├── composables/
 │   ├── defineShortcuts.ts
+│   ├── useActiveIntegration.ts  ← showConvertedColumn, getAccountingAmount, getCostAccountingAmount
 │   ├── useAppSettings.ts
+│   ├── useBexio.ts              ← Bexio connection + CHF accounting
+│   ├── useCosts.ts              ← Costs filters, markSynced, totalThisMonth
 │   ├── useInbox.ts
-│   ├── useJurnal.ts
+│   ├── useJurnal.ts             ← Jurnal connection + IDR accounting + push actions
 │   ├── useKanban.ts
-│   ├── useNotifications.ts  ← Notification Center state
-│   ├── useReservations.ts   ← pushReservations(), pushSelected(), isPushingSelected
+│   ├── useListingMappings.ts    ← Per-listing integration mapping (shared useState)
+│   ├── useNotifications.ts      ← Notification Center state
+│   ├── useReservations.ts       ← pushReservations(), pushSelected(), isPushingSelected
 │   ├── useShortcuts.ts
 │   └── useUpsells.ts
 ├── layouts/
