@@ -468,6 +468,25 @@ app/
 │   │   └── DateRangePicker.vue
 │   ├── dashboard/
 │   │   └── TotalVisitors.vue
+│   ├── finance/
+│   │   ├── BexioIntegration.vue
+│   │   ├── CostDetailDrawer.vue
+│   │   ├── CostFilters.vue
+│   │   ├── CostTable.vue
+│   │   ├── CostsTab.vue
+│   │   ├── IntegrationsTab.vue
+│   │   ├── JurnalIntegration.vue
+│   │   ├── OverviewTab.vue
+│   │   ├── ReservationsTab.vue  ← Elev8 statuses, inline selection bar, pushSelected
+│   │   ├── RevenueTab.vue       ← Sub-tabs wrapper (Reservations + Upsell)
+│   │   ├── UpsellTab.vue        ← Always Paid, invoice always required
+│   │   └── data/
+│   │       ├── costs.ts
+│   │       ├── integrations.ts
+│   │       ├── jurnal.ts
+│   │       ├── overview.ts
+│   │       ├── revenue.ts       ← ReservationEntry, ReservationStatus, recentReservations
+│   │       └── upsells.ts       ← UpsellEntry (no status), mockUpsells
 │   ├── inbox/
 │   │   ├── ActionCard.vue
 │   │   ├── GuestSentiment.vue
@@ -537,9 +556,12 @@ app/
 │   ├── defineShortcuts.ts
 │   ├── useAppSettings.ts
 │   ├── useInbox.ts
+│   ├── useJurnal.ts
 │   ├── useKanban.ts
 │   ├── useNotifications.ts  ← Notification Center state
-│   └── useShortcuts.ts
+│   ├── useReservations.ts   ← pushReservations(), pushSelected(), isPushingSelected
+│   ├── useShortcuts.ts
+│   └── useUpsells.ts
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout
@@ -567,6 +589,8 @@ app/
     │   ├── ... (all shadcn demos)
     │   └── tooltip.vue
     ├── email.vue
+    ├── finance/
+    │   └── index.vue           # Finance page (Overview/Revenue/Costs/Integrations tabs)
     ├── inbox.vue
     ├── index.vue               # Dashboard home
     ├── kanban.vue
