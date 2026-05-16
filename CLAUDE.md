@@ -153,6 +153,7 @@ Two integrations supported: **Mekari Jurnal** (IDR, Indonesia) and **Bexio** (CH
 - Composable: `app/composables/useUpsells.ts`
 - Same checkbox `clearKey` pattern as ReservationsTab
 - **Selection bar**: `X rows selected | Clear | [Download X invoices] | [Export CSV]`
+- **Detail drawer**: `UpsellDetailDrawer.vue` — opens on row click or "View detail" dropdown. Shows guest avatar + type badge, date/amount/acctg. amount, channel + icon, reservation ID, sync status with integration badge, note, invoice download.
 
 #### Costs Tab (`CostsTab.vue`)
 - Data: `app/components/finance/data/costs.ts` — `CostEntry` interface + `mockCosts[]`
@@ -524,7 +525,8 @@ app/
 │   │   ├── OverviewTab.vue
 │   │   ├── ReservationsTab.vue   ← Smart push label, integration filter, Acctg. Amount
 │   │   ├── RevenueTab.vue        ← Sub-tabs wrapper (Reservations + Upsell)
-│   │   ├── UpsellTab.vue         ← Always Paid, integration filter, Acctg. Amount
+│   │   ├── UpsellDetailDrawer.vue ← Guest avatar, type badge, sync info, invoice download
+│   │   ├── UpsellTab.vue         ← Always Paid, integration filter, Acctg. Amount, detail drawer
 │   │   └── data/
 │   │       ├── bexio.ts          ← Bexio listing data (Swiss properties)
 │   │       ├── costs.ts          ← CostEntry interface (linkedTaskId), mockCosts (IDR + CHF)
