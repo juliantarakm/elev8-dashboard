@@ -132,7 +132,7 @@ Two integrations supported: **Mekari Jurnal** (IDR, Indonesia) and **Bexio** (CH
 
 **Acctg. Amount column**: shown in Reservations, Upsell, and Costs tables when `showConvertedColumn` is true. Displays `—` for unsynced rows.
 
-**Synced badge**: table rows show cloud-check icon + Jurnal (blue) or Bexio (violet) badge when synced.
+**Synced badge**: table rows in Reservations, Upsell, and Costs tabs all show cloud-check icon + Jurnal (blue) or Bexio (violet) badge when synced. Not-synced rows show cloud-off icon.
 
 #### Reservations Tab (`ReservationsTab.vue`)
 - Data: `app/components/finance/data/revenue.ts` — `ReservationEntry` interface + `recentReservations[]`
