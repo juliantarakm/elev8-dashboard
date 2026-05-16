@@ -13,6 +13,7 @@
 ### Main Modules
 - **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
 - **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
+- **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
 - **Kanban** — Task board
 - **Tasks** — Data table with filtering (TanStack table)
 - **Settings** — Profile, appearance, notifications, account
@@ -101,6 +102,47 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - Schema: `app/components/tasks/data/schema.ts`
 - Mock data: `app/components/tasks/data/data.ts`
 - Columns: `app/components/tasks/components/columns.ts`
+
+### Finance Module (`app/components/finance/`)
+
+#### Overview
+- **OverviewTab.vue** — Header KPI cards (Net Revenue, Total Costs, Upsell Revenue, Unsynced count) + Pending Actions + Recent Activity tables
+- **RevenueTab.vue** — Wrapper with sub-tabs: Reservations + Upsell
+- **CostsTab.vue** — Cost tracking with filters and detail drawer
+- **IntegrationsTab.vue** — Jurnal + Bexio integration cards
+- Page: `app/pages/finance/index.vue`
+
+#### Reservations Tab (`ReservationsTab.vue`)
+- Data: `app/components/finance/data/revenue.ts` — `ReservationEntry` interface + `recentReservations[]`
+- `ReservationStatus` = `'Unverified' | 'Verified' | 'Checked-in' | 'Checked-out'`
+- `invoice: string` — required field (all confirmed reservations have an invoice)
+- Composable: `app/composables/useReservations.ts`
+  - `pushReservations()` — push all unsynced
+  - `pushSelected(keys)` — push specific rows only
+  - `isPushingSelected` ref — separate loading state for partial push
+- **Selection bar** (inline, appears on row select): `X rows selected | Clear | [Download X invoices] | [Export CSV] | [Push X to Jurnal]`
+- **Checkbox fix**: Reka UI `CheckboxRoot` maintains internal state — use `clearKey` ref that increments on `clearSelection()` and bind as `:key` on each `<Checkbox>` to force re-mount on clear
+
+#### Upsell Tab (`UpsellTab.vue`)
+- Data: `app/components/finance/data/upsells.ts` — `UpsellEntry` interface + `mockUpsells[]`
+- No `status` field — all upsells are always Paid
+- `invoice: string` — required field (always present)
+- Composable: `app/composables/useUpsells.ts`
+- Same checkbox `clearKey` pattern as ReservationsTab
+- **Selection bar**: `X rows selected | Clear | [Download X invoices] | [Export CSV]`
+
+#### Checkbox Controlled State Pattern
+Reka UI `CheckboxRoot` ignores external `:checked` prop changes after initial render when used without `v-model`. Fix:
+```ts
+const clearKey = ref(0)
+function clearSelection() {
+  selected.value = []
+  clearKey.value++
+}
+```
+```vue
+<Checkbox :key="`${rowId}-${clearKey}`" :checked="..." @click.stop="toggleRow(id)" />
+```
 
 ### Kanban Module (`app/components/kanban/`)
 - **KanbanBoard.vue** — Main board component

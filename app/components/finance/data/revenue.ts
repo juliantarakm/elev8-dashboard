@@ -1,3 +1,5 @@
+export type ReservationStatus = 'Unverified' | 'Verified' | 'Checked-in' | 'Checked-out'
+
 export interface ReservationEntry {
   id: string
   guest: string
@@ -9,8 +11,8 @@ export interface ReservationEntry {
   guests: number
   amount: number
   currency: string
-  status: string
-  invoice?: string
+  status: ReservationStatus
+  invoice: string
   synced: boolean
   syncedAt?: string
 }
@@ -99,25 +101,28 @@ export const revenueByListing = [
 ]
 
 export const recentReservations: ReservationEntry[] = [
-  // ── May 1 check-ins (synced) ─────────────────────────────────────────────
-  { id: '86109494', guest: 'Thomas Wikes', listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape', channel: 'Direct', checkIn: '2026-05-01', checkOut: '2026-05-04', nights: 3, guests: 2, amount: 367.00, currency: 'CHF', status: 'Confirmed', invoice: 'inv_86109494_wikes.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '85356478', guest: 'Christine Scherrer', listing: 'The R Apartment Hemmental', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 2, amount: 341.58, currency: 'CHF', status: 'Confirmed', invoice: 'inv_85356478_scherrer.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '85850379', guest: 'Lê Thương', listing: 'The R Apartment Uetliberg, Klima, Parken - Wallbox', channel: 'Airbnb', checkIn: '2026-05-01', checkOut: '2026-05-04', nights: 3, guests: 3, amount: 632.33, currency: 'CHF', status: 'Confirmed', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '86060051', guest: 'Kerstin Klein', listing: 'Modern Apartment in Schaffhausen Center', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-02', nights: 1, guests: 3, amount: 241.80, currency: 'CHF', status: 'Confirmed', invoice: 'inv_86060051_klein.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '83828094', guest: 'Mate Bezdek', listing: 'The R Apartment Mittelfelsen - Quiet, Free Parking', channel: 'Direct', checkIn: '2026-05-01', checkOut: '2026-06-01', nights: 31, guests: 2, amount: 3500.00, currency: 'CHF', status: 'In Progress', invoice: 'inv_83828094_bezdek.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '86119381', guest: 'Alette Kramer', listing: 'The R Apartment Bodensee - Old Town', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-02', nights: 1, guests: 5, amount: 338.33, currency: 'CHF', status: 'Confirmed', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '85994225', guest: 'Gerald Staberock', listing: 'The R Apartment Randen', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 4, amount: 408.13, currency: 'CHF', status: 'Confirmed', invoice: 'inv_85994225_staberock.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '86069594', guest: 'Isabelle Brüsch', listing: 'The R Apartment Chrischona - free public transport', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-12', nights: 11, guests: 1, amount: 1011.86, currency: 'CHF', status: 'In Progress', invoice: 'inv_86069594_brusch.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  { id: '83758668', guest: 'Alicia Medina de la Maza', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 2, amount: 173.56, currency: 'CHF', status: 'Confirmed', invoice: 'inv_83758668_medina.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
-  // ── May 2 check-ins (synced) ─────────────────────────────────────────────
-  { id: '86163839', guest: 'Alette Kramer', listing: 'The R Apartment Bodensee - Old Town', channel: 'Direct', checkIn: '2026-05-02', checkOut: '2026-05-03', nights: 1, guests: 5, amount: 259.50, currency: 'CHF', status: 'Confirmed', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
-  { id: '86180138', guest: 'Mirel Hadji', listing: 'The R Suites Hasenberg', channel: 'Direct', checkIn: '2026-05-02', checkOut: '2026-05-03', nights: 1, guests: 2, amount: 107.00, currency: 'CHF', status: 'Confirmed', invoice: 'inv_86180138_hadji.pdf', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
-  { id: '86111741', guest: 'Volodymyr Shypka', listing: 'The R Loft - Cosy Suite Kalmantan incl Breakfast', channel: 'Airbnb', checkIn: '2026-05-02', checkOut: '2026-05-05', nights: 3, guests: 2, amount: 194.30, currency: 'CHF', status: 'Confirmed', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
-  // ── May 3 check-ins (unsynced) ───────────────────────────────────────────
-  { id: '85933489', guest: 'Beat Obrist', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-08', nights: 5, guests: 2, amount: 250.00, currency: 'CHF', status: 'Confirmed', invoice: 'inv_85933489_obrist.pdf', synced: false },
-  { id: '86060052', guest: 'Andrea Allegretti', listing: 'Modern Apartment in Schaffhausen Center', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-07', nights: 4, guests: 1, amount: 491.74, currency: 'CHF', status: 'Confirmed', invoice: 'inv_86060052_allegretti.pdf', synced: false },
-  { id: '85359984', guest: 'Jeremie Lambelin', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-08', nights: 5, guests: 1, amount: 281.25, currency: 'CHF', status: 'In Progress', synced: false },
-  // ── May 5 check-ins (unsynced) ───────────────────────────────────────────
-  { id: '86312047', guest: 'Sandra Meier', listing: 'The R Apartment Rosengasse', channel: 'Airbnb', checkIn: '2026-05-05', checkOut: '2026-05-08', nights: 3, guests: 2, amount: 498.50, currency: 'CHF', status: 'Confirmed', invoice: 'inv_86312047_meier.pdf', synced: false },
-  { id: '86298531', guest: 'Klaus Hartmann', listing: 'The R Apartment Hagen', channel: 'Booking.com', checkIn: '2026-05-05', checkOut: '2026-05-11', nights: 6, guests: 3, amount: 1123.40, currency: 'CHF', status: 'Confirmed', synced: false },
+  // ── May 1 check-ins ──────────────────────────────────────────────────────
+  { id: '86109494', guest: 'Thomas Wikes', listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape', channel: 'Direct', checkIn: '2026-05-01', checkOut: '2026-05-04', nights: 3, guests: 2, amount: 367.00, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86109494_wikes.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '85356478', guest: 'Christine Scherrer', listing: 'The R Apartment Hemmental', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 2, amount: 341.58, currency: 'CHF', status: 'Checked-out', invoice: 'inv_85356478_scherrer.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '85850379', guest: 'Lê Thương', listing: 'The R Apartment Uetliberg, Klima, Parken - Wallbox', channel: 'Airbnb', checkIn: '2026-05-01', checkOut: '2026-05-04', nights: 3, guests: 3, amount: 632.33, currency: 'CHF', status: 'Checked-out', invoice: 'inv_85850379_thuong.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '86060051', guest: 'Kerstin Klein', listing: 'Modern Apartment in Schaffhausen Center', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-02', nights: 1, guests: 3, amount: 241.80, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86060051_klein.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '83828094', guest: 'Mate Bezdek', listing: 'The R Apartment Mittelfelsen - Quiet, Free Parking', channel: 'Direct', checkIn: '2026-05-01', checkOut: '2026-06-01', nights: 31, guests: 2, amount: 3500.00, currency: 'CHF', status: 'Checked-in', invoice: 'inv_83828094_bezdek.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '86119381', guest: 'Alette Kramer', listing: 'The R Apartment Bodensee - Old Town', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-02', nights: 1, guests: 5, amount: 338.33, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86119381_kramer.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '85994225', guest: 'Gerald Staberock', listing: 'The R Apartment Randen', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 4, amount: 408.13, currency: 'CHF', status: 'Checked-out', invoice: 'inv_85994225_staberock.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '86069594', guest: 'Isabelle Brüsch', listing: 'The R Apartment Chrischona - free public transport', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-12', nights: 11, guests: 1, amount: 1011.86, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86069594_brusch.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  { id: '83758668', guest: 'Alicia Medina de la Maza', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-01', checkOut: '2026-05-03', nights: 2, guests: 2, amount: 173.56, currency: 'CHF', status: 'Checked-out', invoice: 'inv_83758668_medina.pdf', synced: true, syncedAt: '2026-05-01T10:00:00Z' },
+  // ── May 2 check-ins ──────────────────────────────────────────────────────
+  { id: '86163839', guest: 'Alette Kramer', listing: 'The R Apartment Bodensee - Old Town', channel: 'Direct', checkIn: '2026-05-02', checkOut: '2026-05-03', nights: 1, guests: 5, amount: 259.50, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86163839_kramer2.pdf', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
+  { id: '86180138', guest: 'Mirel Hadji', listing: 'The R Suites Hasenberg', channel: 'Direct', checkIn: '2026-05-02', checkOut: '2026-05-03', nights: 1, guests: 2, amount: 107.00, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86180138_hadji.pdf', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
+  { id: '86111741', guest: 'Volodymyr Shypka', listing: 'The R Loft - Cosy Suite Kalmantan incl Breakfast', channel: 'Airbnb', checkIn: '2026-05-02', checkOut: '2026-05-05', nights: 3, guests: 2, amount: 194.30, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86111741_shypka.pdf', synced: true, syncedAt: '2026-05-02T10:00:00Z' },
+  // ── May 3–5 check-ins (unsynced) ─────────────────────────────────────────
+  { id: '85933489', guest: 'Beat Obrist', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-08', nights: 5, guests: 2, amount: 250.00, currency: 'CHF', status: 'Checked-out', invoice: 'inv_85933489_obrist.pdf', synced: false },
+  { id: '86060052', guest: 'Andrea Allegretti', listing: 'Modern Apartment in Schaffhausen Center', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-07', nights: 4, guests: 1, amount: 491.74, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86060052_allegretti.pdf', synced: false },
+  { id: '85359984', guest: 'Jeremie Lambelin', listing: 'The R Loft - Cosy Suite incl Breakfast, Roof Top', channel: 'Booking.com', checkIn: '2026-05-03', checkOut: '2026-05-08', nights: 5, guests: 1, amount: 250.00, currency: 'CHF', status: 'Checked-out', invoice: 'inv_85359984_lambelin.pdf', synced: false },
+  { id: '86312047', guest: 'Sandra Meier', listing: 'The R Apartment Rosengasse', channel: 'Airbnb', checkIn: '2026-05-05', checkOut: '2026-05-08', nights: 3, guests: 2, amount: 498.50, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86312047_meier.pdf', synced: false },
+  { id: '86298531', guest: 'Klaus Hartmann', listing: 'The R Apartment Hagen', channel: 'Booking.com', checkIn: '2026-05-05', checkOut: '2026-05-11', nights: 6, guests: 3, amount: 1123.40, currency: 'CHF', status: 'Checked-out', invoice: 'inv_86298531_hartmann.pdf', synced: false },
+  // ── Upcoming (unsynced) ──────────────────────────────────────────────────
+  { id: '86401122', guest: 'Petra Vogler', listing: 'The R Apartment Weinsteig', channel: 'Booking.com', checkIn: '2026-05-20', checkOut: '2026-05-24', nights: 4, guests: 2, amount: 528.00, currency: 'CHF', status: 'Verified', invoice: 'inv_86401122_vogler.pdf', synced: false },
+  { id: '86455389', guest: 'David Andréani', listing: 'The R Apartment Hurbig - old Town', channel: 'Airbnb', checkIn: '2026-05-22', checkOut: '2026-05-26', nights: 4, guests: 2, amount: 712.50, currency: 'CHF', status: 'Unverified', invoice: 'inv_86455389_andreani.pdf', synced: false },
+  { id: '86512047', guest: 'Sun Li', listing: 'Cozy 2BR - the R Villa Sinabung w/ Pool in Sanur', channel: 'Airbnb', checkIn: '2026-05-28', checkOut: '2026-06-04', nights: 7, guests: 4, amount: 895.20, currency: 'CHF', status: 'Unverified', invoice: 'inv_86512047_sunli.pdf', synced: false },
 ]

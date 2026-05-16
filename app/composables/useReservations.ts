@@ -10,6 +10,7 @@ export function useReservations() {
   const unsyncedCount = computed(() => reservations.value.filter(r => !r.synced).length)
 
   const isPushingReservations = ref(false)
+  const isPushingSelected = ref(false)
   const lastReservationSync = useState<string | null>('reservations-last-sync', () => null)
 
   function markSynced(id: string, checkIn: string) {
@@ -30,12 +31,23 @@ export function useReservations() {
     isPushingReservations.value = false
   }
 
+  async function pushSelected(keys: { id: string, checkIn: string }[]) {
+    if (keys.length === 0) return
+    isPushingSelected.value = true
+    await new Promise(r => setTimeout(r, 1200))
+    keys.forEach(k => markSynced(k.id, k.checkIn))
+    lastReservationSync.value = new Date().toISOString()
+    isPushingSelected.value = false
+  }
+
   return {
     reservations,
     unsyncedCount,
     isPushingReservations,
+    isPushingSelected,
     lastReservationSync,
     markSynced,
     pushReservations,
+    pushSelected,
   }
 }

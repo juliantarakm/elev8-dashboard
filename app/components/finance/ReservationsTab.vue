@@ -9,8 +9,10 @@ const {
   reservations,
   unsyncedCount,
   isPushingReservations,
+  isPushingSelected,
   lastReservationSync,
   pushReservations,
+  pushSelected,
 } = useReservations()
 
 const {
@@ -29,6 +31,7 @@ function getTag(listing: string) {
 const filterListing = ref('all')
 const filterTag = ref('all')
 const filterChannel = ref('all')
+const filterStatus = ref('all')
 const filterSynced = ref('all')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const dateRange = ref<any>(undefined)
@@ -49,6 +52,7 @@ const filteredReservations = computed(() => {
     if (filterListing.value !== 'all' && r.listing !== filterListing.value) return false
     if (filterTag.value !== 'all' && getTag(r.listing) !== filterTag.value) return false
     if (filterChannel.value !== 'all' && r.channel !== filterChannel.value) return false
+    if (filterStatus.value !== 'all' && r.status !== filterStatus.value) return false
     if (filterSynced.value === 'synced' && !r.synced) return false
     if (filterSynced.value === 'unsynced' && r.synced) return false
     if (filterDateFrom.value && r.checkIn < filterDateFrom.value) return false
@@ -61,6 +65,7 @@ function clearFilters() {
   filterListing.value = 'all'
   filterTag.value = 'all'
   filterChannel.value = 'all'
+  filterStatus.value = 'all'
   filterSynced.value = 'all'
   dateRange.value = undefined
   filterDateFrom.value = ''
@@ -97,6 +102,13 @@ function toggleAll() {
   }
 }
 
+const clearKey = ref(0)
+
+function clearSelection() {
+  selected.value = []
+  clearKey.value++
+}
+
 function toggleRow(id: string, checkIn: string) {
   const key = rowKey(id, checkIn)
   if (selected.value.includes(key)) {
@@ -108,9 +120,11 @@ function toggleRow(id: string, checkIn: string) {
 }
 
 const selectedWithInvoice = computed(() =>
-  filteredReservations.value.filter(
-    r => selected.value.includes(rowKey(r.id, r.checkIn)) && r.invoice,
-  ),
+  filteredReservations.value.filter(r => selected.value.includes(rowKey(r.id, r.checkIn))),
+)
+
+const selectedUnsynced = computed(() =>
+  selectedWithInvoice.value.filter(r => !r.synced),
 )
 
 const selectedCount = computed(() =>
@@ -121,6 +135,12 @@ const selectedCount = computed(() =>
 async function handlePushNow() {
   await pushReservations()
   toast.success('All reservations pushed to Jurnal.')
+}
+
+async function handlePushSelected() {
+  const keys = selectedUnsynced.value.map(r => ({ id: r.id, checkIn: r.checkIn }))
+  await pushSelected(keys)
+  toast.success(`${keys.length} reservation${keys.length > 1 ? 's' : ''} pushed to Jurnal.`)
 }
 
 function downloadSingleInvoice(invoice: string, guest: string) {
@@ -174,9 +194,10 @@ const channelIcon: Record<string, string> = {
 }
 
 const statusClass: Record<string, string> = {
-  'Confirmed': 'text-green-700 bg-green-50',
-  'In Progress': 'text-blue-700 bg-blue-50',
-  'Pending': 'text-amber-700 bg-amber-50',
+  'Unverified': 'text-amber-700 bg-amber-50',
+  'Verified': 'text-green-700 bg-green-50',
+  'Checked-in': 'text-blue-700 bg-blue-50',
+  'Checked-out': 'text-muted-foreground bg-muted/60',
 }
 </script>
 
@@ -284,6 +305,23 @@ const statusClass: Record<string, string> = {
         </Select>
       </div>
 
+      <!-- Status -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-muted-foreground">Status</label>
+        <Select v-model="filterStatus">
+          <SelectTrigger class="h-8 w-36 text-sm">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="Unverified">Unverified</SelectItem>
+            <SelectItem value="Verified">Verified</SelectItem>
+            <SelectItem value="Checked-in">Checked-in</SelectItem>
+            <SelectItem value="Checked-out">Checked-out</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <!-- Sync status -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-muted-foreground">Sync</label>
@@ -337,18 +375,8 @@ const statusClass: Record<string, string> = {
         Clear filters
       </Button>
 
-      <!-- Bulk + Export (right-aligned) -->
+      <!-- Export CSV (always visible, right-aligned) -->
       <div class="ml-auto flex items-end gap-2">
-        <Button
-          v-if="selectedWithInvoice.length > 0"
-          variant="outline"
-          size="sm"
-          class="h-8"
-          @click="downloadBulkInvoices"
-        >
-          <Icon name="i-lucide-archive-restore" class="mr-2 h-4 w-4" />
-          Download {{ selectedWithInvoice.length }} invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
-        </Button>
         <Button variant="outline" size="sm" class="h-8" @click="exportCSV">
           <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
           Export CSV
@@ -359,13 +387,44 @@ const statusClass: Record<string, string> = {
     <!-- Selection info bar -->
     <div v-if="selectedCount > 0" class="flex items-center gap-2 rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
       <Icon name="i-lucide-check-square" class="h-4 w-4" />
-      <span>{{ selectedCount }} row{{ selectedCount > 1 ? 's' : '' }} selected</span>
-      <span v-if="selectedWithInvoice.length > 0" class="text-foreground">
-        — {{ selectedWithInvoice.length }} with invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
-      </span>
-      <button class="ml-2 text-xs underline hover:text-foreground" @click="selected = []">
-        Clear selection
+      <span class="font-medium text-foreground">{{ selectedCount }} row{{ selectedCount > 1 ? 's' : '' }} selected</span>
+      <button class="text-xs underline hover:text-foreground" @click="clearSelection">
+        Clear
       </button>
+      <Separator orientation="vertical" class="mx-1 h-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-7"
+        @click="downloadBulkInvoices"
+      >
+        <Icon name="i-lucide-archive-restore" class="mr-1.5 h-3.5 w-3.5" />
+        Download {{ selectedWithInvoice.length }} invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-7"
+        @click="exportCSV"
+      >
+        <Icon name="i-lucide-download" class="mr-1.5 h-3.5 w-3.5" />
+        Export CSV
+      </Button>
+      <Button
+        v-if="selectedUnsynced.length > 0 && jurnalConnected"
+        size="sm"
+        class="h-7 bg-blue-600 text-white hover:bg-blue-700"
+        :disabled="isPushingSelected"
+        @click="handlePushSelected"
+      >
+        <Icon
+          v-if="isPushingSelected"
+          name="i-lucide-loader-2"
+          class="mr-1.5 h-3.5 w-3.5 animate-spin"
+        />
+        <Icon v-else name="i-lucide-upload" class="mr-1.5 h-3.5 w-3.5" />
+        {{ isPushingSelected ? 'Pushing…' : `Push ${selectedUnsynced.length} to Jurnal` }}
+      </Button>
     </div>
 
     <!-- Table -->
@@ -376,6 +435,7 @@ const statusClass: Record<string, string> = {
             <TableRow>
               <TableHead class="w-10 px-3">
                 <Checkbox
+                  :key="`header-${clearKey}`"
                   :checked="allSelected ? true : someSelected ? 'indeterminate' : false"
                   aria-label="Select all"
                   @click.stop="toggleAll"
@@ -408,6 +468,7 @@ const statusClass: Record<string, string> = {
             >
               <TableCell class="px-3">
                 <Checkbox
+                  :key="`${rowKey(res.id, res.checkIn)}-${clearKey}`"
                   :checked="selected.includes(rowKey(res.id, res.checkIn))"
                   aria-label="Select row"
                   @click.stop="toggleRow(res.id, res.checkIn)"
@@ -433,12 +494,10 @@ const statusClass: Record<string, string> = {
               </TableCell>
               <TableCell class="text-center">
                 <Icon
-                  v-if="res.invoice"
                   name="i-lucide-paperclip"
                   class="mx-auto h-4 w-4 text-muted-foreground"
                   :title="res.invoice"
                 />
-                <span v-else class="text-xs text-muted-foreground">—</span>
               </TableCell>
               <TableCell class="text-center">
                 <Icon

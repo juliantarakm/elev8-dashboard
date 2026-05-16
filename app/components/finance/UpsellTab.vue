@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useUpsells } from '@/composables/useUpsells'
 import { useJurnal } from '@/composables/useJurnal'
-import type { UpsellType, UpsellStatus } from '@/components/finance/data/upsells'
+import type { UpsellType } from '@/components/finance/data/upsells'
 
 const {
   upsells,
@@ -17,14 +17,12 @@ const { isConnected: jurnalConnected, formatDate } = useJurnal()
 
 // ── Filters ────────────────────────────────────────────────────────────────
 const filterType = ref<'all' | UpsellType>('all')
-const filterStatus = ref<'all' | UpsellStatus>('all')
 const filterChannel = ref('all')
 const filterSynced = ref('all')
 
 const filteredUpsells = computed(() => {
   return upsells.value.filter((u) => {
     if (filterType.value !== 'all' && u.type !== filterType.value) return false
-    if (filterStatus.value !== 'all' && u.status !== filterStatus.value) return false
     if (filterChannel.value !== 'all' && u.channel !== filterChannel.value) return false
     if (filterSynced.value === 'synced' && !u.synced) return false
     if (filterSynced.value === 'unsynced' && u.synced) return false
@@ -34,13 +32,13 @@ const filteredUpsells = computed(() => {
 
 function clearFilters() {
   filterType.value = 'all'
-  filterStatus.value = 'all'
   filterChannel.value = 'all'
   filterSynced.value = 'all'
 }
 
 // ── Selection ──────────────────────────────────────────────────────────────
 const selected = ref<string[]>([])
+const clearKey = ref(0)
 
 const allSelected = computed(() =>
   filteredUpsells.value.length > 0
@@ -49,6 +47,11 @@ const allSelected = computed(() =>
 const someSelected = computed(() =>
   !allSelected.value && filteredUpsells.value.some(u => selected.value.includes(u.id)),
 )
+
+function clearSelection() {
+  selected.value = []
+  clearKey.value++
+}
 
 function toggleAll() {
   if (allSelected.value) {
@@ -69,9 +72,6 @@ function toggleRow(id: string) {
   }
 }
 
-const selectedWithInvoice = computed(() =>
-  filteredUpsells.value.filter(u => selected.value.includes(u.id) && u.invoice),
-)
 
 const selectedCount = computed(() =>
   filteredUpsells.value.filter(u => selected.value.includes(u.id)).length,
@@ -95,13 +95,9 @@ function downloadSingleInvoice(invoice: string, guest: string) {
 }
 
 function downloadBulkInvoices() {
-  const invoices = selectedWithInvoice.value
-  if (invoices.length === 0) {
-    toast.info('No invoices available in selection.')
-    return
-  }
-  invoices.forEach(u => downloadSingleInvoice(u.invoice!, u.guest))
-  toast.success(`${invoices.length} invoice${invoices.length > 1 ? 's' : ''} downloaded.`)
+  const items = filteredUpsells.value.filter(u => selected.value.includes(u.id))
+  items.forEach(u => downloadSingleInvoice(u.invoice, u.guest))
+  toast.success(`${items.length} invoice${items.length > 1 ? 's' : ''} downloaded.`)
 }
 
 function exportCSV() {
@@ -134,12 +130,6 @@ const typeClass: Record<string, string> = {
   'Welcome Package': 'text-pink-700 bg-pink-50',
   'Extra Cleaning': 'text-teal-700 bg-teal-50',
   'BBQ Setup': 'text-orange-700 bg-orange-50',
-}
-
-const statusClass: Record<string, string> = {
-  'Paid': 'text-green-700 bg-green-50',
-  'Pending': 'text-amber-700 bg-amber-50',
-  'Cancelled': 'text-red-700 bg-red-50',
 }
 
 const channelIcon: Record<string, string> = {
@@ -222,21 +212,6 @@ const upsellTypes: UpsellType[] = [
       </div>
 
       <div class="flex flex-col gap-1">
-        <label class="text-xs text-muted-foreground">Status</label>
-        <Select v-model="filterStatus">
-          <SelectTrigger class="h-8 w-32 text-sm">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div class="flex flex-col gap-1">
         <label class="text-xs text-muted-foreground">Channel</label>
         <Select v-model="filterChannel">
           <SelectTrigger class="h-8 w-36 text-sm">
@@ -270,16 +245,6 @@ const upsellTypes: UpsellType[] = [
       </Button>
 
       <div class="ml-auto flex items-end gap-2">
-        <Button
-          v-if="selectedWithInvoice.length > 0"
-          variant="outline"
-          size="sm"
-          class="h-8"
-          @click="downloadBulkInvoices"
-        >
-          <Icon name="i-lucide-archive-restore" class="mr-2 h-4 w-4" />
-          Download {{ selectedWithInvoice.length }} invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
-        </Button>
         <Button variant="outline" size="sm" class="h-8" @click="exportCSV">
           <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
           Export CSV
@@ -290,13 +255,24 @@ const upsellTypes: UpsellType[] = [
     <!-- Selection info bar -->
     <div v-if="selectedCount > 0" class="flex items-center gap-2 rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
       <Icon name="i-lucide-check-square" class="h-4 w-4" />
-      <span>{{ selectedCount }} row{{ selectedCount > 1 ? 's' : '' }} selected</span>
-      <span v-if="selectedWithInvoice.length > 0" class="text-foreground">
-        — {{ selectedWithInvoice.length }} with invoice{{ selectedWithInvoice.length > 1 ? 's' : '' }}
-      </span>
-      <button class="ml-2 text-xs underline hover:text-foreground" @click="selected = []">
-        Clear selection
+      <span class="font-medium text-foreground">{{ selectedCount }} row{{ selectedCount > 1 ? 's' : '' }} selected</span>
+      <button class="text-xs underline hover:text-foreground" @click="clearSelection">
+        Clear
       </button>
+      <Separator orientation="vertical" class="mx-1 h-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-7"
+        @click="downloadBulkInvoices"
+      >
+        <Icon name="i-lucide-archive-restore" class="mr-1.5 h-3.5 w-3.5" />
+        Download {{ selectedCount }} invoice{{ selectedCount > 1 ? 's' : '' }}
+      </Button>
+      <Button variant="outline" size="sm" class="h-7" @click="exportCSV">
+        <Icon name="i-lucide-download" class="mr-1.5 h-3.5 w-3.5" />
+        Export CSV
+      </Button>
     </div>
 
     <!-- Table -->
@@ -306,6 +282,7 @@ const upsellTypes: UpsellType[] = [
           <TableRow>
             <TableHead class="w-10 px-3">
               <Checkbox
+                :key="`header-${clearKey}`"
                 :checked="allSelected ? true : someSelected ? 'indeterminate' : false"
                 aria-label="Select all"
                 @click.stop="toggleAll"
@@ -317,7 +294,6 @@ const upsellTypes: UpsellType[] = [
             <TableHead class="w-28">Date</TableHead>
             <TableHead>Type</TableHead>
             <TableHead class="text-right">Amount</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead class="w-20 text-center">Invoice</TableHead>
             <TableHead class="w-20 text-center">Synced</TableHead>
             <TableHead class="w-10" />
@@ -325,7 +301,7 @@ const upsellTypes: UpsellType[] = [
         </TableHeader>
         <TableBody>
           <TableRow v-if="filteredUpsells.length === 0">
-            <TableCell colspan="11" class="py-12 text-center text-sm text-muted-foreground">
+            <TableCell colspan="10" class="py-12 text-center text-sm text-muted-foreground">
               No upsell entries match the selected filters.
             </TableCell>
           </TableRow>
@@ -338,6 +314,7 @@ const upsellTypes: UpsellType[] = [
           >
             <TableCell class="px-3">
               <Checkbox
+                :key="`${u.id}-${clearKey}`"
                 :checked="selected.includes(u.id)"
                 aria-label="Select row"
                 @click.stop="toggleRow(u.id)"
@@ -360,19 +337,12 @@ const upsellTypes: UpsellType[] = [
               </span>
             </TableCell>
             <TableCell class="text-right font-semibold tabular-nums">{{ formatCHF(u.amount) }}</TableCell>
-            <TableCell>
-              <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="statusClass[u.status]">
-                {{ u.status }}
-              </span>
-            </TableCell>
             <TableCell class="text-center">
               <Icon
-                v-if="u.invoice"
                 name="i-lucide-paperclip"
                 class="mx-auto h-4 w-4 text-muted-foreground"
                 :title="u.invoice"
               />
-              <span v-else class="text-xs text-muted-foreground">—</span>
             </TableCell>
             <TableCell class="text-center">
               <Icon
