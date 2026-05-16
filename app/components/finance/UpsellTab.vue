@@ -4,7 +4,7 @@ import { toast } from 'vue-sonner'
 import { useUpsells } from '@/composables/useUpsells'
 import { useJurnal } from '@/composables/useJurnal'
 import { useListingMappings } from '@/composables/useListingMappings'
-import type { UpsellType } from '@/components/finance/data/upsells'
+import type { UpsellEntry, UpsellType } from '@/components/finance/data/upsells'
 
 const {
   upsells,
@@ -126,6 +126,15 @@ function exportCSV() {
   a.click()
   URL.revokeObjectURL(url)
   toast.success('CSV exported.')
+}
+
+// ── Detail drawer ─────────────────────────────────────────────────────────
+const drawerOpen = ref(false)
+const selectedUpsell = ref<UpsellEntry | null>(null)
+
+function openDrawer(upsell: UpsellEntry) {
+  selectedUpsell.value = upsell
+  drawerOpen.value = true
 }
 
 // ── Display helpers ────────────────────────────────────────────────────────
@@ -338,10 +347,11 @@ const upsellTypes: UpsellType[] = [
             v-for="u in filteredUpsells"
             v-else
             :key="u.id"
-            class="hover:bg-muted/50"
+            class="cursor-pointer hover:bg-muted/50"
             :class="selected.includes(u.id) && 'bg-muted/40'"
+            @click="openDrawer(u)"
           >
-            <TableCell class="px-3">
+            <TableCell class="px-3" @click.stop>
               <Checkbox
                 :key="`${u.id}-${clearKey}`"
                 :checked="selected.includes(u.id)"
@@ -404,16 +414,16 @@ const upsellTypes: UpsellType[] = [
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem @click="openDrawer(u)">
+                    <Icon name="i-lucide-eye" class="mr-2 h-4 w-4" />
+                    View detail
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     v-if="u.invoice"
                     @click="downloadSingleInvoice(u.invoice!, u.guest)"
                   >
                     <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
                     Download invoice
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled>
-                    <Icon name="i-lucide-eye" class="mr-2 h-4 w-4" />
-                    View detail
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -423,4 +433,10 @@ const upsellTypes: UpsellType[] = [
       </Table>
     </div>
   </div>
+
+  <FinanceUpsellDetailDrawer
+    :upsell="selectedUpsell"
+    :open="drawerOpen"
+    @update:open="drawerOpen = $event"
+  />
 </template>
