@@ -324,7 +324,7 @@ const upsellTypes: UpsellType[] = [
               Acctg. Amount
             </TableHead>
             <TableHead class="w-20 text-center">Invoice</TableHead>
-            <TableHead class="w-20 text-center">Synced</TableHead>
+            <TableHead class="w-32 text-center">Synced</TableHead>
             <TableHead class="w-10" />
           </TableRow>
         </TableHeader>
@@ -377,12 +377,18 @@ const upsellTypes: UpsellType[] = [
               />
             </TableCell>
             <TableCell class="text-center">
-              <Icon
-                v-if="u.synced"
-                name="i-lucide-cloud-check"
-                class="mx-auto h-4 w-4 text-green-500"
-                title="Synced"
-              />
+              <template v-if="u.synced">
+                <div class="inline-flex items-center gap-1.5">
+                  <Icon name="i-lucide-cloud-check" class="h-4 w-4 text-green-500" />
+                  <span
+                    v-if="getMappingFor(u.listing)"
+                    class="rounded-full px-2 py-0.5 text-xs font-medium"
+                    :class="getMappingFor(u.listing)!.integration === 'jurnal' ? 'text-blue-700 bg-blue-50' : 'text-violet-700 bg-violet-50'"
+                  >
+                    {{ getMappingFor(u.listing)!.integration === 'jurnal' ? 'Jurnal' : 'Bexio' }}
+                  </span>
+                </div>
+              </template>
               <Icon
                 v-else
                 name="i-lucide-cloud-off"
