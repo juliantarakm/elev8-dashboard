@@ -39,6 +39,22 @@ export const navMenu: NavMenu[] = [
     ],
   },
   {
+    heading: 'Smart Flow',
+    items: [
+      {
+        title: 'Journeys',
+        icon: 'i-lucide-route',
+        link: '/journeys',
+        new: true,
+      },
+      {
+        title: 'Templates',
+        icon: 'i-lucide-file-text',
+        link: '/templates',
+      },
+    ],
+  },
+  {
     heading: 'Apps',
     items: [
       {
