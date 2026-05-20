@@ -33,15 +33,21 @@ function handleUseJourney(journey: Journey) {
 }
 
 function handleInstallTemplate(template: MarketplaceTemplate) {
+  const trigStep = template.steps[0]?.type === 'trigger' ? (template.steps[0] as any) : null
   editingJourney.value = {
     id: `j-${Date.now()}`,
     name: template.name,
     status: 'draft',
-    triggerType: template.steps[0]?.type === 'trigger' ? (template.steps[0] as any).triggerType : 'booking_confirmed',
+    triggerType: trigStep?.triggers?.[0]?.type ?? 'booking_confirmed',
     lastModified: new Date().toISOString().split('T')[0],
     properties: ['All Properties'],
     steps: template.steps.map(s => ({ ...s, id: `s-${Date.now()}-${Math.random().toString(36).slice(2)}` })),
   }
+  goTo('editor')
+}
+
+function handleNewJourneyScratch() {
+  editingJourney.value = null
   goTo('editor')
 }
 
@@ -77,6 +83,7 @@ function handleRegenerate() {
       <JourneysJourneyList
         v-if="currentView === 'list'"
         @new-journey="goTo('builder-prompt')"
+        @new-journey-scratch="handleNewJourneyScratch"
         @open-marketplace="goTo('marketplace')"
         @edit-journey="handleEditJourney"
       />

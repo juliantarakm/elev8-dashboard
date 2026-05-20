@@ -24,8 +24,7 @@ function makeDefaultJourney(): Journey {
         id: `s-${Date.now()}`,
         type: 'trigger',
         name: 'Booking Confirmed',
-        triggerType: 'booking_confirmed',
-        alternativeTriggers: [],
+        triggers: [{ type: 'booking_confirmed', settings: {} }],
         properties: ['All Properties'],
       },
     ],
@@ -46,6 +45,10 @@ const isActive = computed({
     localJourney.value = { ...localJourney.value, status: val ? 'active' : 'inactive' }
   },
 })
+
+function setProperties(val: string[]) {
+  localJourney.value = { ...localJourney.value, properties: val }
+}
 
 const selectedStep = computed(
   () => localJourney.value.steps.find(s => s.id === selectedStepId.value) ?? null
@@ -70,7 +73,8 @@ function handleStepUpdate(updated: JourneyStep) {
 }
 
 function deleteStep(id: string) {
-  if (localJourney.value.steps.length <= 1) return
+  const step = localJourney.value.steps.find(s => s.id === id)
+  if (!step || step.type === 'trigger') return
   const remaining = localJourney.value.steps.filter(s => s.id !== id)
   localJourney.value = { ...localJourney.value, steps: remaining }
   if (selectedStepId.value === id) {
@@ -104,12 +108,25 @@ function addStep(type: StepType, insertAfterIndex?: number) {
   selectedStepId.value = id
 }
 
+function onDragMove(evt: any) {
+  // Prevent the trigger step from being moved at all
+  if (evt.draggedContext.element.type === 'trigger') return false
+  // Prevent any step from being moved before the trigger (index 0)
+  if (evt.relatedContext.index === 0) return false
+  return true
+}
+
 function onDragEnd() {
   localJourney.value = { ...localJourney.value, steps: [...localJourney.value.steps] }
 }
 
 function handleSave() {
-  emit('save', localJourney.value)
+  const trigStep = localJourney.value.steps.find(s => s.type === 'trigger') as any
+  const journey = {
+    ...localJourney.value,
+    triggerType: trigStep?.triggers?.[0]?.type ?? localJourney.value.triggerType,
+  }
+  emit('save', journey)
 }
 
 const addStepMenuOpen = ref(false)
@@ -162,6 +179,10 @@ const addStepGroups = computed(() => {
       </div>
 
       <div class="flex shrink-0 items-center gap-3">
+        <JourneysJourneyPropertySelect
+          :model-value="localJourney.properties"
+          @update:model-value="setProperties"
+        />
         <div class="flex items-center gap-2">
           <Switch :checked="isActive" @update:checked="isActive = $event" />
           <span class="text-sm text-muted-foreground">{{ isActive ? 'Active' : 'Inactive' }}</span>
@@ -179,6 +200,7 @@ const addStepGroups = computed(() => {
             handle=".drag-handle"
             ghost-class="opacity-40"
             animation="150"
+            :move="onDragMove"
             @end="onDragEnd"
           >
             <template #item="{ element: step, index }">

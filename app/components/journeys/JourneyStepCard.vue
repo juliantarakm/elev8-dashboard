@@ -47,10 +47,9 @@ const summaryText = computed(() => {
     return actionLabel[(s as any).actionType] ?? ''
   }
   if (s.type === 'trigger') {
-    const primary = triggerMeta[(s as any).triggerType]?.label ?? ''
-    const alts: string[] = (s as any).alternativeTriggers ?? []
-    if (alts.length === 0) return primary
-    return [primary, ...alts.map(a => triggerMeta[a]?.label ?? a)].join(' · ')
+    const entries = (s as any).triggers ?? []
+    if (entries.length === 0) return ''
+    return entries.map((e: any) => triggerMeta[e.type]?.label ?? e.type).join(' · ')
   }
   if (s.type === 'if_else' || s.type === 'hard_requirement') return conditionMeta[(s as any).conditionType] ?? ''
   if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? t.slice(0, 50) + '…' : t }
@@ -99,11 +98,13 @@ const isMessage = computed(() => props.step.type === 'message')
         </Tooltip>
       </TooltipProvider>
       <Icon
+        v-if="step.type !== 'trigger'"
         name="i-lucide-grip-vertical"
         class="drag-handle h-4 w-4 cursor-grab text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
         @click.stop
       />
       <Button
+        v-if="step.type !== 'trigger'"
         variant="ghost"
         size="icon"
         class="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"

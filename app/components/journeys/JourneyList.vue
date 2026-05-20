@@ -4,6 +4,7 @@ import { triggerMeta } from './data/journeys'
 
 const emit = defineEmits<{
   'new-journey': []
+  'new-journey-scratch': []
   'open-marketplace': []
   'edit-journey': [journey: Journey]
 }>()
@@ -33,10 +34,29 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
           <Icon name="i-lucide-store" class="mr-2 h-4 w-4" />
           Marketplace
         </Button>
-        <Button @click="emit('new-journey')">
-          <Icon name="i-lucide-plus" class="mr-2 h-4 w-4" />
-          New Journey
-        </Button>
+        <DropdownMenu>
+          <div class="flex">
+            <Button class="rounded-r-none pr-3" @click="emit('new-journey')">
+              <Icon name="i-lucide-sparkles" class="mr-2 h-4 w-4" />
+              Build with AI
+            </Button>
+            <DropdownMenuTrigger as-child>
+              <Button class="rounded-l-none border-l border-primary-foreground/20 px-2">
+                <Icon name="i-lucide-chevron-down" class="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </div>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="emit('new-journey')">
+              <Icon name="i-lucide-sparkles" class="mr-2 h-4 w-4" />
+              Build with AI
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="emit('new-journey-scratch')">
+              <Icon name="i-lucide-pencil-line" class="mr-2 h-4 w-4" />
+              Start from scratch
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
 
@@ -47,10 +67,16 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
         <p class="mt-1 mb-5 text-sm text-muted-foreground max-w-sm">
           Create your first Journey to automate guest communication end-to-end.
         </p>
-        <Button @click="emit('new-journey')">
-          <Icon name="i-lucide-plus" class="mr-2 h-4 w-4" />
-          New Journey
-        </Button>
+        <div class="flex gap-2">
+          <Button @click="emit('new-journey')">
+            <Icon name="i-lucide-sparkles" class="mr-2 h-4 w-4" />
+            Build with AI
+          </Button>
+          <Button variant="outline" @click="emit('new-journey-scratch')">
+            <Icon name="i-lucide-pencil-line" class="mr-2 h-4 w-4" />
+            From Scratch
+          </Button>
+        </div>
       </div>
 
       <div v-else class="rounded-lg border">

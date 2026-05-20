@@ -66,10 +66,46 @@ export interface BaseStep {
   name: string
 }
 
+export interface TriggerSettings {
+  offsetAmount?: number
+  offsetUnit?: 'minutes' | 'hours' | 'days'
+  offsetDirection?: 'before' | 'at' | 'after'
+  dayOfStay?: number
+  frequency?: 'daily' | 'weekly' | 'monthly'
+  scheduleTime?: string
+  scheduleDate?: string
+  keywords?: string
+  targetSentiments?: ('positive' | 'neutral' | 'negative')[]
+}
+
+export interface TriggerEntry {
+  type: TriggerType
+  settings: TriggerSettings
+}
+
+export function defaultTriggerSettings(type: TriggerType): TriggerSettings {
+  if (['before_checkin', 'before_checkout', 'before_reservation', 'before_stay_ends'].includes(type))
+    return { offsetAmount: 2, offsetUnit: 'days' }
+  if (['after_checkin', 'after_checkout', 'after_reservation'].includes(type))
+    return { offsetAmount: 1, offsetUnit: 'hours' }
+  if (type === 'checkin' || type === 'checkout')
+    return { offsetDirection: 'at', offsetAmount: 0, offsetUnit: 'hours' }
+  if (type === 'during_reservation')
+    return { dayOfStay: 2 }
+  if (type === 'scheduled')
+    return { frequency: 'daily', scheduleTime: '09:00' }
+  if (type === 'send_once')
+    return { scheduleDate: '', scheduleTime: '09:00' }
+  if (type === 'conversation_content')
+    return { keywords: '' }
+  if (type === 'sentiment_change')
+    return { targetSentiments: ['negative'] }
+  return {}
+}
+
 export interface TriggerStep extends BaseStep {
   type: 'trigger'
-  triggerType: TriggerType
-  alternativeTriggers: TriggerType[]
+  triggers: TriggerEntry[]
   properties: string[]
 }
 
@@ -223,8 +259,7 @@ export const mockJourneys: Journey[] = [
         id: 's-1-1',
         type: 'trigger',
         name: 'Booking Confirmed',
-        triggerType: 'booking_confirmed',
-        alternativeTriggers: [],
+        triggers: [{ type: 'booking_confirmed', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -290,8 +325,7 @@ export const mockJourneys: Journey[] = [
         id: 's-2-1',
         type: 'trigger',
         name: 'Before Reservation',
-        triggerType: 'before_reservation',
-        alternativeTriggers: [],
+        triggers: [{ type: 'before_reservation', settings: { offsetAmount: 3, offsetUnit: 'days' } }],
         properties: ['Swiss Properties'],
       },
       {
@@ -328,8 +362,7 @@ export const mockJourneys: Journey[] = [
         id: 's-3-1',
         type: 'trigger',
         name: 'Gap Night Opened',
-        triggerType: 'gap_night_opened',
-        alternativeTriggers: [],
+        triggers: [{ type: 'gap_night_opened', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -379,8 +412,7 @@ export const mockJourneys: Journey[] = [
         id: 's-4-1',
         type: 'trigger',
         name: 'Guest Checked Out',
-        triggerType: 'guest_checked_out',
-        alternativeTriggers: [],
+        triggers: [{ type: 'guest_checked_out', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -429,8 +461,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt1-s1',
         type: 'trigger',
         name: 'Booking Confirmed',
-        triggerType: 'booking_confirmed',
-        alternativeTriggers: [],
+        triggers: [{ type: 'booking_confirmed', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -518,8 +549,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt2-s1',
         type: 'trigger',
         name: 'Gap Night Opened',
-        triggerType: 'gap_night_opened',
-        alternativeTriggers: [],
+        triggers: [{ type: 'gap_night_opened', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -568,8 +598,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt3-s1',
         type: 'trigger',
         name: 'Booking Confirmed',
-        triggerType: 'booking_confirmed',
-        alternativeTriggers: [],
+        triggers: [{ type: 'booking_confirmed', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -635,8 +664,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt4-s1',
         type: 'trigger',
         name: 'After Check-in',
-        triggerType: 'checkin',
-        alternativeTriggers: [],
+        triggers: [{ type: 'checkin', settings: { offsetDirection: 'after', offsetAmount: 2, offsetUnit: 'hours' } }],
         properties: ['All Properties'],
       },
       {
@@ -695,8 +723,7 @@ export const generatedJourneyExample: Journey & {
       id: 'ai-s1',
       type: 'trigger',
       name: 'Booking Confirmed',
-      triggerType: 'booking_confirmed',
-      alternativeTriggers: [],
+      triggers: [{ type: 'booking_confirmed', settings: {} }],
       properties: ['All Properties'],
     },
     {
