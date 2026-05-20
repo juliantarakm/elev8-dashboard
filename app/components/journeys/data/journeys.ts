@@ -69,6 +69,7 @@ export interface BaseStep {
 export interface TriggerStep extends BaseStep {
   type: 'trigger'
   triggerType: TriggerType
+  alternativeTriggers: TriggerType[]
   properties: string[]
 }
 
@@ -223,6 +224,7 @@ export const mockJourneys: Journey[] = [
         type: 'trigger',
         name: 'Booking Confirmed',
         triggerType: 'booking_confirmed',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -289,6 +291,7 @@ export const mockJourneys: Journey[] = [
         type: 'trigger',
         name: 'Before Reservation',
         triggerType: 'before_reservation',
+        alternativeTriggers: [],
         properties: ['Swiss Properties'],
       },
       {
@@ -326,6 +329,7 @@ export const mockJourneys: Journey[] = [
         type: 'trigger',
         name: 'Gap Night Opened',
         triggerType: 'gap_night_opened',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -376,6 +380,7 @@ export const mockJourneys: Journey[] = [
         type: 'trigger',
         name: 'Guest Checked Out',
         triggerType: 'guest_checked_out',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -425,6 +430,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         type: 'trigger',
         name: 'Booking Confirmed',
         triggerType: 'booking_confirmed',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -513,6 +519,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         type: 'trigger',
         name: 'Gap Night Opened',
         triggerType: 'gap_night_opened',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -562,6 +569,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         type: 'trigger',
         name: 'Booking Confirmed',
         triggerType: 'booking_confirmed',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -628,6 +636,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         type: 'trigger',
         name: 'After Check-in',
         triggerType: 'checkin',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
       {
@@ -687,6 +696,7 @@ export const generatedJourneyExample: Journey & {
       type: 'trigger',
       name: 'Booking Confirmed',
       triggerType: 'booking_confirmed',
+      alternativeTriggers: [],
       properties: ['All Properties'],
     },
     {

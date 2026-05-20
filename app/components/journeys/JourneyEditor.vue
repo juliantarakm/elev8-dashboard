@@ -25,6 +25,7 @@ function makeDefaultJourney(): Journey {
         type: 'trigger',
         name: 'Booking Confirmed',
         triggerType: 'booking_confirmed',
+        alternativeTriggers: [],
         properties: ['All Properties'],
       },
     ],

@@ -46,7 +46,12 @@ const summaryText = computed(() => {
     const actionLabel: Record<string, string> = { create_task: 'Create Task', flag_reservation: 'Flag Reservation', staff_alert: 'Staff Alert', raise_action_item: 'Raise Action Item' }
     return actionLabel[(s as any).actionType] ?? ''
   }
-  if (s.type === 'trigger') return triggerMeta[(s as any).triggerType]?.label ?? ''
+  if (s.type === 'trigger') {
+    const primary = triggerMeta[(s as any).triggerType]?.label ?? ''
+    const alts: string[] = (s as any).alternativeTriggers ?? []
+    if (alts.length === 0) return primary
+    return [primary, ...alts.map(a => triggerMeta[a]?.label ?? a)].join(' · ')
+  }
   if (s.type === 'if_else' || s.type === 'hard_requirement') return conditionMeta[(s as any).conditionType] ?? ''
   if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? t.slice(0, 50) + '…' : t }
   if (s.type === 'toggle_ai') return (s as any).enable ? 'Enable AI responses' : 'Disable AI responses'

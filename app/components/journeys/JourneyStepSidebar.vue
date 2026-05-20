@@ -2,8 +2,9 @@
 import type {
   JourneyStep, TriggerStep, WaitStep, MessageStep, ContextCheckStep, ActionStep,
   IfElseStep, HardRequirementStep, CreateNoteStep, ToggleAIStep, IntegrationStep,
+  TriggerType,
 } from './data/journeys'
-import { conditionMeta } from './data/journeys'
+import { conditionMeta, triggerMeta } from './data/journeys'
 
 const props = defineProps<{
   step: JourneyStep | null
@@ -32,6 +33,38 @@ const integrationStep = computed(() => props.step?.type === 'integration' ? prop
 const isEndJourney = computed(() => props.step?.type === 'end_journey')
 
 const conditionTypes = Object.entries(conditionMeta).map(([value, label]) => ({ value, label }))
+
+const allTriggerOptions = Object.entries(triggerMeta).map(([value, meta]) => ({ value: value as TriggerType, label: meta.label, category: meta.category }))
+const eventTriggers = computed(() => allTriggerOptions.filter(t => t.category === 'event'))
+const calendarTriggers = computed(() => allTriggerOptions.filter(t => t.category === 'calendar'))
+
+const altTriggers = computed(() => (triggerStep.value?.alternativeTriggers ?? []) as TriggerType[])
+
+function addAltTrigger(type: TriggerType) {
+  if (!triggerStep.value) return
+  const current = triggerStep.value.alternativeTriggers ?? []
+  if (current.includes(type)) return
+  patch({ alternativeTriggers: [...current, type] } as any)
+}
+
+function removeAltTrigger(index: number) {
+  if (!triggerStep.value) return
+  const current = [...(triggerStep.value.alternativeTriggers ?? [])]
+  current.splice(index, 1)
+  patch({ alternativeTriggers: current } as any)
+}
+
+function getTriggerLabel(type: TriggerType) {
+  return triggerMeta[type]?.label ?? type
+}
+
+const availableAltTriggers = computed(() => {
+  if (!triggerStep.value) return allTriggerOptions
+  const used = new Set([triggerStep.value.triggerType, ...(triggerStep.value.alternativeTriggers ?? [])])
+  return allTriggerOptions.filter(t => !used.has(t.value))
+})
+
+const showAltTriggerPicker = ref(false)
 </script>
 
 <template>
@@ -56,39 +89,97 @@ const conditionTypes = Object.entries(conditionMeta).map(([value, label]) => ({ 
       <!-- Trigger -->
       <div v-if="triggerStep" class="flex flex-col gap-4">
         <div>
-          <Label>Trigger Event</Label>
-          <Select :model-value="triggerStep.triggerType" @update:model-value="patch({ triggerType: $event } as any)">
-            <SelectTrigger class="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Event-based</SelectLabel>
-                <SelectItem value="booking_confirmed">Booking Confirmed</SelectItem>
-                <SelectItem value="guest_first_inquiry">Guest First Inquiry</SelectItem>
-                <SelectItem value="host_message_sent">Host Message Sent</SelectItem>
-                <SelectItem value="guest_canceled">Guest Canceled</SelectItem>
-                <SelectItem value="guest_checked_out">Guest Checked Out</SelectItem>
-                <SelectItem value="conversation_content">Conversation Content</SelectItem>
-                <SelectItem value="sentiment_change">Sentiment Change</SelectItem>
-                <SelectItem value="cleaning_complete">Cleaning Complete</SelectItem>
-                <SelectItem value="noise_disturbance">Noise / Disturbance</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Calendar-based</SelectLabel>
-                <SelectItem value="checkin">Check-In</SelectItem>
-                <SelectItem value="checkout">Check-Out</SelectItem>
-                <SelectItem value="during_reservation">During Reservation</SelectItem>
-                <SelectItem value="before_reservation">Before Reservation</SelectItem>
-                <SelectItem value="after_reservation">After Reservation</SelectItem>
-                <SelectItem value="before_stay_ends">Before Stay Ends</SelectItem>
-                <SelectItem value="gap_night_opened">Gap Night Opened</SelectItem>
-                <SelectItem value="scheduled">Daily / Weekly / Monthly</SelectItem>
-                <SelectItem value="send_once">Send Once</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <Label>Triggers</Label>
+          <p class="mt-0.5 text-xs text-muted-foreground">Journey fires when ANY of these events occur.</p>
+
+          <!-- Primary trigger -->
+          <div class="mt-2 flex flex-col gap-1.5">
+            <div class="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+              <Icon name="i-lucide-zap" class="h-3.5 w-3.5 shrink-0 text-purple-500" />
+              <Select :model-value="triggerStep.triggerType" @update:model-value="patch({ triggerType: $event } as any)">
+                <SelectTrigger class="h-auto border-0 p-0 shadow-none focus:ring-0 flex-1 text-sm font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Event-based</SelectLabel>
+                    <SelectItem v-for="t in eventTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Calendar-based</SelectLabel>
+                    <SelectItem v-for="t in calendarTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Badge variant="secondary" class="text-[10px] shrink-0">Primary</Badge>
+            </div>
+
+            <!-- Alternative triggers -->
+            <template v-for="(alt, i) in altTriggers" :key="i">
+              <div class="flex items-center gap-1.5">
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <span class="text-[9px] font-semibold text-muted-foreground">OR</span>
+                </div>
+                <div class="flex flex-1 items-center gap-2 rounded-md border bg-card px-3 py-2">
+                  <Icon name="i-lucide-zap" class="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                  <Select :model-value="alt" @update:model-value="(v) => { const arr = [...altTriggers]; arr[i] = v as TriggerType; patch({ alternativeTriggers: arr } as any) }">
+                    <SelectTrigger class="h-auto border-0 p-0 shadow-none focus:ring-0 flex-1 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Event-based</SelectLabel>
+                        <SelectItem v-for="t in eventTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Calendar-based</SelectLabel>
+                        <SelectItem v-for="t in calendarTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="ghost" size="icon" class="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive" aria-label="Remove trigger" @click="removeAltTrigger(i)">
+                    <Icon name="i-lucide-x" class="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Add alternative trigger -->
+            <div class="flex items-center gap-1.5">
+              <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted">
+                <span class="text-[9px] font-semibold text-muted-foreground">OR</span>
+              </div>
+              <DropdownMenu v-model:open="showAltTriggerPicker">
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    variant="outline"
+                    class="flex-1 justify-start gap-2 border-dashed text-xs text-muted-foreground h-8"
+                    :disabled="availableAltTriggers.length === 0"
+                  >
+                    <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />
+                    Add alternative trigger
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="w-56">
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">Event-based</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    v-for="t in availableAltTriggers.filter(x => x.category === 'event')"
+                    :key="t.value"
+                    @click="addAltTrigger(t.value)"
+                  >{{ t.label }}</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">Calendar-based</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    v-for="t in availableAltTriggers.filter(x => x.category === 'calendar')"
+                    :key="t.value"
+                    @click="addAltTrigger(t.value)"
+                  >{{ t.label }}</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
+
         <div>
           <Label>Properties</Label>
           <p class="mt-1 text-sm text-muted-foreground rounded-md border bg-muted/40 px-3 py-2">All Properties</p>
