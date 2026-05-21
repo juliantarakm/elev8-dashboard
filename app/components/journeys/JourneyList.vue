@@ -100,8 +100,10 @@ function toggleAddToGroupJourney(id: string) {
 }
 
 function submitAddToGroup() {
-  if (addToGroupSelectedIds.value.length > 0) {
+  const count = addToGroupSelectedIds.value.length
+  if (count > 0) {
     addJourneysToGroup(addToGroupId.value, [...addToGroupSelectedIds.value])
+    toast.success(`${count} ${count === 1 ? 'journey' : 'journeys'} added to "${addToGroupName.value}"`)
   }
   addToGroupOpen.value = false
 }
