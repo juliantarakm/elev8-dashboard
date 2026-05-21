@@ -47,11 +47,6 @@ export const navMenu: NavMenu[] = [
         link: '/journeys',
         new: true,
       },
-      {
-        title: 'Templates',
-        icon: 'i-lucide-file-text',
-        link: '/templates',
-      },
     ],
   },
   {
