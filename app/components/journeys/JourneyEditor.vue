@@ -62,7 +62,10 @@ function startEditName() {
 
 function commitName(e: Event) {
   const val = (e.target as HTMLInputElement).value.trim()
-  if (val) localJourney.value = { ...localJourney.value, name: val }
+  if (val && val !== localJourney.value.name) {
+    localJourney.value = { ...localJourney.value, name: val }
+    toast.success(`Journey renamed to "${val}"`)
+  }
   isEditingName.value = false
 }
 
