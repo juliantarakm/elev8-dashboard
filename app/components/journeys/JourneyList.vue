@@ -93,8 +93,8 @@ const addToGroupName = computed(
 )
 
 const addToGroupAvailable = computed(() => {
-  const currentIds = new Set(groups.value.find(g => g.id === addToGroupId.value)?.journeyIds ?? [])
-  return journeys.value.filter(j => !currentIds.has(j.id))
+  const allGroupedIds = new Set(groups.value.flatMap(g => g.journeyIds))
+  return journeys.value.filter(j => !allGroupedIds.has(j.id))
 })
 
 function openAddToGroup(groupId: string) {
@@ -590,12 +590,12 @@ function submitRename() {
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add to "{{ addToGroupName }}"</DialogTitle>
-          <DialogDescription>Select journeys to add. Journeys already in another group will be moved.</DialogDescription>
+          <DialogDescription>Select ungrouped journeys to add to this group.</DialogDescription>
         </DialogHeader>
         <ScrollArea class="h-52 rounded-md border my-2">
           <div class="p-1.5 space-y-0.5">
             <p v-if="addToGroupAvailable.length === 0" class="py-6 text-center text-sm text-muted-foreground">
-              All journeys are already in this group.
+              No ungrouped journeys available.
             </p>
             <button
               v-for="j in addToGroupAvailable"
@@ -610,9 +610,6 @@ function submitRename() {
                 <Icon v-if="addToGroupSelectedIds.includes(j.id)" name="i-lucide-check" class="h-3 w-3" />
               </div>
               <span class="flex-1 truncate text-left">{{ j.name }}</span>
-              <span class="shrink-0 text-xs text-muted-foreground">
-                {{ getJourneyGroup(j.id)?.name ?? 'Ungrouped' }}
-              </span>
             </button>
           </div>
         </ScrollArea>
