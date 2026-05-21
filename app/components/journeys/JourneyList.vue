@@ -251,6 +251,7 @@ function submitRename() {
               <TableHead class="w-[160px]">Status</TableHead>
               <TableHead class="w-[70px]">Steps</TableHead>
               <TableHead>Trigger</TableHead>
+              <TableHead class="w-[130px]">Properties</TableHead>
               <TableHead class="w-[130px]">Last Modified</TableHead>
               <TableHead class="w-[56px] text-right">Actions</TableHead>
             </TableRow>
@@ -260,7 +261,7 @@ function submitRename() {
             <template v-for="group in groups" :key="group.id">
               <!-- Group header row -->
               <TableRow class="bg-muted/40 hover:bg-muted/50 border-b">
-                <TableCell colspan="6" class="py-2 pr-3">
+                <TableCell colspan="7" class="py-2 pr-3">
                   <div class="flex items-center gap-2">
                     <button
                       class="flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-muted-foreground/10"
@@ -333,6 +334,12 @@ function submitRename() {
                   </TableCell>
                   <TableCell>{{ journey.steps.length }}</TableCell>
                   <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                  <TableCell class="text-sm">
+                    <div class="flex items-center gap-1.5 text-muted-foreground">
+                      <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0" />
+                      <span>{{ journey.properties?.includes('All Properties') ? 'All' : `${journey.properties?.length ?? 0}` }}</span>
+                    </div>
+                  </TableCell>
                   <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
                   <TableCell class="text-right">
                     <DropdownMenu>
@@ -388,7 +395,7 @@ function submitRename() {
             <!-- Ungrouped section -->
             <template v-if="ungroupedJourneys.length > 0">
               <TableRow v-if="groups.length > 0" class="bg-muted/20 hover:bg-muted/20">
-                <TableCell colspan="6" class="py-1.5 pl-4">
+                <TableCell colspan="7" class="py-1.5 pl-4">
                   <span class="text-xs font-medium text-muted-foreground">Ungrouped</span>
                 </TableCell>
               </TableRow>
@@ -411,6 +418,12 @@ function submitRename() {
                 </TableCell>
                 <TableCell>{{ journey.steps.length }}</TableCell>
                 <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                <TableCell class="text-sm">
+                  <div class="flex items-center gap-1.5 text-muted-foreground">
+                    <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0" />
+                    <span>{{ journey.properties?.includes('All Properties') ? 'All' : `${journey.properties?.length ?? 0}` }}</span>
+                  </div>
+                </TableCell>
                 <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
                 <TableCell class="text-right">
                   <DropdownMenu>
