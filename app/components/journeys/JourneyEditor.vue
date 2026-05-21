@@ -163,21 +163,30 @@ const addStepGroups = computed(() => {
         <Icon name="i-lucide-arrow-left" class="h-4 w-4" />
       </Button>
 
-      <div class="flex-1 min-w-0" @click="startEditName">
+      <div class="flex-1 min-w-0 group/title flex items-center gap-1.5">
         <input
           v-if="isEditingName"
           ref="nameInputRef"
           :value="localJourney.name"
-          class="text-lg font-semibold bg-transparent border-b border-primary outline-none w-full"
+          class="text-lg font-semibold bg-transparent border-b border-primary outline-none flex-1 min-w-0"
           @blur="commitName"
           @keydown.enter="commitName"
         />
-        <h1
-          v-else
-          class="cursor-pointer text-lg font-semibold truncate hover:text-primary transition-colors"
-        >
-          {{ localJourney.name }}
-        </h1>
+        <template v-else>
+          <h1
+            class="cursor-pointer text-lg font-semibold truncate hover:text-primary transition-colors"
+            @click="startEditName"
+          >
+            {{ localJourney.name }}
+          </h1>
+          <button
+            class="shrink-0 opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+            aria-label="Rename journey"
+            @click="startEditName"
+          >
+            <Icon name="i-lucide-pencil" class="h-3.5 w-3.5" />
+          </button>
+        </template>
       </div>
 
       <div class="flex shrink-0 items-center gap-3">
