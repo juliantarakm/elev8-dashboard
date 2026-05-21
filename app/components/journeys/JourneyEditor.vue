@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import type { Journey, JourneyStep, StepType, ConditionType } from './data/journeys'
 import draggable from 'vuedraggable'
 
@@ -127,6 +128,7 @@ function handleSave() {
     triggerType: trigStep?.triggers?.[0]?.type ?? localJourney.value.triggerType,
   }
   emit('save', journey)
+  toast.success(`"${journey.name}" saved`)
 }
 
 const addStepMenuOpen = ref(false)
