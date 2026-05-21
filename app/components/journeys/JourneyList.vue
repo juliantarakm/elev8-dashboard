@@ -108,8 +108,13 @@ const renamingGroupId = ref<string | null>(null)
 const renameInput = ref('')
 
 function startRename(group: JourneyGroup) {
-  renamingGroupId.value = group.id
-  renameInput.value = group.name
+  const id = group.id
+  const name = group.name
+  // Delay until DropdownMenu finishes closing and returning focus to its trigger
+  setTimeout(() => {
+    renamingGroupId.value = id
+    renameInput.value = name
+  }, 50)
 }
 
 // Only save if we haven't already cancelled (Escape sets renamingGroupId to null before blur fires)
