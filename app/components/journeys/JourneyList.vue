@@ -99,6 +99,23 @@ function submitAddToGroup() {
   addToGroupOpen.value = false
 }
 
+// --- Delete confirmations ---
+const deleteJourneyConfirm = ref<Journey | null>(null)
+const deleteGroupConfirm = ref<JourneyGroup | null>(null)
+
+function confirmDeleteJourney(journey: Journey) { deleteJourneyConfirm.value = journey }
+function confirmDeleteGroup(group: JourneyGroup) { deleteGroupConfirm.value = group }
+
+function doDeleteJourney() {
+  if (deleteJourneyConfirm.value) deleteJourney(deleteJourneyConfirm.value.id)
+  deleteJourneyConfirm.value = null
+}
+
+function doDeleteGroup() {
+  if (deleteGroupConfirm.value) deleteGroup(deleteGroupConfirm.value.id)
+  deleteGroupConfirm.value = null
+}
+
 // --- Rename Group Dialog ---
 const renameDialogOpen = ref(false)
 const renamingGroupId = ref<string | null>(null)
@@ -241,7 +258,7 @@ function submitRename() {
                             Rename
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem class="text-destructive" @click="deleteGroup(group.id)">
+                          <DropdownMenuItem class="text-destructive" @click="confirmDeleteGroup(group)">
                             <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
                             Delete Group
                           </DropdownMenuItem>
@@ -315,7 +332,7 @@ function submitRename() {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem class="text-destructive" @click="deleteJourney(journey.id)">
+                        <DropdownMenuItem class="text-destructive" @click="confirmDeleteJourney(journey)">
                           <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
@@ -387,7 +404,7 @@ function submitRename() {
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem class="text-destructive" @click="deleteJourney(journey.id)">
+                      <DropdownMenuItem class="text-destructive" @click="confirmDeleteJourney(journey)">
                         <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -474,6 +491,42 @@ function submitRename() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete Journey Confirmation -->
+    <AlertDialog :open="!!deleteJourneyConfirm" @update:open="val => { if (!val) deleteJourneyConfirm = null }">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Journey?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span class="font-medium text-foreground">{{ deleteJourneyConfirm?.name }}</span> will be permanently deleted. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction class="bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="doDeleteJourney">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- Delete Group Confirmation -->
+    <AlertDialog :open="!!deleteGroupConfirm" @update:open="val => { if (!val) deleteGroupConfirm = null }">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Group?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span class="font-medium text-foreground">{{ deleteGroupConfirm?.name }}</span> will be deleted. Journeys inside will become ungrouped.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction class="bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="doDeleteGroup">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <!-- Add Journey to Group Dialog -->
     <Dialog v-model:open="addToGroupOpen">
