@@ -153,6 +153,7 @@ function openRenameDialog(group: JourneyGroup) {
 function submitRename() {
   if (renamingGroupId.value && renameInput.value.trim()) {
     renameGroup(renamingGroupId.value, renameInput.value.trim())
+    toast.success(`Group renamed to "${renameInput.value.trim()}"`)
   }
   renameDialogOpen.value = false
 }
