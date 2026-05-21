@@ -26,6 +26,16 @@ function getTriggerLabel(t: string) {
   return triggerMeta[t]?.label ?? t
 }
 
+function handleMoveToGroup(journey: Journey, groupId: string | null) {
+  moveJourneyToGroup(journey.id, groupId)
+  if (groupId) {
+    const groupName = groups.value.find(g => g.id === groupId)?.name ?? ''
+    toast.success(`"${journey.name}" moved to "${groupName}"`)
+  } else {
+    toast.success(`"${journey.name}" removed from group`)
+  }
+}
+
 function handleToggleStatus(journey: Journey) {
   const next = journey.status === 'active' ? 'inactive' : 'active'
   toggleStatus(journey.id)
@@ -349,14 +359,14 @@ function submitRename() {
                             <DropdownMenuItem
                               v-for="g in groups.filter(g => g.id !== getJourneyGroup(journey.id)?.id)"
                               :key="g.id"
-                              @click="moveJourneyToGroup(journey.id, g.id)"
+                              @click="handleMoveToGroup(journey, g.id)"
                             >
                               <Icon name="i-lucide-folder" class="mr-2 h-4 w-4" />
                               {{ g.name }}
                             </DropdownMenuItem>
                             <template v-if="getJourneyGroup(journey.id)">
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem @click="moveJourneyToGroup(journey.id, null)">
+                              <DropdownMenuItem @click="handleMoveToGroup(journey, null)">
                                 <Icon name="i-lucide-folder-minus" class="mr-2 h-4 w-4" />
                                 Remove from Group
                               </DropdownMenuItem>
@@ -427,7 +437,7 @@ function submitRename() {
                           <DropdownMenuItem
                             v-for="g in groups"
                             :key="g.id"
-                            @click="moveJourneyToGroup(journey.id, g.id)"
+                            @click="handleMoveToGroup(journey, g.id)"
                           >
                             <Icon name="i-lucide-folder" class="mr-2 h-4 w-4" />
                             {{ g.name }}
