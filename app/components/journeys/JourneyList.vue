@@ -63,6 +63,7 @@ function submitCreateGroup() {
   const name = newGroupName.value.trim()
   if (!name) return
   createGroup(name, [...newGroupJourneyIds.value])
+  toast.success(`Group "${name}" created`)
   createGroupOpen.value = false
 }
 
