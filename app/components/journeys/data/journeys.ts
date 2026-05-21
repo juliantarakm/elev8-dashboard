@@ -246,6 +246,18 @@ export const conditionMeta: Record<ConditionType, string> = {
   ai_conversation_check: 'AI Conversation Check',
 }
 
+export interface JourneyGroup {
+  id: string
+  name: string
+  journeyIds: string[]
+  collapsed: boolean
+}
+
+export const mockGroups: JourneyGroup[] = [
+  { id: 'g-1', name: 'Guest Experience', journeyIds: ['j-1', 'j-2'], collapsed: false },
+  { id: 'g-2', name: 'Revenue', journeyIds: ['j-3'], collapsed: false },
+]
+
 export const mockJourneys: Journey[] = [
   {
     id: 'j-1',

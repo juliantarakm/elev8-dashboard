@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Journey } from './data/journeys'
+import type { Journey, JourneyGroup } from './data/journeys'
 import { triggerMeta } from './data/journeys'
 
 const emit = defineEmits<{
@@ -9,27 +9,133 @@ const emit = defineEmits<{
   'edit-journey': [journey: Journey]
 }>()
 
-const { journeys, toggleStatus, deleteJourney } = useJourneys()
-
-function getTriggerLabel(t: string) {
-  return triggerMeta[t]?.label ?? t
-}
+const {
+  journeys, toggleStatus, deleteJourney,
+  groups, createGroup, deleteGroup, renameGroup, toggleGroupCollapse,
+  moveJourneyToGroup, addJourneysToGroup,
+} = useJourneys()
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
   inactive: { label: 'Inactive', variant: 'secondary' },
   draft: { label: 'Draft', variant: 'outline' },
 }
+
+function getTriggerLabel(t: string) {
+  return triggerMeta[t]?.label ?? t
+}
+
+// --- Grouping helpers ---
+const ungroupedJourneys = computed(() => {
+  const groupedIds = new Set(groups.value.flatMap(g => g.journeyIds))
+  return journeys.value.filter(j => !groupedIds.has(j.id))
+})
+
+function getGroupJourneys(group: JourneyGroup): Journey[] {
+  return group.journeyIds
+    .map(id => journeys.value.find(j => j.id === id))
+    .filter((j): j is Journey => !!j)
+}
+
+function getJourneyGroup(journeyId: string): JourneyGroup | undefined {
+  return groups.value.find(g => g.journeyIds.includes(journeyId))
+}
+
+// --- Create Group Dialog ---
+const createGroupOpen = ref(false)
+const newGroupName = ref('')
+const newGroupJourneyIds = ref<string[]>([])
+
+function openCreateGroup() {
+  newGroupName.value = ''
+  newGroupJourneyIds.value = []
+  createGroupOpen.value = true
+}
+
+function toggleNewGroupJourney(id: string) {
+  const idx = newGroupJourneyIds.value.indexOf(id)
+  if (idx === -1) newGroupJourneyIds.value.push(id)
+  else newGroupJourneyIds.value.splice(idx, 1)
+}
+
+function submitCreateGroup() {
+  const name = newGroupName.value.trim()
+  if (!name) return
+  createGroup(name, [...newGroupJourneyIds.value])
+  createGroupOpen.value = false
+}
+
+// --- Add Journey to Group Dialog ---
+const addToGroupOpen = ref(false)
+const addToGroupId = ref('')
+const addToGroupSelectedIds = ref<string[]>([])
+
+const addToGroupName = computed(
+  () => groups.value.find(g => g.id === addToGroupId.value)?.name ?? ''
+)
+
+const addToGroupAvailable = computed(() => {
+  const currentIds = new Set(groups.value.find(g => g.id === addToGroupId.value)?.journeyIds ?? [])
+  return journeys.value.filter(j => !currentIds.has(j.id))
+})
+
+function openAddToGroup(groupId: string) {
+  addToGroupId.value = groupId
+  addToGroupSelectedIds.value = []
+  addToGroupOpen.value = true
+}
+
+function toggleAddToGroupJourney(id: string) {
+  const idx = addToGroupSelectedIds.value.indexOf(id)
+  if (idx === -1) addToGroupSelectedIds.value.push(id)
+  else addToGroupSelectedIds.value.splice(idx, 1)
+}
+
+function submitAddToGroup() {
+  if (addToGroupSelectedIds.value.length > 0) {
+    addJourneysToGroup(addToGroupId.value, [...addToGroupSelectedIds.value])
+  }
+  addToGroupOpen.value = false
+}
+
+// --- Inline rename ---
+const renamingGroupId = ref<string | null>(null)
+const renameInput = ref('')
+
+watch(renamingGroupId, (newId) => {
+  if (newId) {
+    nextTick(() => {
+      const el = document.querySelector('[data-rename-input]') as HTMLInputElement | null
+      el?.focus()
+      el?.select()
+    })
+  }
+})
+
+function startRename(group: JourneyGroup) {
+  renamingGroupId.value = group.id
+  renameInput.value = group.name
+}
+
+function commitRename(groupId: string) {
+  if (renameInput.value.trim()) renameGroup(groupId, renameInput.value.trim())
+  renamingGroupId.value = null
+}
 </script>
 
 <template>
   <div class="flex flex-col h-full overflow-y-auto">
+    <!-- Header -->
     <div class="flex items-start justify-between gap-4 border-b bg-background px-6 py-5">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Journeys</h1>
         <p class="text-sm text-muted-foreground mt-0.5">Automate guest communication end-to-end with AI-powered flows.</p>
       </div>
       <div class="flex shrink-0 gap-2">
+        <Button variant="outline" @click="openCreateGroup">
+          <Icon name="i-lucide-folder-plus" class="mr-2 h-4 w-4" />
+          New Group
+        </Button>
         <Button variant="outline" @click="emit('open-marketplace')">
           <Icon name="i-lucide-store" class="mr-2 h-4 w-4" />
           Marketplace
@@ -60,7 +166,9 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
       </div>
     </div>
 
+    <!-- Content -->
     <div class="flex-1 p-6">
+      <!-- Empty state -->
       <div v-if="journeys.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
         <Icon name="i-lucide-route" class="mb-4 h-12 w-12 text-muted-foreground opacity-40" />
         <h3 class="text-lg font-semibold">No Journeys yet</h3>
@@ -79,63 +187,319 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
         </div>
       </div>
 
-      <div v-else class="rounded-lg border">
+      <!-- Journey table -->
+      <div v-else class="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Steps</TableHead>
+              <TableHead class="w-[300px]">Name</TableHead>
+              <TableHead class="w-[160px]">Status</TableHead>
+              <TableHead class="w-[70px]">Steps</TableHead>
               <TableHead>Trigger</TableHead>
-              <TableHead>Last Modified</TableHead>
-              <TableHead class="text-right">Actions</TableHead>
+              <TableHead class="w-[130px]">Last Modified</TableHead>
+              <TableHead class="w-[56px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="journey in journeys" :key="journey.id">
-              <TableCell class="font-medium">{{ journey.name }}</TableCell>
-              <TableCell>
-                <div class="flex items-center gap-2">
-                  <Switch
-                    :key="`${journey.id}-${journey.status}`"
-                    :checked="journey.status === 'active'"
-                    :disabled="journey.status === 'draft'"
-                    @update:checked="toggleStatus(journey.id)"
-                  />
-                  <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
-                    {{ statusConfig[journey.status]?.label ?? journey.status }}
-                  </Badge>
-                </div>
-              </TableCell>
-              <TableCell>{{ journey.steps.length }}</TableCell>
-              <TableCell class="text-muted-foreground text-sm">
-                {{ getTriggerLabel(journey.triggerType) }}
-              </TableCell>
-              <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
-              <TableCell class="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" aria-label="Journey actions">
-                      <Icon name="i-lucide-ellipsis" class="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="emit('edit-journey', journey)">
-                      <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem class="text-destructive" @click="deleteJourney(journey.id)">
-                      <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
+            <!-- Groups -->
+            <template v-for="group in groups" :key="group.id">
+              <!-- Group header row -->
+              <TableRow class="bg-muted/40 hover:bg-muted/50 border-b">
+                <TableCell colspan="6" class="py-2 pr-3">
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-muted-foreground/10"
+                      @click="toggleGroupCollapse(group.id)"
+                    >
+                      <Icon
+                        :name="group.collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+                        class="h-3.5 w-3.5 text-muted-foreground"
+                      />
+                    </button>
+                    <Icon name="i-lucide-folder" class="h-4 w-4 shrink-0 text-muted-foreground" />
+
+                    <input
+                      v-if="renamingGroupId === group.id"
+                      data-rename-input
+                      :value="renameInput"
+                      class="bg-transparent text-sm font-medium border-b border-primary outline-none min-w-[120px]"
+                      @input="renameInput = ($event.target as HTMLInputElement).value"
+                      @blur="commitRename(group.id)"
+                      @keydown.enter="($event.target as HTMLInputElement).blur()"
+                      @keydown.escape="renamingGroupId = null"
+                    />
+                    <span v-else class="text-sm font-medium">{{ group.name }}</span>
+
+                    <Badge variant="secondary" class="h-5 px-1.5 text-[10px] font-normal">
+                      {{ getGroupJourneys(group).length }}
+                    </Badge>
+
+                    <div class="ml-auto flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        @click="openAddToGroup(group.id)"
+                      >
+                        <Icon name="i-lucide-plus" class="h-3 w-3" />
+                        Add Journey
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                          <Button variant="ghost" size="icon" class="h-7 w-7" aria-label="Group actions">
+                            <Icon name="i-lucide-ellipsis" class="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem @click="startRename(group)">
+                            <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem class="text-destructive" @click="deleteGroup(group.id)">
+                            <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
+                            Delete Group
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+
+              <!-- Journey rows inside group -->
+              <template v-if="!group.collapsed">
+                <TableRow
+                  v-for="journey in getGroupJourneys(group)"
+                  :key="journey.id"
+                >
+                  <TableCell class="font-medium pl-10">{{ journey.name }}</TableCell>
+                  <TableCell>
+                    <div class="flex items-center gap-2">
+                      <Switch
+                        :key="`${journey.id}-${journey.status}`"
+                        :checked="journey.status === 'active'"
+                        :disabled="journey.status === 'draft'"
+                        @update:checked="toggleStatus(journey.id)"
+                      />
+                      <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
+                        {{ statusConfig[journey.status]?.label ?? journey.status }}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>{{ journey.steps.length }}</TableCell>
+                  <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                  <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
+                  <TableCell class="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger as-child>
+                        <Button variant="ghost" size="icon" aria-label="Journey actions">
+                          <Icon name="i-lucide-ellipsis" class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="emit('edit-journey', journey)">
+                          <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Icon name="i-lucide-folder-symlink" class="mr-2 h-4 w-4" />
+                            Move to Group
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem
+                              v-for="g in groups.filter(g => g.id !== getJourneyGroup(journey.id)?.id)"
+                              :key="g.id"
+                              @click="moveJourneyToGroup(journey.id, g.id)"
+                            >
+                              <Icon name="i-lucide-folder" class="mr-2 h-4 w-4" />
+                              {{ g.name }}
+                            </DropdownMenuItem>
+                            <template v-if="getJourneyGroup(journey.id)">
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem @click="moveJourneyToGroup(journey.id, null)">
+                                <Icon name="i-lucide-folder-minus" class="mr-2 h-4 w-4" />
+                                Remove from Group
+                              </DropdownMenuItem>
+                            </template>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem class="text-destructive" @click="deleteJourney(journey.id)">
+                          <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              </template>
+            </template>
+
+            <!-- Ungrouped section -->
+            <template v-if="ungroupedJourneys.length > 0">
+              <TableRow v-if="groups.length > 0" class="bg-muted/20 hover:bg-muted/20">
+                <TableCell colspan="6" class="py-1.5 pl-4">
+                  <span class="text-xs font-medium text-muted-foreground">Ungrouped</span>
+                </TableCell>
+              </TableRow>
+              <TableRow
+                v-for="journey in ungroupedJourneys"
+                :key="journey.id"
+              >
+                <TableCell class="font-medium">{{ journey.name }}</TableCell>
+                <TableCell>
+                  <div class="flex items-center gap-2">
+                    <Switch
+                      :key="`${journey.id}-${journey.status}`"
+                      :checked="journey.status === 'active'"
+                      :disabled="journey.status === 'draft'"
+                      @update:checked="toggleStatus(journey.id)"
+                    />
+                    <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
+                      {{ statusConfig[journey.status]?.label ?? journey.status }}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell>{{ journey.steps.length }}</TableCell>
+                <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
+                <TableCell class="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="icon" aria-label="Journey actions">
+                        <Icon name="i-lucide-ellipsis" class="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="emit('edit-journey', journey)">
+                        <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSub v-if="groups.length > 0">
+                        <DropdownMenuSubTrigger>
+                          <Icon name="i-lucide-folder-symlink" class="mr-2 h-4 w-4" />
+                          Move to Group
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem
+                            v-for="g in groups"
+                            :key="g.id"
+                            @click="moveJourneyToGroup(journey.id, g.id)"
+                          >
+                            <Icon name="i-lucide-folder" class="mr-2 h-4 w-4" />
+                            {{ g.name }}
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem class="text-destructive" @click="deleteJourney(journey.id)">
+                        <Icon name="i-lucide-trash-2" class="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            </template>
           </TableBody>
         </Table>
       </div>
     </div>
+
+    <!-- Create Group Dialog -->
+    <Dialog v-model:open="createGroupOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>New Group</DialogTitle>
+          <DialogDescription>Organize journeys into a named group.</DialogDescription>
+        </DialogHeader>
+        <div class="flex flex-col gap-4 py-1">
+          <div class="flex flex-col gap-1.5">
+            <Label for="new-group-name">Group Name</Label>
+            <Input
+              id="new-group-name"
+              v-model="newGroupName"
+              placeholder="e.g. Guest Experience"
+              @keydown.enter="submitCreateGroup"
+            />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <Label>
+              Add Journeys
+              <span class="text-muted-foreground font-normal ml-1">(optional)</span>
+            </Label>
+            <ScrollArea class="h-48 rounded-md border">
+              <div class="p-1.5 space-y-0.5">
+                <button
+                  v-for="j in journeys"
+                  :key="j.id"
+                  class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+                  @click="toggleNewGroupJourney(j.id)"
+                >
+                  <div :class="[
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
+                    newGroupJourneyIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  ]">
+                    <Icon v-if="newGroupJourneyIds.includes(j.id)" name="i-lucide-check" class="h-3 w-3" />
+                  </div>
+                  <span class="flex-1 truncate text-left">{{ j.name }}</span>
+                  <Badge :variant="statusConfig[j.status]?.variant ?? 'outline'" class="h-5 px-1.5 text-[10px]">
+                    {{ statusConfig[j.status]?.label ?? j.status }}
+                  </Badge>
+                </button>
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="createGroupOpen = false">Cancel</Button>
+          <Button :disabled="!newGroupName.trim()" @click="submitCreateGroup">
+            Create Group
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Add Journey to Group Dialog -->
+    <Dialog v-model:open="addToGroupOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add to "{{ addToGroupName }}"</DialogTitle>
+          <DialogDescription>Select journeys to add. Journeys already in another group will be moved.</DialogDescription>
+        </DialogHeader>
+        <ScrollArea class="h-52 rounded-md border my-2">
+          <div class="p-1.5 space-y-0.5">
+            <p v-if="addToGroupAvailable.length === 0" class="py-6 text-center text-sm text-muted-foreground">
+              All journeys are already in this group.
+            </p>
+            <button
+              v-for="j in addToGroupAvailable"
+              :key="j.id"
+              class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+              @click="toggleAddToGroupJourney(j.id)"
+            >
+              <div :class="[
+                'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
+                addToGroupSelectedIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+              ]">
+                <Icon v-if="addToGroupSelectedIds.includes(j.id)" name="i-lucide-check" class="h-3 w-3" />
+              </div>
+              <span class="flex-1 truncate text-left">{{ j.name }}</span>
+              <span class="shrink-0 text-xs text-muted-foreground">
+                {{ getJourneyGroup(j.id)?.name ?? 'Ungrouped' }}
+              </span>
+            </button>
+          </div>
+        </ScrollArea>
+        <DialogFooter>
+          <Button variant="outline" @click="addToGroupOpen = false">Cancel</Button>
+          <Button :disabled="addToGroupSelectedIds.length === 0" @click="submitAddToGroup">
+            Add {{ addToGroupSelectedIds.length > 0 ? `${addToGroupSelectedIds.length} ` : '' }}{{ addToGroupSelectedIds.length === 1 ? 'Journey' : 'Journeys' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
