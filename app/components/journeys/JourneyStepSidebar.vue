@@ -293,25 +293,90 @@ const showAltTriggerPicker = ref(false)
               </div>
 
               <!-- Settings: sentiment change -->
-              <div v-else-if="triggerSettingsType(entry.type) === 'sentiment'" class="mt-3">
-                <Label class="text-xs text-muted-foreground mb-2 block">Fire when guest sentiment becomes:</Label>
-                <div class="flex gap-1.5">
-                  <button
-                    v-for="s in (['positive', 'neutral', 'negative'] as const)"
-                    :key="s"
-                    :class="[
-                      'flex-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                      entry.settings.targetSentiments?.includes(s)
-                        ? s === 'positive' ? 'bg-green-500 border-green-500 text-white'
-                          : s === 'neutral' ? 'bg-amber-500 border-amber-500 text-white'
-                          : 'bg-red-500 border-red-500 text-white'
-                        : 'text-muted-foreground hover:bg-muted'
-                    ]"
-                    @click="toggleSentiment(i, s)"
-                  >
-                    {{ s.charAt(0).toUpperCase() + s.slice(1) }}
-                  </button>
+              <div v-else-if="triggerSettingsType(entry.type) === 'sentiment'" class="mt-3 flex flex-col gap-3">
+                <!-- Sentiment buttons -->
+                <div>
+                  <Label class="text-xs text-muted-foreground mb-2 block">Sentiment Trigger</Label>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button
+                      v-for="s in (['positive', 'neutral', 'negative'] as const)"
+                      :key="s"
+                      :class="[
+                        'rounded-lg border py-2.5 text-sm font-medium transition-colors',
+                        entry.settings.targetSentiments?.includes(s)
+                          ? s === 'positive' ? 'bg-green-500 border-green-500 text-white'
+                            : s === 'neutral' ? 'bg-amber-500 border-amber-500 text-white'
+                            : 'bg-red-500 border-red-500 text-white'
+                          : 'border-input text-muted-foreground hover:bg-muted',
+                      ]"
+                      @click="toggleSentiment(i, s)"
+                    >
+                      {{ s.charAt(0).toUpperCase() + s.slice(1) }}
+                    </button>
+                  </div>
                 </div>
+
+                <Separator />
+
+                <!-- Trigger immediately -->
+                <div
+                  class="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-muted/40"
+                  @click="patchTriggerSettings(i, { triggerImmediately: !entry.settings.triggerImmediately })"
+                >
+                  <div :class="[
+                    'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                    entry.settings.triggerImmediately ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  ]">
+                    <Icon v-if="entry.settings.triggerImmediately" name="i-lucide-check" class="h-3 w-3" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium leading-none">Trigger immediately</p>
+                    <p class="mt-1 text-xs text-muted-foreground">Start journey as soon as sentiment is detected</p>
+                  </div>
+                </div>
+
+                <!-- Delay + specific time (when not immediate) -->
+                <template v-if="!entry.settings.triggerImmediately">
+                  <div>
+                    <Label class="text-xs text-muted-foreground">Delay after sentiment detected</Label>
+                    <div class="mt-2 grid grid-cols-3 gap-2">
+                      <div v-for="unit in [
+                        { key: 'delayDays', label: 'Days' },
+                        { key: 'delayHours', label: 'Hours' },
+                        { key: 'delayMinutes', label: 'Minutes' },
+                      ]" :key="unit.key">
+                        <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                        <Input
+                          type="number"
+                          :model-value="(entry.settings as any)[unit.key] ?? 0"
+                          min="0"
+                          class="h-10 text-center text-sm"
+                          @update:model-value="patchTriggerSettings(i, { [unit.key]: Number($event) })"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="mb-1.5 flex items-center gap-1.5">
+                      <Label class="text-xs text-muted-foreground">Trigger at specific time</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger as-child>
+                            <Icon name="i-lucide-info" class="h-3.5 w-3.5 cursor-help text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>Optionally fire at a specific time of day after the delay elapses.</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Input
+                      type="time"
+                      :model-value="entry.settings.specificTime ?? ''"
+                      class="h-9 text-sm"
+                      @update:model-value="patchTriggerSettings(i, { specificTime: $event as string })"
+                    />
+                  </div>
+                </template>
               </div>
             </div>
           </template>

@@ -76,6 +76,12 @@ export interface TriggerSettings {
   scheduleDate?: string
   keywords?: string
   targetSentiments?: ('positive' | 'neutral' | 'negative')[]
+  // sentiment_change specific
+  triggerImmediately?: boolean
+  delayDays?: number
+  delayHours?: number
+  delayMinutes?: number
+  specificTime?: string
 }
 
 export interface TriggerEntry {
@@ -99,7 +105,7 @@ export function defaultTriggerSettings(type: TriggerType): TriggerSettings {
   if (type === 'conversation_content')
     return { keywords: '' }
   if (type === 'sentiment_change')
-    return { targetSentiments: ['negative'] }
+    return { targetSentiments: ['negative'], triggerImmediately: true, delayDays: 0, delayHours: 0, delayMinutes: 0, specificTime: '' }
   return {}
 }
 
