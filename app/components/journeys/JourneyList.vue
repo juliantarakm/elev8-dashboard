@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
 import type { Journey, JourneyGroup } from './data/journeys'
 import { triggerMeta } from './data/journeys'
 
@@ -99,27 +100,43 @@ function submitAddToGroup() {
 }
 
 // --- Delete confirmations ---
-const duplicateJourneyConfirm = ref<Journey | null>(null)
-const deleteJourneyConfirm = ref<Journey | null>(null)
-const deleteGroupConfirm = ref<JourneyGroup | null>(null)
+// Separate open flag from target so @update:open can't null the target before the action handler reads it
+const duplicateOpen = ref(false)
+const duplicateTarget = ref<Journey | null>(null)
+const deleteJourneyOpen = ref(false)
+const deleteJourneyTarget = ref<Journey | null>(null)
+const deleteGroupOpen = ref(false)
+const deleteGroupTarget = ref<JourneyGroup | null>(null)
 
-function confirmDuplicateJourney(journey: Journey) { duplicateJourneyConfirm.value = journey }
-function confirmDeleteJourney(journey: Journey) { deleteJourneyConfirm.value = journey }
-function confirmDeleteGroup(group: JourneyGroup) { deleteGroupConfirm.value = group }
+function confirmDuplicateJourney(journey: Journey) { duplicateTarget.value = journey; duplicateOpen.value = true }
+function confirmDeleteJourney(journey: Journey) { deleteJourneyTarget.value = journey; deleteJourneyOpen.value = true }
+function confirmDeleteGroup(group: JourneyGroup) { deleteGroupTarget.value = group; deleteGroupOpen.value = true }
 
 function doDuplicateJourney() {
-  if (duplicateJourneyConfirm.value) duplicateJourney(duplicateJourneyConfirm.value.id)
-  duplicateJourneyConfirm.value = null
+  const target = duplicateTarget.value
+  duplicateOpen.value = false
+  if (target) {
+    duplicateJourney(target.id)
+    toast.success(`"${target.name}" duplicated`)
+  }
 }
 
 function doDeleteJourney() {
-  if (deleteJourneyConfirm.value) deleteJourney(deleteJourneyConfirm.value.id)
-  deleteJourneyConfirm.value = null
+  const target = deleteJourneyTarget.value
+  deleteJourneyOpen.value = false
+  if (target) {
+    deleteJourney(target.id)
+    toast.success(`"${target.name}" deleted`)
+  }
 }
 
 function doDeleteGroup() {
-  if (deleteGroupConfirm.value) deleteGroup(deleteGroupConfirm.value.id)
-  deleteGroupConfirm.value = null
+  const target = deleteGroupTarget.value
+  deleteGroupOpen.value = false
+  if (target) {
+    deleteGroup(target.id)
+    toast.success(`Group "${target.name}" deleted`)
+  }
 }
 
 // --- Rename Group Dialog ---
@@ -497,12 +514,12 @@ function submitRename() {
     </Dialog>
 
     <!-- Duplicate Journey Confirmation -->
-    <AlertDialog :open="!!duplicateJourneyConfirm" @update:open="val => { if (!val) duplicateJourneyConfirm = null }">
+    <AlertDialog v-model:open="duplicateOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Duplicate Journey?</AlertDialogTitle>
           <AlertDialogDescription>
-            A copy of <span class="font-medium text-foreground">{{ duplicateJourneyConfirm?.name }}</span> will be created as a copy (inactive).
+            A copy of <span class="font-medium text-foreground">{{ duplicateTarget?.name }}</span> will be created (inactive).
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -513,12 +530,12 @@ function submitRename() {
     </AlertDialog>
 
     <!-- Delete Journey Confirmation -->
-    <AlertDialog :open="!!deleteJourneyConfirm" @update:open="val => { if (!val) deleteJourneyConfirm = null }">
+    <AlertDialog v-model:open="deleteJourneyOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Journey?</AlertDialogTitle>
           <AlertDialogDescription>
-            <span class="font-medium text-foreground">{{ deleteJourneyConfirm?.name }}</span> will be permanently deleted. This cannot be undone.
+            <span class="font-medium text-foreground">{{ deleteJourneyTarget?.name }}</span> will be permanently deleted. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -531,12 +548,12 @@ function submitRename() {
     </AlertDialog>
 
     <!-- Delete Group Confirmation -->
-    <AlertDialog :open="!!deleteGroupConfirm" @update:open="val => { if (!val) deleteGroupConfirm = null }">
+    <AlertDialog v-model:open="deleteGroupOpen">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Group?</AlertDialogTitle>
           <AlertDialogDescription>
-            <span class="font-medium text-foreground">{{ deleteGroupConfirm?.name }}</span> will be deleted. Journeys inside will become ungrouped.
+            <span class="font-medium text-foreground">{{ deleteGroupTarget?.name }}</span> will be deleted. Journeys inside will become ungrouped.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
