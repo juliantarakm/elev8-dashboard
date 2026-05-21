@@ -15,7 +15,7 @@ function makeDefaultJourney(): Journey {
   return {
     id: `j-${Date.now()}`,
     name: 'New Journey',
-    status: 'draft',
+    status: 'inactive',
     triggerType: 'booking_confirmed',
     lastModified: new Date().toISOString().split('T')[0],
     properties: ['All Properties'],

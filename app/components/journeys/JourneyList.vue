@@ -16,10 +16,9 @@ const {
 } = useJourneys()
 
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' }> = {
   active: { label: 'Active', variant: 'default' },
   inactive: { label: 'Inactive', variant: 'secondary' },
-  draft: { label: 'Draft', variant: 'outline' },
 }
 
 function getTriggerLabel(t: string) {
@@ -288,8 +287,7 @@ function submitRename() {
                       <Switch
                         :key="`${journey.id}-${journey.status}`"
                         :checked="journey.status === 'active'"
-                        :disabled="journey.status === 'draft'"
-                        @update:checked="toggleStatus(journey.id)"
+                          @update:checked="toggleStatus(journey.id)"
                       />
                       <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
                         {{ statusConfig[journey.status]?.label ?? journey.status }}
@@ -367,7 +365,6 @@ function submitRename() {
                     <Switch
                       :key="`${journey.id}-${journey.status}`"
                       :checked="journey.status === 'active'"
-                      :disabled="journey.status === 'draft'"
                       @update:checked="toggleStatus(journey.id)"
                     />
                     <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
@@ -505,7 +502,7 @@ function submitRename() {
         <AlertDialogHeader>
           <AlertDialogTitle>Duplicate Journey?</AlertDialogTitle>
           <AlertDialogDescription>
-            A copy of <span class="font-medium text-foreground">{{ duplicateJourneyConfirm?.name }}</span> will be created as a draft.
+            A copy of <span class="font-medium text-foreground">{{ duplicateJourneyConfirm?.name }}</span> will be created as a copy (inactive).
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

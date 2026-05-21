@@ -44,7 +44,7 @@ export function useJourneys() {
     const copy: Journey = JSON.parse(JSON.stringify(original))
     copy.id = newId
     copy.name = `${original.name} (Copy)`
-    copy.status = 'draft'
+    copy.status = 'inactive'
     copy.lastModified = new Date().toISOString().split('T')[0]
     copy.steps = copy.steps.map((s, i) => ({ ...s, id: `${newId}-s${i}` }))
     journeys.value = [...journeys.value, copy]

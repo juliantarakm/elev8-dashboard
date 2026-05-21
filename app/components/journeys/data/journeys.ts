@@ -11,7 +11,7 @@ export type StepType =
   | 'integration'
   | 'end_journey'
 
-export type JourneyStatus = 'active' | 'inactive' | 'draft'
+export type JourneyStatus = 'active' | 'inactive'
 
 export type TriggerCategory = 'event' | 'calendar'
 
@@ -415,7 +415,7 @@ export const mockJourneys: Journey[] = [
   {
     id: 'j-4',
     name: 'Post-Stay Review Request',
-    status: 'draft',
+    status: 'inactive',
     triggerType: 'guest_checked_out',
     lastModified: '2026-05-18',
     properties: ['All Properties'],
