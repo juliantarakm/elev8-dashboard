@@ -100,11 +100,18 @@ function submitAddToGroup() {
 }
 
 // --- Delete confirmations ---
+const duplicateJourneyConfirm = ref<Journey | null>(null)
 const deleteJourneyConfirm = ref<Journey | null>(null)
 const deleteGroupConfirm = ref<JourneyGroup | null>(null)
 
+function confirmDuplicateJourney(journey: Journey) { duplicateJourneyConfirm.value = journey }
 function confirmDeleteJourney(journey: Journey) { deleteJourneyConfirm.value = journey }
 function confirmDeleteGroup(group: JourneyGroup) { deleteGroupConfirm.value = group }
+
+function doDuplicateJourney() {
+  if (duplicateJourneyConfirm.value) duplicateJourney(duplicateJourneyConfirm.value.id)
+  duplicateJourneyConfirm.value = null
+}
 
 function doDeleteJourney() {
   if (deleteJourneyConfirm.value) deleteJourney(deleteJourneyConfirm.value.id)
@@ -304,7 +311,7 @@ function submitRename() {
                           <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem @click="duplicateJourney(journey.id)">
+                        <DropdownMenuItem @click="confirmDuplicateJourney(journey)">
                           <Icon name="i-lucide-copy" class="mr-2 h-4 w-4" />
                           Duplicate
                         </DropdownMenuItem>
@@ -383,7 +390,7 @@ function submitRename() {
                         <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem @click="duplicateJourney(journey.id)">
+                      <DropdownMenuItem @click="confirmDuplicateJourney(journey)">
                         <Icon name="i-lucide-copy" class="mr-2 h-4 w-4" />
                         Duplicate
                       </DropdownMenuItem>
@@ -491,6 +498,22 @@ function submitRename() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Duplicate Journey Confirmation -->
+    <AlertDialog :open="!!duplicateJourneyConfirm" @update:open="val => { if (!val) duplicateJourneyConfirm = null }">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Duplicate Journey?</AlertDialogTitle>
+          <AlertDialogDescription>
+            A copy of <span class="font-medium text-foreground">{{ duplicateJourneyConfirm?.name }}</span> will be created as a draft.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction @click="doDuplicateJourney">Duplicate</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <!-- Delete Journey Confirmation -->
     <AlertDialog :open="!!deleteJourneyConfirm" @update:open="val => { if (!val) deleteJourneyConfirm = null }">
