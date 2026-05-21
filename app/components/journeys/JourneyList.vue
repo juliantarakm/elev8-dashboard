@@ -323,8 +323,8 @@ function submitRename() {
                     <div class="flex items-center gap-2">
                       <Switch
                         :key="`${journey.id}-${journey.status}`"
-                        :checked="journey.status === 'active'"
-                          @update:checked="handleToggleStatus(journey)"
+                        :model-value="journey.status === 'active'"
+                        @update:model-value="handleToggleStatus(journey)"
                       />
                       <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
                         {{ statusConfig[journey.status]?.label ?? journey.status }}
@@ -401,8 +401,8 @@ function submitRename() {
                   <div class="flex items-center gap-2">
                     <Switch
                       :key="`${journey.id}-${journey.status}`"
-                      :checked="journey.status === 'active'"
-                      @update:checked="handleToggleStatus(journey)"
+                      :model-value="journey.status === 'active'"
+                      @update:model-value="handleToggleStatus(journey)"
                     />
                     <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
                       {{ statusConfig[journey.status]?.label ?? journey.status }}

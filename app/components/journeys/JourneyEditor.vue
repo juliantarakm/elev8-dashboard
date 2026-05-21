@@ -200,7 +200,7 @@ const addStepGroups = computed(() => {
           @update:model-value="setProperties"
         />
         <div class="flex items-center gap-2">
-          <Switch :checked="isActive" @update:checked="isActive = $event" />
+          <Switch :model-value="isActive" @update:model-value="isActive = $event" />
           <span class="text-sm text-muted-foreground">{{ isActive ? 'Active' : 'Inactive' }}</span>
         </div>
         <Button @click="handleSave">Save Journey</Button>
