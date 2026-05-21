@@ -26,6 +26,12 @@ function getTriggerLabel(t: string) {
   return triggerMeta[t]?.label ?? t
 }
 
+function handleToggleStatus(journey: Journey) {
+  const next = journey.status === 'active' ? 'inactive' : 'active'
+  toggleStatus(journey.id)
+  toast.success(`"${journey.name}" set to ${next}`)
+}
+
 // --- Grouping helpers ---
 const ungroupedJourneys = computed(() => {
   const groupedIds = new Set(groups.value.flatMap(g => g.journeyIds))
@@ -306,7 +312,7 @@ function submitRename() {
                       <Switch
                         :key="`${journey.id}-${journey.status}`"
                         :checked="journey.status === 'active'"
-                          @update:checked="toggleStatus(journey.id)"
+                          @update:checked="handleToggleStatus(journey)"
                       />
                       <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
                         {{ statusConfig[journey.status]?.label ?? journey.status }}
@@ -384,7 +390,7 @@ function submitRename() {
                     <Switch
                       :key="`${journey.id}-${journey.status}`"
                       :checked="journey.status === 'active'"
-                      @update:checked="toggleStatus(journey.id)"
+                      @update:checked="handleToggleStatus(journey)"
                     />
                     <Badge :variant="statusConfig[journey.status]?.variant ?? 'outline'">
                       {{ statusConfig[journey.status]?.label ?? journey.status }}
