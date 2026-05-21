@@ -10,10 +10,15 @@ const emit = defineEmits<{
 }>()
 
 const {
-  journeys, toggleStatus, deleteJourney,
+  journeys, toggleStatus, deleteJourney, duplicateJourney,
   groups, createGroup, deleteGroup, renameGroup, toggleGroupCollapse,
   moveJourneyToGroup, addJourneysToGroup,
 } = useJourneys()
+
+// Auto-focus directive for inline rename input
+const vFocus = {
+  mounted(el: HTMLInputElement) { el.focus(); el.select() },
+}
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
@@ -102,23 +107,19 @@ function submitAddToGroup() {
 const renamingGroupId = ref<string | null>(null)
 const renameInput = ref('')
 
-watch(renamingGroupId, (newId) => {
-  if (newId) {
-    nextTick(() => {
-      const el = document.querySelector('[data-rename-input]') as HTMLInputElement | null
-      el?.focus()
-      el?.select()
-    })
-  }
-})
-
 function startRename(group: JourneyGroup) {
   renamingGroupId.value = group.id
   renameInput.value = group.name
 }
 
-function commitRename(groupId: string) {
+// Only save if we haven't already cancelled (Escape sets renamingGroupId to null before blur fires)
+function commitRenameOnBlur(groupId: string) {
+  if (renamingGroupId.value === null) return
   if (renameInput.value.trim()) renameGroup(groupId, renameInput.value.trim())
+  renamingGroupId.value = null
+}
+
+function cancelRename() {
   renamingGroupId.value = null
 }
 </script>
@@ -220,13 +221,13 @@ function commitRename(groupId: string) {
 
                     <input
                       v-if="renamingGroupId === group.id"
-                      data-rename-input
+                      v-focus
                       :value="renameInput"
                       class="bg-transparent text-sm font-medium border-b border-primary outline-none min-w-[120px]"
                       @input="renameInput = ($event.target as HTMLInputElement).value"
-                      @blur="commitRename(group.id)"
-                      @keydown.enter="($event.target as HTMLInputElement).blur()"
-                      @keydown.escape="renamingGroupId = null"
+                      @blur="commitRenameOnBlur(group.id)"
+                      @keydown.enter.prevent="commitRenameOnBlur(group.id)"
+                      @keydown.escape.prevent="cancelRename"
                     />
                     <span v-else class="text-sm font-medium">{{ group.name }}</span>
 
@@ -302,6 +303,10 @@ function commitRename(groupId: string) {
                           <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem @click="duplicateJourney(journey.id)">
+                          <Icon name="i-lucide-copy" class="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger>
                             <Icon name="i-lucide-folder-symlink" class="mr-2 h-4 w-4" />
@@ -376,6 +381,10 @@ function commitRename(groupId: string) {
                       <DropdownMenuItem @click="emit('edit-journey', journey)">
                         <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
                         Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem @click="duplicateJourney(journey.id)">
+                        <Icon name="i-lucide-copy" class="mr-2 h-4 w-4" />
+                        Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuSub v-if="groups.length > 0">
                         <DropdownMenuSubTrigger>

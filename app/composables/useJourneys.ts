@@ -37,6 +37,19 @@ export function useJourneys() {
     }))
   }
 
+  function duplicateJourney(id: string) {
+    const original = journeys.value.find(j => j.id === id)
+    if (!original) return
+    const newId = `j-${Date.now()}`
+    const copy: Journey = JSON.parse(JSON.stringify(original))
+    copy.id = newId
+    copy.name = `${original.name} (Copy)`
+    copy.status = 'draft'
+    copy.lastModified = new Date().toISOString().split('T')[0]
+    copy.steps = copy.steps.map((s, i) => ({ ...s, id: `${newId}-s${i}` }))
+    journeys.value = [...journeys.value, copy]
+  }
+
   // --- Group management ---
 
   function createGroup(name: string, journeyIds: string[] = []) {
@@ -85,7 +98,7 @@ export function useJourneys() {
   }
 
   return {
-    journeys, toggleStatus, saveJourney, deleteJourney,
+    journeys, toggleStatus, saveJourney, deleteJourney, duplicateJourney,
     groups, createGroup, deleteGroup, renameGroup, toggleGroupCollapse,
     moveJourneyToGroup, addJourneysToGroup,
   }
