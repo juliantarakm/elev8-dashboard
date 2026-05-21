@@ -43,7 +43,9 @@ const nameInputRef = ref<HTMLInputElement | null>(null)
 const isActive = computed({
   get: () => localJourney.value.status === 'active',
   set: (val) => {
-    localJourney.value = { ...localJourney.value, status: val ? 'active' : 'inactive' }
+    const status = val ? 'active' : 'inactive'
+    localJourney.value = { ...localJourney.value, status }
+    toast.success(`"${localJourney.value.name}" set to ${status}`)
   },
 })
 
