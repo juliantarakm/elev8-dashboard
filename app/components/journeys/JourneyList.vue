@@ -15,10 +15,6 @@ const {
   moveJourneyToGroup, addJourneysToGroup,
 } = useJourneys()
 
-// Auto-focus directive for inline rename input
-const vFocus = {
-  mounted(el: HTMLInputElement) { el.focus(); el.select() },
-}
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   active: { label: 'Active', variant: 'default' },
@@ -103,29 +99,22 @@ function submitAddToGroup() {
   addToGroupOpen.value = false
 }
 
-// --- Inline rename ---
+// --- Rename Group Dialog ---
+const renameDialogOpen = ref(false)
 const renamingGroupId = ref<string | null>(null)
 const renameInput = ref('')
 
-function startRename(group: JourneyGroup) {
-  const id = group.id
-  const name = group.name
-  // Delay until DropdownMenu finishes closing and returning focus to its trigger
-  setTimeout(() => {
-    renamingGroupId.value = id
-    renameInput.value = name
-  }, 50)
+function openRenameDialog(group: JourneyGroup) {
+  renamingGroupId.value = group.id
+  renameInput.value = group.name
+  renameDialogOpen.value = true
 }
 
-// Only save if we haven't already cancelled (Escape sets renamingGroupId to null before blur fires)
-function commitRenameOnBlur(groupId: string) {
-  if (renamingGroupId.value === null) return
-  if (renameInput.value.trim()) renameGroup(groupId, renameInput.value.trim())
-  renamingGroupId.value = null
-}
-
-function cancelRename() {
-  renamingGroupId.value = null
+function submitRename() {
+  if (renamingGroupId.value && renameInput.value.trim()) {
+    renameGroup(renamingGroupId.value, renameInput.value.trim())
+  }
+  renameDialogOpen.value = false
 }
 </script>
 
@@ -224,17 +213,7 @@ function cancelRename() {
                     </button>
                     <Icon name="i-lucide-folder" class="h-4 w-4 shrink-0 text-muted-foreground" />
 
-                    <input
-                      v-if="renamingGroupId === group.id"
-                      v-focus
-                      :value="renameInput"
-                      class="bg-transparent text-sm font-medium border-b border-primary outline-none min-w-[120px]"
-                      @input="renameInput = ($event.target as HTMLInputElement).value"
-                      @blur="commitRenameOnBlur(group.id)"
-                      @keydown.enter.prevent="commitRenameOnBlur(group.id)"
-                      @keydown.escape.prevent="cancelRename"
-                    />
-                    <span v-else class="text-sm font-medium">{{ group.name }}</span>
+                    <span class="text-sm font-medium">{{ group.name }}</span>
 
                     <Badge variant="secondary" class="h-5 px-1.5 text-[10px] font-normal">
                       {{ getGroupJourneys(group).length }}
@@ -257,7 +236,7 @@ function cancelRename() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem @click="startRename(group)">
+                          <DropdownMenuItem @click="openRenameDialog(group)">
                             <Icon name="i-lucide-pencil" class="mr-2 h-4 w-4" />
                             Rename
                           </DropdownMenuItem>
@@ -472,6 +451,26 @@ function cancelRename() {
           <Button :disabled="!newGroupName.trim()" @click="submitCreateGroup">
             Create Group
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Rename Group Dialog -->
+    <Dialog v-model:open="renameDialogOpen">
+      <DialogContent class="sm:max-w-xs">
+        <DialogHeader>
+          <DialogTitle>Rename Group</DialogTitle>
+        </DialogHeader>
+        <div class="py-2">
+          <Input
+            v-model="renameInput"
+            placeholder="Group name"
+            @keydown.enter="submitRename"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="renameDialogOpen = false">Cancel</Button>
+          <Button :disabled="!renameInput.trim()" @click="submitRename">Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
