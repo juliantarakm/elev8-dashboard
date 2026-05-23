@@ -22,6 +22,14 @@ function handleStatusChange(id: string, status: OrderStatus) {
   toast.success(`Order marked as ${ORDER_STATUS_LABELS[status]}.`)
 }
 
+const showCancelModal = ref(false)
+const cancelTargetOrder = ref<UpsellOrder | null>(null)
+
+function handleCancel(order: UpsellOrder) {
+  cancelTargetOrder.value = order
+  showCancelModal.value = true
+}
+
 function formatCurrency(amount: number, currency: string) {
   return `${currency} ${amount.toLocaleString('id-ID')}`
 }
@@ -169,9 +177,10 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     v-if="order.status === 'pending' || order.status === 'confirmed'"
-                    @click="handleStatusChange(order.id, 'cancelled')"
+                    class="text-destructive"
+                    @click="handleCancel(order)"
                   >
-                    <Icon name="lucide:x-circle" class="mr-2 h-4 w-4 text-destructive" />
+                    <Icon name="lucide:x-circle" class="mr-2 h-4 w-4" />
                     Cancel Order
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -189,4 +198,9 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
       </Table>
     </div>
   </div>
+  <UpsellsUpsellCancelModal
+    :order="cancelTargetOrder"
+    :open="showCancelModal"
+    @update:open="showCancelModal = $event"
+  />
 </template>
