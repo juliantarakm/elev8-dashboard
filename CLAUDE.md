@@ -14,6 +14,7 @@
 - **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
 - **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
+- **Upsells** — Upsell Catalog with CRUD, category-first create flow, 2-tab wizard drawer, per-item pricing, tax/service toggles
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
 - **Tasks** — Data table with filtering (TanStack table)
@@ -219,6 +220,33 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 ### Kanban Module (`app/components/kanban/`)
 - **KanbanBoard.vue** — Main board component
 - Composable: `app/composables/useKanban.ts`
+
+### Upsells Module (`app/components/upsells/`)
+
+#### Data + Types (`app/components/upsells/data/upsell-services.ts`)
+- `UpsellItem` interface — `id`, `name`, `price`
+- `UpsellService` interface — `id`, `name`, `category`, `description`, `image`, `youtubeLinks[]`, `assignedListings[]`, `items: UpsellItem[]`, `currency`, `pricingEnabled`, `taxPercent`, `servicePercent`, `status`, `internalNotes`, `notificationUsers[]`
+- `UpsellCategory` = `'Airport Transport' | 'Private Chef' | 'Spa' | 'Activity' | 'Vehicle Rental' | 'Late Check-out' | 'Early Check-in' | 'Mid-stay Cleaning' | 'Office Equipment' | 'Baby' | 'Miscellaneous' | 'Pet'`
+- 10 mock services across all categories
+
+#### Composable (`app/composables/useUpsellServices.ts`)
+- `services` — `useState<UpsellService[]>` with spread syntax mutations
+- Filters: `activeCategoryFilter`, `activeStatusFilter`, `activeListingFilter`, `searchValue`
+- Actions: `addService()`, `updateService()`, `deleteService()`, `toggleListingFilter()`, `clearListingFilters()`
+
+#### Components
+- **UpsellTable.vue** — TanStack data table with columns: Name, Category, Price Range, Items, Listings, Status; includes `priceRange()` helper
+- **UpsellFilterBar.vue** — Category pills + Status filter + Listing filter + Search input
+- **UpsellDrawer.vue** — 2-tab Sheet drawer (Details + Items tabs); Details tab: name, description, image, YouTube links, listings, tax/service section; Items tab: sortable item list with name/price inline editing
+- Category-first create flow: "Add Service" button opens dropdown with 12 categories → on select, drawer opens with category pre-filled
+
+#### Tax/Service Section
+- Single `pricingEnabled` toggle — when ON, Tax % and Service % input fields appear below
+- When OFF, entire section is hidden (not just disabled)
+- Use `model-value` / `update:model-value` (NOT `checked` / `update:checked`) for Switch reactivity in reka-ui
+
+#### Page (`app/pages/upsells.vue`)
+- Thin shell wiring FilterBar + Table + Drawer together
 
 ### Settings (`app/components/settings/`)
 - **Layout.vue** — Settings page shell
@@ -492,7 +520,8 @@ const table = useVueTable({
 | `useActiveIntegration` | `app/composables/useActiveIntegration.ts` | Per-listing accounting amount resolution | `showConvertedColumn`, `getAccountingAmount()`, `getCostAccountingAmount()` |
 | `useCosts` | `app/composables/useCosts.ts` | Costs tab state + filters | `costs`, `filteredCosts`, all `filter*` refs, `markSynced()`, `clearFilters()` |
 | `useReservations` | `app/composables/useReservations.ts` | Reservations state | `reservations`, `pushReservations()`, `pushSelected()`, `isPushingSelected` |
-| `useUpsells` | `app/composables/useUpsells.ts` | Upsells state | `upsells`, `pushUpsells()`, `isPushingUpsells` |
+| `useUpsells` | `app/composables/useUpsells.ts` | Upsells (Finance) state | `upsells`, `pushUpsells()`, `isPushingUpsells` |
+| `useUpsellServices` | `app/composables/useUpsellServices.ts` | Upsells Catalog state + CRUD | `services`, filters, `addService()`, `updateService()`, `deleteService()` |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -591,6 +620,12 @@ app/
 │   │   ├── NotificationItem.vue
 │   │   └── data/
 │   │       └── alerts.ts       ← Alert types + mock data
+│   ├── upsells/
+│   │   ├── data/
+│   │   │   └── upsell-services.ts
+│   │   ├── UpsellFilterBar.vue
+│   │   ├── UpsellTable.vue
+│   │   └── UpsellDrawer.vue
 │   ├── kanban/
 │   │   └── KanbanBoard.vue
 │   ├── layout/
