@@ -1,0 +1,133 @@
+<script setup lang="ts">
+import { toast } from 'vue-sonner'
+import { useUpsellServices } from '@/composables/useUpsellServices'
+import type { UpsellService } from '@/components/upsells/data/upsell-services'
+
+const { filteredServices, toggleStatus, deleteService } = useUpsellServices()
+
+const emit = defineEmits<{
+  openDrawer: [service: UpsellService | null]
+}>()
+
+function openEdit(service: UpsellService) {
+  emit('openDrawer', service)
+}
+
+function handleToggleStatus(id: string) {
+  toggleStatus(id)
+  toast.success('Service status updated.')
+}
+
+function handleDelete(id: string) {
+  deleteService(id)
+  toast.success('Service deleted.')
+}
+
+function formatPrice(price: number, currency: string) {
+  return `${currency} ${price.toLocaleString('id-ID')}`
+}
+
+const categoryBadgeClass: Record<string, string> = {
+  'Airport Transport': 'text-violet-700 bg-violet-50',
+  'Vehicle Rental': 'text-slate-700 bg-slate-100',
+  'Private Chef': 'text-amber-700 bg-amber-50',
+  'Spa': 'text-pink-700 bg-pink-50',
+  'Activity': 'text-emerald-700 bg-emerald-50',
+  'Late Check-out': 'text-indigo-700 bg-indigo-50',
+  'Early Check-in': 'text-sky-700 bg-sky-50',
+  'Mid-stay Cleaning': 'text-teal-700 bg-teal-50',
+  'Office Equipment': 'text-orange-700 bg-orange-50',
+  'Baby': 'text-rose-700 bg-rose-50',
+  'Pet': 'text-lime-700 bg-lime-50',
+  'Miscellaneous': 'text-gray-700 bg-gray-100',
+}
+</script>
+
+<template>
+  <div class="rounded-md border">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead class="w-12" />
+          <TableHead>Name</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead class="text-right">Price</TableHead>
+          <TableHead class="text-center">Listings</TableHead>
+          <TableHead class="text-center">Status</TableHead>
+          <TableHead class="w-10" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow v-if="filteredServices.length === 0">
+          <TableCell colspan="7" class="py-12 text-center text-sm text-muted-foreground">
+            No upsell services match the selected filters.
+          </TableCell>
+        </TableRow>
+        <TableRow
+          v-for="svc in filteredServices"
+          v-else
+          :key="svc.id"
+          class="cursor-pointer hover:bg-muted/50"
+          @click="openEdit(svc)"
+        >
+          <TableCell>
+            <div class="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+              <Icon name="lucide:image" class="h-5 w-5 text-muted-foreground" />
+            </div>
+          </TableCell>
+          <TableCell>
+            <p class="font-medium">{{ svc.name }}</p>
+            <p class="max-w-64 truncate text-xs text-muted-foreground">{{ svc.description }}</p>
+          </TableCell>
+          <TableCell>
+            <span
+              class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="categoryBadgeClass[svc.category] ?? 'text-gray-700 bg-gray-100'"
+            >
+              {{ svc.category }}
+            </span>
+          </TableCell>
+          <TableCell class="text-right font-semibold tabular-nums">
+            {{ formatPrice(svc.price, svc.currency) }}
+          </TableCell>
+          <TableCell class="text-center">
+            <Badge variant="secondary">
+              {{ svc.assignedListings.length }} {{ svc.assignedListings.length === 1 ? 'listing' : 'listings' }}
+            </Badge>
+          </TableCell>
+          <TableCell class="text-center">
+            <Badge :variant="svc.status === 'active' ? 'default' : 'secondary'">
+              {{ svc.status === 'active' ? 'Active' : 'Inactive' }}
+            </Badge>
+          </TableCell>
+          <TableCell @click.stop>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" size="icon" class="h-7 w-7" aria-label="Row actions">
+                  <Icon name="lucide:ellipsis" class="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem @click="openEdit(svc)">
+                  <Icon name="lucide:pencil" class="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="handleToggleStatus(svc.id)">
+                  <Icon
+                    :name="svc.status === 'active' ? 'lucide:eye-off' : 'lucide:eye'"
+                    class="mr-2 h-4 w-4"
+                  />
+                  {{ svc.status === 'active' ? 'Deactivate' : 'Activate' }}
+                </DropdownMenuItem>
+                <DropdownMenuItem class="text-destructive" @click="handleDelete(svc.id)">
+                  <Icon name="lucide:trash-2" class="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  </div>
+</template>
