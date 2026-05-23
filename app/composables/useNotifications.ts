@@ -1,6 +1,7 @@
 import type { Alert } from '~/components/notifications/data/alerts'
 import { mockAlerts, alertRouteMap, getDescription as getDesc } from '~/components/notifications/data/alerts'
 import { formatDistanceToNow } from 'date-fns'
+import { useUpsellNotifications } from './useUpsellNotifications'
 
 export type SeverityFilter = 'all' | 'critical' | 'warning'
 
@@ -15,7 +16,12 @@ export function useNotifications() {
     alerts.value.filter(a => a.status === 'ACTIVE')
   )
 
-  const unreadCount = computed(() => activeAlerts.value.length)
+  const { unreadNotifications: upsellUnread } = useUpsellNotifications()
+
+  const unreadCount = computed(() => {
+    const alertUnread = activeAlerts.value.length
+    return alertUnread + upsellUnread.value.length
+  })
 
   const filteredAlerts = computed(() => {
     const active = activeAlerts.value

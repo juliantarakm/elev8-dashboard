@@ -17,6 +17,8 @@ export type AlertType =
   | 'RATE_PLAN_UNMAPPED'
   | 'BOOKING_QUOTA_LOW'
   | 'DYNAMIC_TEMPLATE_FAILED'
+  // Upsell alert types (managed via useUpsellNotifications, surfaced here for display)
+  // 'UPSELL_ORDER_REQUESTED' | 'UPSELL_ORDER_CONFIRMED' | 'UPSELL_ORDER_CANCELLED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING'
 
