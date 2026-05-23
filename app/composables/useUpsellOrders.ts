@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import type { OrderStatus, UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { mockUpsellOrders } from '@/components/upsells/data/upsell-orders'
+import { getPolicyForService, calculateRefund } from '@/components/upsells/data/cancellation-policies'
 
 export function useUpsellOrders() {
   const orders = useState<UpsellOrder[]>('upsell-orders', () =>
@@ -63,6 +64,30 @@ export function useUpsellOrders() {
     }]
   }
 
+  function cancelOrder(id: string, reason: string, cancelledBy: 'guest' | 'staff') {
+    const order = orders.value.find(o => o.id === id)
+    if (!order) return null
+
+    const policy = getPolicyForService(order.serviceId)
+    const refund = policy
+      ? calculateRefund(order.grandTotal, order.serviceDate, new Date().toISOString(), policy, cancelledBy)
+      : { refundAmount: order.grandTotal, refundPercent: 100, lateFee: 0, reason: 'No policy — full refund' }
+
+    orders.value = orders.value.map(o =>
+      o.id === id
+        ? {
+            ...o,
+            status: 'cancelled',
+            cancellationReason: reason,
+            cancellationBy: cancelledBy,
+            updatedAt: new Date().toISOString(),
+          }
+        : o,
+    )
+
+    return refund
+  }
+
   function clearFilters() {
     filterStatus.value = 'all'
     filterService.value = 'all'
@@ -83,6 +108,7 @@ export function useUpsellOrders() {
     searchValue,
     updateStatus,
     addOrder,
+    cancelOrder,
     clearFilters,
   }
 }
