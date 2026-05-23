@@ -27,6 +27,15 @@ function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString('id-ID')}`
 }
 
+function priceRange(svc: UpsellService) {
+  if (svc.items.length === 0) return '—'
+  const prices = svc.items.map(i => i.price)
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  if (min === max) return formatPrice(min, svc.currency)
+  return `${formatPrice(min, svc.currency)} – ${formatPrice(max, svc.currency).replace(svc.currency + ' ', '')}`
+}
+
 const categoryBadgeClass: Record<string, string> = {
   'Airport Transport': 'text-violet-700 bg-violet-50',
   'Vehicle Rental': 'text-slate-700 bg-slate-100',
@@ -51,7 +60,8 @@ const categoryBadgeClass: Record<string, string> = {
           <TableHead class="w-12" />
           <TableHead>Name</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead class="text-right">Price</TableHead>
+          <TableHead class="text-right">Price Range</TableHead>
+          <TableHead class="text-center">Items</TableHead>
           <TableHead class="text-center">Listings</TableHead>
           <TableHead class="text-center">Status</TableHead>
           <TableHead class="w-10" />
@@ -59,7 +69,7 @@ const categoryBadgeClass: Record<string, string> = {
       </TableHeader>
       <TableBody>
         <TableRow v-if="filteredServices.length === 0">
-          <TableCell colspan="7" class="py-12 text-center text-sm text-muted-foreground">
+          <TableCell colspan="8" class="py-12 text-center text-sm text-muted-foreground">
             No upsell services match the selected filters.
           </TableCell>
         </TableRow>
@@ -87,8 +97,13 @@ const categoryBadgeClass: Record<string, string> = {
               {{ svc.category }}
             </span>
           </TableCell>
-          <TableCell class="text-right font-semibold tabular-nums">
-            {{ formatPrice(svc.price, svc.currency) }}
+          <TableCell class="text-right font-semibold tabular-nums whitespace-nowrap">
+            {{ priceRange(svc) }}
+          </TableCell>
+          <TableCell class="text-center">
+            <Badge variant="secondary">
+              {{ svc.items.length }} {{ svc.items.length === 1 ? 'item' : 'items' }}
+            </Badge>
           </TableCell>
           <TableCell class="text-center">
             <Badge variant="secondary">
