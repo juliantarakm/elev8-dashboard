@@ -16,15 +16,21 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const { updateStatus } = useUpsellOrders()
+const { orders, updateStatus } = useUpsellOrders()
+
+// Always look up the latest order from reactive state
+const order = computed(() => {
+  if (!props.order) return null
+  return orders.value.find(o => o.id === props.order!.id) ?? null
+})
 
 function onOpenChange(value: boolean) {
   emit('update:open', value)
 }
 
 function handleStatusChange(status: OrderStatus) {
-  if (!props.order) return
-  updateStatus(props.order.id, status)
+  if (!order.value) return
+  updateStatus(order.value.id, status)
   toast.success(`Order marked as ${ORDER_STATUS_LABELS[status]}.`)
 }
 
