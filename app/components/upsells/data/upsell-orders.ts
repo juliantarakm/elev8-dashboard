@@ -1,0 +1,322 @@
+export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
+
+export interface UpsellOrderItem {
+  id: string
+  name: string
+  price: number
+  quantity: number
+}
+
+export interface UpsellOrder {
+  id: string
+  reservationId: string
+  guestName: string
+  guestEmail?: string
+  serviceId: string
+  serviceName: string
+  serviceCategory: string
+  items: UpsellOrderItem[]
+  subtotal: number
+  taxAmount: number
+  serviceAmount: number
+  grandTotal: number
+  currency: string
+  status: OrderStatus
+  orderDate: string
+  checkInDate: string
+  checkOutDate: string
+  listing: string
+  channel: string
+  notes: string
+  staffAssigned?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
+
+export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
+  pending: 'text-amber-700 bg-amber-50',
+  confirmed: 'text-emerald-700 bg-emerald-50',
+  completed: 'text-slate-700 bg-slate-100',
+  cancelled: 'text-destructive bg-destructive/10',
+}
+
+export const mockUpsellOrders: UpsellOrder[] = [
+  {
+    id: 'ord-001',
+    reservationId: '86109494',
+    guestName: 'Thomas Wikes',
+    guestEmail: 'thomas.wikes@email.com',
+    serviceId: 'svc-001',
+    serviceName: 'Airport Transfer (Ngurah Rai)',
+    serviceCategory: 'Airport Transport',
+    items: [
+      { id: 'itm-001b', name: 'SUV (up to 5 pax)', price: 500000, quantity: 1 },
+    ],
+    subtotal: 500000,
+    taxAmount: 55000,
+    serviceAmount: 25000,
+    grandTotal: 580000,
+    currency: 'IDR',
+    status: 'completed',
+    orderDate: '2026-05-01',
+    checkInDate: '2026-05-02',
+    checkOutDate: '2026-05-07',
+    listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape',
+    channel: 'Direct',
+    notes: 'Flight arrives 14:30. Pickup with name board.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-04-28T10:00:00Z',
+    updatedAt: '2026-05-01T15:00:00Z',
+  },
+  {
+    id: 'ord-002',
+    reservationId: '83828094',
+    guestName: 'Mate Bezdek',
+    guestEmail: 'mate.bezdek@email.com',
+    serviceId: 'svc-002',
+    serviceName: 'Private Chef - Dinner',
+    serviceCategory: 'Private Chef',
+    items: [
+      { id: 'itm-002a', name: 'Balinese Set Menu', price: 1500000, quantity: 1 },
+    ],
+    subtotal: 1500000,
+    taxAmount: 165000,
+    serviceAmount: 75000,
+    grandTotal: 1740000,
+    currency: 'IDR',
+    status: 'confirmed',
+    orderDate: '2026-05-01',
+    checkInDate: '2026-05-02',
+    checkOutDate: '2026-05-05',
+    listing: 'The R Apartment Mittelfelsen - Quiet, Free Parking',
+    channel: 'Direct',
+    notes: 'Dietary restriction: no shellfish. 4 guests.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-04-29T08:00:00Z',
+    updatedAt: '2026-05-01T12:00:00Z',
+  },
+  {
+    id: 'ord-003',
+    reservationId: '85418022',
+    guestName: 'Reto Wyss',
+    guestEmail: 'reto.wyss@email.com',
+    serviceId: 'svc-001',
+    serviceName: 'Airport Transfer (Ngurah Rai)',
+    serviceCategory: 'Airport Transport',
+    items: [
+      { id: 'itm-001a', name: 'Standard Sedan', price: 350000, quantity: 2 },
+    ],
+    subtotal: 700000,
+    taxAmount: 77000,
+    serviceAmount: 35000,
+    grandTotal: 812000,
+    currency: 'IDR',
+    status: 'completed',
+    orderDate: '2026-05-01',
+    checkInDate: '2026-05-03',
+    checkOutDate: '2026-05-10',
+    listing: 'The R Pererenan Mezzanine Studio + Plunge Pool',
+    channel: 'Direct',
+    notes: '2 cars needed for 4 pax with luggage.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-04-30T09:00:00Z',
+    updatedAt: '2026-05-01T16:00:00Z',
+  },
+  {
+    id: 'ord-004',
+    reservationId: '86266805',
+    guestName: 'Cameron Skillcorn',
+    guestEmail: 'cameron.s@email.com',
+    serviceId: 'svc-003',
+    serviceName: 'In-Villa Spa Treatment',
+    serviceCategory: 'Spa',
+    items: [
+      { id: 'itm-003c', name: 'Body Scrub + Massage', price: 1100000, quantity: 2 },
+    ],
+    subtotal: 2200000,
+    taxAmount: 242000,
+    serviceAmount: 0,
+    grandTotal: 2442000,
+    currency: 'IDR',
+    status: 'completed',
+    orderDate: '2026-05-04',
+    checkInDate: '2026-05-01',
+    checkOutDate: '2026-05-06',
+    listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
+    channel: 'Direct',
+    notes: 'Couples treatment. Arrive at 15:00.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-02T14:00:00Z',
+    updatedAt: '2026-05-04T18:00:00Z',
+  },
+  {
+    id: 'ord-005',
+    reservationId: '86413147',
+    guestName: 'James Alizada',
+    guestEmail: 'james.a@email.com',
+    serviceId: 'svc-008',
+    serviceName: 'Vehicle Rental',
+    serviceCategory: 'Vehicle Rental',
+    items: [
+      { id: 'itm-008a', name: 'Scooter (Automatic)', price: 120000, quantity: 2 },
+    ],
+    subtotal: 240000,
+    taxAmount: 26400,
+    serviceAmount: 12000,
+    grandTotal: 278400,
+    currency: 'IDR',
+    status: 'confirmed',
+    orderDate: '2026-05-06',
+    checkInDate: '2026-05-05',
+    checkOutDate: '2026-05-12',
+    listing: 'KABA - Stylish 2BR the R Villa Kaba-Kerobokan+Pool/Bikes',
+    channel: 'Booking.com',
+    notes: '3-day rental each. International licenses confirmed.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-04T10:00:00Z',
+    updatedAt: '2026-05-06T08:00:00Z',
+  },
+  {
+    id: 'ord-006',
+    reservationId: '86555874',
+    guestName: 'Cameron Skillcorn',
+    guestEmail: 'cameron.s@email.com',
+    serviceId: 'svc-001',
+    serviceName: 'Airport Transfer (Ngurah Rai)',
+    serviceCategory: 'Airport Transport',
+    items: [
+      { id: 'itm-001c', name: 'Minivan (up to 8 pax)', price: 650000, quantity: 1 },
+    ],
+    subtotal: 650000,
+    taxAmount: 71500,
+    serviceAmount: 32500,
+    grandTotal: 754000,
+    currency: 'IDR',
+    status: 'pending',
+    orderDate: '2026-05-10',
+    checkInDate: '2026-05-12',
+    checkOutDate: '2026-05-18',
+    listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape',
+    channel: 'Direct',
+    notes: 'Flight arrives 23:45. Late night pickup surcharge applies.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-08T11:00:00Z',
+    updatedAt: '2026-05-10T09:00:00Z',
+  },
+  {
+    id: 'ord-007',
+    reservationId: '84721653',
+    guestName: 'Amanda Healey',
+    guestEmail: 'amanda.h@email.com',
+    serviceId: 'svc-003',
+    serviceName: 'In-Villa Spa Treatment',
+    serviceCategory: 'Spa',
+    items: [
+      { id: 'itm-003a', name: 'Balinese Massage', price: 800000, quantity: 1 },
+    ],
+    subtotal: 800000,
+    taxAmount: 88000,
+    serviceAmount: 0,
+    grandTotal: 888000,
+    currency: 'IDR',
+    status: 'pending',
+    orderDate: '2026-05-11',
+    checkInDate: '2026-05-10',
+    checkOutDate: '2026-05-15',
+    listing: 'Cozy 2BR- the R Villa Sinabung w/ Pool in Sanur',
+    channel: 'Booking.com',
+    notes: 'Guest prefers female therapist.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-09T16:00:00Z',
+    updatedAt: '2026-05-11T10:00:00Z',
+  },
+  {
+    id: 'ord-008',
+    reservationId: '86596428',
+    guestName: 'Khasan Alshalabi',
+    guestEmail: 'khasan.a@email.com',
+    serviceId: 'svc-005',
+    serviceName: 'Surf Lesson at Canggu',
+    serviceCategory: 'Activity',
+    items: [
+      { id: 'itm-005a', name: 'Beginner Lesson', price: 500000, quantity: 1 },
+      { id: 'itm-005b', name: 'Intermediate Lesson', price: 600000, quantity: 1 },
+    ],
+    subtotal: 1100000,
+    taxAmount: 121000,
+    serviceAmount: 0,
+    grandTotal: 1221000,
+    currency: 'IDR',
+    status: 'confirmed',
+    orderDate: '2026-05-11',
+    checkInDate: '2026-05-10',
+    checkOutDate: '2026-05-14',
+    listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
+    channel: 'Direct',
+    notes: '2 guests: 1 beginner, 1 intermediate. Same instructor preferred.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-09T10:00:00Z',
+    updatedAt: '2026-05-11T14:00:00Z',
+  },
+  {
+    id: 'ord-009',
+    reservationId: '86470236',
+    guestName: 'Mikhail Batkovsky',
+    guestEmail: 'mikhail.b@email.com',
+    serviceId: 'svc-010',
+    serviceName: 'Mid-stay Deep Cleaning',
+    serviceCategory: 'Mid-stay Cleaning',
+    items: [
+      { id: 'itm-010b', name: 'Deep Clean + Laundry', price: 600000, quantity: 1 },
+    ],
+    subtotal: 600000,
+    taxAmount: 66000,
+    serviceAmount: 0,
+    grandTotal: 666000,
+    currency: 'IDR',
+    status: 'pending',
+    orderDate: '2026-05-12',
+    checkInDate: '2026-05-08',
+    checkOutDate: '2026-05-15',
+    listing: 'The R Apartments Studio walk to the Beach',
+    channel: 'Direct',
+    notes: 'Schedule for May 13 when guest is on day trip.',
+    staffAssigned: 'Made Surya',
+    createdAt: '2026-05-10T08:00:00Z',
+    updatedAt: '2026-05-12T11:00:00Z',
+  },
+  {
+    id: 'ord-010',
+    reservationId: '85418022',
+    guestName: 'Reto Wyss',
+    guestEmail: 'reto.wyss@email.com',
+    serviceId: 'svc-006',
+    serviceName: 'Late Check-out (until 2pm)',
+    serviceCategory: 'Late Check-out',
+    items: [
+      { id: 'itm-006a', name: 'Late Check-out', price: 450000, quantity: 1 },
+    ],
+    subtotal: 450000,
+    taxAmount: 49500,
+    serviceAmount: 0,
+    grandTotal: 499500,
+    currency: 'IDR',
+    status: 'cancelled',
+    orderDate: '2026-05-08',
+    checkInDate: '2026-05-03',
+    checkOutDate: '2026-05-10',
+    listing: 'The R Pererenan Mezzanine Studio + Plunge Pool',
+    channel: 'Direct',
+    notes: 'Next-day booking blocked this request. Refunded.',
+    staffAssigned: 'Komang Juliantara',
+    createdAt: '2026-05-07T09:00:00Z',
+    updatedAt: '2026-05-08T16:00:00Z',
+  },
+]
