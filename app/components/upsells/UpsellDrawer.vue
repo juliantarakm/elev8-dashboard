@@ -44,6 +44,7 @@ const formTaxPercent = ref(0)
 const formServicePercent = ref(0)
 const formItems = ref<UpsellItem[]>([])
 const formListings = ref<string[]>([])
+const formAvailability = ref<'always' | 'by_request'>('always')
 const formStatus = ref<'active' | 'inactive'>('active')
 const showDeleteConfirm = ref(false)
 
@@ -74,6 +75,7 @@ watch(() => props.open, (open) => {
       formServicePercent.value = props.service.servicePercent
       formItems.value = props.service.items.map(i => ({ ...i }))
       formListings.value = [...props.service.assignedListings]
+      formAvailability.value = props.service.availability
       formStatus.value = props.service.status
     }
     else {
@@ -92,6 +94,7 @@ watch(() => props.open, (open) => {
       formServicePercent.value = 0
       formItems.value = []
       formListings.value = []
+      formAvailability.value = 'always'
       formStatus.value = 'active'
     }
   }
@@ -238,6 +241,7 @@ function handleSave() {
     servicePercent: formServicePercent.value,
     items: formItems.value,
     assignedListings: formListings.value,
+    availability: formAvailability.value,
     status: formStatus.value,
   }
 
@@ -508,6 +512,38 @@ function onOpenChange(val: boolean) {
             <p class="text-xs text-muted-foreground">
               {{ formListings.length }} of {{ BALI_LISTINGS.length }} listings selected
             </p>
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-3">
+            <Label>Availability</Label>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
+                :class="formAvailability === 'always' ? 'border-primary bg-primary/5' : 'border-border'"
+                @click="formAvailability = 'always'"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:shopping-cart" class="h-4 w-4" />
+                  <span class="text-sm font-medium">Always Available</span>
+                </div>
+                <span class="text-xs text-muted-foreground">Guests can order anytime</span>
+              </button>
+              <button
+                type="button"
+                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
+                :class="formAvailability === 'by_request' ? 'border-primary bg-primary/5' : 'border-border'"
+                @click="formAvailability = 'by_request'"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:clock" class="h-4 w-4" />
+                  <span class="text-sm font-medium">By Request</span>
+                </div>
+                <span class="text-xs text-muted-foreground">Requires confirmation first</span>
+              </button>
+            </div>
           </div>
 
           <Separator />

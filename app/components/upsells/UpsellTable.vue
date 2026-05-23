@@ -63,13 +63,14 @@ const categoryBadgeClass: Record<string, string> = {
           <TableHead class="text-right">Price Range</TableHead>
           <TableHead class="text-center">Items</TableHead>
           <TableHead class="text-center">Listings</TableHead>
+          <TableHead class="text-center">Availability</TableHead>
           <TableHead class="text-center">Status</TableHead>
           <TableHead class="w-10" />
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow v-if="filteredServices.length === 0">
-          <TableCell colspan="8" class="py-12 text-center text-sm text-muted-foreground">
+          <TableCell colspan="9" class="py-12 text-center text-sm text-muted-foreground">
             No upsell services match the selected filters.
           </TableCell>
         </TableRow>
@@ -108,6 +109,15 @@ const categoryBadgeClass: Record<string, string> = {
           <TableCell class="text-center">
             <Badge variant="secondary">
               {{ svc.assignedListings.length }} {{ svc.assignedListings.length === 1 ? 'listing' : 'listings' }}
+            </Badge>
+          </TableCell>
+          <TableCell class="text-center">
+            <Badge :variant="svc.availability === 'always' ? 'default' : 'outline'" class="gap-1">
+              <Icon
+                :name="svc.availability === 'always' ? 'lucide:shopping-cart' : 'lucide:clock'"
+                class="h-3 w-3"
+              />
+              {{ svc.availability === 'always' ? 'Always' : 'By Request' }}
             </Badge>
           </TableCell>
           <TableCell class="text-center">
