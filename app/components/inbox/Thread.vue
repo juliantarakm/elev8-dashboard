@@ -13,6 +13,7 @@ const { selectedConversation,
   getNotes,
   addNote,
   getPhoneCalls,
+  getLinkedOrders,
   rightPanelCollapsed,
   toggleRightPanel,
 } = useInbox()
@@ -30,6 +31,11 @@ const conversationNotes = computed(() => {
 const conversationPhoneCalls = computed(() => {
   if (!selectedConversation.value) return []
   return getPhoneCalls(selectedConversation.value.id)
+})
+
+const linkedOrders = computed(() => {
+  if (!selectedConversation.value) return []
+  return getLinkedOrders(selectedConversation.value.id)
 })
 
 const expandedTranscripts = ref(new Set<string>())
@@ -92,6 +98,10 @@ function dismissSuggestion() {
   if (aiSuggestion.value) {
     dismissedSuggestions.value.push(aiSuggestion.value.id)
   }
+}
+
+function navigateToOrder(orderId: string) {
+  navigateTo(`/upsells?tab=orders&order=${orderId}`)
 }
 
 const statusVariantMap: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -216,6 +226,30 @@ function formatCallDate(timestamp: string): string {
       </div>
     </div>
     <Separator />
+
+    <!-- Linked Upsell Orders -->
+    <div v-if="linkedOrders.length > 0" class="flex flex-wrap items-center gap-2 px-4 pb-2 pt-2">
+      <span class="text-xs text-muted-foreground">Orders:</span>
+      <Badge
+        v-for="order in linkedOrders"
+        :key="order.id"
+        variant="secondary"
+        class="cursor-pointer gap-1 text-xs"
+        :class="{
+          'bg-emerald-50 text-emerald-700 hover:bg-emerald-100': order.status === 'confirmed',
+          'bg-amber-50 text-amber-700 hover:bg-amber-100': order.status === 'pending',
+          'bg-slate-100 text-slate-700 hover:bg-slate-200': order.status === 'completed',
+          'bg-destructive/10 text-destructive hover:bg-destructive/20': order.status === 'cancelled',
+        }"
+        @click="navigateToOrder(order.id)"
+      >
+        <Icon
+          :name="order.status === 'pending' ? 'lucide:clock' : order.status === 'confirmed' ? 'lucide:check-circle' : order.status === 'completed' ? 'lucide:check-check' : 'lucide:x-circle'"
+          class="h-3 w-3"
+        />
+        {{ order.serviceName }}
+      </Badge>
+    </div>
 
       <div class="flex flex-col flex-1 overflow-hidden">
         <div class="flex items-center h-8 px-4 shrink-0 border-b">
