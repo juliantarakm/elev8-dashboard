@@ -3,8 +3,9 @@ import { UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
 import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { useUpsellOrders } from '@/composables/useUpsellOrders'
+import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 
-const activeView = ref<'catalog' | 'orders'>('catalog')
+const activeView = ref<'catalog' | 'orders' | 'notifications'>('catalog')
 
 // Catalog state
 const drawerOpen = ref(false)
@@ -32,6 +33,9 @@ function openOrderDrawer(order: UpsellOrder) {
   selectedOrder.value = order
   orderDrawerOpen.value = true
 }
+
+// Notifications state
+const { unreadCount: upsellUnreadCount } = useUpsellNotifications()
 </script>
 
 <template>
@@ -88,6 +92,17 @@ function openOrderDrawer(order: UpsellOrder) {
             {{ statusCounts.pending }}
           </Badge>
         </button>
+        <button
+          class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all"
+          :class="activeView === 'notifications' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          @click="activeView = 'notifications'"
+        >
+          <Icon name="lucide:bell" class="h-4 w-4" />
+          Notifications
+          <Badge v-if="upsellUnreadCount > 0" variant="default" class="h-5 min-w-[1.25rem] px-1 text-[10px]">
+            {{ upsellUnreadCount }}
+          </Badge>
+        </button>
       </div>
     </div>
 
@@ -119,6 +134,11 @@ function openOrderDrawer(order: UpsellOrder) {
         </div>
       </div>
       <UpsellsUpsellOrderTable @open-drawer="openOrderDrawer" />
+    </template>
+
+    <!-- Notifications View -->
+    <template v-if="activeView === 'notifications'">
+      <UpsellsUpsellNotificationList />
     </template>
 
     <!-- Drawers -->
