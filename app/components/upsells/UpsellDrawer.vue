@@ -32,7 +32,8 @@ const formName = ref('')
 const formDescription = ref('')
 const formCategory = ref<UpsellService['category']>('Airport Transport')
 const formCurrency = ref('CHF')
-const formImage = ref('')
+const formImage = ref<string | undefined>(undefined)
+const serviceImageInputRef = ref<HTMLInputElement | null>(null)
 const formYoutubeLinks = ref<string[]>([])
 const formNewYoutubeLink = ref('')
 const formInternalNotes = ref('')
@@ -64,7 +65,7 @@ watch(() => props.open, (open) => {
       formDescription.value = props.service.description
       formCategory.value = props.service.category
       formCurrency.value = props.service.currency
-      formImage.value = props.service.image ?? ''
+      formImage.value = props.service.image
       formYoutubeLinks.value = [...props.service.youtubeLinks]
       formInternalNotes.value = props.service.internalNotes
       formNotificationUsers.value = [...props.service.notificationUsers]
@@ -80,7 +81,7 @@ watch(() => props.open, (open) => {
       formDescription.value = ''
       formCategory.value = props.initialCategory ?? 'Airport Transport'
       formCurrency.value = 'CHF'
-      formImage.value = ''
+      formImage.value = undefined
       formYoutubeLinks.value = []
       formNewYoutubeLink.value = ''
       formInternalNotes.value = ''
@@ -187,6 +188,19 @@ function onItemsReorder() {
   // vuedraggable updates formItems directly via v-model
 }
 
+function handleServiceImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    formImage.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+  input.value = ''
+}
+
 function handleItemImageUpload(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -215,7 +229,7 @@ function handleSave() {
     description: formDescription.value.trim(),
     category: formCategory.value,
     currency: formCurrency.value,
-    image: formImage.value.trim() || undefined,
+    image: formImage.value,
     youtubeLinks: formYoutubeLinks.value,
     internalNotes: formInternalNotes.value.trim(),
     notificationUsers: formNotificationUsers.value,
@@ -430,13 +444,38 @@ function onOpenChange(val: boolean) {
           <Separator />
 
           <div class="flex flex-col gap-2">
-            <Label>Image URL</Label>
-            <div class="flex items-center gap-3">
-              <Input v-model="formImage" placeholder="https://..." class="flex-1" />
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted">
-                <Icon name="lucide:image-plus" class="h-5 w-5 text-muted-foreground" />
-              </div>
+            <Label>Image</Label>
+            <input
+              ref="serviceImageInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleServiceImageUpload"
+            >
+            <div v-if="formImage" class="relative">
+              <img
+                :src="formImage"
+                alt="Service image"
+                class="h-40 w-full rounded-md border object-cover"
+              >
+              <Button
+                variant="destructive"
+                size="icon"
+                class="absolute right-2 top-2 h-7 w-7"
+                @click="formImage = undefined"
+              >
+                <Icon name="lucide:x" class="h-3.5 w-3.5" />
+              </Button>
             </div>
+            <Button
+              v-else
+              variant="outline"
+              class="w-full"
+              @click="serviceImageInputRef?.click()"
+            >
+              <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
+              Upload Image
+            </Button>
           </div>
 
           <Separator />
