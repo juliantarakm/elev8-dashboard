@@ -25,6 +25,11 @@ export interface UpsellService {
   category: UpsellCategory
   currency: string
   image?: string
+  youtubeLinks: string[]
+  internalNotes: string
+  notificationUsers: string[]
+  taxPercent: number
+  servicePercent: number
   items: UpsellItem[]
   assignedListings: string[]
   status: 'active' | 'inactive'
@@ -73,6 +78,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Private airport transfer from Ngurah Rai International Airport to your villa. Includes meet & greet, luggage assistance, and cold towels upon arrival.',
     category: 'Airport Transport',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Coordinate with driver 24h before arrival. Confirm flight number.',
+    notificationUsers: ['Komang Juliantara'],
+    taxPercent: 11,
+    servicePercent: 5,
     items: [
       { id: 'itm-001a', name: 'Standard Sedan', price: 350000 },
       { id: 'itm-001b', name: 'SUV (up to 5 pax)', price: 500000 },
@@ -89,6 +99,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Experience a private dinner prepared by a local Balinese chef at your villa. Choose from Balinese, Indonesian, or Western menu. Includes appetizer, main course, dessert for up to 4 guests.',
     category: 'Private Chef',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Confirm dietary restrictions 48h before. Chef arrives 2h before dinner.',
+    notificationUsers: ['Komang Juliantara'],
+    taxPercent: 11,
+    servicePercent: 5,
     items: [
       { id: 'itm-002a', name: 'Balinese Set Menu', price: 1500000 },
       { id: 'itm-002b', name: 'Seafood BBQ', price: 1800000 },
@@ -105,6 +120,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Relaxing in-villa spa treatment with professional therapists. Choose from Balinese massage, aromatherapy, or body scrub. 90-minute session.',
     category: 'Spa',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: '',
+    notificationUsers: [],
+    taxPercent: 11,
+    servicePercent: 5,
     items: [
       { id: 'itm-003a', name: 'Balinese Massage', price: 800000 },
       { id: 'itm-003b', name: 'Aromatherapy Massage', price: 900000 },
@@ -121,6 +141,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Full-day guided tour to Tegallalang Rice Terraces, Tirta Empul water temple, and Ubud Monkey Forest. Includes private driver, lunch, and entrance fees.',
     category: 'Activity',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Pickup at 8am. Bring sunscreen and comfortable shoes.',
+    notificationUsers: ['Komang Juliantara'],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-004a', name: 'Group Tour (shared)', price: 600000 },
       { id: 'itm-004b', name: 'Private Tour', price: 950000 },
@@ -136,6 +161,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: '2-hour surf lesson with certified instructor at Canggu or Batu Bolong beach. Includes surfboard rental, rash guard, and bottled water. Suitable for beginners.',
     category: 'Activity',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: '',
+    notificationUsers: [],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-005a', name: 'Beginner Lesson', price: 500000 },
       { id: 'itm-005b', name: 'Intermediate Lesson', price: 600000 },
@@ -152,6 +182,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Extend your check-out time until 2:00 PM. Subject to availability and next-day bookings.',
     category: 'Late Check-out',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Check next-day booking before confirming.',
+    notificationUsers: [],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-006a', name: 'Late Check-out', price: 450000 },
     ],
@@ -166,6 +201,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Check in early from 10:00 AM instead of the standard 3:00 PM. Subject to availability and prior-night bookings.',
     category: 'Early Check-in',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Check prior-night booking before confirming.',
+    notificationUsers: [],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-007a', name: 'Early Check-in', price: 450000 },
     ],
@@ -180,6 +220,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Vehicle rental delivered to your villa. Includes basic insurance. Perfect for exploring Bali at your own pace.',
     category: 'Vehicle Rental',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Collect passport copy for car rental. Scooter requires international license.',
+    notificationUsers: ['Komang Juliantara'],
+    taxPercent: 11,
+    servicePercent: 5,
     items: [
       { id: 'itm-008a', name: 'Scooter (Automatic)', price: 120000 },
       { id: 'itm-008b', name: 'Honda Scoopy', price: 150000 },
@@ -197,6 +242,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Baby equipment delivered and set up in your villa prior to arrival.',
     category: 'Baby',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Set up before guest arrival. Confirm equipment availability.',
+    notificationUsers: [],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-009a', name: 'Baby Crib', price: 250000 },
       { id: 'itm-009b', name: 'High Chair', price: 150000 },
@@ -213,6 +263,11 @@ export const mockUpsellServices: UpsellService[] = [
     description: 'Thorough mid-stay cleaning service including fresh linens, towel replacement, and full villa refresh. Recommended for stays of 5+ nights.',
     category: 'Mid-stay Cleaning',
     currency: 'IDR',
+    youtubeLinks: [],
+    internalNotes: 'Schedule when guests are out on excursion if possible.',
+    notificationUsers: ['Made Surya'],
+    taxPercent: 11,
+    servicePercent: 0,
     items: [
       { id: 'itm-010a', name: 'Standard Cleaning', price: 400000 },
       { id: 'itm-010b', name: 'Deep Clean + Laundry', price: 600000 },

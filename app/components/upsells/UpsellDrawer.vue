@@ -17,12 +17,20 @@ const emit = defineEmits<{
 const { addService, updateService, deleteService } = useUpsellServices()
 
 const isEditing = computed(() => props.service !== null)
+const activeTab = ref<'details' | 'items'>('details')
 
 const formName = ref('')
 const formDescription = ref('')
 const formCategory = ref<UpsellService['category']>('Airport Transport')
-const formCurrency = ref('IDR')
+const formCurrency = ref('CHF')
 const formImage = ref('')
+const formYoutubeLinks = ref<string[]>([])
+const formNewYoutubeLink = ref('')
+const formInternalNotes = ref('')
+const formNotificationUsers = ref<string[]>([])
+const formNewNotificationUser = ref('')
+const formTaxPercent = ref(0)
+const formServicePercent = ref(0)
 const formItems = ref<UpsellItem[]>([])
 const formListings = ref<string[]>([])
 const formStatus = ref<'active' | 'inactive'>('active')
@@ -30,6 +38,7 @@ const showDeleteConfirm = ref(false)
 
 watch(() => props.open, (open) => {
   if (open) {
+    activeTab.value = 'details'
     showDeleteConfirm.value = false
     if (props.service) {
       formName.value = props.service.name
@@ -37,6 +46,11 @@ watch(() => props.open, (open) => {
       formCategory.value = props.service.category
       formCurrency.value = props.service.currency
       formImage.value = props.service.image ?? ''
+      formYoutubeLinks.value = [...props.service.youtubeLinks]
+      formInternalNotes.value = props.service.internalNotes
+      formNotificationUsers.value = [...props.service.notificationUsers]
+      formTaxPercent.value = props.service.taxPercent
+      formServicePercent.value = props.service.servicePercent
       formItems.value = props.service.items.map(i => ({ ...i }))
       formListings.value = [...props.service.assignedListings]
       formStatus.value = props.service.status
@@ -45,14 +59,45 @@ watch(() => props.open, (open) => {
       formName.value = ''
       formDescription.value = ''
       formCategory.value = props.initialCategory ?? 'Airport Transport'
-      formCurrency.value = 'IDR'
+      formCurrency.value = 'CHF'
       formImage.value = ''
+      formYoutubeLinks.value = []
+      formNewYoutubeLink.value = ''
+      formInternalNotes.value = ''
+      formNotificationUsers.value = []
+      formNewNotificationUser.value = ''
+      formTaxPercent.value = 0
+      formServicePercent.value = 0
       formItems.value = [{ id: `itm-${Date.now()}`, name: '', price: 0 }]
       formListings.value = []
       formStatus.value = 'active'
     }
   }
 })
+
+function addYoutubeLink() {
+  const link = formNewYoutubeLink.value.trim()
+  if (link) {
+    formYoutubeLinks.value = [...formYoutubeLinks.value, link]
+    formNewYoutubeLink.value = ''
+  }
+}
+
+function removeYoutubeLink(idx: number) {
+  formYoutubeLinks.value = formYoutubeLinks.value.filter((_, i) => i !== idx)
+}
+
+function addNotificationUser() {
+  const user = formNewNotificationUser.value.trim()
+  if (user) {
+    formNotificationUsers.value = [...formNotificationUsers.value, user]
+    formNewNotificationUser.value = ''
+  }
+}
+
+function removeNotificationUser(idx: number) {
+  formNotificationUsers.value = formNotificationUsers.value.filter((_, i) => i !== idx)
+}
 
 function toggleListing(listing: string) {
   if (formListings.value.includes(listing)) {
@@ -104,6 +149,11 @@ function handleSave() {
     category: formCategory.value,
     currency: formCurrency.value,
     image: formImage.value.trim() || undefined,
+    youtubeLinks: formYoutubeLinks.value,
+    internalNotes: formInternalNotes.value.trim(),
+    notificationUsers: formNotificationUsers.value,
+    taxPercent: formTaxPercent.value,
+    servicePercent: formServicePercent.value,
     items: validItems,
     assignedListings: formListings.value,
     status: formStatus.value,
@@ -143,16 +193,39 @@ function onOpenChange(val: boolean) {
         </SheetDescription>
       </SheetHeader>
 
+      <div class="border-b px-6 pt-3">
+        <Tabs v-model="activeTab">
+          <TabsList class="w-full">
+            <TabsTrigger value="details" class="flex-1">
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="items" class="flex-1">
+              Items
+              <Badge v-if="formItems.length > 0" variant="secondary" class="ml-2">
+                {{ formItems.length }}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <ScrollArea class="flex-1">
-        <div class="flex flex-col gap-5 p-6">
+        <!-- Tab 1: Details -->
+        <div v-if="activeTab === 'details'" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-2">
-            <Label>Name</Label>
-            <Input v-model="formName" placeholder="e.g. Airport Transfer (Ngurah Rai)" />
+            <Label>Name <span class="text-destructive">*</span></Label>
+            <Input v-model="formName" placeholder="Enter the name of the upsell (e.g., In-villa SPA)" />
           </div>
 
           <div class="flex flex-col gap-2">
             <Label>Description</Label>
             <Textarea v-model="formDescription" placeholder="Describe the service..." rows="3" />
+            <div class="flex flex-wrap gap-1.5">
+              <span class="text-xs text-muted-foreground">Variable Replacement</span>
+              <code class="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;guest_first_name&gt;</code>
+              <code class="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;guest_last_name&gt;</code>
+              <code class="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;listing_name&gt;</code>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -184,6 +257,9 @@ function onOpenChange(val: boolean) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="CHF">
+                    CHF
+                  </SelectItem>
                   <SelectItem value="IDR">
                     IDR
                   </SelectItem>
@@ -193,9 +269,6 @@ function onOpenChange(val: boolean) {
                   <SelectItem value="EUR">
                     EUR
                   </SelectItem>
-                  <SelectItem value="CHF">
-                    CHF
-                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -203,49 +276,113 @@ function onOpenChange(val: boolean) {
 
           <Separator />
 
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <Label>Items</Label>
-              <Button variant="outline" size="sm" class="h-7" @click="addItem">
-                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
-                Add Item
-              </Button>
-            </div>
+          <div class="flex flex-col gap-2">
+            <Label>YouTube Links</Label>
             <div class="flex flex-col gap-2">
               <div
-                v-for="(item, idx) in formItems"
-                :key="item.id"
+                v-for="(link, idx) in formYoutubeLinks"
+                :key="idx"
                 class="flex items-center gap-2"
               >
-                <span class="w-5 text-xs text-muted-foreground">{{ idx + 1 }}</span>
-                <Input
-                  :model-value="item.name"
-                  placeholder="Item name"
-                  class="flex-1"
-                  @update:model-value="updateItemName(item.id, String($event))"
-                />
-                <Input
-                  :model-value="item.price"
-                  type="number"
-                  min="0"
-                  placeholder="Price"
-                  class="w-32"
-                  @update:model-value="updateItemPrice(item.id, Number($event))"
-                />
+                <Input :model-value="link" class="flex-1" disabled />
                 <Button
                   variant="ghost"
                   size="icon"
                   class="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                  :disabled="formItems.length <= 1"
-                  @click="removeItem(item.id)"
+                  @click="removeYoutubeLink(idx)"
                 >
                   <Icon name="lucide:x" class="h-4 w-4" />
                 </Button>
               </div>
+              <div class="flex items-center gap-2">
+                <Input
+                  v-model="formNewYoutubeLink"
+                  placeholder="Paste a YouTube link (optional)"
+                  class="flex-1"
+                  @keydown.enter.prevent="addYoutubeLink"
+                />
+                <Button variant="outline" size="sm" class="h-9" @click="addYoutubeLink">
+                  <Icon name="lucide:plus" class="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <p class="text-xs text-muted-foreground">
-              {{ formItems.length }} {{ formItems.length === 1 ? 'item' : 'items' }}
-            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <Label>Internal Notes</Label>
+            <Textarea
+              v-model="formInternalNotes"
+              placeholder="Add any internal notes or instructions relevant to this upsell"
+              rows="2"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-2">
+            <Label>Add Users to Receive WhatsApp Notification</Label>
+            <div v-if="formNotificationUsers.length === 0" class="rounded-md border border-dashed p-4 text-center">
+              <p class="text-sm text-muted-foreground">
+                No users have been added yet
+              </p>
+              <p class="text-xs text-muted-foreground">
+                Add users to receive notifications.
+              </p>
+            </div>
+            <div v-else class="flex flex-col gap-1.5">
+              <div
+                v-for="(user, idx) in formNotificationUsers"
+                :key="idx"
+                class="flex items-center justify-between rounded-md border px-3 py-1.5"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:user" class="h-3.5 w-3.5 text-muted-foreground" />
+                  <span class="text-sm">{{ user }}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6 text-muted-foreground hover:text-destructive"
+                  @click="removeNotificationUser(idx)"
+                >
+                  <Icon name="lucide:x" class="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <Input
+                v-model="formNewNotificationUser"
+                placeholder="User name"
+                class="flex-1"
+                @keydown.enter.prevent="addNotificationUser"
+              />
+              <Button variant="outline" size="sm" class="h-9" @click="addNotificationUser">
+                <Icon name="lucide:plus" class="mr-1 h-4 w-4" />
+                Add
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-3">
+            <Label>Tax and Service</Label>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-2">
+                <Label class="text-muted-foreground text-xs font-normal">Tax</Label>
+                <div class="flex items-center gap-2">
+                  <Input v-model.number="formTaxPercent" type="number" min="0" max="100" class="flex-1" />
+                  <span class="text-sm text-muted-foreground">%</span>
+                </div>
+              </div>
+              <div class="flex flex-col gap-2">
+                <Label class="text-muted-foreground text-xs font-normal">Service</Label>
+                <div class="flex items-center gap-2">
+                  <Input v-model.number="formServicePercent" type="number" min="0" max="100" class="flex-1" />
+                  <span class="text-sm text-muted-foreground">%</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Separator />
@@ -304,6 +441,78 @@ function onOpenChange(val: boolean) {
                 :checked="formStatus === 'active'"
                 @update:checked="formStatus = $event ? 'active' : 'inactive'"
               />
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Items -->
+        <div v-if="activeTab === 'items'" class="flex flex-col gap-5 p-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium">Upsell Items</p>
+                <p class="text-xs text-muted-foreground">
+                  Define the options guests can choose from within this service.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" class="h-8" @click="addItem">
+                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
+                Add Item
+              </Button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div
+                v-for="(item, idx) in formItems"
+                :key="item.id"
+                class="rounded-md border p-3"
+              >
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-xs font-medium text-muted-foreground">Item {{ idx + 1 }}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    :disabled="formItems.length <= 1"
+                    @click="removeItem(item.id)"
+                  >
+                    <Icon name="lucide:trash-2" class="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <Input
+                    :model-value="item.name"
+                    placeholder="Item name (e.g., Scooter, Toyota Avanza)"
+                    @update:model-value="updateItemName(item.id, String($event))"
+                  />
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-muted-foreground whitespace-nowrap">Price</span>
+                    <Input
+                      :model-value="item.price"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      class="flex-1"
+                      @update:model-value="updateItemPrice(item.id, Number($event))"
+                    />
+                    <span class="text-xs text-muted-foreground">{{ formCurrency }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="formItems.length === 0"
+              class="flex flex-col items-center gap-2 rounded-md border border-dashed p-6"
+            >
+              <Icon name="lucide:package" class="h-8 w-8 text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">
+                No items yet
+              </p>
+              <Button variant="outline" size="sm" @click="addItem">
+                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
+                Add your first item
+              </Button>
             </div>
           </div>
         </div>
