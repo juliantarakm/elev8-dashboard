@@ -10,8 +10,7 @@ interface ReplyBoxProps {
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage } = useInbox()
-const { selectedConversation } = useInbox()
+const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage, selectedConversation } = useInbox()
 const showOrderCreator = ref(false)
 
 const replyText = ref('')
