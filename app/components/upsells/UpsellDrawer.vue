@@ -330,10 +330,7 @@ function onOpenChange(val: boolean) {
                 <span class="text-sm text-muted-foreground">
                   {{ formPricingEnabled ? 'On' : 'Off' }}
                 </span>
-                <Switch
-                  :checked="formPricingEnabled"
-                  @update:checked="formPricingEnabled = $event"
-                />
+<Switch :model-value="formPricingEnabled" @update:model-value="formPricingEnabled = $event" />
               </div>
             </div>
             <div v-if="formPricingEnabled" class="grid grid-cols-2 gap-4">
