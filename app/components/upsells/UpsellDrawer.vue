@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
+import draggable from 'vuedraggable'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useUpsellServices } from '@/composables/useUpsellServices'
 import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
@@ -37,6 +46,14 @@ const formListings = ref<string[]>([])
 const formStatus = ref<'active' | 'inactive'>('active')
 const showDeleteConfirm = ref(false)
 
+// Item modal state
+const showItemModal = ref(false)
+const editingItemId = ref<string | null>(null)
+const itemFormName = ref('')
+const itemFormDescription = ref('')
+const itemFormPrice = ref(0)
+const itemFormImage = ref('')
+
 watch(() => props.open, (open) => {
   if (open) {
     activeTab.value = 'details'
@@ -71,7 +88,7 @@ watch(() => props.open, (open) => {
       formPricingEnabled.value = false
       formTaxPercent.value = 0
       formServicePercent.value = 0
-      formItems.value = [{ id: `itm-${Date.now()}`, name: '', price: 0 }]
+      formItems.value = []
       formListings.value = []
       formStatus.value = 'active'
     }
@@ -119,28 +136,54 @@ function clearAllListings() {
   formListings.value = []
 }
 
-function addItem() {
-  formItems.value = [...formItems.value, { id: `itm-${Date.now()}`, name: '', description: '', price: 0 }]
-}
-
 function removeItem(id: string) {
   formItems.value = formItems.value.filter(i => i.id !== id)
 }
 
-function updateItemName(id: string, name: string) {
-  formItems.value = formItems.value.map(i => i.id === id ? { ...i, name } : i)
+function openAddItemModal() {
+  editingItemId.value = null
+  itemFormName.value = ''
+  itemFormDescription.value = ''
+  itemFormPrice.value = 0
+  itemFormImage.value = ''
+  showItemModal.value = true
 }
 
-function updateItemDescription(id: string, description: string) {
-  formItems.value = formItems.value.map(i => i.id === id ? { ...i, description } : i)
+function openEditItemModal(item: UpsellItem) {
+  editingItemId.value = item.id
+  itemFormName.value = item.name
+  itemFormDescription.value = item.description || ''
+  itemFormPrice.value = item.price
+  itemFormImage.value = item.image || ''
+  showItemModal.value = true
 }
 
-function updateItemPrice(id: string, price: number) {
-  formItems.value = formItems.value.map(i => i.id === id ? { ...i, price } : i)
+function saveItemModal() {
+  if (!itemFormName.value.trim()) {
+    toast.error('Item name is required.')
+    return
+  }
+  if (editingItemId.value) {
+    formItems.value = formItems.value.map(i =>
+      i.id === editingItemId.value
+        ? { ...i, name: itemFormName.value.trim(), description: itemFormDescription.value.trim(), price: itemFormPrice.value, image: itemFormImage.value.trim() || undefined }
+        : i,
+    )
+  }
+  else {
+    formItems.value = [...formItems.value, {
+      id: `itm-${Date.now()}`,
+      name: itemFormName.value.trim(),
+      description: itemFormDescription.value.trim(),
+      price: itemFormPrice.value,
+      image: itemFormImage.value.trim() || undefined,
+    }]
+  }
+  showItemModal.value = false
 }
 
-function updateItemImage(id: string, image: string) {
-  formItems.value = formItems.value.map(i => i.id === id ? { ...i, image } : i)
+function onItemsReorder() {
+  // vuedraggable updates formItems directly via v-model
 }
 
 function handleSave() {
@@ -148,9 +191,8 @@ function handleSave() {
     toast.error('Service name is required.')
     return
   }
-  const validItems = formItems.value.filter(i => i.name.trim() && i.price > 0)
-  if (validItems.length === 0) {
-    toast.error('At least one item with name and price is required.')
+  if (formItems.value.length === 0) {
+    toast.error('At least one item is required.')
     return
   }
 
@@ -166,7 +208,7 @@ function handleSave() {
     pricingEnabled: formPricingEnabled.value,
     taxPercent: formTaxPercent.value,
     servicePercent: formServicePercent.value,
-    items: validItems,
+    items: formItems.value,
     assignedListings: formListings.value,
     status: formStatus.value,
   }
@@ -438,85 +480,52 @@ function onOpenChange(val: boolean) {
               <div>
                 <p class="text-sm font-medium">Upsell Items</p>
                 <p class="text-xs text-muted-foreground">
-                  Define the options guests can choose from within this service.
+                  Drag to reorder. Click an item to edit.
                 </p>
               </div>
-              <Button variant="outline" size="sm" class="h-8" @click="addItem">
+              <Button variant="outline" size="sm" class="h-8" @click="openAddItemModal">
                 <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
                 Add Item
               </Button>
             </div>
 
-            <div class="flex flex-col gap-3">
-              <div
-                v-for="(item, idx) in formItems"
-                :key="item.id"
-                class="rounded-md border p-3"
-              >
-                <div class="mb-2 flex items-center justify-between">
-                  <span class="text-xs font-medium text-muted-foreground">Item {{ idx + 1 }}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    :disabled="formItems.length <= 1"
-                    @click="removeItem(item.id)"
-                  >
-                    <Icon name="lucide:trash-2" class="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-                <div class="flex flex-col gap-2">
-                  <Input
-                    :model-value="item.name"
-                    placeholder="Item name (e.g., Scooter, Toyota Avanza)"
-                    @update:model-value="updateItemName(item.id, String($event))"
-                  />
-                  <Textarea
-                    :model-value="item.description || ''"
-                    placeholder="Item description (optional)"
-                    rows="2"
-                    class="text-sm"
-                    @update:model-value="updateItemDescription(item.id, String($event))"
-                  />
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs text-muted-foreground whitespace-nowrap">Price</span>
-                    <Input
-                      :model-value="item.price"
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      class="flex-1"
-                      @update:model-value="updateItemPrice(item.id, Number($event))"
-                    />
-                    <span class="text-xs text-muted-foreground">{{ formCurrency }}</span>
+            <draggable
+              v-model="formItems"
+              item-key="id"
+              handle=".drag-handle"
+              ghost-class="opacity-40"
+              animation="150"
+            >
+              <template #item="{ element: item }">
+                <div
+                  class="group flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                  @click="openEditItemModal(item)"
+                >
+                  <div class="drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing">
+                    <Icon name="lucide:grip-vertical" class="h-4 w-4" />
                   </div>
-                  <div class="flex items-center gap-2">
-                    <Input
-                      :model-value="item.image || ''"
-                      placeholder="Image URL (optional)"
-                      class="flex-1 text-sm"
-                      @update:model-value="updateItemImage(item.id, String($event))"
-                    />
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">{{ item.name }}</p>
+                    <p v-if="item.description" class="text-xs text-muted-foreground truncate">
+                      {{ item.description }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-medium text-muted-foreground">
+                      {{ item.price.toLocaleString() }} {{ formCurrency }}
+                    </span>
                     <Button
-                      v-if="item.image"
                       variant="ghost"
                       size="icon"
-                      class="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      @click="updateItemImage(item.id, '')"
+                      class="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      @click.stop="removeItem(item.id)"
                     >
-                      <Icon name="lucide:x" class="h-3.5 w-3.5" />
+                      <Icon name="lucide:trash-2" class="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <div v-if="item.image" class="mt-1">
-                    <img
-                      :src="item.image"
-                      :alt="item.name"
-                      class="h-20 w-full rounded-md border object-cover"
-                    />
-                  </div>
                 </div>
-              </div>
-            </div>
+              </template>
+            </draggable>
 
             <div
               v-if="formItems.length === 0"
@@ -526,7 +535,7 @@ function onOpenChange(val: boolean) {
               <p class="text-sm text-muted-foreground">
                 No items yet
               </p>
-              <Button variant="outline" size="sm" @click="addItem">
+              <Button variant="outline" size="sm" @click="openAddItemModal">
                 <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
                 Add your first item
               </Button>
@@ -570,5 +579,64 @@ function onOpenChange(val: boolean) {
         </div>
       </div>
     </SheetContent>
+
+    <!-- Item Modal -->
+    <Dialog v-model:open="showItemModal">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ editingItemId ? 'Edit Item' : 'Add Item' }}</DialogTitle>
+          <DialogDescription>
+            Define an option guests can choose from within this service.
+          </DialogDescription>
+        </DialogHeader>
+        <div class="flex flex-col gap-4 py-2">
+          <div class="flex flex-col gap-2">
+            <Label>Name <span class="text-destructive">*</span></Label>
+            <Input v-model="itemFormName" placeholder="e.g., Standard Sedan, Scooter" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <Label>Description</Label>
+            <Textarea v-model="itemFormDescription" placeholder="Describe this option..." rows="2" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <Label>Price</Label>
+            <div class="flex items-center gap-2">
+              <Input v-model.number="itemFormPrice" type="number" min="0" placeholder="0" class="flex-1" />
+              <span class="text-sm text-muted-foreground">{{ formCurrency }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <Label>Image</Label>
+            <div class="flex items-center gap-2">
+              <Input v-model="itemFormImage" placeholder="Image URL (optional)" class="flex-1" />
+              <Button
+                v-if="itemFormImage"
+                variant="ghost"
+                size="icon"
+                class="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                @click="itemFormImage = ''"
+              >
+                <Icon name="lucide:x" class="h-4 w-4" />
+              </Button>
+            </div>
+            <div v-if="itemFormImage" class="mt-1">
+              <img
+                :src="itemFormImage"
+                :alt="itemFormName"
+                class="h-32 w-full rounded-md border object-cover"
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showItemModal = false">
+            Cancel
+          </Button>
+          <Button @click="saveItemModal">
+            {{ editingItemId ? 'Save Changes' : 'Add Item' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </Sheet>
 </template>
