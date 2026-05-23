@@ -24,6 +24,7 @@ export interface UpsellOrder {
   status: OrderStatus
   orderDate: string
   serviceDate: string
+  serviceEndDate?: string
   checkInDate: string
   checkOutDate: string
   listing: string
@@ -185,6 +186,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     status: 'confirmed',
     orderDate: '2026-05-06',
     serviceDate: '2026-05-07',
+    serviceEndDate: '2026-05-09',
     checkInDate: '2026-05-05',
     checkOutDate: '2026-05-12',
     listing: 'KABA - Stylish 2BR the R Villa Kaba-Kerobokan+Pool/Bikes',

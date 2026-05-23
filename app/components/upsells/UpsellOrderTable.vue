@@ -129,7 +129,14 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
             </TableCell>
             <TableCell class="text-center">
               <div class="flex flex-col gap-0.5">
-                <span class="text-sm font-medium">{{ order.serviceDate }}</span>
+                <span class="text-sm font-medium">
+                  <template v-if="order.serviceEndDate">
+                    {{ order.serviceDate }} – {{ order.serviceEndDate }}
+                  </template>
+                  <template v-else>
+                    {{ order.serviceDate }}
+                  </template>
+                </span>
                 <span class="text-xs text-muted-foreground">Ordered {{ order.orderDate }}</span>
               </div>
             </TableCell>

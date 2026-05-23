@@ -95,7 +95,14 @@ function formatCurrency(amount: number, currency: string) {
               </div>
               <div>
                 <span class="text-muted-foreground">Service Date</span>
-                <p class="font-medium">{{ order.serviceDate }}</p>
+                <p class="font-medium">
+                  <template v-if="order.serviceEndDate">
+                    {{ order.serviceDate }} – {{ order.serviceEndDate }}
+                  </template>
+                  <template v-else>
+                    {{ order.serviceDate }}
+                  </template>
+                </p>
               </div>
               <div class="col-span-2">
                 <span class="text-muted-foreground">Listing</span>
