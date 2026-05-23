@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { ScheduledTemplate, StayStatus } from '~/components/inbox/data/conversations'
 import { toast } from 'vue-sonner'
+import { useInbox } from '@/composables/useInbox'
 
 interface ReplyBoxProps {
   channel: string
@@ -10,6 +11,8 @@ interface ReplyBoxProps {
 
 const props = defineProps<ReplyBoxProps>()
 const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage } = useInbox()
+const { selectedConversation } = useInbox()
+const showOrderCreator = ref(false)
 
 const replyText = ref('')
 const isRewriting = ref(false)
@@ -223,6 +226,15 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
         </DropdownMenu>
       </div>
       <Button
+        variant="outline"
+        size="sm"
+        class="h-9 gap-1.5"
+        @click="showOrderCreator = true"
+      >
+        <Icon name="lucide:shopping-cart" class="h-4 w-4" />
+        <span class="hidden sm:inline">Upsell</span>
+      </Button>
+      <Button
         variant="default"
         size="sm"
         :disabled="!replyText.trim()"
@@ -233,4 +245,9 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
       </Button>
     </div>
   </div>
+  <InboxUpsellOrderCreator
+    :conversation="selectedConversation ?? null"
+    :open="showOrderCreator"
+    @update:open="showOrderCreator = $event"
+  />
 </template>
