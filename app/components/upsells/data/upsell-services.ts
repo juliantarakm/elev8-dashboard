@@ -88,9 +88,9 @@ export const mockUpsellServices: UpsellService[] = [
     taxPercent: 11,
     servicePercent: 5,
     items: [
-      { id: 'itm-001a', name: 'Standard Sedan', description: 'Toyota Avanza or similar. Fits 3 passengers with luggage.', price: 350000, image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400' },
-      { id: 'itm-001b', name: 'SUV (up to 5 pax)', description: 'Toyota Fortuner or similar. Spacious with AC.', price: 500000, image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400' },
-      { id: 'itm-001c', name: 'Minivan (up to 8 pax)', description: 'Toyota Hiace or similar. Ideal for groups and families.', price: 650000, image: 'https://images.unsplash.com/photo-1464219789935-c2d9d9aba644?w=400' },
+      { id: 'itm-001a', name: 'Standard Sedan', description: 'Toyota Avanza or similar. Fits 3 passengers with luggage.', price: 350000 },
+      { id: 'itm-001b', name: 'SUV (up to 5 pax)', description: 'Toyota Fortuner or similar. Spacious with AC.', price: 500000 },
+      { id: 'itm-001c', name: 'Minivan (up to 8 pax)', description: 'Toyota Hiace or similar. Ideal for groups and families.', price: 650000 },
     ],
     assignedListings: BALI_LISTINGS,
     status: 'active',

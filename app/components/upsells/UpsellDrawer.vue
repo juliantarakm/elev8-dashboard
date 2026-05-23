@@ -52,7 +52,8 @@ const editingItemId = ref<string | null>(null)
 const itemFormName = ref('')
 const itemFormDescription = ref('')
 const itemFormPrice = ref(0)
-const itemFormImage = ref('')
+const itemFormImage = ref<string | undefined>(undefined)
+const itemImageInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => props.open, (open) => {
   if (open) {
@@ -145,7 +146,7 @@ function openAddItemModal() {
   itemFormName.value = ''
   itemFormDescription.value = ''
   itemFormPrice.value = 0
-  itemFormImage.value = ''
+  itemFormImage.value = undefined
   showItemModal.value = true
 }
 
@@ -154,7 +155,7 @@ function openEditItemModal(item: UpsellItem) {
   itemFormName.value = item.name
   itemFormDescription.value = item.description || ''
   itemFormPrice.value = item.price
-  itemFormImage.value = item.image || ''
+  itemFormImage.value = item.image
   showItemModal.value = true
 }
 
@@ -166,7 +167,7 @@ function saveItemModal() {
   if (editingItemId.value) {
     formItems.value = formItems.value.map(i =>
       i.id === editingItemId.value
-        ? { ...i, name: itemFormName.value.trim(), description: itemFormDescription.value.trim(), price: itemFormPrice.value, image: itemFormImage.value.trim() || undefined }
+        ? { ...i, name: itemFormName.value.trim(), description: itemFormDescription.value.trim(), price: itemFormPrice.value, image: itemFormImage.value }
         : i,
     )
   }
@@ -176,7 +177,7 @@ function saveItemModal() {
       name: itemFormName.value.trim(),
       description: itemFormDescription.value.trim(),
       price: itemFormPrice.value,
-      image: itemFormImage.value.trim() || undefined,
+      image: itemFormImage.value,
     }]
   }
   showItemModal.value = false
@@ -184,6 +185,19 @@ function saveItemModal() {
 
 function onItemsReorder() {
   // vuedraggable updates formItems directly via v-model
+}
+
+function handleItemImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    itemFormImage.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+  input.value = ''
 }
 
 function handleSave() {
@@ -504,6 +518,12 @@ function onOpenChange(val: boolean) {
                   <div class="drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing">
                     <Icon name="lucide:grip-vertical" class="h-4 w-4" />
                   </div>
+                  <div v-if="item.image" class="h-10 w-10 shrink-0 overflow-hidden rounded-md border">
+                    <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
+                  </div>
+                  <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
+                    <Icon name="lucide:image" class="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium truncate">{{ item.name }}</p>
                     <p v-if="item.description" class="text-xs text-muted-foreground truncate">
@@ -607,25 +627,37 @@ function onOpenChange(val: boolean) {
           </div>
           <div class="flex flex-col gap-2">
             <Label>Image</Label>
-            <div class="flex items-center gap-2">
-              <Input v-model="itemFormImage" placeholder="Image URL (optional)" class="flex-1" />
-              <Button
-                v-if="itemFormImage"
-                variant="ghost"
-                size="icon"
-                class="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                @click="itemFormImage = ''"
-              >
-                <Icon name="lucide:x" class="h-4 w-4" />
-              </Button>
-            </div>
-            <div v-if="itemFormImage" class="mt-1">
+            <input
+              ref="itemImageInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleItemImageUpload"
+            >
+            <div v-if="itemFormImage" class="relative">
               <img
                 :src="itemFormImage"
                 :alt="itemFormName"
                 class="h-32 w-full rounded-md border object-cover"
-              />
+              >
+              <Button
+                variant="destructive"
+                size="icon"
+                class="absolute right-2 top-2 h-7 w-7"
+                @click="itemFormImage = undefined"
+              >
+                <Icon name="lucide:x" class="h-3.5 w-3.5" />
+              </Button>
             </div>
+            <Button
+              v-else
+              variant="outline"
+              class="w-full"
+              @click="itemImageInputRef?.click()"
+            >
+              <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
+              Upload Image
+            </Button>
           </div>
         </div>
         <DialogFooter>
