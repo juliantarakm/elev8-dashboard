@@ -29,7 +29,9 @@ const formNewYoutubeLink = ref('')
 const formInternalNotes = ref('')
 const formNotificationUsers = ref<string[]>([])
 const formNewNotificationUser = ref('')
+const formTaxEnabled = ref(false)
 const formTaxPercent = ref(0)
+const formServiceEnabled = ref(false)
 const formServicePercent = ref(0)
 const formItems = ref<UpsellItem[]>([])
 const formListings = ref<string[]>([])
@@ -49,7 +51,9 @@ watch(() => props.open, (open) => {
       formYoutubeLinks.value = [...props.service.youtubeLinks]
       formInternalNotes.value = props.service.internalNotes
       formNotificationUsers.value = [...props.service.notificationUsers]
+      formTaxEnabled.value = props.service.taxEnabled
       formTaxPercent.value = props.service.taxPercent
+      formServiceEnabled.value = props.service.serviceEnabled
       formServicePercent.value = props.service.servicePercent
       formItems.value = props.service.items.map(i => ({ ...i }))
       formListings.value = [...props.service.assignedListings]
@@ -66,7 +70,9 @@ watch(() => props.open, (open) => {
       formInternalNotes.value = ''
       formNotificationUsers.value = []
       formNewNotificationUser.value = ''
+      formTaxEnabled.value = false
       formTaxPercent.value = 0
+      formServiceEnabled.value = false
       formServicePercent.value = 0
       formItems.value = [{ id: `itm-${Date.now()}`, name: '', price: 0 }]
       formListings.value = []
@@ -152,7 +158,9 @@ function handleSave() {
     youtubeLinks: formYoutubeLinks.value,
     internalNotes: formInternalNotes.value.trim(),
     notificationUsers: formNotificationUsers.value,
+    taxEnabled: formTaxEnabled.value,
     taxPercent: formTaxPercent.value,
+    serviceEnabled: formServiceEnabled.value,
     servicePercent: formServicePercent.value,
     items: validItems,
     assignedListings: formListings.value,
@@ -320,19 +328,49 @@ function onOpenChange(val: boolean) {
           <Separator />
 
           <div class="flex flex-col gap-3">
-            <Label>Tax and Service</Label>
+            <div class="flex items-center justify-between">
+              <Label>Tax and Service</Label>
+            </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-2">
-                <Label class="text-muted-foreground text-xs font-normal">Tax</Label>
+                <div class="flex items-center justify-between">
+                  <Label class="text-muted-foreground text-xs font-normal">Tax</Label>
+                  <Switch
+                    :checked="formTaxEnabled"
+                    size="sm"
+                    @update:checked="formTaxEnabled = $event"
+                  />
+                </div>
                 <div class="flex items-center gap-2">
-                  <Input v-model.number="formTaxPercent" type="number" min="0" max="100" class="flex-1" />
+                  <Input
+                    v-model.number="formTaxPercent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    class="flex-1"
+                    :disabled="!formTaxEnabled"
+                  />
                   <span class="text-sm text-muted-foreground">%</span>
                 </div>
               </div>
               <div class="flex flex-col gap-2">
-                <Label class="text-muted-foreground text-xs font-normal">Service</Label>
+                <div class="flex items-center justify-between">
+                  <Label class="text-muted-foreground text-xs font-normal">Service</Label>
+                  <Switch
+                    :checked="formServiceEnabled"
+                    size="sm"
+                    @update:checked="formServiceEnabled = $event"
+                  />
+                </div>
                 <div class="flex items-center gap-2">
-                  <Input v-model.number="formServicePercent" type="number" min="0" max="100" class="flex-1" />
+                  <Input
+                    v-model.number="formServicePercent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    class="flex-1"
+                    :disabled="!formServiceEnabled"
+                  />
                   <span class="text-sm text-muted-foreground">%</span>
                 </div>
               </div>

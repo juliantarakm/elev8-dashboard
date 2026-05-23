@@ -28,7 +28,9 @@ export interface UpsellService {
   youtubeLinks: string[]
   internalNotes: string
   notificationUsers: string[]
+  taxEnabled: boolean
   taxPercent: number
+  serviceEnabled: boolean
   servicePercent: number
   items: UpsellItem[]
   assignedListings: string[]
@@ -81,7 +83,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Coordinate with driver 24h before arrival. Confirm flight number.',
     notificationUsers: ['Komang Juliantara'],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: true,
     servicePercent: 5,
     items: [
       { id: 'itm-001a', name: 'Standard Sedan', price: 350000 },
@@ -102,7 +106,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Confirm dietary restrictions 48h before. Chef arrives 2h before dinner.',
     notificationUsers: ['Komang Juliantara'],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: true,
     servicePercent: 5,
     items: [
       { id: 'itm-002a', name: 'Balinese Set Menu', price: 1500000 },
@@ -123,8 +129,10 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: '',
     notificationUsers: [],
+    taxEnabled: true,
     taxPercent: 11,
-    servicePercent: 5,
+    serviceEnabled: false,
+    servicePercent: 0,
     items: [
       { id: 'itm-003a', name: 'Balinese Massage', price: 800000 },
       { id: 'itm-003b', name: 'Aromatherapy Massage', price: 900000 },
@@ -143,9 +151,11 @@ export const mockUpsellServices: UpsellService[] = [
     currency: 'IDR',
     youtubeLinks: [],
     internalNotes: 'Pickup at 8am. Bring sunscreen and comfortable shoes.',
-    notificationUsers: ['Komang Juliantara'],
+notificationUsers: ['Komang Juliantara'],
+    taxEnabled: true,
     taxPercent: 11,
-    servicePercent: 0,
+    serviceEnabled: true,
+    servicePercent: 5,
     items: [
       { id: 'itm-004a', name: 'Group Tour (shared)', price: 600000 },
       { id: 'itm-004b', name: 'Private Tour', price: 950000 },
@@ -164,7 +174,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: '',
     notificationUsers: [],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: false,
     servicePercent: 0,
     items: [
       { id: 'itm-005a', name: 'Beginner Lesson', price: 500000 },
@@ -185,7 +197,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Check next-day booking before confirming.',
     notificationUsers: [],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: false,
     servicePercent: 0,
     items: [
       { id: 'itm-006a', name: 'Late Check-out', price: 450000 },
@@ -204,7 +218,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Check prior-night booking before confirming.',
     notificationUsers: [],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: false,
     servicePercent: 0,
     items: [
       { id: 'itm-007a', name: 'Early Check-in', price: 450000 },
@@ -223,7 +239,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Collect passport copy for car rental. Scooter requires international license.',
     notificationUsers: ['Komang Juliantara'],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: true,
     servicePercent: 5,
     items: [
       { id: 'itm-008a', name: 'Scooter (Automatic)', price: 120000 },
@@ -245,7 +263,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Set up before guest arrival. Confirm equipment availability.',
     notificationUsers: [],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: false,
     servicePercent: 0,
     items: [
       { id: 'itm-009a', name: 'Baby Crib', price: 250000 },
@@ -266,7 +286,9 @@ export const mockUpsellServices: UpsellService[] = [
     youtubeLinks: [],
     internalNotes: 'Schedule when guests are out on excursion if possible.',
     notificationUsers: ['Made Surya'],
+    taxEnabled: true,
     taxPercent: 11,
+    serviceEnabled: false,
     servicePercent: 0,
     items: [
       { id: 'itm-010a', name: 'Standard Cleaning', price: 400000 },
