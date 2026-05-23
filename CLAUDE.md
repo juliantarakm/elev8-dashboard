@@ -151,6 +151,7 @@ Two integrations supported: **Mekari Jurnal** (IDR, Indonesia) and **Bexio** (CH
 - Data: `app/components/finance/data/upsells.ts` — `UpsellEntry` interface + `mockUpsells[]`
 - No `status` field — all upsells are always Paid
 - `invoice: string` — required field (always present)
+- `UpsellType` = `'Vehicle Rental' | 'Airport Transport' | 'Private Chef' | 'Spa' | 'Activity' | 'Late Check-out' | 'Early Check-in' | 'Mid-stay Cleaning' | 'Office Equipment' | 'Baby' | 'Miscellaneous' | 'Pet'`
 - Composable: `app/composables/useUpsells.ts`
 - Same checkbox `clearKey` pattern as ReservationsTab
 - **Selection bar**: `X rows selected | Clear | [Download X invoices] | [Export CSV]`
