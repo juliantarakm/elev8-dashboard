@@ -31,6 +31,13 @@ export interface UpsellOrder {
   channel: string
   notes: string
   invoice?: string
+  cancellationReason?: string
+  cancellationBy?: 'guest' | 'staff'
+  source: 'inbox' | 'manual' | 'web'
+  conversationId?: string
+  createdByStaffId: string
+  guestNotifiedAt?: string
+  staffNotifiedAt?: string
   staffAssigned?: string
   createdAt: string
   updatedAt: string
@@ -77,6 +84,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: 'Flight arrives 14:30. Pickup with name board.',
     invoice: 'INV-ORD-001',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-04-28T10:00:00Z',
     updatedAt: '2026-05-01T15:00:00Z',
   },
@@ -106,6 +115,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: 'Dietary restriction: no shellfish. 4 guests.',
     invoice: 'INV-ORD-002',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-04-29T08:00:00Z',
     updatedAt: '2026-05-01T12:00:00Z',
   },
@@ -135,6 +146,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: '2 cars needed for 4 pax with luggage.',
     invoice: 'INV-ORD-003',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-04-30T09:00:00Z',
     updatedAt: '2026-05-01T16:00:00Z',
   },
@@ -164,6 +177,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: 'Couples treatment. Arrive at 15:00.',
     invoice: 'INV-ORD-004',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-02T14:00:00Z',
     updatedAt: '2026-05-04T18:00:00Z',
   },
@@ -194,6 +209,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: '3-day rental each. International licenses confirmed.',
     invoice: 'INV-ORD-005',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-04T10:00:00Z',
     updatedAt: '2026-05-06T08:00:00Z',
   },
@@ -222,6 +239,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     channel: 'Direct',
     notes: 'Flight arrives 23:45. Late night pickup surcharge applies.',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-08T11:00:00Z',
     updatedAt: '2026-05-10T09:00:00Z',
   },
@@ -250,6 +269,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     channel: 'Booking.com',
     notes: 'Guest prefers female therapist.',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-09T16:00:00Z',
     updatedAt: '2026-05-11T10:00:00Z',
   },
@@ -280,6 +301,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     notes: '2 guests: 1 beginner, 1 intermediate. Same instructor preferred.',
     invoice: 'INV-ORD-008',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-09T10:00:00Z',
     updatedAt: '2026-05-11T14:00:00Z',
   },
@@ -308,6 +331,8 @@ export const mockUpsellOrders: UpsellOrder[] = [
     channel: 'Direct',
     notes: 'Schedule for May 13 when guest is on day trip.',
     staffAssigned: 'Made Surya',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
     createdAt: '2026-05-10T08:00:00Z',
     updatedAt: '2026-05-12T11:00:00Z',
   },
@@ -336,6 +361,10 @@ export const mockUpsellOrders: UpsellOrder[] = [
     channel: 'Direct',
     notes: 'Next-day booking blocked this request. Refunded.',
     staffAssigned: 'Komang Juliantara',
+    source: 'manual',
+    createdByStaffId: 'staff-2',
+    cancellationReason: 'Next-day booking blocked availability.',
+    cancellationBy: 'staff',
     createdAt: '2026-05-07T09:00:00Z',
     updatedAt: '2026-05-08T16:00:00Z',
   },
