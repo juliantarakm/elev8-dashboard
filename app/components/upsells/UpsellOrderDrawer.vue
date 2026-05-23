@@ -16,6 +16,8 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
+const showCancelModal = ref(false)
+
 const { orders, updateStatus } = useUpsellOrders()
 
 // Always look up the latest order from reactive state
@@ -186,6 +188,28 @@ function formatCurrency(amount: number, currency: string) {
 
           <Separator />
 
+          <div class="flex flex-col gap-2">
+            <Label class="text-xs text-muted-foreground uppercase tracking-wide">Notifications</Label>
+            <div class="flex flex-col gap-1.5">
+              <div v-if="order.guestNotifiedAt" class="flex items-center gap-2 text-sm">
+                <Icon name="lucide:check" class="h-3.5 w-3.5 text-emerald-500" />
+                <span>Guest notified</span>
+                <span class="text-xs text-muted-foreground">{{ order.guestNotifiedAt }}</span>
+              </div>
+              <div v-else class="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon name="lucide:minus" class="h-3.5 w-3.5" />
+                <span>Guest not yet notified</span>
+              </div>
+              <div v-if="order.staffNotifiedAt" class="flex items-center gap-2 text-sm">
+                <Icon name="lucide:check" class="h-3.5 w-3.5 text-emerald-500" />
+                <span>Staff notified</span>
+                <span class="text-xs text-muted-foreground">{{ order.staffNotifiedAt }}</span>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
           <!-- Notes -->
           <div v-if="order.notes" class="flex flex-col gap-2">
             <Label class="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
@@ -200,10 +224,19 @@ function formatCurrency(amount: number, currency: string) {
         </div>
       </ScrollArea>
 
-      <!-- Footer Actions -->
+          <!-- Footer Actions -->
       <div v-if="order" class="border-t shrink-0 px-6 py-4">
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
+            <Button
+              v-if="order && (order.status === 'pending' || order.status === 'confirmed')"
+              variant="outline"
+              class="flex-1"
+              @click="showCancelModal = true"
+            >
+              <Icon name="lucide:x-circle" class="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
             <Button
               v-if="order.status === 'pending'"
               variant="outline"
@@ -259,5 +292,11 @@ function formatCurrency(amount: number, currency: string) {
         </div>
       </div>
     </SheetContent>
+
+    <UpsellsUpsellCancelModal
+      :order="order"
+      :open="showCancelModal"
+      @update:open="showCancelModal = $event"
+    />
   </Sheet>
 </template>
