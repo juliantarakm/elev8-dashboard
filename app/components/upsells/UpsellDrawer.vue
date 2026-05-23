@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
 import { useUpsellServices } from '@/composables/useUpsellServices'
-import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
 
 const props = defineProps<{
@@ -228,33 +228,11 @@ function onOpenChange(val: boolean) {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-2">
-              <Label>Category</Label>
-              <template v-if="isEditing">
-                <Select v-model="formCategory">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="cat in UPSPELL_CATEGORIES" :key="cat" :value="cat">
-                      {{ cat }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </template>
-              <template v-else>
-                <div class="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm">
-                  {{ formCategory }}
-                </div>
-              </template>
-            </div>
-
-            <div class="flex flex-col gap-2">
-              <Label>Currency</Label>
-              <Select v-model="formCurrency">
-                <SelectTrigger>
-                  <SelectValue />
+          <div class="flex flex-col gap-2">
+            <Label>Currency</Label>
+            <Select v-model="formCurrency">
+              <SelectTrigger class="w-32">
+                <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CHF">
