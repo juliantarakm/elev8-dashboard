@@ -120,7 +120,7 @@ function clearAllListings() {
 }
 
 function addItem() {
-  formItems.value = [...formItems.value, { id: `itm-${Date.now()}`, name: '', price: 0 }]
+  formItems.value = [...formItems.value, { id: `itm-${Date.now()}`, name: '', description: '', price: 0 }]
 }
 
 function removeItem(id: string) {
@@ -131,8 +131,16 @@ function updateItemName(id: string, name: string) {
   formItems.value = formItems.value.map(i => i.id === id ? { ...i, name } : i)
 }
 
+function updateItemDescription(id: string, description: string) {
+  formItems.value = formItems.value.map(i => i.id === id ? { ...i, description } : i)
+}
+
 function updateItemPrice(id: string, price: number) {
   formItems.value = formItems.value.map(i => i.id === id ? { ...i, price } : i)
+}
+
+function updateItemImage(id: string, image: string) {
+  formItems.value = formItems.value.map(i => i.id === id ? { ...i, image } : i)
 }
 
 function handleSave() {
@@ -463,6 +471,13 @@ function onOpenChange(val: boolean) {
                     placeholder="Item name (e.g., Scooter, Toyota Avanza)"
                     @update:model-value="updateItemName(item.id, String($event))"
                   />
+                  <Textarea
+                    :model-value="item.description || ''"
+                    placeholder="Item description (optional)"
+                    rows="2"
+                    class="text-sm"
+                    @update:model-value="updateItemDescription(item.id, String($event))"
+                  />
                   <div class="flex items-center gap-2">
                     <span class="text-xs text-muted-foreground whitespace-nowrap">Price</span>
                     <Input
@@ -474,6 +489,30 @@ function onOpenChange(val: boolean) {
                       @update:model-value="updateItemPrice(item.id, Number($event))"
                     />
                     <span class="text-xs text-muted-foreground">{{ formCurrency }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Input
+                      :model-value="item.image || ''"
+                      placeholder="Image URL (optional)"
+                      class="flex-1 text-sm"
+                      @update:model-value="updateItemImage(item.id, String($event))"
+                    />
+                    <Button
+                      v-if="item.image"
+                      variant="ghost"
+                      size="icon"
+                      class="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      @click="updateItemImage(item.id, '')"
+                    >
+                      <Icon name="lucide:x" class="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <div v-if="item.image" class="mt-1">
+                    <img
+                      :src="item.image"
+                      :alt="item.name"
+                      class="h-20 w-full rounded-md border object-cover"
+                    />
                   </div>
                 </div>
               </div>
