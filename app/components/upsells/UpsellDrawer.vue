@@ -185,15 +185,15 @@ function onOpenChange(val: boolean) {
 
 <template>
   <Sheet :open="props.open" @update:open="onOpenChange">
-    <SheetContent class="flex w-full flex-col gap-0 p-0 sm:max-w-lg" side="right">
-      <SheetHeader class="border-b px-6 py-4">
+    <SheetContent class="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg" side="right">
+      <SheetHeader class="shrink-0 border-b px-6 py-4">
         <SheetTitle>{{ isEditing ? 'Edit Service' : `Add ${formCategory} Service` }}</SheetTitle>
         <SheetDescription>
           {{ isEditing ? 'Update the upsell service details.' : 'Create a new upsell service to offer to guests.' }}
         </SheetDescription>
       </SheetHeader>
 
-      <div class="border-b px-6 pt-3">
+      <div class="shrink-0 border-b px-6 pt-3">
         <Tabs v-model="activeTab">
           <TabsList class="w-full">
             <TabsTrigger value="details" class="flex-1">
@@ -209,7 +209,7 @@ function onOpenChange(val: boolean) {
         </Tabs>
       </div>
 
-      <ScrollArea class="flex-1">
+      <ScrollArea class="min-h-0 flex-1 overflow-y-auto">
         <!-- Tab 1: Details -->
         <div v-if="activeTab === 'details'" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-2">
@@ -518,7 +518,7 @@ function onOpenChange(val: boolean) {
         </div>
       </ScrollArea>
 
-      <div class="border-t px-6 py-4">
+      <div class="border-t shrink-0 px-6 py-4">
         <div class="flex items-center gap-2">
           <Button variant="outline" class="flex-1" @click="onOpenChange(false)">
             Cancel
