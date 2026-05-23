@@ -56,6 +56,7 @@ export interface Conversation {
   checkOut: string
   verification?: GuestVerification
   cleaningStatus?: CleaningStatus
+  linkedUpsellOrderIds?: string[]
 }
 
 export interface Message {
@@ -216,6 +217,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-30T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-2',
@@ -241,6 +243,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-01T11:00:00Z',
     verification: 'verified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-3',
@@ -266,6 +269,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-29T11:00:00Z',
     verification: 'unverified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-4',
@@ -291,6 +295,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-23T11:00:00Z',
     verification: 'check_out',
     cleaningStatus: 'need_cleaning',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-6',
@@ -315,6 +320,7 @@ export const conversations: Conversation[] = [
     checkIn: '',
     checkOut: '',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-5',
@@ -340,6 +346,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-28T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-7',
@@ -364,6 +371,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-06T11:00:00Z',
     verification: 'verified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-8',
@@ -388,6 +396,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-27T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-9',
@@ -412,6 +421,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-05T11:00:00Z',
     verification: 'unverified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-10',
@@ -436,6 +446,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-25T11:00:00Z',
     verification: 'check_out',
     cleaningStatus: 'need_cleaning',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-11',
@@ -460,6 +471,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-15T11:00:00Z',
     verification: 'unverified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-12',
@@ -484,6 +496,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-27T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-13',
@@ -507,6 +520,7 @@ export const conversations: Conversation[] = [
     checkIn: '',
     checkOut: '',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-14',
@@ -531,6 +545,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-28T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'in_progress',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-15',
@@ -555,6 +570,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-11T11:00:00Z',
     verification: 'unverified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-16',
@@ -578,6 +594,7 @@ export const conversations: Conversation[] = [
     checkIn: '',
     checkOut: '',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-17',
@@ -601,6 +618,7 @@ export const conversations: Conversation[] = [
     checkIn: '2026-04-20T15:00:00Z',
     checkOut: '2026-04-25T11:00:00Z',
     cleaningStatus: 'need_cleaning',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-18',
@@ -625,6 +643,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-30T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-19',
@@ -650,6 +669,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-05-02T11:00:00Z',
     verification: 'verified',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
   {
     id: 'conv-20',
@@ -675,6 +695,7 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-27T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
 ]
 

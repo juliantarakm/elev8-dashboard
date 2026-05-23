@@ -1,5 +1,7 @@
 import type { Conversation, ConversationStatus, Message, Note, PhoneCall, Reservation, StayStatus } from '~/components/inbox/data/conversations'
 import { conversations as conversationsData, messages as messagesData, phoneCalls as phoneCallsData, reservations, staffMembers } from '~/components/inbox/data/conversations'
+import { useUpsellOrders } from './useUpsellOrders'
+import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
 
@@ -501,6 +503,21 @@ export function useInbox() {
     return phoneCallsData[conversationId] ?? []
   }
 
+  function getLinkedOrders(conversationId: string): UpsellOrder[] {
+    const { orders } = useUpsellOrders()
+    const conv = conversations.value.find(c => c.id === conversationId)
+    if (!conv?.linkedUpsellOrderIds?.length) return []
+    return orders.value.filter(o => conv.linkedUpsellOrderIds!.includes(o.id))
+  }
+
+  function linkOrderToConversation(conversationId: string, orderId: string) {
+    conversations.value = conversations.value.map(c =>
+      c.id === conversationId
+        ? { ...c, linkedUpsellOrderIds: [...(c.linkedUpsellOrderIds || []), orderId] }
+        : c,
+    )
+  }
+
   return {
     selectedConversationId,
     showActionNeeded,
@@ -559,5 +576,7 @@ export function useInbox() {
     sendMessage,
     retryMessage,
     getPhoneCalls,
+    getLinkedOrders,
+    linkOrderToConversation,
   }
 }
