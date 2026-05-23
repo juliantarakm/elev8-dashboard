@@ -77,7 +77,7 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
             <TableHead>Service</TableHead>
             <TableHead class="text-right">Total</TableHead>
             <TableHead class="text-center">Status</TableHead>
-            <TableHead class="text-center">Date</TableHead>
+            <TableHead class="text-center">Service Date</TableHead>
             <TableHead class="w-10" />
           </TableRow>
         </TableHeader>
@@ -127,8 +127,11 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
                 {{ ORDER_STATUS_LABELS[order.status] }}
               </Badge>
             </TableCell>
-            <TableCell class="text-center text-sm text-muted-foreground">
-              {{ order.orderDate }}
+            <TableCell class="text-center">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-medium">{{ order.serviceDate }}</span>
+                <span class="text-xs text-muted-foreground">Ordered {{ order.orderDate }}</span>
+              </div>
             </TableCell>
             <TableCell @click.stop>
               <DropdownMenu>

@@ -23,6 +23,7 @@ export interface UpsellOrder {
   currency: string
   status: OrderStatus
   orderDate: string
+  serviceDate: string
   checkInDate: string
   checkOutDate: string
   listing: string
@@ -67,6 +68,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'completed',
     orderDate: '2026-05-01',
+    serviceDate: '2026-05-02',
     checkInDate: '2026-05-02',
     checkOutDate: '2026-05-07',
     listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape',
@@ -95,6 +97,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'confirmed',
     orderDate: '2026-05-01',
+    serviceDate: '2026-05-03',
     checkInDate: '2026-05-02',
     checkOutDate: '2026-05-05',
     listing: 'The R Apartment Mittelfelsen - Quiet, Free Parking',
@@ -123,6 +126,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'completed',
     orderDate: '2026-05-01',
+    serviceDate: '2026-05-03',
     checkInDate: '2026-05-03',
     checkOutDate: '2026-05-10',
     listing: 'The R Pererenan Mezzanine Studio + Plunge Pool',
@@ -151,6 +155,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'completed',
     orderDate: '2026-05-04',
+    serviceDate: '2026-05-03',
     checkInDate: '2026-05-01',
     checkOutDate: '2026-05-06',
     listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
@@ -179,6 +184,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'confirmed',
     orderDate: '2026-05-06',
+    serviceDate: '2026-05-07',
     checkInDate: '2026-05-05',
     checkOutDate: '2026-05-12',
     listing: 'KABA - Stylish 2BR the R Villa Kaba-Kerobokan+Pool/Bikes',
@@ -207,6 +213,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'pending',
     orderDate: '2026-05-10',
+    serviceDate: '2026-05-12',
     checkInDate: '2026-05-12',
     checkOutDate: '2026-05-18',
     listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape',
@@ -234,6 +241,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'pending',
     orderDate: '2026-05-11',
+    serviceDate: '2026-05-12',
     checkInDate: '2026-05-10',
     checkOutDate: '2026-05-15',
     listing: 'Cozy 2BR- the R Villa Sinabung w/ Pool in Sanur',
@@ -262,6 +270,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'confirmed',
     orderDate: '2026-05-11',
+    serviceDate: '2026-05-12',
     checkInDate: '2026-05-10',
     checkOutDate: '2026-05-14',
     listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
@@ -290,6 +299,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'pending',
     orderDate: '2026-05-12',
+    serviceDate: '2026-05-13',
     checkInDate: '2026-05-08',
     checkOutDate: '2026-05-15',
     listing: 'The R Apartments Studio walk to the Beach',
@@ -317,6 +327,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     currency: 'IDR',
     status: 'cancelled',
     orderDate: '2026-05-08',
+    serviceDate: '2026-05-10',
     checkInDate: '2026-05-03',
     checkOutDate: '2026-05-10',
     listing: 'The R Pererenan Mezzanine Studio + Plunge Pool',

@@ -93,6 +93,10 @@ function formatCurrency(amount: number, currency: string) {
                 <span class="text-muted-foreground">Check-out</span>
                 <p class="font-medium">{{ order.checkOutDate }}</p>
               </div>
+              <div>
+                <span class="text-muted-foreground">Service Date</span>
+                <p class="font-medium">{{ order.serviceDate }}</p>
+              </div>
               <div class="col-span-2">
                 <span class="text-muted-foreground">Listing</span>
                 <p class="font-medium">{{ order.listing }}</p>
