@@ -2,10 +2,11 @@
 import { toast } from 'vue-sonner'
 import { useUpsellServices } from '@/composables/useUpsellServices'
 import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
-import type { UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
+import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
 
 const props = defineProps<{
   service: UpsellService | null
+  initialCategory: UpsellCategory | null
   open: boolean
 }>()
 
@@ -43,7 +44,7 @@ watch(() => props.open, (open) => {
     else {
       formName.value = ''
       formDescription.value = ''
-      formCategory.value = 'Airport Transport'
+      formCategory.value = props.initialCategory ?? 'Airport Transport'
       formCurrency.value = 'IDR'
       formImage.value = ''
       formItems.value = [{ id: `itm-${Date.now()}`, name: '', price: 0 }]
@@ -136,7 +137,7 @@ function onOpenChange(val: boolean) {
   <Sheet :open="props.open" @update:open="onOpenChange">
     <SheetContent class="flex w-full flex-col gap-0 p-0 sm:max-w-lg" side="right">
       <SheetHeader class="border-b px-6 py-4">
-        <SheetTitle>{{ isEditing ? 'Edit Service' : 'Add Service' }}</SheetTitle>
+        <SheetTitle>{{ isEditing ? 'Edit Service' : `Add ${formCategory} Service` }}</SheetTitle>
         <SheetDescription>
           {{ isEditing ? 'Update the upsell service details.' : 'Create a new upsell service to offer to guests.' }}
         </SheetDescription>
@@ -157,16 +158,23 @@ function onOpenChange(val: boolean) {
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
               <Label>Category</Label>
-              <Select v-model="formCategory">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="cat in UPSPELL_CATEGORIES" :key="cat" :value="cat">
-                    {{ cat }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <template v-if="isEditing">
+                <Select v-model="formCategory">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="cat in UPSPELL_CATEGORIES" :key="cat" :value="cat">
+                      {{ cat }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </template>
+              <template v-else>
+                <div class="flex h-9 items-center rounded-md border bg-muted/50 px-3 text-sm">
+                  {{ formCategory }}
+                </div>
+              </template>
             </div>
 
             <div class="flex flex-col gap-2">

@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import type { UpsellService } from '@/components/upsells/data/upsell-services'
+import { UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
+import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
 
 const drawerOpen = ref(false)
 const selectedService = ref<UpsellService | null>(null)
+const createCategory = ref<UpsellCategory | null>(null)
 
 function openDrawer(service: UpsellService | null) {
   selectedService.value = service
+  createCategory.value = null
+  drawerOpen.value = true
+}
+
+function openCreateDrawer(category: UpsellCategory) {
+  selectedService.value = null
+  createCategory.value = category
   drawerOpen.value = true
 }
 </script>
@@ -21,10 +30,24 @@ function openDrawer(service: UpsellService | null) {
           Manage upsell services offered to your guests.
         </p>
       </div>
-      <Button size="sm" @click="openDrawer(null)">
-        <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-        Add Service
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button size="sm">
+            <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
+            Add Service
+            <Icon name="lucide:chevron-down" class="ml-2 h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-52">
+          <DropdownMenuItem
+            v-for="cat in UPSPELL_CATEGORIES"
+            :key="cat"
+            @click="openCreateDrawer(cat)"
+          >
+            {{ cat }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
 
     <UpsellsUpsellFilterBar />
@@ -33,6 +56,7 @@ function openDrawer(service: UpsellService | null) {
 
     <UpsellsUpsellDrawer
       :service="selectedService"
+      :initial-category="createCategory"
       :open="drawerOpen"
       @update:open="drawerOpen = $event"
     />
