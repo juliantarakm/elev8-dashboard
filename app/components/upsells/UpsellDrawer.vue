@@ -228,30 +228,6 @@ function onOpenChange(val: boolean) {
             </div>
           </div>
 
-          <div class="flex flex-col gap-2">
-            <Label>Currency</Label>
-            <Select v-model="formCurrency">
-              <SelectTrigger class="w-32">
-                <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CHF">
-                    CHF
-                  </SelectItem>
-                  <SelectItem value="IDR">
-                    IDR
-                  </SelectItem>
-                  <SelectItem value="USD">
-                    USD
-                  </SelectItem>
-                  <SelectItem value="EUR">
-                    EUR
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <Separator />
 
           <div class="flex flex-col gap-2">
