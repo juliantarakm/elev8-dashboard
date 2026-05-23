@@ -28,6 +28,7 @@ export interface UpsellOrder {
   listing: string
   channel: string
   notes: string
+  invoice?: string
   staffAssigned?: string
   createdAt: string
   updatedAt: string
@@ -71,6 +72,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'TAMBORA - The R Tambora: Stylish 3BR Tropical Escape',
     channel: 'Direct',
     notes: 'Flight arrives 14:30. Pickup with name board.',
+    invoice: 'INV-ORD-001',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-04-28T10:00:00Z',
     updatedAt: '2026-05-01T15:00:00Z',
@@ -98,6 +100,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'The R Apartment Mittelfelsen - Quiet, Free Parking',
     channel: 'Direct',
     notes: 'Dietary restriction: no shellfish. 4 guests.',
+    invoice: 'INV-ORD-002',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-04-29T08:00:00Z',
     updatedAt: '2026-05-01T12:00:00Z',
@@ -125,6 +128,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'The R Pererenan Mezzanine Studio + Plunge Pool',
     channel: 'Direct',
     notes: '2 cars needed for 4 pax with luggage.',
+    invoice: 'INV-ORD-003',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-04-30T09:00:00Z',
     updatedAt: '2026-05-01T16:00:00Z',
@@ -152,6 +156,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
     channel: 'Direct',
     notes: 'Couples treatment. Arrive at 15:00.',
+    invoice: 'INV-ORD-004',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-05-02T14:00:00Z',
     updatedAt: '2026-05-04T18:00:00Z',
@@ -179,6 +184,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'KABA - Stylish 2BR the R Villa Kaba-Kerobokan+Pool/Bikes',
     channel: 'Booking.com',
     notes: '3-day rental each. International licenses confirmed.',
+    invoice: 'INV-ORD-005',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-05-04T10:00:00Z',
     updatedAt: '2026-05-06T08:00:00Z',
@@ -261,6 +267,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     listing: 'BRATAN - The R Bratan | 3BR- Serene Getaway in Canggu',
     channel: 'Direct',
     notes: '2 guests: 1 beginner, 1 intermediate. Same instructor preferred.',
+    invoice: 'INV-ORD-008',
     staffAssigned: 'Komang Juliantara',
     createdAt: '2026-05-09T10:00:00Z',
     updatedAt: '2026-05-11T14:00:00Z',

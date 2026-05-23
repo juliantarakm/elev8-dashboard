@@ -102,6 +102,23 @@ function formatCurrency(amount: number, currency: string) {
 
           <Separator />
 
+          <!-- Invoice -->
+          <div v-if="order.invoice" class="flex flex-col gap-2">
+            <Label class="text-xs text-muted-foreground uppercase tracking-wide">Invoice</Label>
+            <div class="flex items-center justify-between rounded-md border p-3">
+              <div class="flex items-center gap-2">
+                <Icon name="lucide:file-text" class="h-4 w-4 text-muted-foreground" />
+                <span class="text-sm font-medium">{{ order.invoice }}</span>
+              </div>
+              <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs">
+                <Icon name="lucide:download" class="h-3.5 w-3.5" />
+                Download
+              </Button>
+            </div>
+          </div>
+
+          <Separator v-if="order.invoice" />
+
           <!-- Items -->
           <div class="flex flex-col gap-2">
             <Label class="text-xs text-muted-foreground uppercase tracking-wide">Items Ordered</Label>
