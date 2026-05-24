@@ -38,7 +38,7 @@ const conversationPhoneCalls = computed((): PhoneCall[] =>
           <TabsTrigger value="activity" class="text-xs shrink-0">Activity</TabsTrigger>
           <TabsTrigger value="upsells" class="text-xs shrink-0">
             Upsell
-            <Badge v-if="reservation.upsells?.length" class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ reservation.upsells.length }}</Badge>
+            <Badge v-if="conversation.linkedUpsellOrderIds?.length" class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ conversation.linkedUpsellOrderIds.length }}</Badge>
           </TabsTrigger>
           <TabsTrigger value="history" class="text-xs shrink-0">
             History
@@ -71,7 +71,7 @@ const conversationPhoneCalls = computed((): PhoneCall[] =>
 
         <TabsContent value="upsells">
           <div class="p-4">
-            <InboxReservationUpsells :upsells="reservation.upsells ?? []" />
+            <InboxReservationUpsells :linked-order-ids="conversation.linkedUpsellOrderIds ?? []" />
           </div>
         </TabsContent>
 

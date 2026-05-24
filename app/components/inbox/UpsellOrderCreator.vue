@@ -17,7 +17,7 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const { linkOrderToConversation } = useInbox()
+const { linkOrderToConversation, sendMessage } = useInbox()
 const { addOrder, orders } = useUpsellOrders()
 const { services } = useUpsellServices()
 const { createNotification } = useUpsellNotifications()
@@ -31,6 +31,14 @@ const filteredServices = computed(() =>
   services.value.filter(s => s.status === 'active'),
 )
 
+const selectedServiceId = computed({
+  get: () => selectedService.value?.id ?? '',
+  set: (id: string) => {
+    selectedService.value = filteredServices.value.find(s => s.id === id) ?? null
+    selectedItems.value = []
+  },
+})
+
 function onOpenChange(value: boolean) {
   emit('update:open', value)
   if (!value) resetForm()
@@ -43,11 +51,15 @@ function resetForm() {
   notes.value = ''
 }
 
-function toggleItem(itemId: string) {
-  if (selectedItems.value.includes(itemId)) {
-    selectedItems.value = selectedItems.value.filter(id => id !== itemId)
-  } else {
+const isCreateDisabled = computed(() =>
+  !selectedService.value || selectedItems.value.length === 0 || !serviceDate.value,
+)
+
+function toggleItem(itemId: string, checked: boolean | 'indeterminate') {
+  if (checked === true) {
     selectedItems.value = [...selectedItems.value, itemId]
+  } else {
+    selectedItems.value = selectedItems.value.filter(id => id !== itemId)
   }
 }
 
@@ -109,7 +121,25 @@ function handleCreate() {
     createNotification(newOrder, 'order_confirmed')
   }
 
-  toast.success(`Order created${isAlways ? ' and confirmed' : ' — pending confirmation'}.`)
+  const upsellOffer = {
+    orderId: newOrder.id,
+    serviceName: selectedService.value.name,
+    serviceCategory: selectedService.value.category,
+    items: items.map(i => ({ id: i.id, name: i.name, price: i.price })),
+    serviceDate: serviceDate.value,
+    subtotal,
+    taxAmount,
+    serviceAmount,
+    grandTotal,
+    currency: selectedService.value.currency,
+    status: 'pending' as const,
+  }
+
+  const upsellMessage = `Hi ${props.conversation.guestName}! We'd like to offer you the following:`
+
+  sendMessage(props.conversation.id, upsellMessage, 'ota', upsellOffer)
+
+  toast.success(`Upsell offer sent to ${props.conversation.guestName}!`)
   onOpenChange(false)
 }
 </script>
@@ -140,7 +170,7 @@ function handleCreate() {
 
           <div class="flex flex-col gap-2">
             <Label>Service <span class="text-destructive">*</span></Label>
-            <Select v-model="selectedService">
+            <Select v-model="selectedServiceId">
               <SelectTrigger>
                 <SelectValue placeholder="Select a service..." />
               </SelectTrigger>
@@ -148,7 +178,7 @@ function handleCreate() {
                 <SelectItem
                   v-for="svc in filteredServices"
                   :key="svc.id"
-                  :value="svc"
+                  :value="svc.id"
                 >
                   <div class="flex items-center gap-2">
                     <span>{{ svc.name }}</span>
@@ -172,7 +202,7 @@ function handleCreate() {
               >
                 <Checkbox
                   :checked="selectedItems.includes(item.id)"
-                  @update:checked="toggleItem(item.id)"
+                  @update:model-value="(checked: boolean | 'indeterminate') => toggleItem(item.id, checked)"
                 />
                 <div class="flex-1">
                   <p class="text-sm font-medium">{{ item.name }}</p>
@@ -226,7 +256,7 @@ function handleCreate() {
           </Button>
           <Button
             class="flex-1"
-            :disabled="!selectedService || selectedItems.length === 0 || !serviceDate"
+            :disabled="isCreateDisabled"
             @click="handleCreate"
           >
             <Icon name="lucide:shopping-cart" class="mr-2 h-4 w-4" />

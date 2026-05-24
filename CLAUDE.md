@@ -14,7 +14,7 @@
 - **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
 - **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
-- **Upsells** — Upsell Catalog with CRUD, category-first create flow, 2-tab wizard drawer, per-item pricing, tax/service toggles
+- **Upsells** — Full request system: Catalog CRUD, Order tracking with lifecycle (pending→confirmed→completed/cancelled), Cancellation flow with refund policies, Staff/Guest notifications, Inbox integration (UpsellOrderCreator, UpsellOfferCard in chat, linked orders in ReservationPanel)
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
 - **Tasks** — Data table with filtering (TanStack table)
@@ -223,30 +223,63 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 
 ### Upsells Module (`app/components/upsells/`)
 
-#### Data + Types (`app/components/upsells/data/upsell-services.ts`)
-- `UpsellItem` interface — `id`, `name`, `price`
-- `UpsellService` interface — `id`, `name`, `category`, `description`, `image`, `youtubeLinks[]`, `assignedListings[]`, `items: UpsellItem[]`, `currency`, `pricingEnabled`, `taxPercent`, `servicePercent`, `status`, `internalNotes`, `notificationUsers[]`
-- `UpsellCategory` = `'Airport Transport' | 'Private Chef' | 'Spa' | 'Activity' | 'Vehicle Rental' | 'Late Check-out' | 'Early Check-in' | 'Mid-stay Cleaning' | 'Office Equipment' | 'Baby' | 'Miscellaneous' | 'Pet'`
-- 10 mock services across all categories
+#### Data + Types
+- **`upsell-services.ts`** — `UpsellItem` (with `description?`, `image?`), `UpsellService` (with `availability: 'always' | 'by_request'`, `pricingEnabled`, `taxPercent`, `servicePercent`), 10 mock services
+- **`upsell-orders.ts`** — `UpsellOrder` interface with `serviceDate`, `serviceEndDate?`, `source` ('direct' | 'inbox'), `conversationId?`, `cancellationReason?`, `cancellationBy?`, `invoice?`; `OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'`; 11 mock orders
+- **`upsell-notifications.ts`** — 7 notification types (order_created, order_confirmed, order_completed, order_cancelled, refund_issued, reminder_24h, reminder_1h), notification template system, 10 mock notifications
+- **`cancellation-policies.ts`** — Per-service refund calculator (48h/24h/late windows); staff cancel = 100% refund always; guest cancel depends on timing
 
-#### Composable (`app/composables/useUpsellServices.ts`)
-- `services` — `useState<UpsellService[]>` with spread syntax mutations
-- Filters: `activeCategoryFilter`, `activeStatusFilter`, `activeListingFilter`, `searchValue`
-- Actions: `addService()`, `updateService()`, `deleteService()`, `toggleListingFilter()`, `clearListingFilters()`
+#### Composables
+- **`useUpsellServices.ts`** — Catalog CRUD, filters (`activeCategoryFilter`, `activeStatusFilter`, `activeListingFilter`, `searchValue`)
+- **`useUpsellOrders.ts`** — Orders state + CRUD, `updateStatus()`, `addOrder()`, `cancelOrder()` (with refund calculation), filters, `statusCounts`, `totalRevenue`
+- **`useUpsellNotifications.ts`** — Notification state, `createNotification()`, `markAsRead()`, unread count
 
 #### Components
-- **UpsellTable.vue** — TanStack data table with columns: Name, Category, Price Range, Items, Listings, Status; includes `priceRange()` helper
-- **UpsellFilterBar.vue** — Category pills + Status filter + Listing filter + Search input
-- **UpsellDrawer.vue** — 2-tab Sheet drawer (Details + Items tabs); Details tab: name, description, image, YouTube links, listings, tax/service section; Items tab: sortable item list with name/price inline editing
-- Category-first create flow: "Add Service" button opens dropdown with 12 categories → on select, drawer opens with category pre-filled
-
-#### Tax/Service Section
-- Single `pricingEnabled` toggle — when ON, Tax % and Service % input fields appear below
-- When OFF, entire section is hidden (not just disabled)
-- Use `model-value` / `update:model-value` (NOT `checked` / `update:checked`) for Switch reactivity in reka-ui
+- **`UpsellTable.vue`** — TanStack data table with columns: Name, Category, Price Range, Items, Listings, Availability, Status
+- **`UpsellFilterBar.vue`** — Category pills + Status filter + Listing filter + Search input
+- **`UpsellDrawer.vue`** — 2-tab Sheet drawer (Details + Items); Details: name, description, image upload (FileReader→base64), YouTube links, listings, availability selector, tax/service section; Items: modal dialog for adding items, vuedraggable sort with grip handle
+- **`UpsellOrderTable.vue`** — Orders table with status filter pills, KPI cards
+- **`UpsellOrderDrawer.vue`** — Order detail with reactive computed lookup from `useUpsellOrders` state, cancel button, notification log section
+- **`UpsellNotificationList.vue`** — Staff notification list with unread/all filter, severity icons
+- **`UpsellCancelModal.vue`** — Cancellation reason textarea + cancelled-by toggle (guest/staff)
 
 #### Page (`app/pages/upsells.vue`)
-- Thin shell wiring FilterBar + Table + Drawer together
+- 3 tabs: Catalog / Orders / Notifications with KPI cards
+
+### Upsells Inbox Integration (`app/components/inbox/`)
+
+#### Components
+- **`UpsellOrderCreator.vue`** — Mini Sheet drawer for creating upsell orders from chat; service picker (Select component), item checkboxes (with `isCreateDisabled` computed), date picker
+- **`UpsellOfferCard.vue`** — Renders upsell offer in chat thread with service details, pricing breakdown, status badge, action buttons (Withdraw / View Order)
+- **`ReplyBox.vue`** — "Upsell" button (shopping-cart icon) next to channel dropdown, opens UpsellOrderCreator
+- **`ReservationUpsells.vue`** — Tab in ReservationPanel showing linked upsell orders from `conversation.linkedUpsellOrderIds`, displays order status, service date, grand total
+- **`Thread.vue`** — Linked order badges removed from thread header (moved to ReservationPanel Upsell tab)
+
+#### Data + Types (`app/components/inbox/data/conversations.ts`)
+- `Conversation` extended with `linkedUpsellOrderIds?: string[]`
+- `Message` extended with `upsellOffer?: UpsellOffer`
+- `UpsellOffer` type — `id`, `orderId`, `serviceName`, `items`, `subtotal`, `taxAmount`, `serviceAmount`, `grandTotal`, `currency`, `status: 'pending' | 'accepted' | 'declined' | 'withdrawn'`, `serviceDate`
+- Mock `conv-21` (Emma Thompson) with accepted spa upsell + `ord-011` order
+- Reservation `R-2026-0521` added for Emma Thompson
+
+#### Composable (`app/composables/useInbox.ts`)
+- `sendMessage()` accepts optional `upsellOffer` payload — creates order + sends chat message with offer card
+- `getLinkedOrders(conversationId)` — returns UpsellOrder[] for a conversation
+- `linkOrderToConversation(conversationId, orderId)` — adds order ID to `linkedUpsellOrderIds`
+
+#### Upsell Offer Flow
+1. Staff clicks Upsell button → UpsellOrderCreator opens → selects service/items/date → sends offer
+2. `sendMessage()` creates order (status: pending) + sends message with `upsellOffer` payload
+3. `UpsellOfferCard` renders in thread with pricing breakdown and status badge
+4. Guest accepts → offer status becomes 'accepted', order status becomes 'confirmed'
+5. Staff can withdraw offer → status becomes 'withdrawn'
+6. Linked order appears in ReservationPanel → Upsell tab
+
+#### Key Patterns
+- `availability: 'always'` → auto-confirmed; `'by_request'` → pending confirmation
+- Cancellation: staff cancel = 100% refund; guest cancel depends on policy timing
+- Upsell offers embedded in chat via `UpsellOfferCard` component (not separate notification)
+- Order drawer reactivity: use computed lookup from `useUpsellOrders` state, not prop snapshot
 
 ### Settings (`app/components/settings/`)
 - **Layout.vue** — Settings page shell
@@ -522,6 +555,8 @@ const table = useVueTable({
 | `useReservations` | `app/composables/useReservations.ts` | Reservations state | `reservations`, `pushReservations()`, `pushSelected()`, `isPushingSelected` |
 | `useUpsells` | `app/composables/useUpsells.ts` | Upsells (Finance) state | `upsells`, `pushUpsells()`, `isPushingUpsells` |
 | `useUpsellServices` | `app/composables/useUpsellServices.ts` | Upsells Catalog state + CRUD | `services`, filters, `addService()`, `updateService()`, `deleteService()` |
+| `useUpsellOrders` | `app/composables/useUpsellOrders.ts` | Upsell Orders state + CRUD | `orders`, `filteredOrders`, `statusCounts`, `totalRevenue`, `updateStatus()`, `addOrder()`, `cancelOrder()` |
+| `useUpsellNotifications` | `app/composables/useUpsellNotifications.ts` | Upsell Notifications state | `notifications`, `unreadCount`, `createNotification()`, `markAsRead()` |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -605,16 +640,19 @@ app/
 │   │   ├── List.vue
 │   │   ├── ListItem.vue
 │   │   ├── Nav.vue
-│   │   ├── ReplyBox.vue
+│   │   ├── ReplyBox.vue            ← Upsell button next to channel dropdown
 │   │   ├── ReservationActivity.vue
 │   │   ├── ReservationGuest.vue
 │   │   ├── ReservationListing.vue
-│   │   ├── ReservationPanel.vue
+│   │   ├── ReservationPanel.vue    ← Upsell tab shows linked orders
 │   │   ├── ReservationSummary.vue
 │   │   ├── ReservationTasks.vue
-│   │   ├── Thread.vue          ← Phone tab with call history
+│   │   ├── ReservationUpsells.vue  ← Linked upsell orders from conversation
+│   │   ├── Thread.vue              ← Phone tab + UpsellOfferCard in messages
+│   │   ├── UpsellOfferCard.vue     ← Upsell offer UI in chat (status, pricing, actions)
+│   │   ├── UpsellOrderCreator.vue  ← Mini drawer for creating orders from chat
 │   │   └── data/
-│   │       └── conversations.ts ← PhoneCall, phoneCalls data
+│   │       └── conversations.ts    ← UpsellOffer type, linkedUpsellOrderIds, conv-21
 │   ├── notifications/          ← Notification Center (new)
 │   │   ├── NotificationCenter.vue
 │   │   ├── NotificationItem.vue
@@ -622,10 +660,17 @@ app/
 │   │       └── alerts.ts       ← Alert types + mock data
 │   ├── upsells/
 │   │   ├── data/
-│   │   │   └── upsell-services.ts
+│   │   │   ├── upsell-services.ts  ← UpsellItem (desc/image), UpsellService (availability)
+│   │   │   ├── upsell-orders.ts    ← UpsellOrder (serviceDate, source, cancellation)
+│   │   │   ├── upsell-notifications.ts ← 7 notification types + templates
+│   │   │   └── cancellation-policies.ts ← Per-service refund calculator
 │   │   ├── UpsellFilterBar.vue
 │   │   ├── UpsellTable.vue
-│   │   └── UpsellDrawer.vue
+│   │   ├── UpsellDrawer.vue        ← 2-tab: Details + Items (modal + drag-sort)
+│   │   ├── UpsellOrderTable.vue
+│   │   ├── UpsellOrderDrawer.vue   ← Order detail with cancel + notification log
+│   │   ├── UpsellNotificationList.vue
+│   │   └── UpsellCancelModal.vue
 │   ├── kanban/
 │   │   └── KanbanBoard.vue
 │   ├── layout/
@@ -681,7 +726,10 @@ app/
 │   ├── useNotifications.ts      ← Notification Center state
 │   ├── useReservations.ts       ← pushReservations(), pushSelected(), isPushingSelected
 │   ├── useShortcuts.ts
-│   └── useUpsells.ts
+│   ├── useUpsells.ts
+│   ├── useUpsellServices.ts       ← Catalog CRUD
+│   ├── useUpsellOrders.ts         ← Orders CRUD + cancelOrder()
+│   └── useUpsellNotifications.ts  ← Notification state + createNotification()
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout

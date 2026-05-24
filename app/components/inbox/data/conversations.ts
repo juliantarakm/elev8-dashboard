@@ -59,6 +59,26 @@ export interface Conversation {
   linkedUpsellOrderIds?: string[]
 }
 
+export interface UpsellOfferItem {
+  id: string
+  name: string
+  price: number
+}
+
+export interface UpsellOffer {
+  orderId: string
+  serviceName: string
+  serviceCategory: string
+  items: UpsellOfferItem[]
+  serviceDate: string
+  subtotal: number
+  taxAmount: number
+  serviceAmount: number
+  grandTotal: number
+  currency: string
+  status: 'pending' | 'accepted' | 'declined' | 'withdrawn'
+}
+
 export interface Message {
   id: string
   conversationId: string
@@ -72,6 +92,7 @@ export interface Message {
   sendStatus?: 'sending' | 'sent' | 'failed'
   aiWritten?: boolean
   senderRole?: string
+  upsellOffer?: UpsellOffer
 }
 
 export interface SmartAction {
@@ -695,7 +716,33 @@ export const conversations: Conversation[] = [
     checkOut: '2026-04-27T11:00:00Z',
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
-    linkedUpsellOrderIds: [],
+    linkedUpsellOrderIds: ['ord-011'],
+  },
+  {
+    id: 'conv-21',
+    guestName: 'Emma Thompson',
+    guestAvatar: undefined,
+    guestInitials: 'ET',
+    listingName: 'The R Villa Samalas | 4BR Retreat in Pererenan',
+    propertyName: 'The R Villa Samalas',
+    reservationId: 'R-2026-0521',
+    otaSource: 'Airbnb',
+    status: null,
+    lastMessage: 'Wonderful! I\'ve confirmed your spa booking for May 28th at 2 PM.',
+    lastMessageAt: '2026-05-20T15:45:00Z',
+    unreadCount: 0,
+    isAssignedToMe: true,
+    assignedTo: 'staff-2',
+    tags: ['Pererenan', 'Pool', '4BR'],
+    labels: [],
+    sentiment: 'positive',
+    sentimentNote: 'Guest accepted spa upsell offer',
+    stayStatus: 'future',
+    checkIn: '2026-05-27T15:00:00Z',
+    checkOut: '2026-06-03T11:00:00Z',
+    verification: 'unverified',
+    cleaningStatus: 'need_cleaning',
+    linkedUpsellOrderIds: ['ord-011'],
   },
 ]
 
@@ -1407,6 +1454,72 @@ export const messages: Record<string, Message[]> = {
       content: 'Called Carlos to confirm late checkout. He requested 2 PM instead of 11 AM — approved. He was very friendly and appreciated the flexibility.',
       channel: 'Phone',
       timestamp: '2026-04-25T16:05:00Z',
+    },
+  ],
+  'conv-21': [
+    {
+      id: 'msg-21-1',
+      conversationId: 'conv-21',
+      sender: 'guest',
+      senderName: 'Emma Thompson',
+      content: 'Hi! We\'re looking forward to our stay next week. Any recommendations for things to do?',
+      channel: 'Airbnb',
+      timestamp: '2026-05-20T14:00:00Z',
+    },
+    {
+      id: 'msg-21-2',
+      conversationId: 'conv-21',
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Emma! Welcome to Bali! We have so many wonderful experiences to offer. Let me share something special with you.',
+      channel: 'Airbnb',
+      timestamp: '2026-05-20T14:15:00Z',
+    },
+    {
+      id: 'msg-21-3',
+      conversationId: 'conv-21',
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Emma Thompson! We\'d like to offer you the following:',
+      channel: 'Airbnb',
+      timestamp: '2026-05-20T14:16:00Z',
+      upsellOffer: {
+        orderId: 'ord-011',
+        serviceName: 'In-Villa Spa Treatment',
+        serviceCategory: 'Spa',
+        items: [
+          { id: 'itm-003a', name: 'Balinese Massage', price: 800000 },
+          { id: 'itm-003b', name: 'Aromatherapy Massage', price: 900000 },
+        ],
+        serviceDate: '2026-05-28',
+        subtotal: 1700000,
+        taxAmount: 187000,
+        serviceAmount: 0,
+        grandTotal: 1887000,
+        currency: 'IDR',
+        status: 'accepted',
+      },
+    },
+    {
+      id: 'msg-21-4',
+      conversationId: 'conv-21',
+      sender: 'guest',
+      senderName: 'Emma Thompson',
+      content: 'This looks amazing! We\'d love to book the spa treatment. Can we do it on May 28th in the afternoon?',
+      channel: 'Airbnb',
+      timestamp: '2026-05-20T15:30:00Z',
+    },
+    {
+      id: 'msg-21-5',
+      conversationId: 'conv-21',
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Wonderful! I\'ve confirmed your spa booking for May 28th at 2 PM. Our therapists will arrive at the villa. Enjoy your relaxation! 🌺',
+      channel: 'Airbnb',
+      timestamp: '2026-05-20T15:45:00Z',
     },
   ],
 }
@@ -2558,6 +2671,66 @@ export const reservations: Record<string, Reservation> = {
       },
     ],
   },
+  'R-2026-0521': {
+    id: 'R-2026-0521',
+    propertyName: 'The R Villa Samalas',
+    roomName: '4BR Villa',
+    listingName: 'The R Villa Samalas | 4BR Retreat in Pererenan',
+    otaSource: 'Airbnb',
+    checkIn: '2026-05-27T15:00:00Z',
+    checkOut: '2026-06-03T11:00:00Z',
+    nights: 7,
+    guestCount: 2,
+    totalPrice: 2450,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: {
+      name: 'Emma Thompson',
+      email: 'emma.thompson@email.com',
+      phone: '+44 7700 900456',
+      previousStays: 1,
+      notes: 'Interested in spa treatments. Accepted upsell offer for In-Villa Spa.',
+    },
+    listingDetails: {
+      name: 'The R Villa Samalas',
+      property: 'Pererenan Retreats',
+      room: '4BR Villa',
+      amenities: ['Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Spa'],
+    },
+    tasks: [],
+    scheduledTemplates: [],
+    activity: [
+      {
+        id: 'act-21-1',
+        type: 'reservation',
+        title: 'Reservation Confirmed',
+        description: 'Booking for 7 nights via Airbnb',
+        actor: 'System',
+        timestamp: '2026-05-10T10:00:00Z',
+        colorDot: 'green',
+      },
+      {
+        id: 'act-21-2',
+        type: 'message',
+        title: 'Upsell Offer Sent',
+        description: 'In-Villa Spa Treatment offered to guest',
+        actor: 'Komang Juliantara',
+        timestamp: '2026-05-20T14:16:00Z',
+        channel: 'Airbnb',
+        colorDot: 'gold',
+      },
+      {
+        id: 'act-21-3',
+        type: 'message',
+        title: 'Upsell Accepted',
+        description: 'Guest accepted the spa treatment offer',
+        actor: 'Emma Thompson',
+        timestamp: '2026-05-20T15:30:00Z',
+        channel: 'Airbnb',
+        colorDot: 'green',
+      },
+    ],
+  },
 }
 
 export const otaSources = [
@@ -2597,7 +2770,7 @@ export const phoneCalls: Record<string, PhoneCall[]> = {
     { id: 'call-19-1', conversationId: 'conv-19', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-26T09:15:00Z', from: '+7 495 123-45-67', to: 'Komang' },
     { id: 'call-19-2', conversationId: 'conv-19', direction: 'inbound', status: 'voicemail', duration: 15, timestamp: '2026-04-26T09:16:00Z', from: '+7 495 123-45-67', to: 'Komang', note: 'Guest asking about early check-in, requesting callback' },
   ],
-  'conv-20': [
+   'conv-20': [
     { id: 'call-20-1', conversationId: 'conv-20', direction: 'outbound', status: 'completed', duration: 252, timestamp: '2026-04-25T16:00:00Z', from: 'Komang', to: '+52 55 1234 5678', note: 'Confirmed late checkout at 2 PM, guest was happy' },
     { id: 'call-20-2', conversationId: 'conv-20', direction: 'inbound', status: 'completed', duration: 85, timestamp: '2026-04-24T10:30:00Z', from: '+52 55 1234 5678', to: 'Komang' },
   ],

@@ -6,16 +6,6 @@ onMounted(() => {
   unreadFilter.value = false
   assignedToMeFilter.value = false
   activeStayFilter.value = 'all'
-
-  // Clean up any orphaned elements from SSR hydration
-  nextTick(() => {
-    const keepIds = new Set(['__nuxt', 'teleports', '__NUXT_DATA__', 'vue-tracer-overlay', 'nuxt-devtools-container'])
-    const keepTags = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'NOSCRIPT', 'NUXT-DEVTOOLS-INSPECT-PANEL'])
-    Array.from(document.body.children).forEach(el => {
-      if (keepIds.has(el.id) || keepTags.has(el.tagName)) return
-      el.remove()
-    })
-  })
 })
 </script>
 

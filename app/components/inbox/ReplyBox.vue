@@ -176,6 +176,15 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-7 gap-1.5"
+          @click="showOrderCreator = true"
+        >
+          <Icon name="lucide:shopping-cart" class="h-4 w-4" />
+          <span class="hidden sm:inline">Upsell</span>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs text-muted-foreground">
@@ -224,15 +233,6 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-9 gap-1.5"
-        @click="showOrderCreator = true"
-      >
-        <Icon name="lucide:shopping-cart" class="h-4 w-4" />
-        <span class="hidden sm:inline">Upsell</span>
-      </Button>
       <Button
         variant="default"
         size="sm"

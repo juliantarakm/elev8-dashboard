@@ -420,7 +420,7 @@ export function useInbox() {
     pendingSuggestion.value = content
   }
 
-  function sendMessage(conversationId: string, content: string, channel: string) {
+  function sendMessage(conversationId: string, content: string, channel: string, upsellOffer?: Message['upsellOffer']) {
     const conv = conversations.value.find(c => c.id === conversationId)
     if (!conv || !content.trim()) return
 
@@ -435,6 +435,7 @@ export function useInbox() {
       channel,
       timestamp: new Date().toISOString(),
       sendStatus: 'sending',
+      upsellOffer,
     }
 
     const currentMessages = messages.value[conversationId] ?? []

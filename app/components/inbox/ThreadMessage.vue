@@ -114,6 +114,11 @@ const dateLabel = computed(() => {
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">
           {{ message.content }}
         </div>
+        <InboxUpsellOfferCard
+          v-if="message.upsellOffer"
+          :offer="message.upsellOffer"
+          :conversation-id="message.conversationId"
+        />
         <div v-if="message.sendStatus === 'sending'" class="flex items-center gap-1 text-[10px] text-muted-foreground">
           <Icon name="lucide:loader-2" class="size-2.5 animate-spin" />
           {{ isRetrying ? 'Retrying...' : 'Sending...' }}
