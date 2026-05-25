@@ -10,7 +10,7 @@ interface ReplyBoxProps {
 }
 
 const props = defineProps<ReplyBoxProps>()
-const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage, selectedConversation } = useInbox()
+const { isElevaiEnabled, pendingSuggestion, clearSuggestion, selectedReservation, sendMessage, selectedConversation, autoTranslate } = useInbox()
 const showOrderCreator = ref(false)
 
 const replyText = ref('')
@@ -42,6 +42,9 @@ const channelLabel = computed(() => {
   const selected = channelOptions.value.find(o => o.value === sendChannel.value)
   return selected?.label ?? ''
 })
+
+const guestLanguage = computed(() => selectedConversation.value?.guestLanguage)
+const showTranslateIndicator = computed(() => autoTranslate.value && !!guestLanguage.value)
 
 const rewrites = [
   'Thanks for reaching out! I\'d be happy to help with that. Let me look into it and get back to you shortly.',
@@ -153,6 +156,10 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
         <Icon name="lucide:loader-2" class="size-3.5 animate-spin text-[#FBC800]" />
         Rewriting
       </div>
+    </div>
+    <div v-if="showTranslateIndicator" class="flex items-center gap-1.5 px-1">
+      <Icon name="lucide:languages" class="size-3.5 text-muted-foreground" />
+      <span class="text-[11px] text-muted-foreground">Messages will be auto-translated to {{ guestLanguage }}</span>
     </div>
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">

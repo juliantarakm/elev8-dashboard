@@ -57,6 +57,7 @@ export interface Conversation {
   verification?: GuestVerification
   cleaningStatus?: CleaningStatus
   linkedUpsellOrderIds?: string[]
+  guestLanguage?: string
 }
 
 export interface UpsellOfferItem {
@@ -93,6 +94,7 @@ export interface Message {
   aiWritten?: boolean
   senderRole?: string
   upsellOffer?: UpsellOffer
+  translatedContent?: string
 }
 
 export interface SmartAction {
@@ -127,6 +129,7 @@ export interface GuestDetails {
   phone: string
   previousStays: number
   notes: string
+  language: string
 }
 
 export interface BookingReview {
@@ -239,6 +242,7 @@ export const conversations: Conversation[] = [
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
   },
   {
     id: 'conv-2',
@@ -265,6 +269,7 @@ export const conversations: Conversation[] = [
     verification: 'verified',
     cleaningStatus: 'cleaning_finished',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
   },
   {
     id: 'conv-3',
@@ -291,6 +296,7 @@ export const conversations: Conversation[] = [
     verification: 'unverified',
     cleaningStatus: 'cleaning_finished',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
   },
   {
     id: 'conv-4',
@@ -317,6 +323,7 @@ export const conversations: Conversation[] = [
     verification: 'check_out',
     cleaningStatus: 'need_cleaning',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
   },
   {
     id: 'conv-6',
@@ -342,6 +349,7 @@ export const conversations: Conversation[] = [
     checkOut: '',
     cleaningStatus: 'cleaning_finished',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'Japanese',
   },
   {
     id: 'conv-5',
@@ -368,6 +376,7 @@ export const conversations: Conversation[] = [
     verification: 'check_in',
     cleaningStatus: 'cleaning_finished',
     linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
   },
   {
     id: 'conv-7',
@@ -1565,6 +1574,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+1 555-0142',
       previousStays: 2,
       notes: 'Returning guest. Prefers early check-in. Allergic to feather pillows.',
+      language: 'English',
     },
     listingDetails: {
       name: 'Villa Canggu',
@@ -1691,6 +1701,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+44 7700 900123',
       previousStays: 0,
       notes: 'First-time guest.',
+      language: 'English',
     },
     listingDetails: {
       name: 'Sunset Loft',
@@ -1741,6 +1752,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+61 4 1234 5678',
       previousStays: 1,
       notes: 'Travelling with family.',
+      language: 'English',
     },
     listingDetails: {
       name: 'Beach House',
@@ -1786,6 +1798,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+1 555-0198',
       previousStays: 3,
       notes: 'Loyal returning guest. Prefers pool-facing room.',
+      language: 'English',
     },
     listingDetails: {
       name: 'Pool Villa',
@@ -1869,6 +1882,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+1 555-0211',
       previousStays: 0,
       notes: 'New inquiry. No booking yet.',
+      language: 'Japanese',
     },
     listingDetails: {
       name: 'Rice Terrace Lodge',
@@ -1920,6 +1934,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+91 98765 43210',
       previousStays: 0,
       notes: 'First-time guest. Mentioned sensitivity to heat.',
+      language: 'English',
     },
     listingDetails: {
       name: 'Garden Retreat',
@@ -1986,6 +2001,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+1 555-0167',
       previousStays: 1,
       notes: 'Returning guest. Loves the rooftop.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Sunset Loft',
@@ -2036,6 +2052,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+34 612 345 678',
       previousStays: 0,
       notes: 'First-time guest. Travelling with family.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Villa Canggu',
@@ -2107,6 +2124,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+82 10-1234-5678',
       previousStays: 0,
       notes: 'First-time visitor to Bali.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Rice Terrace Lodge',
@@ -2163,6 +2181,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+65 9123 4567',
       previousStays: 2,
       notes: 'Repeat guest. Loves the beach access.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Beach House',
@@ -2211,6 +2230,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+1 555-0345',
       previousStays: 0,
       notes: 'First-time guest from US.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Pool Villa',
@@ -2271,6 +2291,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+86 138 0013 8000',
       previousStays: 1,
       notes: 'Returning guest. Loves yoga.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Garden Retreat',
@@ -2324,6 +2345,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+39 333 456 7890',
       previousStays: 0,
       notes: 'Travelling with 2 young children.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Sunset Loft',
@@ -2380,6 +2402,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+81 90-1234-5678',
       previousStays: 0,
       notes: 'Interested in yoga and nature.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Rice Terrace Lodge',
@@ -2419,6 +2442,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+91 98765 43210',
       previousStays: 0,
       notes: 'Interested in honeymoon package.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Beach House',
@@ -2458,6 +2482,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+44 7700 900456',
       previousStays: 1,
       notes: 'Repeat guest. Left 5-star review.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Pool Villa',
@@ -2517,6 +2542,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+49 171 234 5678',
       previousStays: 0,
       notes: 'First-time guest. Travelling with family.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Villa Canggu',
@@ -2584,6 +2610,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+7 495 123-45-67',
       previousStays: 1,
       notes: 'Returning guest. Prefers phone communication. Previously stayed in Dec 2025.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Villa Merapi',
@@ -2641,6 +2668,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+52 55 1234 5678',
       previousStays: 2,
       notes: 'Loyal repeat guest. Always requests late checkout. Family of 6.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'Villa Luwa',
@@ -2690,6 +2718,7 @@ export const reservations: Record<string, Reservation> = {
       phone: '+44 7700 900456',
       previousStays: 1,
       notes: 'Interested in spa treatments. Accepted upsell offer for In-Villa Spa.',
+      language: 'Indonesian',
     },
     listingDetails: {
       name: 'The R Villa Samalas',

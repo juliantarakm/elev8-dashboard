@@ -15,6 +15,7 @@ const { selectedConversation,
   getPhoneCalls,
   rightPanelCollapsed,
   toggleRightPanel,
+  autoTranslate,
 } = useInbox()
 
 const activeThreadTab = ref<'messages' | 'notes' | 'phone'>('messages')
@@ -128,6 +129,11 @@ function handleAddNote() {
   toast.success('Note added')
 }
 
+function toggleAutoTranslate() {
+  autoTranslate.value = !autoTranslate.value
+  toast.info(autoTranslate.value ? 'Auto-translate enabled' : 'Auto-translate disabled')
+}
+
 function formatNoteDate(timestamp: string) {
   const date = new Date(timestamp)
   return format(date, 'EEEE, MMMM d yyyy, h:mm a')
@@ -189,6 +195,57 @@ function formatCallDate(timestamp: string): string {
           </TooltipTrigger>
           <TooltipContent>Resolve action needed for this guest</TooltipContent>
         </Tooltip>
+        <Popover>
+          <PopoverTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              :class="autoTranslate ? 'text-primary' : ''"
+            >
+              <Icon name="lucide:languages" class="size-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-72 p-0" align="end" :side-offset="4">
+            <div class="p-3 space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <Icon name="lucide:languages" class="size-4 text-muted-foreground" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium">Translation</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ selectedConversation?.guestName }} speaks {{ selectedConversation?.guestLanguage ?? 'unknown' }}
+                  </div>
+                </div>
+              </div>
+              <Separator />
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm">Auto-translate</div>
+                  <div class="text-[11px] text-muted-foreground">Your preferred language: Bahasa Indonesia</div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  :class="autoTranslate ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary' : ''"
+                  @click="toggleAutoTranslate"
+                >
+                  {{ autoTranslate ? 'Active' : 'Disabled' }}
+                </Button>
+              </div>
+              <div v-if="autoTranslate" class="rounded-md bg-muted/50 p-2.5">
+                <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1">
+                  <Icon name="lucide:info" class="size-3" />
+                  How it works
+                </div>
+                <ul class="text-[11px] text-muted-foreground space-y-0.5 ml-4 list-disc">
+                  <li>Guest messages translated to Bahasa Indonesia</li>
+                  <li>Your replies translated to {{ selectedConversation?.guestLanguage ?? 'guest language' }}</li>
+                </ul>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         <Tooltip>
           <TooltipTrigger as-child>
             <Button variant="ghost" size="icon" @click="toggleRightPanel">

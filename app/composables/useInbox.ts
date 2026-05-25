@@ -52,6 +52,42 @@ export function useInbox() {
   const elevaiState = useState<Record<string, ElevaiConvState>>('inbox-elevai-state', () => ({}))
   const searchValue = useState<string>('inbox-search-value', () => '')
   const rightPanelCollapsed = useState<boolean>('inbox-right-panel-collapsed', () => false)
+  const autoTranslate = useState<boolean>('inbox-auto-translate', () => true)
+
+  const mockTranslations: Record<string, string> = {
+    'Hi! We\'re arriving tomorrow and wanted to confirm the check-in process.': 'Halo! Kami tiba besok dan ingin mengonfirmasi proses check-in.',
+    'What time is check-in? We arrive at 3 PM.': 'Jam berapa check-in? Kami tiba jam 3 sore.',
+    'Thanks for the info! I\'ll confirm soon.': 'Terima kasih infonya! Saya akan konfirmasi segera.',
+    'Is there parking available at the property?': 'Apakah ada parkir di properti?',
+    'Thank you so much! Really looking forward to our stay.': 'Terima kasih banyak! Sangat menantikan masa tinggal kami.',
+    'Could you recommend any good restaurants nearby?': 'Bisa rekomendasikan restoran bagus di sekitar sini?',
+    'Hello! We had a great time at your place. Thank you!': 'Halo! Kami senang sekali di tempat Anda. Terima kasih!',
+    'We had an issue with the AC. Can someone come fix it?': 'Kami ada masalah dengan AC. Bisa kirim orang untuk memperbaiki?',
+    'What\'s the WiFi password?': 'Password WiFi-nya apa?',
+    'Thanks for the wonderful stay! We\'ll definitely be back.': 'Terima kasih untuk masa tinggal yang menyenangkan! Kami pasti akan kembali.',
+    'Is early check-in possible? Our flight arrives at 10 AM.': 'Apakah early check-in memungkinkan? Penerbangan kami tiba jam 10 pagi.',
+    'Can we extend our stay by one night?': 'Bisa memperpanjang masa tinggal kami satu malam?',
+    'The hot water isn\'t working properly.': 'Air panas tidak berfungsi dengan baik.',
+    'Do you provide airport transfer service?': 'Apakah Anda menyediakan layanan transfer bandara?',
+    'Everything was great, thank you!': 'Semuanya bagus, terima kasih!',
+    'Hi, is your place available for a 2-night stay next weekend?': 'Halo, apakah tempat Anda tersedia untuk menginap 2 malam akhir pekan depan?',
+    'Thanks! We\'d love to book it.': 'Terima kasih! Kami ingin sekali memesannya.',
+    'What\'s the earliest we can check in?': 'Jam berapa paling awal kami bisa check-in?',
+    'That sounds perfect, thank you!': 'Kedengarannya sempurna, terima kasih!',
+    'We\'d also like to arrange airport pickup if possible.': 'Kami juga ingin mengatur penjemputan bandara jika memungkinkan.',
+    'How far is the villa from the beach?': 'Seberapa jauh vila dari pantai?',
+    'We have a late flight on checkout day, can we stay until 6 PM?': 'Kami ada penerbangan malam saat checkout, bisa tinggal sampai jam 6 sore?',
+    'Is the pool heated?': 'Apakah kolam renangnya dipanaskan?',
+    'Can you help us book a scooter?': 'Bisa bantu kami pesan scooter?',
+    'We\'re celebrating our anniversary, any special arrangements?': 'Kami merayakan anniversary, ada pengaturan khusus?',
+    'The bathroom drain seems to be clogged.': 'Saluran kamar mandi sepertinya tersumbat.',
+    'Is there a washing machine we can use?': 'Apakah ada mesin cuci yang bisa kami pakai?',
+  }
+
+  async function mockTranslate(text: string, _targetLang: string): Promise<string> {
+    await new Promise(resolve => setTimeout(resolve, 500))
+    return mockTranslations[text] ?? `[Diterjemahkan] ${text}`
+  }
 
   function toggleRightPanel() {
     rightPanelCollapsed.value = !rightPanelCollapsed.value
@@ -534,6 +570,8 @@ export function useInbox() {
     searchValue,
     rightPanelCollapsed,
     toggleRightPanel,
+    autoTranslate,
+    mockTranslate,
     sortBy,
     pendingSuggestion,
     filteredConversations,
