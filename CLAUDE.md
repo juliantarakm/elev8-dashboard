@@ -41,6 +41,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Inbox Quick Reference** → `docs/superpowers/changelogs/2025-04-25-inbox-quick-ref.md`
 - **Notification Center Spec** → `docs/superpowers/specs/2026-05-07-notification-center-design.md`
 - **Notification Center Plan** → `docs/superpowers/plans/2026-05-07-notification-center-plan.md`
+- **Auto-Translate Spec** → `docs/superpowers/specs/2026-05-25-auto-translate-design.md`
+- **Auto-Translate Plan** → `docs/superpowers/plans/2026-05-25-auto-translate.md`
 
 ---
 
@@ -49,8 +51,9 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 ### Inbox Module (`app/components/inbox/`)
 
 #### Data + Types (`app/components/inbox/data/conversations.ts`)
-- `Conversation` type with `status: ConversationStatus | null`, `assignedTo?: string | null`, `tags: string[]`
-- `Message` type with `aiWritten?: boolean`, `senderRole?: string`
+- `Conversation` type with `status: ConversationStatus | null`, `assignedTo?: string | null`, `tags: string[]`, `guestLanguage?: string`
+- `Message` type with `aiWritten?: boolean`, `senderRole?: string`, `translatedContent?: string`
+- `GuestDetails` type with `language: string`
 - `StaffMember` list: You/Admin, Komang Juliantara/Guest Relations, Made Surya/Housekeeping, Wayan Adi/Maintenance
 - `Reservation` type + mock data (6 conversations)
 
@@ -67,6 +70,11 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Auto-read**: Selecting a conversation sets `unreadCount = 0`
 - **Key type**: `ConversationStatus = 'action_needed'` (nullable — `null` = no action needed)
 - **Phone**: `getPhoneCalls(conversationId)` returns `PhoneCall[]` for the conversation
+- **Auto-translate**: `autoTranslate` boolean state (default `true`), `mockTranslate(text, lang)` async mock function (500ms delay)
+  - Guest messages → translated to Bahasa Indonesia; Host messages → translated to `guestLanguage`
+  - Toggle button (icon `lucide:languages`, ghost variant) in Thread header opens Popover with guest language info + Active/Disabled toggle
+  - `ThreadMessage.vue`: when auto-translate ON → bubble shows translated text only + "Translated" label; when OFF → shows original
+  - `ReplyBox.vue`: shows "Messages will be auto-translated to {guestLanguage}" indicator when ON
 
 #### Phone Call Features
 - `PhoneCall` interface with `direction`, `status`, `duration`, `transcript`, `summary`, `recording_url`
@@ -542,7 +550,7 @@ const table = useVueTable({
 
 | Composable | File | Usage | Key Exports |
 |-----------|------|-------|-------------|
-| `useInbox` | `app/composables/useInbox.ts` | Inbox module state | `conversations`, filters, `markAsHandled()`, `assignTo()`, `toggleListingFilter()`, `clearTagFilters()`, `getPhoneCalls()` |
+| `useInbox` | `app/composables/useInbox.ts` | Inbox module state | `conversations`, filters, `autoTranslate`, `mockTranslate()`, `markAsHandled()`, `assignTo()`, `toggleListingFilter()`, `clearTagFilters()`, `getPhoneCalls()` |
 | `useNotifications` | `app/composables/useNotifications.ts` | Notification Center | `alerts`, `unreadCount`, `filteredAlerts`, `markAsRead()`, `markAllAsRead()`, `dismiss()`, `navigateToAlert()` |
 | `useKanban` | `app/composables/useKanban.ts` | Kanban board state | columns, cards, drag handlers |
 | `useAppSettings` | `app/composables/useAppSettings.ts` | Theme/settings | dark mode, sidebar state, settings preferences |
