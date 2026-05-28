@@ -1,5 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
+import { useInventoryListings } from '@/composables/useInventoryListings'
+
 const activeTab = ref<'catalog' | 'listings'>('catalog')
+
+const { items } = useInventoryCatalog()
+const { entries } = useInventoryListings()
+
+const totalAssetValue = computed(() =>
+  items.value
+    .filter(i => i.type === 'permanent')
+    .reduce((sum, i) => sum + (i.purchaseValue ?? 0), 0),
+)
+
+const expiringSoonCount = computed(() => {
+  const now = new Date()
+  return items.value.filter((i) => {
+    if (!i.warrantyExpiry) return false
+    const diff = (new Date(i.warrantyExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    return diff <= 30
+  }).length
+})
+
+const damagedCount = computed(() =>
+  entries.value.filter(e => e.condition === 'damaged' || e.condition === 'missing').length,
+)
 </script>
 
 <template>
@@ -11,6 +37,36 @@ const activeTab = ref<'catalog' | 'listings'>('catalog')
         </h2>
         <p class="text-muted-foreground">
           Track assets and supplies across your property listings.
+        </p>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Total Items</p>
+        <p class="text-2xl font-bold">{{ items.length }}</p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Total Asset Value</p>
+        <p class="text-2xl font-bold">IDR {{ totalAssetValue.toLocaleString('id-ID') }}</p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Warranty Expiring / Expired</p>
+        <p
+          class="text-2xl font-bold"
+          :class="expiringSoonCount > 0 ? 'text-amber-600' : ''"
+        >
+          {{ expiringSoonCount }}
+        </p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Damaged / Missing</p>
+        <p
+          class="text-2xl font-bold"
+          :class="damagedCount > 0 ? 'text-destructive' : ''"
+        >
+          {{ damagedCount }}
         </p>
       </div>
     </div>
