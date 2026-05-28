@@ -17,6 +17,8 @@ export type AlertType =
   | 'RATE_PLAN_UNMAPPED'
   | 'BOOKING_QUOTA_LOW'
   | 'DYNAMIC_TEMPLATE_FAILED'
+  | 'WARRANTY_EXPIRING_SOON'
+  | 'WARRANTY_EXPIRED'
   // Upsell alert types (managed via useUpsellNotifications, surfaced here for display)
   // 'UPSELL_ORDER_REQUESTED' | 'UPSELL_ORDER_CONFIRMED' | 'UPSELL_ORDER_CANCELLED'
 
@@ -55,6 +57,8 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   RATE_PLAN_UNMAPPED: 'Booking.com — Rate Plan Unmapped',
   BOOKING_QUOTA_LOW: 'Booking Quota — Running Low',
   DYNAMIC_TEMPLATE_FAILED: 'Automated Message — Failed to Send',
+  WARRANTY_EXPIRING_SOON: 'Inventory — Warranty Expiring Soon',
+  WARRANTY_EXPIRED: 'Inventory — Warranty Expired',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -76,6 +80,8 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   RATE_PLAN_UNMAPPED: '/',
   BOOKING_QUOTA_LOW: '/',
   DYNAMIC_TEMPLATE_FAILED: '/',
+  WARRANTY_EXPIRING_SOON: '/inventory',
+  WARRANTY_EXPIRED: '/inventory',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -112,6 +118,10 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
       return `${context.percentage_remaining || 0}% remaining`
     case 'DYNAMIC_TEMPLATE_FAILED':
       return `${context.template_name || 'Template'} — ${context.guest_name || 'Guest'}`
+    case 'WARRANTY_EXPIRING_SOON':
+      return `${context.itemName} warranty expires on ${context.expiryDate}.`
+    case 'WARRANTY_EXPIRED':
+      return `${context.itemName} warranty expired on ${context.expiryDate}.`
     default:
       return ''
   }
@@ -208,5 +218,31 @@ export const mockAlerts: Alert[] = [
     auto_resolve: false,
     resolve_condition: 'Host manually resolves',
     context: { listing_id: 'listing-villa-1', listing_name: 'Villa Kayu', reservation_a_id: 'res-a', reservation_a_guest: 'John Doe', reservation_b_id: 'res-b', reservation_b_guest: 'Jane Smith', overlap_start: '2026-05-10T14:00:00Z', overlap_end: '2026-05-12T11:00:00Z' },
+  },
+  {
+    alert_id: 'alert-warranty-001',
+    type: 'WARRANTY_EXPIRING_SOON',
+    severity: 'WARNING',
+    status: 'ACTIVE',
+    listing_id: null,
+    property_id: null,
+    triggered_at: '2026-05-28T08:00:00.000Z',
+    resolved_at: null,
+    auto_resolve: false,
+    resolve_condition: 'Warranty renewed or item replaced',
+    context: { itemName: 'Smart TV 55"', expiryDate: 'Jun 10, 2026' },
+  },
+  {
+    alert_id: 'alert-warranty-002',
+    type: 'WARRANTY_EXPIRED',
+    severity: 'WARNING',
+    status: 'ACTIVE',
+    listing_id: null,
+    property_id: null,
+    triggered_at: '2025-11-02T08:00:00.000Z',
+    resolved_at: null,
+    auto_resolve: false,
+    resolve_condition: 'Warranty renewed or item replaced',
+    context: { itemName: 'AC Split 1 PK', expiryDate: 'Nov 1, 2025' },
   },
 ]
