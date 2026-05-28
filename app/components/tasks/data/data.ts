@@ -2,18 +2,11 @@ import { Icon } from '#components'
 import { h } from 'vue'
 
 export const labels = [
-  {
-    value: 'bug',
-    label: 'Bug',
-  },
-  {
-    value: 'feature',
-    label: 'Feature',
-  },
-  {
-    value: 'documentation',
-    label: 'Documentation',
-  },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'replacement', label: 'Replacement' },
+  { value: 'inspection', label: 'Inspection' },
+  { value: 'cleaning', label: 'Cleaning' },
+  { value: 'other', label: 'Other' },
 ]
 
 export const statuses = [

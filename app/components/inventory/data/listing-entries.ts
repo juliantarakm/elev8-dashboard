@@ -42,7 +42,7 @@ export const mockListingEntries: ListingInventoryEntry[] = [
     itemId: 'inv-010',
     listingName: 'The R Villa Merapi',
     quantity: 4,
-    condition: 'good',
+    condition: 'damaged',
     lastUpdated: '2026-05-15T09:00:00.000Z',
   },
   {

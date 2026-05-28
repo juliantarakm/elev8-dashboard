@@ -3,6 +3,8 @@ import type { Table } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
 import { computed } from 'vue'
 import { priorities, statuses } from '../data/data'
+import { shortListingName } from './columns'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import DataTableFacetedFilter from './DataTableFacetedFilter.vue'
 import DataTableViewOptions from './DataTableViewOptions.vue'
 
@@ -13,16 +15,24 @@ interface DataTableToolbarProps {
 const props = defineProps<DataTableToolbarProps>()
 
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0)
+
+const listingOptions = BALI_LISTINGS.map(l => ({ value: l, label: shortListingName(l) }))
 </script>
 
 <template>
   <div class="flex items-center justify-between">
-    <div class="flex flex-1 items-center space-x-2">
+    <div class="flex flex-1 flex-wrap items-center gap-2">
       <Input
         placeholder="Filter tasks..."
         :model-value="(table.getColumn('title')?.getFilterValue() as string) ?? ''"
         class="h-8 w-[150px] lg:w-[250px]"
-        @input="table.getColumn('title')?.setFilterValue($event.target.value)"
+        @input="table.getColumn('title')?.setFilterValue(($event.target as HTMLInputElement).value)"
+      />
+      <DataTableFacetedFilter
+        v-if="table.getColumn('listing')"
+        :column="table.getColumn('listing')"
+        title="Listing"
+        :options="listingOptions"
       />
       <DataTableFacetedFilter
         v-if="table.getColumn('status')"
@@ -36,7 +46,6 @@ const isFiltered = computed(() => props.table.getState().columnFilters.length > 
         title="Priority"
         :options="priorities"
       />
-
       <Button
         v-if="isFiltered"
         variant="ghost"

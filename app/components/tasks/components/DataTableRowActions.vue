@@ -2,15 +2,34 @@
 import type { Row } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
 import { computed } from 'vue'
-import { labels } from '../data/data'
-import { taskSchema } from '../data/schema'
+import { statuses } from '../data/data'
+import { useTaskStore } from '@/composables/useTaskStore'
+import { toast } from 'vue-sonner'
 
 interface DataTableRowActionsProps {
   row: Row<Task>
 }
 const props = defineProps<DataTableRowActionsProps>()
 
-const task = computed(() => taskSchema.parse(props.row.original))
+const { updateStatus, deleteTask } = useTaskStore()
+const task = computed(() => props.row.original)
+
+function handleStatusChange(status: string) {
+  updateStatus(task.value.id, status)
+  if (task.value.linkedInventoryItemName) {
+    if (status === 'done') {
+      toast.success(`HostBuddy updated: ${task.value.linkedInventoryItemName} condition → Good`)
+    }
+    else if (status === 'canceled') {
+      toast.info(`HostBuddy reverted: ${task.value.linkedInventoryItemName} condition restored`)
+    }
+  }
+}
+
+function handleDelete() {
+  deleteTask(task.value.id)
+  toast.success(`Task "${task.value.title}" deleted`)
+}
 </script>
 
 <template>
@@ -24,23 +43,24 @@ const task = computed(() => taskSchema.parse(props.row.original))
         <span class="sr-only">Open menu</span>
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" class="w-[160px]">
-      <DropdownMenuItem>Edit</DropdownMenuItem>
-      <DropdownMenuItem>Make a copy</DropdownMenuItem>
-      <DropdownMenuItem>Favorite</DropdownMenuItem>
-      <DropdownMenuSeparator />
+    <DropdownMenuContent align="end" class="w-[180px]">
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
+        <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuRadioGroup :value="task.label">
-            <DropdownMenuRadioItem v-for="label in labels" :key="label.value" :value="label.value">
-              {{ label.label }}
+          <DropdownMenuRadioGroup :value="task.status">
+            <DropdownMenuRadioItem
+              v-for="status in statuses"
+              :key="status.value"
+              :value="status.value"
+              @click="handleStatusChange(status.value)"
+            >
+              {{ status.label }}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>
+      <DropdownMenuItem class="text-destructive" @click="handleDelete">
         Delete
         <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
       </DropdownMenuItem>
