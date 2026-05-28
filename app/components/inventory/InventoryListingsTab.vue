@@ -174,6 +174,6 @@ function formatRelativeDate(iso: string) {
       </Table>
     </div>
 
-    <ListingInventoryDrawer v-model:open="drawerOpen" :entry="selectedEntry" />
+    <InventoryListingDrawer v-model:open="drawerOpen" :entry="selectedEntry" />
   </div>
 </template>
