@@ -32,6 +32,7 @@ const condition = ref<ListingInventoryEntry['condition']>('good')
 const stockLevel = ref<number | undefined>(undefined)
 const notes = ref('')
 const itemSearch = ref('')
+const itemPickerOpen = ref(false)
 
 const selectedItem = computed(() => {
   if (!selectedItemId.value) return null
@@ -55,6 +56,7 @@ function resetForm() {
   stockLevel.value = undefined
   notes.value = ''
   itemSearch.value = ''
+  itemPickerOpen.value = false
 }
 
 function populateForm(entry: ListingInventoryEntry) {
@@ -110,7 +112,7 @@ function handleSave() {
       <div class="flex flex-col gap-4 px-4 py-4">
         <div class="flex flex-col gap-1.5">
           <Label>Item <span class="text-destructive">*</span></Label>
-          <Popover>
+          <Popover v-model:open="itemPickerOpen">
             <PopoverTrigger as-child>
               <Button variant="outline" class="justify-between w-full font-normal">
                 {{ selectedItem ? selectedItem.name : 'Select item from catalog...' }}
@@ -127,7 +129,7 @@ function handleSave() {
                       v-for="item in filteredItems"
                       :key="item.id"
                       :value="item.id"
-                      @select="selectedItemId = item.id"
+                      @select="() => { selectedItemId = item.id; itemPickerOpen = false }"
                     >
                       <Icon
                         name="lucide:check"
