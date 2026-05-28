@@ -107,7 +107,7 @@ function handleSave() {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="flex flex-col gap-4 py-4">
+      <div class="flex flex-col gap-4 px-4 py-4">
         <div class="flex flex-col gap-1.5">
           <Label>Item <span class="text-destructive">*</span></Label>
           <Popover>

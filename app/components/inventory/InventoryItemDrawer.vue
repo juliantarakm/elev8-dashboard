@@ -149,7 +149,7 @@ function handleSave() {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="flex flex-col gap-4 py-4">
+      <div class="flex flex-col gap-4 px-4 py-4">
         <div class="flex flex-col gap-1.5">
           <Label for="item-name">Item Name <span class="text-destructive">*</span></Label>
           <Input id="item-name" v-model="name" placeholder="e.g. King Bed, Shampoo" />
