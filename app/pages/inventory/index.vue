@@ -6,7 +6,7 @@ import { useInventoryListings } from '@/composables/useInventoryListings'
 const activeTab = ref<'catalog' | 'listings'>('catalog')
 
 const { items } = useInventoryCatalog()
-const { entries } = useInventoryListings()
+const { entries, lowStockCount } = useInventoryListings()
 
 const totalAssetValue = computed(() =>
   items.value
@@ -42,7 +42,7 @@ const damagedCount = computed(() =>
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <div class="rounded-lg border p-4">
         <p class="text-sm text-muted-foreground">Total Items</p>
         <p class="text-2xl font-bold">{{ items.length }}</p>
@@ -67,6 +67,15 @@ const damagedCount = computed(() =>
           :class="damagedCount > 0 ? 'text-destructive' : ''"
         >
           {{ damagedCount }}
+        </p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Low Stock</p>
+        <p
+          class="text-2xl font-bold"
+          :class="lowStockCount > 0 ? 'text-orange-500' : ''"
+        >
+          {{ lowStockCount }}
         </p>
       </div>
     </div>

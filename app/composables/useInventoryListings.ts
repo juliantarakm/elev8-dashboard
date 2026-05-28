@@ -11,6 +11,12 @@ export function useInventoryListings() {
   const filterCategory = ref<string>('all')
   const filterCondition = ref<ItemCondition | 'all'>('all')
 
+  const LOW_STOCK_THRESHOLD = 5
+
+  const lowStockCount = computed(() =>
+    entries.value.filter(e => e.stockLevel !== undefined && e.stockLevel <= LOW_STOCK_THRESHOLD).length,
+  )
+
   const filteredEntries = computed(() => {
     return entries.value.filter((entry) => {
       if (filterListing.value !== 'all' && entry.listingName !== filterListing.value) return false
@@ -43,6 +49,7 @@ export function useInventoryListings() {
   return {
     entries,
     filteredEntries,
+    lowStockCount,
     filterListing,
     filterCategory,
     filterCondition,

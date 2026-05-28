@@ -51,7 +51,7 @@ export const mockListingEntries: ListingInventoryEntry[] = [
     listingName: 'The R Villa Merapi',
     quantity: 12,
     condition: 'good',
-    stockLevel: 8,
+    stockLevel: 2,
     lastUpdated: '2026-05-22T07:45:00.000Z',
   },
   {
@@ -60,7 +60,7 @@ export const mockListingEntries: ListingInventoryEntry[] = [
     listingName: 'The R Villa Merapi',
     quantity: 12,
     condition: 'good',
-    stockLevel: 5,
+    stockLevel: 3,
     lastUpdated: '2026-05-22T07:45:00.000Z',
   },
   {

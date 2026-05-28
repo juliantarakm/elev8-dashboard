@@ -6,8 +6,10 @@ import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryListings } from '@/composables/useInventoryListings'
 import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 
+const LOW_STOCK_THRESHOLD = 5
+
 const { getItemById } = useInventoryCatalog()
-const { filteredEntries, filterListing, filterCondition, deleteEntry } = useInventoryListings()
+const { entries, filteredEntries, filterListing, filterCondition, deleteEntry } = useInventoryListings()
 
 const drawerOpen = ref(false)
 const selectedEntry = ref<ListingInventoryEntry | null>(null)
@@ -44,6 +46,33 @@ function conditionVariant(cond: ItemCondition) {
     missing: 'bg-red-100 text-red-700 border-red-200',
   }
   return map[cond]
+}
+
+function downloadCSV() {
+  const headers = ['Item', 'Category', 'Listing', 'Quantity', 'Unit', 'Condition', 'Stock Level', 'Last Updated']
+  const rows = entries.value.map((e) => {
+    const item = getItemById(e.itemId)
+    return [
+      item?.name ?? e.itemId,
+      item?.category ?? '',
+      e.listingName,
+      e.quantity.toString(),
+      item?.unit ?? '',
+      e.condition,
+      e.stockLevel?.toString() ?? '',
+      new Date(e.lastUpdated).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
+    ]
+  })
+  const csv = [headers, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'inventory-per-listing.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function formatRelativeDate(iso: string) {
@@ -85,7 +114,11 @@ function formatRelativeDate(iso: string) {
         </Button>
       </div>
 
-      <div class="ml-auto">
+      <div class="ml-auto flex items-center gap-2">
+        <Button variant="outline" size="sm" @click="downloadCSV">
+          <Icon name="lucide:download" class="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
         <Button size="sm" @click="openAdd">
           <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           Add Entry
@@ -135,11 +168,17 @@ function formatRelativeDate(iso: string) {
                 {{ entry.condition }}
               </span>
             </TableCell>
-            <TableCell class="text-muted-foreground">
-              <span v-if="entry.stockLevel !== undefined">
-                {{ entry.stockLevel }} {{ getItemById(entry.itemId)?.unit ?? '' }}
+            <TableCell>
+              <span v-if="entry.stockLevel !== undefined" class="flex items-center gap-1.5">
+                <span class="text-muted-foreground">{{ entry.stockLevel }} {{ getItemById(entry.itemId)?.unit ?? '' }}</span>
+                <span
+                  v-if="entry.stockLevel <= LOW_STOCK_THRESHOLD"
+                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-700 border-orange-200"
+                >
+                  Low
+                </span>
               </span>
-              <span v-else>—</span>
+              <span v-else class="text-muted-foreground">—</span>
             </TableCell>
             <TableCell class="text-sm text-muted-foreground">
               {{ formatRelativeDate(entry.lastUpdated) }}

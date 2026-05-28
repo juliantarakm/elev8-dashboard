@@ -67,6 +67,10 @@ export const mockInventoryItems: InventoryItem[] = [
     warrantyExpiry: '2026-06-10',
     supplier: { name: 'Samsung Store Denpasar', contact: '+62 361 789012' },
     notes: 'Samsung 4K, HDMI + Netflix built-in',
+    documents: [
+      { name: 'Samsung Warranty Card.pdf', url: 'mock://warranty-smart-tv', type: 'warranty' },
+      { name: 'Purchase Receipt.jpg', url: 'mock://receipt-smart-tv', type: 'receipt' },
+    ],
   },
   {
     id: 'inv-003',
@@ -144,6 +148,10 @@ export const mockInventoryItems: InventoryItem[] = [
     warrantyExpiry: '2025-11-01',
     supplier: { name: 'Daikin Authorized Bali', contact: '+62 361 556677' },
     notes: 'Daikin 1PK Inverter. Annual servicing required.',
+    documents: [
+      { name: 'Daikin Warranty Certificate.pdf', url: 'mock://warranty-ac-split', type: 'warranty' },
+      { name: 'Installation Receipt.pdf', url: 'mock://receipt-ac-split', type: 'receipt' },
+    ],
   },
   {
     id: 'inv-011',

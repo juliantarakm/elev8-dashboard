@@ -5,10 +5,13 @@ import { INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
 import type { InventoryItem } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 
-const { filteredItems, searchValue, activeCategoryFilter, activeTypeFilter, deleteItem } = useInventoryCatalog()
+const { items, filteredItems, searchValue, activeCategoryFilter, activeTypeFilter, deleteItem } = useInventoryCatalog()
 
 const drawerOpen = ref(false)
 const selectedItem = ref<InventoryItem | null>(null)
+
+const docViewOpen = ref(false)
+const docViewItem = ref<InventoryItem | null>(null)
 
 function openAdd() {
   selectedItem.value = null
@@ -23,6 +26,11 @@ function openEdit(item: InventoryItem) {
 function handleDelete(item: InventoryItem) {
   deleteItem(item.id)
   toast.success(`"${item.name}" removed from catalog`)
+}
+
+function openDocView(item: InventoryItem) {
+  docViewItem.value = item
+  docViewOpen.value = true
 }
 
 function warrantyStatus(expiry?: string): 'expired' | 'soon' | 'ok' | 'none' {
@@ -43,6 +51,36 @@ function formatIDR(val?: number) {
 function formatDate(d?: string) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  warranty: 'Warranty',
+  receipt: 'Receipt',
+  invoice: 'Invoice',
+  other: 'Other',
+}
+
+function downloadCSV() {
+  const headers = ['Name', 'Category', 'Type', 'Unit', 'Purchase Value (IDR)', 'Purchase Date', 'Warranty Expiry']
+  const rows = items.value.map(i => [
+    i.name,
+    i.category,
+    i.type,
+    i.unit,
+    i.purchaseValue?.toString() ?? '',
+    i.purchaseDate ?? '',
+    i.warrantyExpiry ?? '',
+  ])
+  const csv = [headers, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'inventory-catalog.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -78,7 +116,11 @@ function formatDate(d?: string) {
         </SelectContent>
       </Select>
 
-      <div class="ml-auto">
+      <div class="ml-auto flex items-center gap-2">
+        <Button variant="outline" size="sm" @click="downloadCSV">
+          <Icon name="lucide:download" class="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
         <Button size="sm" @click="openAdd">
           <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
           Add Item
@@ -125,24 +167,36 @@ function formatDate(d?: string) {
             <TableCell class="text-muted-foreground">{{ item.unit }}</TableCell>
             <TableCell class="text-muted-foreground">{{ formatIDR(item.purchaseValue) }}</TableCell>
             <TableCell>
-              <template v-if="warrantyStatus(item.warrantyExpiry) === 'none'">
-                <span class="text-muted-foreground">—</span>
-              </template>
-              <Badge
-                v-else-if="warrantyStatus(item.warrantyExpiry) === 'expired'"
-                variant="destructive"
-              >
-                Expired
-              </Badge>
-              <Badge
-                v-else-if="warrantyStatus(item.warrantyExpiry) === 'soon'"
-                class="bg-amber-100 text-amber-700 border-amber-200"
-              >
-                Expiring soon
-              </Badge>
-              <span v-else class="text-sm text-muted-foreground">
-                {{ formatDate(item.warrantyExpiry) }}
-              </span>
+              <div class="flex items-center gap-1.5">
+                <template v-if="warrantyStatus(item.warrantyExpiry) === 'none'">
+                  <span class="text-muted-foreground">—</span>
+                </template>
+                <Badge
+                  v-else-if="warrantyStatus(item.warrantyExpiry) === 'expired'"
+                  variant="destructive"
+                >
+                  Expired
+                </Badge>
+                <Badge
+                  v-else-if="warrantyStatus(item.warrantyExpiry) === 'soon'"
+                  class="bg-amber-100 text-amber-700 border-amber-200"
+                >
+                  Expiring soon
+                </Badge>
+                <span v-else class="text-sm text-muted-foreground">
+                  {{ formatDate(item.warrantyExpiry) }}
+                </span>
+                <Button
+                  v-if="item.documents?.some(d => d.type === 'warranty' || d.type === 'receipt')"
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6 shrink-0"
+                  aria-label="View documents"
+                  @click.stop="openDocView(item)"
+                >
+                  <Icon name="lucide:paperclip" class="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
             </TableCell>
             <TableCell @click.stop>
               <DropdownMenu>
@@ -175,5 +229,45 @@ function formatDate(d?: string) {
     </div>
 
     <InventoryItemDrawer v-model:open="drawerOpen" :item="selectedItem" />
+
+    <!-- Warranty / Document Quick-View -->
+    <Dialog v-model:open="docViewOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Documents — {{ docViewItem?.name }}</DialogTitle>
+          <DialogDescription>Attached warranty cards, receipts, and invoices.</DialogDescription>
+        </DialogHeader>
+        <div class="flex flex-col gap-2 py-2">
+          <div
+            v-for="(doc, i) in docViewItem?.documents"
+            :key="i"
+            class="flex items-center gap-3 rounded-md border p-3"
+          >
+            <Icon name="lucide:file-text" class="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium truncate">{{ doc.name }}</p>
+              <Badge variant="outline" class="mt-0.5 text-xs capitalize">
+                {{ DOC_TYPE_LABELS[doc.type] ?? doc.type }}
+              </Badge>
+            </div>
+            <a
+              v-if="doc.url.startsWith('data:')"
+              :href="doc.url"
+              :download="doc.name"
+              class="shrink-0"
+            >
+              <Button variant="outline" size="sm">
+                <Icon name="lucide:download" class="mr-1.5 h-3.5 w-3.5" />
+                Download
+              </Button>
+            </a>
+            <span v-else class="text-xs text-muted-foreground shrink-0">Mock file</span>
+          </div>
+          <p v-if="!docViewItem?.documents?.length" class="text-sm text-muted-foreground text-center py-4">
+            No documents attached.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
