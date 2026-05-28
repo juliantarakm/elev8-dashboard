@@ -22,7 +22,7 @@ function openEdit(item: InventoryItem) {
 
 function handleDelete(item: InventoryItem) {
   deleteItem(item.id)
-  toast.success(`"${item.name}" dihapus dari catalog`)
+  toast.success(`"${item.name}" removed from catalog`)
 }
 
 function warrantyStatus(expiry?: string): 'expired' | 'soon' | 'ok' | 'none' {
@@ -42,7 +42,7 @@ function formatIDR(val?: number) {
 
 function formatDate(d?: string) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 
@@ -51,7 +51,7 @@ function formatDate(d?: string) {
     <div class="flex flex-wrap items-center gap-2">
       <div class="relative w-48">
         <Icon name="lucide:search" class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input v-model="searchValue" placeholder="Cari item..." class="pl-8" />
+        <Input v-model="searchValue" placeholder="Search items..." class="pl-8" />
       </div>
 
       <div class="flex flex-wrap gap-1.5">
@@ -63,7 +63,7 @@ function formatDate(d?: string) {
           class="h-8"
           @click="activeCategoryFilter = cat as typeof activeCategoryFilter"
         >
-          {{ cat === 'all' ? 'Semua' : cat }}
+          {{ cat === 'all' ? 'All' : cat }}
         </Button>
       </div>
 
@@ -72,7 +72,7 @@ function formatDate(d?: string) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Semua Tipe</SelectItem>
+          <SelectItem value="all">All Types</SelectItem>
           <SelectItem value="permanent">Permanent</SelectItem>
           <SelectItem value="consumable">Consumable</SelectItem>
         </SelectContent>
@@ -91,12 +91,12 @@ function formatDate(d?: string) {
         <TableHeader>
           <TableRow>
             <TableHead class="w-12" />
-            <TableHead>Nama</TableHead>
-            <TableHead>Kategori</TableHead>
-            <TableHead>Tipe</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Unit</TableHead>
-            <TableHead>Harga Beli</TableHead>
-            <TableHead>Garansi</TableHead>
+            <TableHead>Purchase Value</TableHead>
+            <TableHead>Warranty</TableHead>
             <TableHead class="w-20" />
           </TableRow>
         </TableHeader>
@@ -132,13 +132,13 @@ function formatDate(d?: string) {
                 v-else-if="warrantyStatus(item.warrantyExpiry) === 'expired'"
                 variant="destructive"
               >
-                Garansi habis
+                Expired
               </Badge>
               <Badge
                 v-else-if="warrantyStatus(item.warrantyExpiry) === 'soon'"
                 class="bg-amber-100 text-amber-700 border-amber-200"
               >
-                Segera berakhir
+                Expiring soon
               </Badge>
               <span v-else class="text-sm text-muted-foreground">
                 {{ formatDate(item.warrantyExpiry) }}
@@ -159,7 +159,7 @@ function formatDate(d?: string) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem class="text-destructive" @click="handleDelete(item)">
                     <Icon name="lucide:trash-2" class="mr-2 h-4 w-4" />
-                    Hapus
+                    Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -167,7 +167,7 @@ function formatDate(d?: string) {
           </TableRow>
           <TableRow v-if="filteredItems.length === 0">
             <TableCell colspan="8" class="text-center text-muted-foreground py-10">
-              Tidak ada item ditemukan.
+              No items found.
             </TableCell>
           </TableRow>
         </TableBody>

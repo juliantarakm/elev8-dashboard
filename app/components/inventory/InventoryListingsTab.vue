@@ -25,11 +25,11 @@ function openEdit(entry: ListingInventoryEntry) {
 function handleDelete(entry: ListingInventoryEntry) {
   const item = getItemById(entry.itemId)
   deleteEntry(entry.id)
-  toast.success(`"${item?.name ?? 'Item'}" dihapus dari listing`)
+  toast.success(`"${item?.name ?? 'Item'}" removed from listing`)
 }
 
 const CONDITIONS: { value: ItemCondition | 'all', label: string }[] = [
-  { value: 'all', label: 'Semua' },
+  { value: 'all', label: 'All' },
   { value: 'good', label: 'Good' },
   { value: 'fair', label: 'Fair' },
   { value: 'damaged', label: 'Damaged' },
@@ -50,10 +50,10 @@ function formatRelativeDate(iso: string) {
   const date = new Date(iso)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return 'Hari ini'
-  if (diff === 1) return 'Kemarin'
-  if (diff < 7) return `${diff} hari lalu`
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Yesterday'
+  if (diff < 7) return `${diff} days ago`
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 
@@ -62,10 +62,10 @@ function formatRelativeDate(iso: string) {
     <div class="flex flex-wrap items-center gap-2">
       <Select v-model="filterListing">
         <SelectTrigger class="w-56 h-8">
-          <SelectValue placeholder="Semua Listing" />
+          <SelectValue placeholder="All Listings" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Semua Listing</SelectItem>
+          <SelectItem value="all">All Listings</SelectItem>
           <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
             {{ listing }}
           </SelectItem>
@@ -99,9 +99,9 @@ function formatRelativeDate(iso: string) {
           <TableRow>
             <TableHead>Item</TableHead>
             <TableHead>Listing</TableHead>
-            <TableHead>Jumlah</TableHead>
-            <TableHead>Kondisi</TableHead>
-            <TableHead>Stok Level</TableHead>
+            <TableHead>Quantity</TableHead>
+            <TableHead>Condition</TableHead>
+            <TableHead>Stock Level</TableHead>
             <TableHead>Last Updated</TableHead>
             <TableHead class="w-20" />
           </TableRow>
@@ -159,7 +159,7 @@ function formatRelativeDate(iso: string) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem class="text-destructive" @click="handleDelete(entry)">
                     <Icon name="lucide:trash-2" class="mr-2 h-4 w-4" />
-                    Hapus
+                    Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -167,7 +167,7 @@ function formatRelativeDate(iso: string) {
           </TableRow>
           <TableRow v-if="filteredEntries.length === 0">
             <TableCell colspan="7" class="text-center text-muted-foreground py-10">
-              Tidak ada entry ditemukan.
+              No entries found.
             </TableCell>
           </TableRow>
         </TableBody>

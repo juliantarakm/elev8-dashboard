@@ -10,7 +10,7 @@ const activeTab = ref<'catalog' | 'listings'>('catalog')
           Inventory
         </h2>
         <p class="text-muted-foreground">
-          Lacak aset dan perlengkapan properti per listing.
+          Track assets and supplies across your property listings.
         </p>
       </div>
     </div>

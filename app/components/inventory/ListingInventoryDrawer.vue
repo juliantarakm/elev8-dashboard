@@ -113,15 +113,15 @@ function handleSave() {
           <Popover>
             <PopoverTrigger as-child>
               <Button variant="outline" class="justify-between w-full font-normal">
-                {{ selectedItem ? selectedItem.name : 'Pilih item dari catalog...' }}
+                {{ selectedItem ? selectedItem.name : 'Select item from catalog...' }}
                 <Icon name="lucide:chevrons-up-down" class="ml-2 h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-72 p-0">
               <Command>
-                <CommandInput v-model="itemSearch" placeholder="Cari item..." />
+                <CommandInput v-model="itemSearch" placeholder="Search items..." />
                 <CommandList>
-                  <CommandEmpty>Item tidak ditemukan.</CommandEmpty>
+                  <CommandEmpty>No items found.</CommandEmpty>
                   <CommandGroup>
                     <CommandItem
                       v-for="item in filteredItems"
@@ -150,7 +150,7 @@ function handleSave() {
           <Label>Listing <span class="text-destructive">*</span></Label>
           <Select v-model="selectedListing">
             <SelectTrigger>
-              <SelectValue placeholder="Pilih listing..." />
+              <SelectValue placeholder="Select listing..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
@@ -161,12 +161,12 @@ function handleSave() {
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <Label>Jumlah ({{ selectedItem?.unit || 'pcs' }})</Label>
+          <Label>Quantity ({{ selectedItem?.unit || 'pcs' }})</Label>
           <Input v-model.number="quantity" type="number" min="1" />
         </div>
 
         <div v-if="!isConsumable" class="flex flex-col gap-1.5">
-          <Label>Kondisi</Label>
+          <Label>Condition</Label>
           <RadioGroup v-model="condition" class="flex flex-wrap gap-3">
             <div v-for="cond in ['good', 'fair', 'damaged', 'missing']" :key="cond" class="flex items-center gap-2">
               <RadioGroupItem :id="`cond-${cond}`" :value="cond" />
@@ -176,22 +176,22 @@ function handleSave() {
         </div>
 
         <div v-if="isConsumable" class="flex flex-col gap-1.5">
-          <Label>Stok Saat Ini ({{ selectedItem?.unit || 'pcs' }})</Label>
+          <Label>Current Stock ({{ selectedItem?.unit || 'pcs' }})</Label>
           <Input v-model.number="stockLevel" type="number" min="0" placeholder="0" />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <Label>Catatan</Label>
-          <Textarea v-model="notes" placeholder="Kondisi detail, lokasi di properti, dll." rows="3" />
+          <Label>Notes</Label>
+          <Textarea v-model="notes" placeholder="Condition details, location in property, etc." rows="3" />
         </div>
       </div>
 
       <SheetFooter>
         <Button variant="outline" @click="isOpen = false">
-          Batal
+          Cancel
         </Button>
         <Button :disabled="!selectedItemId || !selectedListing" @click="handleSave">
-          {{ isEditing ? 'Simpan Perubahan' : 'Tambah Entry' }}
+          {{ isEditing ? 'Save Changes' : 'Add Entry' }}
         </Button>
       </SheetFooter>
     </SheetContent>

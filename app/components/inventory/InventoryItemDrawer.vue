@@ -151,13 +151,13 @@ function handleSave() {
 
       <div class="flex flex-col gap-4 py-4">
         <div class="flex flex-col gap-1.5">
-          <Label for="item-name">Nama Item <span class="text-destructive">*</span></Label>
-          <Input id="item-name" v-model="name" placeholder="Cth: Kasur King, Sabun Mandi" />
+          <Label for="item-name">Item Name <span class="text-destructive">*</span></Label>
+          <Input id="item-name" v-model="name" placeholder="e.g. King Bed, Shampoo" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1.5">
-            <Label>Kategori</Label>
+            <Label>Category</Label>
             <Select v-model="category">
               <SelectTrigger>
                 <SelectValue />
@@ -171,12 +171,12 @@ function handleSave() {
           </div>
           <div class="flex flex-col gap-1.5">
             <Label>Unit</Label>
-            <Input v-model="unit" placeholder="pcs / botol / set" />
+            <Input v-model="unit" placeholder="pcs / bottle / set" />
           </div>
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <Label>Tipe</Label>
+          <Label>Type</Label>
           <RadioGroup v-model="type" class="flex gap-4">
             <div class="flex items-center gap-2">
               <RadioGroupItem id="type-permanent" value="permanent" />
@@ -190,7 +190,7 @@ function handleSave() {
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <Label>Foto</Label>
+          <Label>Photo</Label>
           <div v-if="photo" class="relative w-24 h-24 rounded-md overflow-hidden border">
             <img :src="photo" alt="item photo" class="w-full h-full object-cover" />
             <button
@@ -203,7 +203,7 @@ function handleSave() {
           <label v-else class="flex items-center gap-2 cursor-pointer w-fit">
             <Button variant="outline" size="sm" as="span">
               <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
-              Upload Foto
+              Upload Photo
             </Button>
             <input type="file" accept="image/*" class="hidden" @change="handlePhotoUpload" />
           </label>
@@ -212,10 +212,10 @@ function handleSave() {
         <Separator />
 
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Informasi Pembelian</p>
+          <p class="text-sm font-medium">Purchase Information</p>
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1.5">
-              <Label>Harga Beli (IDR)</Label>
+              <Label>Purchase Value (IDR)</Label>
               <Input
                 v-model.number="purchaseValue"
                 type="number"
@@ -223,12 +223,12 @@ function handleSave() {
               />
             </div>
             <div class="flex flex-col gap-1.5">
-              <Label>Tanggal Beli</Label>
+              <Label>Purchase Date</Label>
               <Input v-model="purchaseDate" type="date" />
             </div>
           </div>
           <div class="flex flex-col gap-1.5">
-            <Label>Expired Garansi</Label>
+            <Label>Warranty Expiry</Label>
             <Input v-model="warrantyExpiry" type="date" />
           </div>
         </div>
@@ -238,19 +238,19 @@ function handleSave() {
         <div class="flex flex-col gap-3">
           <p class="text-sm font-medium">Supplier / Vendor</p>
           <div class="flex flex-col gap-1.5">
-            <Label>Nama Supplier</Label>
-            <Input v-model="supplierName" placeholder="Cth: Ace Hardware Bali" />
+            <Label>Supplier Name</Label>
+            <Input v-model="supplierName" placeholder="e.g. Ace Hardware Bali" />
           </div>
           <div class="flex flex-col gap-1.5">
-            <Label>Kontak</Label>
-            <Input v-model="supplierContact" placeholder="Nomor HP atau email" />
+            <Label>Contact</Label>
+            <Input v-model="supplierContact" placeholder="Phone number or email" />
           </div>
         </div>
 
         <Separator />
 
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Dokumen</p>
+          <p class="text-sm font-medium">Documents</p>
           <div v-if="documents.length > 0" class="flex flex-col gap-2">
             <div
               v-for="(doc, i) in documents"
@@ -264,10 +264,10 @@ function handleSave() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="warranty">Garansi</SelectItem>
-                  <SelectItem value="receipt">Struk</SelectItem>
+                  <SelectItem value="warranty">Warranty</SelectItem>
+                  <SelectItem value="receipt">Receipt</SelectItem>
                   <SelectItem value="invoice">Invoice</SelectItem>
-                  <SelectItem value="other">Lainnya</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="ghost" size="icon" class="h-7 w-7" @click="removeDocument(i)">
@@ -278,27 +278,27 @@ function handleSave() {
           <label class="flex items-center gap-2 cursor-pointer w-fit">
             <Button variant="outline" size="sm" as="span">
               <Icon name="lucide:paperclip" class="mr-2 h-4 w-4" />
-              Upload Dokumen
+              Upload Document
             </Button>
             <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocumentUpload" />
           </label>
-          <p class="text-xs text-muted-foreground">PDF, JPG, PNG. Bisa upload lebih dari satu.</p>
+          <p class="text-xs text-muted-foreground">PDF, JPG, PNG. Multiple files supported.</p>
         </div>
 
         <Separator />
 
         <div class="flex flex-col gap-1.5">
-          <Label>Catatan</Label>
-          <Textarea v-model="notes" placeholder="Informasi tambahan tentang item ini..." rows="3" />
+          <Label>Notes</Label>
+          <Textarea v-model="notes" placeholder="Additional notes about this item..." rows="3" />
         </div>
       </div>
 
       <SheetFooter>
         <Button variant="outline" @click="isOpen = false">
-          Batal
+          Cancel
         </Button>
         <Button :disabled="!name.trim()" @click="handleSave">
-          {{ isEditing ? 'Simpan Perubahan' : 'Tambah Item' }}
+          {{ isEditing ? 'Save Changes' : 'Add Item' }}
         </Button>
       </SheetFooter>
     </SheetContent>
