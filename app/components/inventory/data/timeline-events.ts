@@ -7,12 +7,15 @@ export type TimelineEventType =
   | 'task_linked'
   | 'task_completed'
   | 'task_canceled'
+  | 'status_changed'
+  | 'maintenance_completed'
 
 export type TimelineActor = 'hostbuddy' | 'staff'
 
 export interface InventoryTimelineEvent {
   id: string
-  entryId: string
+  entryId?: string
+  itemId?: string
   type: TimelineEventType
   actor: TimelineActor
   timestamp: string
@@ -21,6 +24,7 @@ export interface InventoryTimelineEvent {
     to?: string | number
     taskId?: string
     taskTitle?: string
+    scheduleName?: string
   }
 }
 
@@ -131,5 +135,45 @@ export const mockTimelineEvents: InventoryTimelineEvent[] = [
       taskTitle: 'Coffee maker rusak, perlu penggantian',
       to: 'damaged',
     },
+  },
+
+  // inv-004 (Coffee Maker catalog item → under_maintenance via HostBuddy)
+  {
+    id: 'evt-item-004-a',
+    itemId: 'inv-004',
+    type: 'status_changed',
+    actor: 'hostbuddy',
+    timestamp: '2026-05-28T08:00:00.000Z',
+    details: { from: 'active', to: 'under_maintenance', taskTitle: 'Coffee maker rusak, perlu penggantian' },
+  },
+
+  // inv-010 (AC Split catalog item → under_maintenance via HostBuddy)
+  {
+    id: 'evt-item-010-a',
+    itemId: 'inv-010',
+    type: 'status_changed',
+    actor: 'hostbuddy',
+    timestamp: '2026-05-27T10:15:00.000Z',
+    details: { from: 'active', to: 'under_maintenance', taskTitle: 'AC Split tidak dingin — perlu servis' },
+  },
+
+  // inv-002 (Smart TV → Screen Cleaning completed)
+  {
+    id: 'evt-item-002-a',
+    itemId: 'inv-002',
+    type: 'maintenance_completed',
+    actor: 'staff',
+    timestamp: '2026-03-10T09:00:00.000Z',
+    details: { scheduleName: 'Screen Cleaning' },
+  },
+
+  // inv-009 (Rice Cooker → Descaling completed — last time, now overdue)
+  {
+    id: 'evt-item-009-a',
+    itemId: 'inv-009',
+    type: 'maintenance_completed',
+    actor: 'staff',
+    timestamp: '2025-11-15T10:00:00.000Z',
+    details: { scheduleName: 'Descaling' },
   },
 ]

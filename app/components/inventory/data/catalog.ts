@@ -8,6 +8,8 @@ export type InventoryCategory =
 
 export type InventoryItemType = 'permanent' | 'consumable'
 
+export type AssetStatus = 'active' | 'under_maintenance' | 'disposed' | 'replaced'
+
 export interface InventoryDocument {
   name: string
   url: string
@@ -17,6 +19,13 @@ export interface InventoryDocument {
 export interface InventorySupplier {
   name: string
   contact: string
+}
+
+export interface MaintenanceSchedule {
+  id: string
+  name: string
+  intervalDays: number
+  lastServicedDate?: string
 }
 
 export interface InventoryItem {
@@ -32,6 +41,11 @@ export interface InventoryItem {
   documents?: InventoryDocument[]
   supplier?: InventorySupplier
   notes?: string
+  // Asset management
+  assetStatus?: AssetStatus
+  usefulLifeYears?: number
+  salvageValue?: number
+  maintenanceSchedules?: MaintenanceSchedule[]
 }
 
 export const INVENTORY_CATEGORIES: InventoryCategory[] = [
@@ -42,6 +56,15 @@ export const INVENTORY_CATEGORIES: InventoryCategory[] = [
   'Consumable',
   'Other',
 ]
+
+export const DEFAULT_USEFUL_LIFE: Record<InventoryCategory, number> = {
+  Electronics: 5,
+  Furniture: 10,
+  Linen: 3,
+  Kitchen: 7,
+  Consumable: 1,
+  Other: 5,
+}
 
 export const mockInventoryItems: InventoryItem[] = [
   {
@@ -55,6 +78,9 @@ export const mockInventoryItems: InventoryItem[] = [
     warrantyExpiry: '2027-01-15',
     supplier: { name: 'Ace Hardware Bali', contact: '+62 361 123456' },
     notes: 'King size, 180x200cm, memory foam',
+    assetStatus: 'active',
+    usefulLifeYears: 10,
+    salvageValue: 850000,
   },
   {
     id: 'inv-002',
@@ -71,6 +97,12 @@ export const mockInventoryItems: InventoryItem[] = [
       { name: 'Samsung Warranty Card.pdf', url: 'mock://warranty-smart-tv', type: 'warranty' },
       { name: 'Purchase Receipt.jpg', url: 'mock://receipt-smart-tv', type: 'receipt' },
     ],
+    assetStatus: 'active',
+    usefulLifeYears: 5,
+    salvageValue: 720000,
+    maintenanceSchedules: [
+      { id: 'ms-002-1', name: 'Screen Cleaning', intervalDays: 90, lastServicedDate: '2026-03-10' },
+    ],
   },
   {
     id: 'inv-003',
@@ -81,6 +113,9 @@ export const mockInventoryItems: InventoryItem[] = [
     purchaseValue: 450000,
     purchaseDate: '2024-06-01',
     notes: 'Includes 2 pillowcases + 1 duvet cover',
+    assetStatus: 'active',
+    usefulLifeYears: 3,
+    salvageValue: 45000,
   },
   {
     id: 'inv-004',
@@ -92,6 +127,9 @@ export const mockInventoryItems: InventoryItem[] = [
     purchaseDate: '2024-02-20',
     warrantyExpiry: '2026-02-20',
     supplier: { name: 'Philips Store Bali', contact: '+62 361 345678' },
+    assetStatus: 'under_maintenance',
+    usefulLifeYears: 5,
+    salvageValue: 120000,
   },
   {
     id: 'inv-005',
@@ -136,6 +174,12 @@ export const mockInventoryItems: InventoryItem[] = [
     purchaseValue: 650000,
     purchaseDate: '2024-04-05',
     warrantyExpiry: '2026-04-05',
+    assetStatus: 'active',
+    usefulLifeYears: 7,
+    salvageValue: 65000,
+    maintenanceSchedules: [
+      { id: 'ms-009-1', name: 'Descaling', intervalDays: 180, lastServicedDate: '2025-11-15' },
+    ],
   },
   {
     id: 'inv-010',
@@ -152,6 +196,12 @@ export const mockInventoryItems: InventoryItem[] = [
       { name: 'Daikin Warranty Certificate.pdf', url: 'mock://warranty-ac-split', type: 'warranty' },
       { name: 'Installation Receipt.pdf', url: 'mock://receipt-ac-split', type: 'receipt' },
     ],
+    assetStatus: 'under_maintenance',
+    usefulLifeYears: 10,
+    salvageValue: 450000,
+    maintenanceSchedules: [
+      { id: 'ms-010-1', name: 'Annual AC Service', intervalDays: 365, lastServicedDate: '2025-11-01' },
+    ],
   },
   {
     id: 'inv-011',
@@ -161,6 +211,9 @@ export const mockInventoryItems: InventoryItem[] = [
     unit: 'pcs',
     purchaseValue: 120000,
     purchaseDate: '2024-06-01',
+    assetStatus: 'active',
+    usefulLifeYears: 5,
+    salvageValue: 12000,
   },
   {
     id: 'inv-012',
@@ -170,5 +223,8 @@ export const mockInventoryItems: InventoryItem[] = [
     unit: 'pcs',
     purchaseValue: 85000,
     purchaseDate: '2024-06-01',
+    assetStatus: 'active',
+    usefulLifeYears: 3,
+    salvageValue: 8500,
   },
 ]

@@ -2,10 +2,21 @@
 import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
-import type { InventoryItem } from '@/components/inventory/data/catalog'
+import type { AssetStatus, InventoryItem } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 
-const { items, filteredItems, searchValue, activeCategoryFilter, activeTypeFilter, deleteItem } = useInventoryCatalog()
+const {
+  items,
+  filteredItems,
+  searchValue,
+  activeCategoryFilter,
+  activeTypeFilter,
+  activeStatusFilter,
+  deleteItem,
+  getBookValue,
+  getDepreciationPct,
+  getNextServiceInfo,
+} = useInventoryCatalog()
 
 const drawerOpen = ref(false)
 const selectedItem = ref<InventoryItem | null>(null)
@@ -53,6 +64,17 @@ function formatDate(d?: string) {
   return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function formatNextServiceDate(d: Date) {
+  return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const ASSET_STATUS_LABELS: Record<AssetStatus, string> = {
+  active: 'Active',
+  under_maintenance: 'Maintenance',
+  disposed: 'Disposed',
+  replaced: 'Replaced',
+}
+
 const DOC_TYPE_LABELS: Record<string, string> = {
   warranty: 'Warranty',
   receipt: 'Receipt',
@@ -61,16 +83,25 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 }
 
 function downloadCSV() {
-  const headers = ['Name', 'Category', 'Type', 'Unit', 'Purchase Value (IDR)', 'Purchase Date', 'Warranty Expiry']
-  const rows = items.value.map(i => [
-    i.name,
-    i.category,
-    i.type,
-    i.unit,
-    i.purchaseValue?.toString() ?? '',
-    i.purchaseDate ?? '',
-    i.warrantyExpiry ?? '',
-  ])
+  const headers = ['Name', 'Category', 'Type', 'Unit', 'Status', 'Purchase Value (IDR)', 'Book Value (IDR)', 'Depreciation %', 'Purchase Date', 'Warranty Expiry', 'Next Service']
+  const rows = items.value.map((i) => {
+    const bv = getBookValue(i)
+    const dp = getDepreciationPct(i)
+    const ns = getNextServiceInfo(i)
+    return [
+      i.name,
+      i.category,
+      i.type,
+      i.unit,
+      i.assetStatus ?? '',
+      i.purchaseValue?.toString() ?? '',
+      bv?.toString() ?? '',
+      dp !== undefined ? `${dp}%` : '',
+      i.purchaseDate ?? '',
+      i.warrantyExpiry ?? '',
+      ns ? formatNextServiceDate(ns.nextDueDate) : '',
+    ]
+  })
   const csv = [headers, ...rows]
     .map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     .join('\n')
@@ -116,6 +147,19 @@ function downloadCSV() {
         </SelectContent>
       </Select>
 
+      <Select v-model="activeStatusFilter">
+        <SelectTrigger class="w-40 h-8">
+          <SelectValue placeholder="All Statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Statuses</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+          <SelectItem value="disposed">Disposed</SelectItem>
+          <SelectItem value="replaced">Replaced</SelectItem>
+        </SelectContent>
+      </Select>
+
       <div class="ml-auto flex items-center gap-2">
         <Button variant="outline" size="sm" @click="downloadCSV">
           <Icon name="lucide:download" class="mr-2 h-4 w-4" />
@@ -135,9 +179,9 @@ function downloadCSV() {
             <TableHead class="w-12" />
             <TableHead>Name</TableHead>
             <TableHead>Category</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Unit</TableHead>
-            <TableHead>Purchase Value</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Book Value</TableHead>
+            <TableHead>Next Service</TableHead>
             <TableHead>Warranty</TableHead>
             <TableHead class="w-20" />
           </TableRow>
@@ -155,17 +199,59 @@ function downloadCSV() {
                 <Icon v-else name="lucide:package" class="h-4 w-4 text-muted-foreground" />
               </div>
             </TableCell>
-            <TableCell class="font-medium">{{ item.name }}</TableCell>
+            <TableCell>
+              <div>
+                <p class="font-medium">{{ item.name }}</p>
+                <p class="text-xs text-muted-foreground">{{ item.unit }} · {{ item.type }}</p>
+              </div>
+            </TableCell>
             <TableCell>
               <Badge variant="outline">{{ item.category }}</Badge>
             </TableCell>
             <TableCell>
-              <Badge :variant="item.type === 'permanent' ? 'secondary' : 'outline'" class="capitalize">
-                {{ item.type }}
-              </Badge>
+              <template v-if="item.assetStatus">
+                <Badge
+                  :class="{
+                    'bg-green-100 text-green-700 border-green-200': item.assetStatus === 'active',
+                    'bg-amber-100 text-amber-700 border-amber-200': item.assetStatus === 'under_maintenance',
+                    'text-muted-foreground': item.assetStatus === 'disposed' || item.assetStatus === 'replaced',
+                  }"
+                  variant="outline"
+                >
+                  {{ ASSET_STATUS_LABELS[item.assetStatus] }}
+                </Badge>
+              </template>
+              <span v-else class="text-muted-foreground">—</span>
             </TableCell>
-            <TableCell class="text-muted-foreground">{{ item.unit }}</TableCell>
-            <TableCell class="text-muted-foreground">{{ formatIDR(item.purchaseValue) }}</TableCell>
+            <TableCell>
+              <template v-if="getBookValue(item) !== undefined">
+                <p class="text-sm">{{ formatIDR(getBookValue(item)) }}</p>
+                <p class="text-xs text-muted-foreground">{{ getDepreciationPct(item) }}% depreciated</p>
+              </template>
+              <span v-else class="text-muted-foreground">—</span>
+            </TableCell>
+            <TableCell>
+              <template v-if="getNextServiceInfo(item)">
+                <Badge
+                  v-if="getNextServiceInfo(item)!.status === 'overdue'"
+                  variant="destructive"
+                  class="text-xs"
+                >
+                  Overdue
+                </Badge>
+                <Badge
+                  v-else-if="getNextServiceInfo(item)!.status === 'due_soon'"
+                  class="bg-amber-100 text-amber-700 border-amber-200 text-xs"
+                  variant="outline"
+                >
+                  Due Soon
+                </Badge>
+                <div v-else class="text-sm text-muted-foreground">
+                  {{ formatNextServiceDate(getNextServiceInfo(item)!.nextDueDate) }}
+                </div>
+              </template>
+              <span v-else class="text-muted-foreground">—</span>
+            </TableCell>
             <TableCell>
               <div class="flex items-center gap-1.5">
                 <template v-if="warrantyStatus(item.warrantyExpiry) === 'none'">

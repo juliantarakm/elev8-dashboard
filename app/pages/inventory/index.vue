@@ -5,14 +5,8 @@ import { useInventoryListings } from '@/composables/useInventoryListings'
 
 const activeTab = ref<'catalog' | 'listings'>('catalog')
 
-const { items } = useInventoryCatalog()
+const { items, activeAssetCount, totalBookValue, underMaintenanceCount, maintenanceAlertCount } = useInventoryCatalog()
 const { entries, lowStockCount } = useInventoryListings()
-
-const totalAssetValue = computed(() =>
-  items.value
-    .filter(i => i.type === 'permanent')
-    .reduce((sum, i) => sum + (i.purchaseValue ?? 0), 0),
-)
 
 const expiringSoonCount = computed(() => {
   const now = new Date()
@@ -22,10 +16,6 @@ const expiringSoonCount = computed(() => {
     return diff <= 30
   }).length
 })
-
-const damagedCount = computed(() =>
-  entries.value.filter(e => e.condition === 'damaged' || e.condition === 'missing').length,
-)
 </script>
 
 <template>
@@ -42,31 +32,40 @@ const damagedCount = computed(() =>
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Total Items</p>
-        <p class="text-2xl font-bold">{{ items.length }}</p>
+        <p class="text-sm text-muted-foreground">Active Assets</p>
+        <p class="text-2xl font-bold">{{ activeAssetCount }}</p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Total Asset Value</p>
-        <p class="text-2xl font-bold">IDR {{ totalAssetValue.toLocaleString('id-ID') }}</p>
+        <p class="text-sm text-muted-foreground">Total Book Value</p>
+        <p class="text-xl font-bold truncate">IDR {{ totalBookValue.toLocaleString('id-ID') }}</p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Warranty Expiring / Expired</p>
+        <p class="text-sm text-muted-foreground">Under Maintenance</p>
+        <p
+          class="text-2xl font-bold"
+          :class="underMaintenanceCount > 0 ? 'text-amber-600' : ''"
+        >
+          {{ underMaintenanceCount }}
+        </p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Maintenance Alerts</p>
+        <p
+          class="text-2xl font-bold"
+          :class="maintenanceAlertCount > 0 ? 'text-destructive' : ''"
+        >
+          {{ maintenanceAlertCount }}
+        </p>
+      </div>
+      <div class="rounded-lg border p-4">
+        <p class="text-sm text-muted-foreground">Warranty Expiring</p>
         <p
           class="text-2xl font-bold"
           :class="expiringSoonCount > 0 ? 'text-amber-600' : ''"
         >
           {{ expiringSoonCount }}
-        </p>
-      </div>
-      <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Damaged / Missing</p>
-        <p
-          class="text-2xl font-bold"
-          :class="damagedCount > 0 ? 'text-destructive' : ''"
-        >
-          {{ damagedCount }}
         </p>
       </div>
       <div class="rounded-lg border p-4">

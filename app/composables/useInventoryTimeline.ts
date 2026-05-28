@@ -7,7 +7,8 @@ export function useInventoryTimeline() {
   )
 
   function addEvent(data: {
-    entryId: string
+    entryId?: string
+    itemId?: string
     type: TimelineEventType
     actor: TimelineActor
     details: InventoryTimelineEvent['details']

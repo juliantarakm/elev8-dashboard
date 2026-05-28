@@ -5,7 +5,7 @@ import { useInventoryListings } from './useInventoryListings'
 import { useInventoryTimeline } from './useInventoryTimeline'
 
 export function useHostBuddyInventorySync() {
-  const { items } = useInventoryCatalog()
+  const { items, updateItemStatus } = useInventoryCatalog()
   const { entries, updateEntry } = useInventoryListings()
   const { addEvent } = useInventoryTimeline()
 
@@ -42,6 +42,9 @@ export function useHostBuddyInventorySync() {
       actor: 'hostbuddy',
       details: { taskId: task.id, taskTitle: task.title, to: 'damaged' },
     })
+    if (task.linkedInventoryItemId) {
+      updateItemStatus(task.linkedInventoryItemId, 'under_maintenance', 'hostbuddy', task.title)
+    }
   }
 
   function syncOnStatusChange(task: Task, newStatus: string) {
@@ -54,6 +57,9 @@ export function useHostBuddyInventorySync() {
         actor: 'hostbuddy',
         details: { taskId: task.id, taskTitle: task.title, to: 'good' },
       })
+      if (task.linkedInventoryItemId) {
+        updateItemStatus(task.linkedInventoryItemId, 'active', 'hostbuddy', task.title)
+      }
     }
     else if (newStatus === 'canceled') {
       const before = (task.conditionBefore as ItemCondition | undefined) ?? 'good'
@@ -64,6 +70,9 @@ export function useHostBuddyInventorySync() {
         actor: 'hostbuddy',
         details: { taskId: task.id, taskTitle: task.title, to: before },
       })
+      if (task.linkedInventoryItemId) {
+        updateItemStatus(task.linkedInventoryItemId, 'active', 'hostbuddy', task.title)
+      }
     }
   }
 
@@ -77,6 +86,9 @@ export function useHostBuddyInventorySync() {
       actor: 'hostbuddy',
       details: { taskId: task.id, taskTitle: task.title, to: before },
     })
+    if (task.linkedInventoryItemId) {
+      updateItemStatus(task.linkedInventoryItemId, 'active', 'hostbuddy', task.title)
+    }
   }
 
   return { detectInventoryItem, syncOnCreate, syncOnStatusChange, syncOnDelete }
