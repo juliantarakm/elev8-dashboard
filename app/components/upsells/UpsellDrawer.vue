@@ -26,7 +26,43 @@ const emit = defineEmits<{
 const { addService, updateService, deleteService } = useUpsellServices()
 
 const isEditing = computed(() => props.service !== null)
-const activeTab = ref<'details' | 'items'>('details')
+
+const currentStep = ref(1)
+const visitedSteps = ref<Set<number>>(new Set([1]))
+const nameError = ref(false)
+
+const steps = [
+  { id: 1, label: 'Basic Info' },
+  { id: 2, label: 'Items' },
+  { id: 3, label: 'Listings' },
+  { id: 4, label: 'Settings' },
+]
+
+function stepCircleClass(stepId: number) {
+  if (currentStep.value === stepId) return 'bg-primary text-primary-foreground'
+  if (visitedSteps.value.has(stepId)) return 'bg-primary/20 text-primary'
+  return 'bg-muted text-muted-foreground'
+}
+
+function goToStep(n: number) {
+  currentStep.value = n
+  const next = new Set(visitedSteps.value)
+  next.add(n)
+  visitedSteps.value = next
+}
+
+function nextStep() {
+  if (currentStep.value === 1 && !formName.value.trim()) {
+    nameError.value = true
+    return
+  }
+  nameError.value = false
+  goToStep(currentStep.value + 1)
+}
+
+function prevStep() {
+  goToStep(currentStep.value - 1)
+}
 
 const formName = ref('')
 const formDescription = ref('')
@@ -59,9 +95,11 @@ const itemImageInputRef = ref<HTMLInputElement | null>(null)
 
 watch(() => props.open, (open) => {
   if (open) {
-    activeTab.value = 'details'
     showDeleteConfirm.value = false
     if (props.service) {
+      currentStep.value = 1
+      visitedSteps.value = new Set([1, 2, 3, 4])
+      nameError.value = false
       formName.value = props.service.name
       formDescription.value = props.service.description
       formCategory.value = props.service.category
@@ -96,6 +134,9 @@ watch(() => props.open, (open) => {
       formListings.value = []
       formAvailability.value = 'always'
       formStatus.value = 'active'
+      currentStep.value = 1
+      visitedSteps.value = new Set([1])
+      nameError.value = false
     }
   }
 })
@@ -219,11 +260,14 @@ function handleItemImageUpload(event: Event) {
 
 function handleSave() {
   if (!formName.value.trim()) {
+    nameError.value = true
+    goToStep(1)
     toast.error('Service name is required.')
     return
   }
   if (formItems.value.length === 0) {
     toast.error('At least one item is required.')
+    goToStep(2)
     return
   }
 
@@ -279,28 +323,54 @@ function onOpenChange(val: boolean) {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="shrink-0 border-b px-6 pt-3">
-        <Tabs v-model="activeTab">
-          <TabsList class="w-full">
-            <TabsTrigger value="details" class="flex-1">
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="items" class="flex-1">
-              Items
-              <Badge v-if="formItems.length > 0" variant="secondary" class="ml-2">
-                {{ formItems.length }}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div class="shrink-0 border-b px-6 pb-4 pt-3">
+        <div class="flex items-center">
+          <template v-for="(step, idx) in steps" :key="step.id">
+            <button
+              type="button"
+              class="flex flex-col items-center gap-1.5 focus:outline-none"
+              @click="goToStep(step.id)"
+            >
+              <div
+                class="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+                :class="stepCircleClass(step.id)"
+              >
+                <Icon
+                  v-if="visitedSteps.has(step.id) && currentStep !== step.id"
+                  name="lucide:check"
+                  class="h-3.5 w-3.5"
+                />
+                <span v-else class="text-xs font-medium">{{ step.id }}</span>
+              </div>
+              <span
+                class="text-xs transition-colors"
+                :class="currentStep === step.id ? 'font-medium text-foreground' : 'text-muted-foreground'"
+              >
+                {{ step.label }}
+              </span>
+            </button>
+            <div
+              v-if="idx < steps.length - 1"
+              class="mb-4 h-px flex-1 bg-border"
+            />
+          </template>
+        </div>
       </div>
 
       <ScrollArea class="min-h-0 flex-1 overflow-y-auto">
-        <!-- Tab 1: Details -->
-        <div v-if="activeTab === 'details'" class="flex flex-col gap-5 p-6">
+        <!-- Step 1: Basic Info -->
+        <div v-if="currentStep === 1" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-2">
             <Label>Name <span class="text-destructive">*</span></Label>
-            <Input v-model="formName" placeholder="Enter the name of the upsell (e.g., In-villa SPA)" />
+            <Input
+              v-model="formName"
+              placeholder="Enter the name of the upsell (e.g., In-villa SPA)"
+              :class="nameError ? 'border-destructive' : ''"
+              @input="nameError = false"
+            />
+            <p v-if="nameError" class="text-xs text-destructive">
+              Service name is required.
+            </p>
           </div>
 
           <div class="flex flex-col gap-2">
@@ -312,6 +382,43 @@ function onOpenChange(val: boolean) {
               <code class="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;guest_last_name&gt;</code>
               <code class="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;listing_name&gt;</code>
             </div>
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-2">
+            <Label>Image</Label>
+            <input
+              ref="serviceImageInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleServiceImageUpload"
+            >
+            <div v-if="formImage" class="relative">
+              <img
+                :src="formImage"
+                alt="Service image"
+                class="h-40 w-full rounded-md border object-cover"
+              >
+              <Button
+                variant="destructive"
+                size="icon"
+                class="absolute right-2 top-2 h-7 w-7"
+                @click="formImage = undefined"
+              >
+                <Icon name="lucide:x" class="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <Button
+              v-else
+              variant="outline"
+              class="w-full"
+              @click="serviceImageInputRef?.click()"
+            >
+              <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
+              Upload Image
+            </Button>
           </div>
 
           <Separator />
@@ -347,14 +454,177 @@ function onOpenChange(val: boolean) {
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="flex flex-col gap-2">
-            <Label>Internal Notes</Label>
-            <Textarea
-              v-model="formInternalNotes"
-              placeholder="Add any internal notes or instructions relevant to this upsell"
-              rows="2"
-            />
+        <!-- Step 2: Items -->
+        <div v-if="currentStep === 2" class="flex flex-col gap-5 p-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium">Upsell Items</p>
+                <p class="text-xs text-muted-foreground">
+                  Drag to reorder. Click an item to edit.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" class="h-8" @click="openAddItemModal">
+                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
+                Add Item
+              </Button>
+            </div>
+
+            <draggable
+              v-model="formItems"
+              item-key="id"
+              handle=".drag-handle"
+              ghost-class="opacity-40"
+              animation="150"
+            >
+              <template #item="{ element: item }">
+                <div
+                  class="group flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                  @click="openEditItemModal(item)"
+                >
+                  <div class="drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing">
+                    <Icon name="lucide:grip-vertical" class="h-4 w-4" />
+                  </div>
+                  <div v-if="item.image" class="h-10 w-10 shrink-0 overflow-hidden rounded-md border">
+                    <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
+                  </div>
+                  <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
+                    <Icon name="lucide:image" class="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-medium">{{ item.name }}</p>
+                    <p v-if="item.description" class="truncate text-xs text-muted-foreground">
+                      {{ item.description }}
+                    </p>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <span class="text-sm font-medium text-muted-foreground">
+                      {{ item.price.toLocaleString() }} {{ formCurrency }}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      @click.stop="removeItem(item.id)"
+                    >
+                      <Icon name="lucide:trash-2" class="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </template>
+            </draggable>
+
+            <div
+              v-if="formItems.length === 0"
+              class="flex flex-col items-center gap-2 rounded-md border border-dashed p-6"
+            >
+              <Icon name="lucide:package" class="h-8 w-8 text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">
+                No items yet
+              </p>
+              <Button variant="outline" size="sm" @click="openAddItemModal">
+                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
+                Add your first item
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Listings & Availability -->
+        <div v-if="currentStep === 3" class="flex flex-col gap-5 p-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <Label>Assigned Listings</Label>
+              <div class="flex gap-2">
+                <Button variant="ghost" size="sm" class="h-7 text-xs" @click="selectAllListings">
+                  Select all
+                </Button>
+                <Button variant="ghost" size="sm" class="h-7 text-xs" @click="clearAllListings">
+                  Clear
+                </Button>
+              </div>
+            </div>
+            <div class="max-h-64 overflow-y-auto rounded-md border">
+              <label
+                v-for="listing in BALI_LISTINGS"
+                :key="listing"
+                class="flex cursor-pointer items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
+              >
+                <Checkbox
+                  :checked="formListings.includes(listing)"
+                  @update:checked="toggleListing(listing)"
+                />
+                <span class="text-sm">{{ listing }}</span>
+              </label>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              {{ formListings.length }} of {{ BALI_LISTINGS.length }} listings selected
+            </p>
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-col gap-3">
+            <Label>Availability</Label>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
+                :class="formAvailability === 'always' ? 'border-primary bg-primary/5' : 'border-border'"
+                @click="formAvailability = 'always'"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:shopping-cart" class="h-4 w-4" />
+                  <span class="text-sm font-medium">Always Available</span>
+                </div>
+                <span class="text-xs text-muted-foreground">Guests can order anytime</span>
+              </button>
+              <button
+                type="button"
+                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
+                :class="formAvailability === 'by_request' ? 'border-primary bg-primary/5' : 'border-border'"
+                @click="formAvailability = 'by_request'"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="lucide:clock" class="h-4 w-4" />
+                  <span class="text-sm font-medium">By Request</span>
+                </div>
+                <span class="text-xs text-muted-foreground">Requires confirmation first</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Settings -->
+        <div v-if="currentStep === 4" class="flex flex-col gap-5 p-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <Label>Tax and Service</Label>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-muted-foreground">
+                  {{ formPricingEnabled ? 'On' : 'Off' }}
+                </span>
+                <Switch :model-value="formPricingEnabled" @update:model-value="formPricingEnabled = $event" />
+              </div>
+            </div>
+            <div v-if="formPricingEnabled" class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-2">
+                <Label class="text-xs font-normal text-muted-foreground">Tax</Label>
+                <div class="flex items-center gap-2">
+                  <Input v-model.number="formTaxPercent" type="number" min="0" max="100" class="flex-1" />
+                  <span class="text-sm text-muted-foreground">%</span>
+                </div>
+              </div>
+              <div class="flex flex-col gap-2">
+                <Label class="text-xs font-normal text-muted-foreground">Service</Label>
+                <div class="flex items-center gap-2">
+                  <Input v-model.number="formServicePercent" type="number" min="0" max="100" class="flex-1" />
+                  <span class="text-sm text-muted-foreground">%</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Separator />
@@ -405,145 +675,13 @@ function onOpenChange(val: boolean) {
 
           <Separator />
 
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <Label>Tax and Service</Label>
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-muted-foreground">
-                  {{ formPricingEnabled ? 'On' : 'Off' }}
-                </span>
-<Switch :model-value="formPricingEnabled" @update:model-value="formPricingEnabled = $event" />
-              </div>
-            </div>
-            <div v-if="formPricingEnabled" class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-2">
-                <Label class="text-muted-foreground text-xs font-normal">Tax</Label>
-                <div class="flex items-center gap-2">
-                  <Input
-                    v-model.number="formTaxPercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    class="flex-1"
-                  />
-                  <span class="text-sm text-muted-foreground">%</span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <Label class="text-muted-foreground text-xs font-normal">Service</Label>
-                <div class="flex items-center gap-2">
-                  <Input
-                    v-model.number="formServicePercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    class="flex-1"
-                  />
-                  <span class="text-sm text-muted-foreground">%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
           <div class="flex flex-col gap-2">
-            <Label>Image</Label>
-            <input
-              ref="serviceImageInputRef"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="handleServiceImageUpload"
-            >
-            <div v-if="formImage" class="relative">
-              <img
-                :src="formImage"
-                alt="Service image"
-                class="h-40 w-full rounded-md border object-cover"
-              >
-              <Button
-                variant="destructive"
-                size="icon"
-                class="absolute right-2 top-2 h-7 w-7"
-                @click="formImage = undefined"
-              >
-                <Icon name="lucide:x" class="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <Button
-              v-else
-              variant="outline"
-              class="w-full"
-              @click="serviceImageInputRef?.click()"
-            >
-              <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
-              Upload Image
-            </Button>
-          </div>
-
-          <Separator />
-
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <Label>Assigned Listings</Label>
-              <div class="flex gap-2">
-                <Button variant="ghost" size="sm" class="h-7 text-xs" @click="selectAllListings">
-                  Select all
-                </Button>
-                <Button variant="ghost" size="sm" class="h-7 text-xs" @click="clearAllListings">
-                  Clear
-                </Button>
-              </div>
-            </div>
-            <div class="max-h-48 overflow-y-auto rounded-md border">
-              <label
-                v-for="listing in BALI_LISTINGS"
-                :key="listing"
-                class="flex cursor-pointer items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50"
-              >
-                <Checkbox
-                  :checked="formListings.includes(listing)"
-                  @update:checked="toggleListing(listing)"
-                />
-                <span class="text-sm">{{ listing }}</span>
-              </label>
-            </div>
-            <p class="text-xs text-muted-foreground">
-              {{ formListings.length }} of {{ BALI_LISTINGS.length }} listings selected
-            </p>
-          </div>
-
-          <Separator />
-
-          <div class="flex flex-col gap-3">
-            <Label>Availability</Label>
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
-                :class="formAvailability === 'always' ? 'border-primary bg-primary/5' : 'border-border'"
-                @click="formAvailability = 'always'"
-              >
-                <div class="flex items-center gap-2">
-                  <Icon name="lucide:shopping-cart" class="h-4 w-4" />
-                  <span class="text-sm font-medium">Always Available</span>
-                </div>
-                <span class="text-xs text-muted-foreground">Guests can order anytime</span>
-              </button>
-              <button
-                type="button"
-                class="flex flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors hover:bg-muted/50"
-                :class="formAvailability === 'by_request' ? 'border-primary bg-primary/5' : 'border-border'"
-                @click="formAvailability = 'by_request'"
-              >
-                <div class="flex items-center gap-2">
-                  <Icon name="lucide:clock" class="h-4 w-4" />
-                  <span class="text-sm font-medium">By Request</span>
-                </div>
-                <span class="text-xs text-muted-foreground">Requires confirmation first</span>
-              </button>
-            </div>
+            <Label>Internal Notes</Label>
+            <Textarea
+              v-model="formInternalNotes"
+              placeholder="Add any internal notes or instructions relevant to this upsell"
+              rows="2"
+            />
           </div>
 
           <Separator />
@@ -561,91 +699,33 @@ function onOpenChange(val: boolean) {
             </div>
           </div>
         </div>
-
-        <!-- Tab 2: Items -->
-        <div v-if="activeTab === 'items'" class="flex flex-col gap-5 p-6">
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium">Upsell Items</p>
-                <p class="text-xs text-muted-foreground">
-                  Drag to reorder. Click an item to edit.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" class="h-8" @click="openAddItemModal">
-                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
-                Add Item
-              </Button>
-            </div>
-
-            <draggable
-              v-model="formItems"
-              item-key="id"
-              handle=".drag-handle"
-              ghost-class="opacity-40"
-              animation="150"
-            >
-              <template #item="{ element: item }">
-                <div
-                  class="group flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
-                  @click="openEditItemModal(item)"
-                >
-                  <div class="drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing">
-                    <Icon name="lucide:grip-vertical" class="h-4 w-4" />
-                  </div>
-                  <div v-if="item.image" class="h-10 w-10 shrink-0 overflow-hidden rounded-md border">
-                    <img :src="item.image" :alt="item.name" class="h-full w-full object-cover">
-                  </div>
-                  <div v-else class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted">
-                    <Icon name="lucide:image" class="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate">{{ item.name }}</p>
-                    <p v-if="item.description" class="text-xs text-muted-foreground truncate">
-                      {{ item.description }}
-                    </p>
-                  </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-sm font-medium text-muted-foreground">
-                      {{ item.price.toLocaleString() }} {{ formCurrency }}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      @click.stop="removeItem(item.id)"
-                    >
-                      <Icon name="lucide:trash-2" class="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </template>
-            </draggable>
-
-            <div
-              v-if="formItems.length === 0"
-              class="flex flex-col items-center gap-2 rounded-md border border-dashed p-6"
-            >
-              <Icon name="lucide:package" class="h-8 w-8 text-muted-foreground" />
-              <p class="text-sm text-muted-foreground">
-                No items yet
-              </p>
-              <Button variant="outline" size="sm" @click="openAddItemModal">
-                <Icon name="lucide:plus" class="mr-1 h-3.5 w-3.5" />
-                Add your first item
-              </Button>
-            </div>
-          </div>
-        </div>
       </ScrollArea>
 
       <div class="border-t shrink-0 px-6 py-4">
         <div class="flex items-center gap-2">
-          <Button variant="outline" class="flex-1" @click="onOpenChange(false)">
+          <Button
+            v-if="currentStep > 1"
+            variant="outline"
+            @click="prevStep"
+          >
+            <Icon name="lucide:chevron-left" class="mr-1 h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            v-else
+            variant="outline"
+            @click="onOpenChange(false)"
+          >
             Cancel
           </Button>
-          <Button class="flex-1" @click="handleSave">
-            {{ isEditing ? 'Save Changes' : 'Create Service' }}
+          <Button class="flex-1" @click="currentStep < 4 ? nextStep() : handleSave()">
+            <template v-if="currentStep < 4">
+              Next
+              <Icon name="lucide:chevron-right" class="ml-1 h-4 w-4" />
+            </template>
+            <template v-else>
+              {{ isEditing ? 'Save Changes' : 'Create Service' }}
+            </template>
           </Button>
         </div>
         <div v-if="isEditing" class="mt-3">
