@@ -1,0 +1,179 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { toast } from 'vue-sonner'
+import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
+import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
+import { useInventoryListings } from '@/composables/useInventoryListings'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
+
+const { getItemById } = useInventoryCatalog()
+const { filteredEntries, filterListing, filterCondition, deleteEntry } = useInventoryListings()
+
+const drawerOpen = ref(false)
+const selectedEntry = ref<ListingInventoryEntry | null>(null)
+
+function openAdd() {
+  selectedEntry.value = null
+  drawerOpen.value = true
+}
+
+function openEdit(entry: ListingInventoryEntry) {
+  selectedEntry.value = entry
+  drawerOpen.value = true
+}
+
+function handleDelete(entry: ListingInventoryEntry) {
+  const item = getItemById(entry.itemId)
+  deleteEntry(entry.id)
+  toast.success(`"${item?.name ?? 'Item'}" dihapus dari listing`)
+}
+
+const CONDITIONS: { value: ItemCondition | 'all', label: string }[] = [
+  { value: 'all', label: 'Semua' },
+  { value: 'good', label: 'Good' },
+  { value: 'fair', label: 'Fair' },
+  { value: 'damaged', label: 'Damaged' },
+  { value: 'missing', label: 'Missing' },
+]
+
+function conditionVariant(cond: ItemCondition) {
+  const map: Record<ItemCondition, string> = {
+    good: 'bg-green-100 text-green-700 border-green-200',
+    fair: 'bg-amber-100 text-amber-700 border-amber-200',
+    damaged: 'bg-orange-100 text-orange-700 border-orange-200',
+    missing: 'bg-red-100 text-red-700 border-red-200',
+  }
+  return map[cond]
+}
+
+function formatRelativeDate(iso: string) {
+  const date = new Date(iso)
+  const now = new Date()
+  const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  if (diff === 0) return 'Hari ini'
+  if (diff === 1) return 'Kemarin'
+  if (diff < 7) return `${diff} hari lalu`
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <Select v-model="filterListing">
+        <SelectTrigger class="w-56 h-8">
+          <SelectValue placeholder="Semua Listing" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Semua Listing</SelectItem>
+          <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
+            {{ listing }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+
+      <div class="flex flex-wrap gap-1.5">
+        <Button
+          v-for="cond in CONDITIONS"
+          :key="cond.value"
+          :variant="filterCondition === cond.value ? 'default' : 'outline'"
+          size="sm"
+          class="h-8"
+          @click="filterCondition = cond.value as typeof filterCondition"
+        >
+          {{ cond.label }}
+        </Button>
+      </div>
+
+      <div class="ml-auto">
+        <Button size="sm" @click="openAdd">
+          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
+          Add Entry
+        </Button>
+      </div>
+    </div>
+
+    <div class="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Item</TableHead>
+            <TableHead>Listing</TableHead>
+            <TableHead>Jumlah</TableHead>
+            <TableHead>Kondisi</TableHead>
+            <TableHead>Stok Level</TableHead>
+            <TableHead>Last Updated</TableHead>
+            <TableHead class="w-20" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            v-for="entry in filteredEntries"
+            :key="entry.id"
+            class="cursor-pointer"
+            @click="openEdit(entry)"
+          >
+            <TableCell>
+              <div class="flex flex-col">
+                <span class="font-medium">{{ getItemById(entry.itemId)?.name ?? '—' }}</span>
+                <Badge variant="outline" class="w-fit mt-0.5 text-xs">
+                  {{ getItemById(entry.itemId)?.category ?? '' }}
+                </Badge>
+              </div>
+            </TableCell>
+            <TableCell class="text-sm text-muted-foreground max-w-48 truncate">
+              {{ entry.listingName }}
+            </TableCell>
+            <TableCell>
+              {{ entry.quantity }} {{ getItemById(entry.itemId)?.unit ?? '' }}
+            </TableCell>
+            <TableCell>
+              <span
+                class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize"
+                :class="conditionVariant(entry.condition)"
+              >
+                {{ entry.condition }}
+              </span>
+            </TableCell>
+            <TableCell class="text-muted-foreground">
+              <span v-if="entry.stockLevel !== undefined">
+                {{ entry.stockLevel }} {{ getItemById(entry.itemId)?.unit ?? '' }}
+              </span>
+              <span v-else>—</span>
+            </TableCell>
+            <TableCell class="text-sm text-muted-foreground">
+              {{ formatRelativeDate(entry.lastUpdated) }}
+            </TableCell>
+            <TableCell @click.stop>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="ghost" size="icon" class="h-8 w-8">
+                    <Icon name="lucide:ellipsis" class="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem @click="openEdit(entry)">
+                    <Icon name="lucide:pencil" class="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="text-destructive" @click="handleDelete(entry)">
+                    <Icon name="lucide:trash-2" class="mr-2 h-4 w-4" />
+                    Hapus
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
+          </TableRow>
+          <TableRow v-if="filteredEntries.length === 0">
+            <TableCell colspan="7" class="text-center text-muted-foreground py-10">
+              Tidak ada entry ditemukan.
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <ListingInventoryDrawer v-model:open="drawerOpen" :entry="selectedEntry" />
+  </div>
+</template>
