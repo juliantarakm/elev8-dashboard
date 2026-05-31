@@ -286,7 +286,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                   <span class="text-sm font-medium">24/7 Availability</span>
                   <span class="text-xs text-muted-foreground">ElevAI will be on 24/7, ready to respond to any guest message at any time.</span>
                 </div>
-                <Switch :checked="schedule.always" @update:checked="setAlways" />
+                <Switch :model-value="schedule.always" @update:model-value="(val: boolean) => setAlways(val)" />
               </div>
 
               <!-- Custom Schedule (disabled when 24/7 on) -->
@@ -298,7 +298,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                   class="flex flex-col gap-2 rounded-lg border p-3"
                 >
                   <div class="flex items-center gap-3">
-                    <Switch :checked="day.enabled" class="shrink-0" @update:checked="(val: boolean) => updateDay(index, { enabled: val })" />
+                    <Switch :model-value="day.enabled" class="shrink-0" @update:model-value="(val: boolean) => updateDay(index, { enabled: val })" />
                     <span class="text-sm font-medium">{{ dayNames[index] }}</span>
                     <span v-if="!day.enabled" class="ml-auto text-xs text-muted-foreground">Unavailable</span>
                   </div>
