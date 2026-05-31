@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot } from '~/components/listings/data/listings'
+import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot, Room } from '~/components/listings/data/listings'
 import { listings, allTags } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
