@@ -4,12 +4,15 @@ export interface DayHours {
   end: string
 }
 
+export type OverrideAudience = 'future' | 'current' | 'inquiry'
+
 export interface DateOverride {
   id: string
-  date: string // ISO date
-  enabled: boolean
-  start: string
-  end: string
+  startDate: string // ISO date
+  startTime: string // "HH:MM"
+  endDate: string
+  endTime: string
+  activeFor: OverrideAudience[]
 }
 
 export interface AiSchedule {

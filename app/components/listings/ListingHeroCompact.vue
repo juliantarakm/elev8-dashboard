@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Listing, AiSchedule, DateOverride } from '~/components/listings/data/listings'
+import type { Listing, AiSchedule, DateOverride, OverrideAudience } from '~/components/listings/data/listings'
+import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listing: Listing }>()
@@ -57,23 +58,48 @@ function clearAll() {
   patchSchedule({ days: schedule.value.days.map(d => ({ ...d, enabled: false })) })
 }
 
-function copyToProperties() {
-  toast.success('Schedule copied to all properties')
-}
-
 function saveSchedule() {
   toast.success('Schedule saved')
   showScheduleSheet.value = false
 }
 
+// Copy to other listings
+const showCopyDialog = ref(false)
+const copyTargets = ref<string[]>([])
+const otherListings = computed(() => listings.value.filter(l => l.id !== props.listing.id))
+
+function toggleTarget(id: string) {
+  copyTargets.value = copyTargets.value.includes(id)
+    ? copyTargets.value.filter(t => t !== id)
+    : [...copyTargets.value, id]
+}
+
+function applyCopy() {
+  const clone = JSON.parse(JSON.stringify(schedule.value)) as AiSchedule
+  listings.value = listings.value.map(l =>
+    copyTargets.value.includes(l.id) ? { ...l, aiSchedule: JSON.parse(JSON.stringify(clone)) } : l
+  )
+  toast.success(`Copied to ${copyTargets.value.length} listing${copyTargets.value.length > 1 ? 's' : ''}`)
+  copyTargets.value = []
+  showCopyDialog.value = false
+}
+
 // Date overrides
+const audienceOptions: { value: OverrideAudience; label: string }[] = [
+  { value: 'future', label: 'Future' },
+  { value: 'current', label: 'Current' },
+  { value: 'inquiry', label: 'Inquiry' },
+]
+
 function addOverride() {
+  const today = new Date().toISOString().split('T')[0]!
   const o: DateOverride = {
     id: `do-${Date.now()}`,
-    date: new Date().toISOString().split('T')[0]!,
-    enabled: true,
-    start: '09:00',
-    end: '21:00',
+    startDate: today,
+    startTime: '09:00',
+    endDate: today,
+    endTime: '17:00',
+    activeFor: ['future', 'current', 'inquiry'],
   }
   patchSchedule({ dateOverrides: [...schedule.value.dateOverrides, o] })
 }
@@ -84,6 +110,13 @@ function updateOverride(id: string, patch: Partial<DateOverride>) {
 
 function removeOverride(id: string) {
   patchSchedule({ dateOverrides: schedule.value.dateOverrides.filter(o => o.id !== id) })
+}
+
+function toggleAudience(o: DateOverride, value: OverrideAudience) {
+  const activeFor = o.activeFor.includes(value)
+    ? o.activeFor.filter(a => a !== value)
+    : [...o.activeFor, value]
+  updateOverride(o.id, { activeFor })
 }
 </script>
 
@@ -222,7 +255,7 @@ function removeOverride(id: string) {
                 <div class="flex items-center justify-between gap-2 pt-1">
                   <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">Clear All</Button>
                   <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm" class="text-xs gap-1" @click="copyToProperties">
+                    <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
                       <Icon name="lucide:copy" class="size-3" />
                       Copy to Properties
                     </Button>
@@ -235,39 +268,102 @@ function removeOverride(id: string) {
             <!-- Date Overrides -->
             <TabsContent value="overrides" class="mt-5 flex flex-col gap-3">
               <p class="text-xs text-muted-foreground">
-                Override the weekly schedule for specific dates (holidays, events, etc.).
+                Override your weekly schedule for specific date ranges — ideal for holidays, vacations, or special events. These rules take priority over the weekly schedule.
               </p>
 
               <div
                 v-for="o in schedule.dateOverrides"
                 :key="o.id"
-                class="flex items-center gap-3 rounded-lg border p-3"
+                class="flex flex-col gap-3 rounded-lg border p-4"
               >
-                <Switch :checked="o.enabled" class="shrink-0" @update:checked="(val: boolean) => updateOverride(o.id, { enabled: val })" />
-                <Input type="date" :model-value="o.date" class="h-8 w-32 text-xs" @update:model-value="(val) => updateOverride(o.id, { date: String(val) })" />
-                <div v-if="o.enabled" class="flex items-center gap-1.5 flex-1">
-                  <Input type="time" :model-value="o.start" class="h-8 text-xs" @update:model-value="(val) => updateOverride(o.id, { start: String(val) })" />
-                  <span class="text-xs text-muted-foreground">to</span>
-                  <Input type="time" :model-value="o.end" class="h-8 text-xs" @update:model-value="(val) => updateOverride(o.id, { end: String(val) })" />
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium">Date Range</span>
+                  <Button variant="ghost" size="icon" class="size-7 text-muted-foreground hover:text-destructive" @click="removeOverride(o.id)">
+                    <Icon name="lucide:trash-2" class="size-4" />
+                  </Button>
                 </div>
-                <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
-                <Button variant="ghost" size="icon" class="size-8 shrink-0 text-muted-foreground hover:text-destructive" @click="removeOverride(o.id)">
-                  <Icon name="lucide:trash-2" class="size-4" />
-                </Button>
+
+                <!-- Start -->
+                <div class="flex flex-col gap-1.5">
+                  <Label class="text-xs">Start</Label>
+                  <div class="flex items-center gap-2">
+                    <Input type="date" :model-value="o.startDate" class="h-8 flex-1 text-xs" @update:model-value="(val) => updateOverride(o.id, { startDate: String(val) })" />
+                    <Input type="time" :model-value="o.startTime" class="h-8 w-28 text-xs" @update:model-value="(val) => updateOverride(o.id, { startTime: String(val) })" />
+                  </div>
+                </div>
+
+                <!-- End -->
+                <div class="flex flex-col gap-1.5">
+                  <Label class="text-xs">End</Label>
+                  <div class="flex items-center gap-2">
+                    <Input type="date" :model-value="o.endDate" class="h-8 flex-1 text-xs" @update:model-value="(val) => updateOverride(o.id, { endDate: String(val) })" />
+                    <Input type="time" :model-value="o.endTime" class="h-8 w-28 text-xs" @update:model-value="(val) => updateOverride(o.id, { endTime: String(val) })" />
+                  </div>
+                </div>
+
+                <!-- Active for -->
+                <div class="flex flex-col gap-1.5">
+                  <Label class="text-xs">Active for</Label>
+                  <div class="flex flex-wrap gap-1.5">
+                    <Button
+                      v-for="opt in audienceOptions"
+                      :key="opt.value"
+                      variant="outline"
+                      size="sm"
+                      class="h-7 text-xs"
+                      :class="o.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
+                      @click="toggleAudience(o, opt.value)"
+                    >{{ opt.label }}</Button>
+                  </div>
+                </div>
               </div>
 
               <p v-if="schedule.dateOverrides.length === 0" class="text-sm text-muted-foreground text-center py-6">
                 No date overrides yet.
               </p>
 
-              <Button variant="outline" class="w-full gap-1.5" @click="addOverride">
-                <Icon name="lucide:plus" class="size-4" />
-                Add Date Override
-              </Button>
+              <div class="flex items-center justify-between gap-2 pt-1">
+                <Button variant="outline" size="sm" class="gap-1.5" @click="addOverride">
+                  <Icon name="lucide:plus" class="size-4" />
+                  Add Date Range
+                </Button>
+                <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
+                  <Icon name="lucide:copy" class="size-3" />
+                  Copy to Properties
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
       </SheetContent>
     </Sheet>
+
+    <!-- Copy to Other Listings Dialog -->
+    <Dialog v-model:open="showCopyDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Copy Schedule to Listings</DialogTitle>
+          <DialogDescription>Apply this listing's AI schedule to other listings.</DialogDescription>
+        </DialogHeader>
+        <ScrollArea class="max-h-72">
+          <div class="flex flex-col gap-1 py-2">
+            <label
+              v-for="l in otherListings"
+              :key="l.id"
+              class="flex items-center gap-3 rounded-md px-2 py-2 cursor-pointer hover:bg-accent"
+            >
+              <Checkbox :model-value="copyTargets.includes(l.id)" @update:model-value="() => toggleTarget(l.id)" />
+              <span class="text-sm truncate">{{ l.name }}</span>
+            </label>
+          </div>
+        </ScrollArea>
+        <DialogFooter>
+          <Button variant="outline" @click="showCopyDialog = false">Cancel</Button>
+          <Button :disabled="copyTargets.length === 0" @click="applyCopy">
+            Copy to {{ copyTargets.length || '' }} listing{{ copyTargets.length > 1 ? 's' : '' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
