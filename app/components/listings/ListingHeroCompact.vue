@@ -392,10 +392,6 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           <Icon name="lucide:map-pin" class="size-3.5" />
           {{ listing.location }}
         </span>
-        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Icon name="lucide:building-2" class="size-3.5" />
-          {{ listing.property }}
-        </span>
 
         <!-- Editable tags -->
         <div class="flex flex-wrap items-center gap-1.5">
