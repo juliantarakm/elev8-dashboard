@@ -50,7 +50,7 @@ const isFilled = (val?: string) => !!val?.trim()
   <div class="flex flex-col h-full overflow-hidden">
     <Tabs v-model="activeTab" class="flex flex-col h-full overflow-hidden">
       <!-- Tab bar using standard shadcn TabsList -->
-      <div class="flex-shrink-0 border-b px-6 pt-3 flex justify-center">
+      <div class="flex-shrink-0 border-b px-6 flex justify-center">
         <TabsList>
           <TabsTrigger value="basics">Basics</TabsTrigger>
           <TabsTrigger value="listing-details">Listing Details</TabsTrigger>
