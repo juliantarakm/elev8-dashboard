@@ -314,6 +314,24 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </DropdownMenuTrigger>
 
           <DropdownMenuContent class="w-56" align="start">
+            <!-- Property overview -->
+            <DropdownMenuItem
+              class="flex items-center justify-between cursor-pointer"
+              @click="emit('update', { ...listing, activeRoomId: undefined })"
+            >
+              <div class="flex items-center gap-2">
+                <div class="flex size-7 items-center justify-center rounded-md bg-muted">
+                  <Icon name="lucide:building-2" class="size-3.5 text-muted-foreground" />
+                </div>
+                <div class="flex flex-col leading-tight">
+                  <span class="text-sm font-medium">Multi-Unit</span>
+                  <span class="text-xs text-muted-foreground">{{ listing.rooms?.length ?? 0 }} units</span>
+                </div>
+              </div>
+              <Icon v-if="!listing.activeRoomId" name="lucide:check" class="size-4 shrink-0 text-primary" />
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
             <DropdownMenuLabel class="text-xs text-muted-foreground">Rooms</DropdownMenuLabel>
             <DropdownMenuItem
               v-for="room in listing.rooms"
