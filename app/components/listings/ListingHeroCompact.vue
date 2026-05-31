@@ -234,48 +234,61 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       Back
     </Button>
 
-    <!-- Room Switcher Button -->
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
-        <button class="flex w-full items-center gap-3 overflow-hidden rounded-lg border p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <!-- Landscape photo -->
-          <div class="relative w-24 h-14 shrink-0 overflow-hidden rounded-md bg-muted group cursor-pointer" @click.stop="showPhotoDialog = true">
-            <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
-            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Icon name="lucide:pencil" class="size-3.5 text-white" />
-            </div>
-          </div>
+    <!-- Hero: large photo + listing info -->
+    <div class="flex flex-col gap-3">
+      <!-- Landscape photo (large) -->
+      <div class="relative w-full h-40 overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
+        <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Icon name="lucide:pencil" class="size-5 text-white" />
+        </div>
+      </div>
 
-          <!-- Info -->
-          <div class="grid flex-1 text-left text-sm leading-tight min-w-0">
-            <span class="truncate font-semibold">{{ listing.name }}</span>
-            <span class="truncate text-xs text-muted-foreground flex items-center gap-1">
-              <Icon :name="listing.unitType === 'multi' ? 'lucide:building-2' : 'lucide:home'" class="size-3 shrink-0" />
-              {{ activeRoom ? activeRoom.name : (listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit') }}
-            </span>
-          </div>
+      <!-- Listing name (large) -->
+      <h1 class="text-2xl font-bold tracking-tight leading-tight">{{ listing.name }}</h1>
 
-          <Icon v-if="listing.rooms && listing.rooms.length > 1" name="lucide:chevrons-up-down" class="ml-auto size-4 shrink-0 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
+      <!-- Location + unit type dropdown -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Icon name="lucide:map-pin" class="size-3.5" />
+          {{ listing.location }}
+        </span>
+        <span class="text-muted-foreground/40">·</span>
 
-      <DropdownMenuContent v-if="listing.rooms && listing.rooms.length > 1" class="w-56" align="start">
-        <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Room</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          v-for="room in listing.rooms"
-          :key="room.id"
-          class="flex items-center justify-between cursor-pointer"
-          @click="switchRoom(room.id)"
-        >
-          <div class="flex flex-col leading-tight">
-            <span class="text-sm font-medium">{{ room.name }}</span>
-            <span class="text-xs text-muted-foreground">{{ room.capacity }} guests</span>
-          </div>
-          <Icon v-if="room.id === (listing.activeRoomId ?? listing.rooms?.[0]?.id)" name="lucide:check" class="size-4 shrink-0 text-primary" />
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <!-- Unit type / room switcher (dropdown only for multi-unit with rooms) -->
+        <DropdownMenu v-if="listing.rooms && listing.rooms.length > 1">
+          <DropdownMenuTrigger as-child>
+            <button class="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-accent">
+              <Icon name="lucide:building-2" class="size-3" />
+              {{ activeRoom ? activeRoom.name : 'Multi-Unit' }}
+              <Icon name="lucide:chevrons-up-down" class="size-3 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent class="w-48" align="start">
+            <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Room</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              v-for="room in listing.rooms"
+              :key="room.id"
+              class="flex items-center justify-between cursor-pointer"
+              @click="switchRoom(room.id)"
+            >
+              <div class="flex flex-col leading-tight">
+                <span class="text-sm font-medium">{{ room.name }}</span>
+                <span class="text-xs text-muted-foreground">{{ room.capacity }} guests</span>
+              </div>
+              <Icon v-if="room.id === (listing.activeRoomId ?? listing.rooms?.[0]?.id)" name="lucide:check" class="size-4 shrink-0 text-primary" />
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <!-- Single unit badge (no dropdown) -->
+        <Badge v-else variant="outline" class="text-xs">
+          <Icon name="lucide:home" class="size-3 mr-1" />
+          Single Unit
+        </Badge>
+      </div>
+    </div>
 
     <!-- AI Status + OTA row -->
     <div class="flex items-center gap-2 flex-wrap">
