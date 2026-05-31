@@ -31,16 +31,16 @@ const activePhotoIndex = ref(0)
       </Button>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-6">
-      <div class="lg:w-1/2 flex flex-col gap-3">
-        <div class="relative overflow-hidden rounded-lg aspect-[4/3] max-w-md bg-muted">
+    <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
+      <div class="flex flex-col gap-3">
+        <div class="relative overflow-hidden rounded-lg aspect-[4/3] bg-muted">
           <img
             :src="listing.photos[activePhotoIndex]"
             :alt="listing.name"
             class="w-full h-full object-cover"
           />
         </div>
-        <div v-if="listing.photos.length > 1" class="flex gap-2 overflow-x-auto">
+        <div v-if="listing.photos.length > 1" class="flex gap-2">
           <button
             v-for="(photo, index) in listing.photos"
             :key="index"
@@ -53,12 +53,12 @@ const activePhotoIndex = ref(0)
         </div>
       </div>
 
-      <div class="lg:w-1/2 flex flex-col gap-3">
-        <div class="flex items-center gap-3">
+      <div class="flex flex-col gap-3">
+        <div class="flex items-start gap-3">
           <h1 class="text-2xl font-bold tracking-tight">{{ listing.name }}</h1>
           <Badge
             :variant="listing.aiStatus === 'active' ? 'default' : 'secondary'"
-            class="text-xs"
+            class="text-xs shrink-0"
           >
             <Icon :name="aiStatusIcon[listing.aiStatus] || 'lucide:bot'" class="size-3 mr-1" />
             {{ aiStatusLabel[listing.aiStatus] || listing.aiStatus }}
