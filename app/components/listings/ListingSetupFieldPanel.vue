@@ -8,6 +8,7 @@ const emit = defineEmits<{ update: [listing: Listing] }>()
 // Field config dialog
 const configField = ref<{ key: string; label: string } | null>(null)
 function openConfig(key: string, label: string) { configField.value = { key, label } }
+function hasConfig(key: string) { return !!props.listing.resources.fieldConfig?.[key] }
 
 const activeTab = ref('basics')
 
@@ -71,28 +72,28 @@ const isFilled = (val?: string) => !!val?.trim()
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
               <Label>Property Name</Label>
-              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('name', 'Property Name')"><Icon name="lucide:pencil" class="size-3" /></button>
+              <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('name', 'Property Name')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('name')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
             </div>
             <Input :model-value="listing.name" @update:model-value="(v) => emit('update', { ...listing, name: String(v) })" />
           </div>
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
               <Label>Location</Label>
-              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('location', 'Location')"><Icon name="lucide:pencil" class="size-3" /></button>
+              <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('location', 'Location')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('location')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
             </div>
             <Input :model-value="listing.location" @update:model-value="(v) => emit('update', { ...listing, location: String(v) })" />
           </div>
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
               <Label>Check-in Time</Label>
-              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('checkInTime', 'Check-in Time')"><Icon name="lucide:pencil" class="size-3" /></button>
+              <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('checkInTime', 'Check-in Time')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('checkInTime')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
             </div>
             <Input type="time" :model-value="basics.checkInTime ?? '14:00'" @update:model-value="(v) => updateBasics({ checkInTime: String(v) })" />
           </div>
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center gap-1.5">
               <Label>Check-out Time</Label>
-              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('checkOutTime', 'Check-out Time')"><Icon name="lucide:pencil" class="size-3" /></button>
+              <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('checkOutTime', 'Check-out Time')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('checkOutTime')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
             </div>
             <Input type="time" :model-value="basics.checkOutTime ?? '11:00'" @update:model-value="(v) => updateBasics({ checkOutTime: String(v) })" />
           </div>
@@ -101,7 +102,7 @@ const isFilled = (val?: string) => !!val?.trim()
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
               <Label>Property Description</Label>
-              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('description', 'Property Description')"><Icon name="lucide:pencil" class="size-3" /></button>
+              <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('description', 'Property Description')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('description')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
             </div>
             <span v-if="isFilled(basics.description)" class="text-[10px] text-primary flex items-center gap-1">
               <Icon name="lucide:sparkles" class="size-3" /> AI filled
@@ -112,14 +113,14 @@ const isFilled = (val?: string) => !!val?.trim()
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5">
             <Label>House Rules</Label>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('houseRules', 'House Rules')"><Icon name="lucide:pencil" class="size-3" /></button>
+            <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('houseRules', 'House Rules')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('houseRules')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
           </div>
           <Textarea :model-value="basics.houseRules ?? ''" rows="3" placeholder="e.g. No smoking, no parties..." @update:model-value="(v) => updateBasics({ houseRules: String(v) })" />
         </div>
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5">
             <Label>Neighborhood Info</Label>
-            <button class="text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('neighborhood', 'Neighborhood Info')"><Icon name="lucide:pencil" class="size-3" /></button>
+            <button class="relative text-muted-foreground hover:text-foreground transition-colors" @click="openConfig('neighborhood', 'Neighborhood Info')"><Icon name="lucide:pencil" class="size-3" /><span v-if="hasConfig('neighborhood')" class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary" /></button>
           </div>
           <Textarea :model-value="basics.neighborhood ?? ''" rows="3" placeholder="Nearby attractions, transport..." @update:model-value="(v) => updateBasics({ neighborhood: String(v) })" />
         </div>
