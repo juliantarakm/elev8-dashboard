@@ -31,7 +31,7 @@ const activePhotoIndex = ref(0)
       </Button>
     </div>
 
-    <div class="relative overflow-hidden rounded-lg aspect-[16/9] bg-muted">
+    <div class="relative overflow-hidden rounded-lg aspect-[21/9] bg-muted">
       <img
         :src="listing.photos[activePhotoIndex]"
         :alt="listing.name"
