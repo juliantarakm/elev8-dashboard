@@ -46,6 +46,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Auto-Translate Plan** → `docs/superpowers/plans/2026-05-25-auto-translate.md`
 - **Listing Details Redesign Spec** → `docs/superpowers/specs/2026-06-01-listing-details-redesign.md`
 - **Listing Details Redesign Plan** → `docs/superpowers/plans/2026-06-01-listing-details-redesign.md`
+- **Listing Floating Menu + AI Auto-Fill Spec** → `docs/superpowers/specs/2026-06-01-listing-floating-menu-ai-autofill.md`
+- **Listing Floating Menu + AI Auto-Fill Plan** → `docs/superpowers/plans/2026-06-01-listing-floating-menu-ai-autofill.md`
 
 ---
 
@@ -63,6 +65,9 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
   - `OverrideAudience` = `'future' | 'current' | 'inquiry'`
   - `alwaysOn()` factory builds a 24/7 default schedule
 - `ListingStats`, `ListingPricing` (nightlyRate/fees/discounts/seasonalRates), `Booking`, `Review`, `MaintenanceTask`, `ListingMaintenance`
+- `ListingDocument`, `ListingResources` (documents, basics, listingDetails, sops, topicsToAvoid, propertyUpsells, fieldConfig)
+- `FieldConfig` = `{ stages: ReservationStage[] }` — per-field config stored in `listing.resources.fieldConfig[fieldKey]`
+- `ReservationStage` = `'future' | 'inquiry_past' | 'current'`
 - Reactive: `listings` uses `ref<Listing[]>` — mutations use `listings.value[index] = updated`
 - Helper exports: `allTags`, `allLocations`, `allProperties`, `allOtas` (computed)
 - Mock data: 16 listings with Unsplash photos (lst-1 has rich mock data + custom schedule; rest use `alwaysOn()` + defaults)
@@ -81,8 +86,16 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **`ListingMaintenanceTab.vue`** — Cleaning schedule + tasks + add-task dialog
 - **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
 - **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
+- **`ListingFloatingMenu.vue`** — Fixed floating pill bar at bottom of page: Listing Setup · Test AI · AI Schedule
+- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header centered + two-panel layout)
+- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
+- **`ListingSetupResourcePanel.vue`** — Right panel (300px): Property Documents (upload PDF/DOCX/TXT, download, delete), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
+- **`FieldConfigDialog.vue`** — Per-field config: Property Type info, Reservation Stages (Future/Inquiry Past/Current), Copy to Other Properties
+- **`ListingTestAIDialog.vue`** — Guest chat simulation dialog with mock AI responses based on listing data (check-in time, amenities, etc.)
 
 > **Schedule overlap rule**: time slots within a day auto-adjust to never overlap (`normalizeSlots` sorts by start and pushes each start past the previous end). Clear All resets hours+audience only (keeps enabled state). When 24/7 is on, the Custom Schedule is shown dimmed + non-editable.
+
+> **Floating menu**: `ListingFloatingMenu` emits `open-setup`, `open-test-ai`, `open-schedule`. Page handles these — setup/test-ai open their overlays, schedule triggers `openSchedule` prop on hero which programmatically opens the schedule Sheet.
 
 #### Listings Index (`app/pages/listings/index.vue`)
 - TanStack Table with search, tag filter (AND logic), AI status filter
@@ -678,14 +691,20 @@ app/
 │   │   └── TotalVisitors.vue
 │   ├── listings/
 │   │   ├── data/
-│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance), AiSchedule (always/days/dateOverrides), ref<Listing[]>, allTags/allLocations/allProperties/allOtas (computed)
-│   │   ├── ListingHeroCompact.vue ← Compact hero: editable photo, unit-type badge, AI status button → schedule Sheet (Weekly/Date Overrides) + Copy-to-Listings dialog
+│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance, resources), AiSchedule, Unit, ListingResources, FieldConfig, ReservationStage, ref<Listing[]>, allTags/allLocations/allProperties/allOtas
+│   │   ├── ListingHeroCompact.vue ← Compact hero: photo manager, unit switcher, editable name+tags, AI schedule Sheet, accepts openSchedule prop
 │   │   ├── ListingOverviewTab.vue ← Stats cards + upcoming bookings + recent reviews
 │   │   ├── ListingPricingTab.vue  ← Base pricing, discounts, seasonal rates
 │   │   ├── ListingCalendarTab.vue ← Bookings list + blocked dates
 │   │   ├── ListingReviewsTab.vue  ← Rating summary + filter + reviews with host reply
 │   │   ├── ListingMaintenanceTab.vue ← Cleaning schedule + tasks + add-task dialog
 │   │   ├── ListingSettingsTab.vue ← Property details form + amenities + distribution channels
+│   │   ├── ListingFloatingMenu.vue ← Fixed floating pill bar (Listing Setup / Test AI / AI Schedule)
+│   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (centered header + two-panel)
+│   │   ├── ListingSetupFieldPanel.vue ← Left panel: 6 tabs + pencil config icons per field
+│   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents + Elev8 AI + auto-fill + copy
+│   │   ├── FieldConfigDialog.vue  ← Per-field: reservation stages + copy to properties
+│   │   ├── ListingTestAIDialog.vue ← Guest chat simulation
 │   │   └── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
 │   ├── finance/
 │   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
