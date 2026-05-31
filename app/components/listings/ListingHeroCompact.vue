@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Listing, AiScheduleEntry } from '~/components/listings/data/listings'
+import type { Listing, AiSchedule, DateOverride } from '~/components/listings/data/listings'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
@@ -20,13 +21,11 @@ function selectPhoto(index: number) {
   showPhotoDialog.value = false
 }
 
-// AI Schedules
-const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
-const monthDays = Array.from({ length: 31 }, (_, i) => i + 1)
-
+// AI Schedule
+const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const showScheduleSheet = ref(false)
-const repeatTab = ref<'weekly' | 'monthly'>('weekly')
+const scheduleTab = ref<'weekly' | 'overrides'>('weekly')
+const schedule = computed(() => props.listing.aiSchedule)
 
 const aiStatusLabel: Record<string, string> = {
   active: 'AI Active',
@@ -34,41 +33,57 @@ const aiStatusLabel: Record<string, string> = {
   not_set: 'AI Not Set',
 }
 
-const enabledCount = computed(() => props.listing.aiSchedules.filter(s => s.enabled).length)
-const filteredSchedules = computed(() => props.listing.aiSchedules.filter(s => s.repeatType === repeatTab.value))
+const summary = computed(() => {
+  if (props.listing.aiStatus !== 'active') return null
+  if (schedule.value.always) return '24/7'
+  const count = schedule.value.days.filter(d => d.enabled).length
+  return count > 0 ? `${count} day${count > 1 ? 's' : ''}` : 'Off'
+})
 
-function commit(schedules: AiScheduleEntry[]) {
-  emit('update', { ...props.listing, aiSchedules: schedules })
+function patchSchedule(patch: Partial<AiSchedule>) {
+  emit('update', { ...props.listing, aiSchedule: { ...schedule.value, ...patch } })
 }
 
-function toggleAi() {
-  const newStatus = props.listing.aiStatus === 'active' ? 'paused' : 'active'
-  emit('update', { ...props.listing, aiStatus: newStatus })
+function setAlways(val: boolean) {
+  patchSchedule({ always: val })
 }
 
-function updateSchedule(id: string, patch: Partial<AiScheduleEntry>) {
-  commit(props.listing.aiSchedules.map(s => s.id === id ? { ...s, ...patch } : s))
+function updateDay(index: number, patch: Partial<AiSchedule['days'][number]>) {
+  const days = schedule.value.days.map((d, i) => i === index ? { ...d, ...patch } : d)
+  patchSchedule({ days })
 }
 
-function toggleDay(s: AiScheduleEntry, day: number) {
-  const days = s.activeDays.includes(day) ? s.activeDays.filter(d => d !== day) : [...s.activeDays, day]
-  updateSchedule(s.id, { activeDays: days })
+function clearAll() {
+  patchSchedule({ days: schedule.value.days.map(d => ({ ...d, enabled: false })) })
 }
 
-function addSchedule() {
-  const entry: AiScheduleEntry = {
-    id: `sch-${Date.now()}`,
-    name: 'New Schedule',
-    repeatType: repeatTab.value,
-    activeDays: [],
-    activeHours: { start: '09:00', end: '21:00' },
+function copyToProperties() {
+  toast.success('Schedule copied to all properties')
+}
+
+function saveSchedule() {
+  toast.success('Schedule saved')
+  showScheduleSheet.value = false
+}
+
+// Date overrides
+function addOverride() {
+  const o: DateOverride = {
+    id: `do-${Date.now()}`,
+    date: new Date().toISOString().split('T')[0]!,
     enabled: true,
+    start: '09:00',
+    end: '21:00',
   }
-  commit([...props.listing.aiSchedules, entry])
+  patchSchedule({ dateOverrides: [...schedule.value.dateOverrides, o] })
 }
 
-function removeSchedule(id: string) {
-  commit(props.listing.aiSchedules.filter(s => s.id !== id))
+function updateOverride(id: string, patch: Partial<DateOverride>) {
+  patchSchedule({ dateOverrides: schedule.value.dateOverrides.map(o => o.id === id ? { ...o, ...patch } : o) })
+}
+
+function removeOverride(id: string) {
+  patchSchedule({ dateOverrides: schedule.value.dateOverrides.filter(o => o.id !== id) })
 }
 </script>
 
@@ -105,9 +120,7 @@ function removeSchedule(id: string) {
             />
             <div class="flex flex-col items-start leading-tight">
               <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
-              <span v-if="listing.aiStatus === 'active' && enabledCount > 0" class="text-[10px] text-muted-foreground">
-                {{ enabledCount }} schedule{{ enabledCount > 1 ? 's' : '' }}
-              </span>
+              <span v-if="summary" class="text-[10px] text-muted-foreground">{{ summary }}</span>
             </div>
             <Icon name="lucide:chevron-right" class="size-3 text-muted-foreground" />
           </button>
@@ -162,101 +175,97 @@ function removeSchedule(id: string) {
     <Sheet v-model:open="showScheduleSheet">
       <SheetContent class="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>ElevAI Schedules</SheetTitle>
-          <SheetDescription>Manage automated guest messaging schedules</SheetDescription>
+          <SheetTitle>Schedule</SheetTitle>
+          <SheetDescription>{{ listing.name }}</SheetDescription>
         </SheetHeader>
 
         <div class="flex flex-col gap-5 px-4 pb-6">
-          <!-- Master Toggle -->
-          <div class="flex items-center justify-between rounded-lg border p-3">
-            <div class="flex items-center gap-3">
-              <div class="flex size-9 items-center justify-center rounded-full" :class="listing.aiStatus === 'active' ? 'bg-[#C8A84B]/10' : 'bg-muted'">
-                <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-4" :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'" />
-              </div>
-              <div>
-                <p class="text-sm font-medium">{{ aiStatusLabel[listing.aiStatus] }}</p>
-                <p class="text-xs text-muted-foreground">Master switch</p>
-              </div>
-            </div>
-            <Switch :checked="listing.aiStatus === 'active'" @update:checked="toggleAi" />
-          </div>
-
-          <!-- Weekly / Monthly Tabs -->
-          <Tabs v-model="repeatTab">
+          <Tabs v-model="scheduleTab">
             <TabsList class="w-full">
-              <TabsTrigger value="weekly" class="flex-1">Weekly</TabsTrigger>
-              <TabsTrigger value="monthly" class="flex-1">Monthly</TabsTrigger>
+              <TabsTrigger value="weekly" class="flex-1">Weekly Schedule</TabsTrigger>
+              <TabsTrigger value="overrides" class="flex-1">Date Overrides</TabsTrigger>
             </TabsList>
-          </Tabs>
 
-          <!-- Schedule List -->
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="s in filteredSchedules"
-              :key="s.id"
-              class="flex flex-col gap-3 rounded-lg border p-4"
-            >
-              <div class="flex items-center justify-between gap-2">
-                <Input :model-value="s.name" class="h-8 text-sm font-medium" @update:model-value="(val) => updateSchedule(s.id, { name: String(val) })" />
-                <Switch :checked="s.enabled" @update:checked="(val: boolean) => updateSchedule(s.id, { enabled: val })" />
-                <Button variant="ghost" size="icon" class="size-8 shrink-0 text-muted-foreground hover:text-destructive" @click="removeSchedule(s.id)">
+            <!-- Weekly Schedule -->
+            <TabsContent value="weekly" class="mt-5 flex flex-col gap-5">
+              <p class="text-xs text-muted-foreground">
+                Set the hours when ElevAI is active for guests, repeated every week. Turn on 24/7 for always-on coverage, or customize by day.
+              </p>
+
+              <!-- 24/7 Toggle -->
+              <div class="flex items-start justify-between gap-3 rounded-lg border p-4">
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-sm font-medium">24/7 Availability</span>
+                  <span class="text-xs text-muted-foreground">ElevAI will be on 24/7, ready to respond to any guest message at any time.</span>
+                </div>
+                <Switch :checked="schedule.always" @update:checked="setAlways" />
+              </div>
+
+              <!-- Custom Schedule -->
+              <div v-if="!schedule.always" class="flex flex-col gap-3">
+                <span class="text-sm font-medium">Custom Schedule</span>
+                <div
+                  v-for="(day, index) in schedule.days"
+                  :key="index"
+                  class="flex items-center gap-3 rounded-lg border p-3"
+                >
+                  <Switch :checked="day.enabled" class="shrink-0" @update:checked="(val: boolean) => updateDay(index, { enabled: val })" />
+                  <span class="w-9 shrink-0 text-sm font-medium">{{ dayNames[index] }}</span>
+                  <div v-if="day.enabled" class="flex items-center gap-1.5 flex-1">
+                    <Input type="time" :model-value="day.start" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { start: String(val) })" />
+                    <span class="text-xs text-muted-foreground">to</span>
+                    <Input type="time" :model-value="day.end" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { end: String(val) })" />
+                  </div>
+                  <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-1">
+                  <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">Clear All</Button>
+                  <div class="flex items-center gap-2">
+                    <Button variant="outline" size="sm" class="text-xs gap-1" @click="copyToProperties">
+                      <Icon name="lucide:copy" class="size-3" />
+                      Copy to Properties
+                    </Button>
+                    <Button size="sm" class="text-xs" @click="saveSchedule">Save Schedule</Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <!-- Date Overrides -->
+            <TabsContent value="overrides" class="mt-5 flex flex-col gap-3">
+              <p class="text-xs text-muted-foreground">
+                Override the weekly schedule for specific dates (holidays, events, etc.).
+              </p>
+
+              <div
+                v-for="o in schedule.dateOverrides"
+                :key="o.id"
+                class="flex items-center gap-3 rounded-lg border p-3"
+              >
+                <Switch :checked="o.enabled" class="shrink-0" @update:checked="(val: boolean) => updateOverride(o.id, { enabled: val })" />
+                <Input type="date" :model-value="o.date" class="h-8 w-32 text-xs" @update:model-value="(val) => updateOverride(o.id, { date: String(val) })" />
+                <div v-if="o.enabled" class="flex items-center gap-1.5 flex-1">
+                  <Input type="time" :model-value="o.start" class="h-8 text-xs" @update:model-value="(val) => updateOverride(o.id, { start: String(val) })" />
+                  <span class="text-xs text-muted-foreground">to</span>
+                  <Input type="time" :model-value="o.end" class="h-8 text-xs" @update:model-value="(val) => updateOverride(o.id, { end: String(val) })" />
+                </div>
+                <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
+                <Button variant="ghost" size="icon" class="size-8 shrink-0 text-muted-foreground hover:text-destructive" @click="removeOverride(o.id)">
                   <Icon name="lucide:trash-2" class="size-4" />
                 </Button>
               </div>
 
-              <!-- Weekly day selector -->
-              <div v-if="s.repeatType === 'weekly'" class="flex flex-wrap gap-1.5">
-                <Button
-                  v-for="(day, index) in dayNames"
-                  :key="index"
-                  variant="outline"
-                  size="sm"
-                  class="h-8 w-10 text-xs"
-                  :class="s.activeDays.includes(index) ? 'border-primary text-primary bg-primary/5' : ''"
-                  @click="toggleDay(s, index)"
-                >{{ day }}</Button>
-              </div>
+              <p v-if="schedule.dateOverrides.length === 0" class="text-sm text-muted-foreground text-center py-6">
+                No date overrides yet.
+              </p>
 
-              <!-- Monthly day selector -->
-              <div v-else class="flex flex-wrap gap-1">
-                <Button
-                  v-for="d in monthDays"
-                  :key="d"
-                  variant="outline"
-                  size="sm"
-                  class="h-7 w-7 p-0 text-[10px]"
-                  :class="s.activeDays.includes(d) ? 'border-primary text-primary bg-primary/5' : ''"
-                  @click="toggleDay(s, d)"
-                >{{ d }}</Button>
-              </div>
-
-              <!-- Hours -->
-              <div class="flex items-center gap-2">
-                <Select :model-value="s.activeHours.start" @update:model-value="(val) => updateSchedule(s.id, { activeHours: { ...s.activeHours, start: val as string } })">
-                  <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <span class="text-xs text-muted-foreground">to</span>
-                <Select :model-value="s.activeHours.end" @update:model-value="(val) => updateSchedule(s.id, { activeHours: { ...s.activeHours, end: val as string } })">
-                  <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <p v-if="filteredSchedules.length === 0" class="text-sm text-muted-foreground text-center py-6">
-              No {{ repeatTab }} schedules yet.
-            </p>
-
-            <Button variant="outline" class="w-full gap-1.5" @click="addSchedule">
-              <Icon name="lucide:plus" class="size-4" />
-              Add {{ repeatTab === 'weekly' ? 'Weekly' : 'Monthly' }} Schedule
-            </Button>
-          </div>
+              <Button variant="outline" class="w-full gap-1.5" @click="addOverride">
+                <Icon name="lucide:plus" class="size-4" />
+                Add Date Override
+              </Button>
+            </TabsContent>
+          </Tabs>
         </div>
       </SheetContent>
     </Sheet>
