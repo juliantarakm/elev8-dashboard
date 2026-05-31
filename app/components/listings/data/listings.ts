@@ -1,9 +1,14 @@
 export type OverrideAudience = 'future' | 'current' | 'inquiry'
 
-export interface DayHours {
-  enabled: boolean
+export interface TimeSlot {
+  id: string
   start: string // 24h "HH:MM"
   end: string
+}
+
+export interface DayHours {
+  enabled: boolean
+  slots: TimeSlot[]
   activeFor: OverrideAudience[]
 }
 
@@ -105,7 +110,7 @@ export interface Listing {
 function alwaysOn(): AiSchedule {
   return {
     always: true,
-    days: Array.from({ length: 7 }, () => ({ enabled: true, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] as OverrideAudience[] })),
+    days: Array.from({ length: 7 }, () => ({ enabled: true, slots: [{ id: 'ts-0', start: '00:00', end: '23:59' }], activeFor: ['future', 'current', 'inquiry'] as OverrideAudience[] })),
     dateOverrides: [],
   }
 }
@@ -131,13 +136,13 @@ export const listings = ref<Listing[]>([
     aiSchedule: {
       always: false,
       days: [
-        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: false, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] },
-        { enabled: false, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, slots: [{ id: 'ts-0', start: '08:00', end: '22:00' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, slots: [{ id: 'ts-0', start: '08:00', end: '22:00' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, slots: [{ id: 'ts-0', start: '08:00', end: '12:00' }, { id: 'ts-1', start: '14:00', end: '22:00' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, slots: [{ id: 'ts-0', start: '08:00', end: '22:00' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, slots: [{ id: 'ts-0', start: '08:00', end: '22:00' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: false, slots: [{ id: 'ts-0', start: '00:00', end: '23:59' }], activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: false, slots: [{ id: 'ts-0', start: '00:00', end: '23:59' }], activeFor: ['future', 'current', 'inquiry'] },
       ],
       dateOverrides: [],
     },

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Listing, AiSchedule, DateOverride, OverrideAudience } from '~/components/listings/data/listings'
+import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot } from '~/components/listings/data/listings'
 import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
@@ -62,8 +62,54 @@ function toggleDayAudience(index: number, value: OverrideAudience) {
   updateDay(index, { activeFor })
 }
 
+// Time slot helpers
+function addMinutes(t: string, mins: number): string {
+  const [h, m] = t.split(':').map(Number)
+  const total = Math.min(Math.max((h! * 60 + m!) + mins, 0), 23 * 60 + 59)
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+// Sort slots and push each start past the previous end so they never overlap
+function normalizeSlots(slots: TimeSlot[]): TimeSlot[] {
+  const sorted = [...slots].sort((a, b) => a.start.localeCompare(b.start))
+  let prevEnd = '00:00'
+  return sorted.map((s) => {
+    let start = s.start
+    let end = s.end
+    if (start < prevEnd) start = prevEnd
+    if (end <= start) end = addMinutes(start, 60)
+    prevEnd = end
+    return { ...s, start, end }
+  })
+}
+
+function updateSlot(dayIndex: number, slotId: string, patch: Partial<TimeSlot>) {
+  const day = schedule.value.days[dayIndex]!
+  const slots = normalizeSlots(day.slots.map(s => s.id === slotId ? { ...s, ...patch } : s))
+  updateDay(dayIndex, { slots })
+}
+
+function addSlot(dayIndex: number) {
+  const day = schedule.value.days[dayIndex]!
+  const last = day.slots[day.slots.length - 1]
+  const start = last ? last.end : '09:00'
+  const slot: TimeSlot = { id: `ts-${Date.now()}`, start, end: addMinutes(start, 120) }
+  updateDay(dayIndex, { slots: normalizeSlots([...day.slots, slot]) })
+}
+
+function removeSlot(dayIndex: number, slotId: string) {
+  const day = schedule.value.days[dayIndex]!
+  updateDay(dayIndex, { slots: day.slots.filter(s => s.id !== slotId) })
+}
+
+// Clear All: reset hours + settings only (keep enabled state)
 function clearAll() {
-  patchSchedule({ days: schedule.value.days.map(d => ({ ...d, enabled: false })) })
+  const days = schedule.value.days.map(d => ({
+    ...d,
+    slots: [{ id: 'ts-0', start: '00:00', end: '23:59' }],
+    activeFor: ['future', 'current', 'inquiry'] as OverrideAudience[],
+  }))
+  patchSchedule({ days })
 }
 
 function saveSchedule() {
@@ -253,25 +299,38 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 >
                   <div class="flex items-center gap-3">
                     <Switch :checked="day.enabled" class="shrink-0" @update:checked="(val: boolean) => updateDay(index, { enabled: val })" />
-                    <span class="w-9 shrink-0 text-sm font-medium">{{ dayNames[index] }}</span>
-                    <div v-if="day.enabled" class="flex items-center gap-1.5 flex-1">
-                      <Input type="time" :model-value="day.start" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { start: String(val) })" />
-                      <span class="text-xs text-muted-foreground">to</span>
-                      <Input type="time" :model-value="day.end" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { end: String(val) })" />
-                    </div>
-                    <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
+                    <span class="text-sm font-medium">{{ dayNames[index] }}</span>
+                    <span v-if="!day.enabled" class="ml-auto text-xs text-muted-foreground">Unavailable</span>
                   </div>
 
-                  <div v-if="day.enabled" class="flex flex-wrap gap-1.5 pl-12">
-                    <Button
-                      v-for="opt in audienceOptions"
-                      :key="opt.value"
-                      variant="outline"
-                      size="sm"
-                      class="h-6 text-[11px] px-2"
-                      :class="day.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
-                      @click="toggleDayAudience(index, opt.value)"
-                    >{{ opt.label }}</Button>
+                  <div v-if="day.enabled" class="flex flex-col gap-2 pl-12">
+                    <!-- Time slots -->
+                    <div v-for="slot in day.slots" :key="slot.id" class="flex items-center gap-1.5">
+                      <Input type="time" :model-value="slot.start" class="h-8 text-xs" @update:model-value="(val) => updateSlot(index, slot.id, { start: String(val) })" />
+                      <span class="text-xs text-muted-foreground">to</span>
+                      <Input type="time" :model-value="slot.end" class="h-8 text-xs" @update:model-value="(val) => updateSlot(index, slot.id, { end: String(val) })" />
+                      <Button variant="ghost" size="icon" class="size-7 shrink-0 text-muted-foreground hover:text-destructive" :disabled="day.slots.length === 1" @click="removeSlot(index, slot.id)">
+                        <Icon name="lucide:x" class="size-3.5" />
+                      </Button>
+                    </div>
+
+                    <Button variant="ghost" size="sm" class="h-6 w-fit gap-1 text-[11px] text-muted-foreground" @click="addSlot(index)">
+                      <Icon name="lucide:plus" class="size-3" />
+                      Add time
+                    </Button>
+
+                    <!-- Audience -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                      <Button
+                        v-for="opt in audienceOptions"
+                        :key="opt.value"
+                        variant="outline"
+                        size="sm"
+                        class="h-6 text-[11px] px-2"
+                        :class="day.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
+                        @click="toggleDayAudience(index, opt.value)"
+                      >{{ opt.label }}</Button>
+                    </div>
                   </div>
                 </div>
               </div>
