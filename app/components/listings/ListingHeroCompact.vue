@@ -340,7 +340,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
     <!-- Hero: photo + info -->
     <div class="flex gap-4 items-start">
       <!-- Photo + unit button (same width) -->
-      <div class="w-64 shrink-0 flex flex-col gap-1.5">
+      <div class="w-80 shrink-0 flex flex-col gap-1.5">
         <!-- 16/9 landscape photo -->
         <div class="relative w-full aspect-video overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
           <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
@@ -535,7 +535,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         </DialogHeader>
 
         <ScrollArea class="max-h-[65vh]">
-          <div class="grid grid-cols-4 gap-3 p-1">
+          <div class="grid grid-cols-3 gap-3 p-1">
             <div
               v-for="(photo, index) in listing.photos"
               :key="photo"
