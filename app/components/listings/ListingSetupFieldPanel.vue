@@ -54,8 +54,9 @@ const isFilled = (val?: string) => !!val?.trim()
     <Tabs v-model="activeTab" class="flex flex-col h-full overflow-hidden">
 
       <!-- Tab bar -->
-      <div class="flex-shrink-0 border-b py-3 overflow-x-auto flex justify-center">
-        <TabsList class="shrink-0">
+      <div class="flex-shrink-0 border-b py-3 overflow-x-auto">
+        <div class="flex justify-center min-w-max px-6">
+          <TabsList class="shrink-0">
           <TabsTrigger value="basics">Basics</TabsTrigger>
           <TabsTrigger value="listing-details">Listing Details</TabsTrigger>
           <TabsTrigger value="amenities">Amenities</TabsTrigger>
@@ -63,6 +64,7 @@ const isFilled = (val?: string) => !!val?.trim()
           <TabsTrigger value="topics">Topics to Avoid</TabsTrigger>
           <TabsTrigger value="upsells">Property Upsells</TabsTrigger>
         </TabsList>
+        </div>
       </div>
 
       <!-- Basics -->
