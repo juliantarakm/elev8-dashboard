@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-import type { Room } from '~/components/listings/data/listings'
-const props = defineProps<{ listing: Listing; activeRoom?: Room | null }>()
+import type { Unit } from '~/components/listings/data/listings'
+const props = defineProps<{ listing: Listing; activeUnit?: Unit | null }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 
 const filterRating = ref<number | null>(null)

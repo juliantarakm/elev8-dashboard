@@ -23,8 +23,8 @@ function updateListing(updated: Listing) {
   }
 }
 
-const activeRoomId = computed(() => listing.value?.activeRoomId ?? null)
-const activeRoom = computed(() => listing.value?.rooms?.find(r => r.id === activeRoomId.value) ?? null)
+const activeUnitId = computed(() => listing.value?.activeUnitId ?? null)
+const activeUnit = computed(() => listing.value?.units?.find(u => u.id === activeUnitId.value) ?? null)
 
 const activeTab = ref('overview')
 </script>
@@ -42,7 +42,7 @@ const activeTab = ref('overview')
   <div v-else class="flex flex-col gap-6">
     <ListingHeroCompact :listing="listing" @update="updateListing" />
 
-    <Tabs v-model="activeTab" :key="activeRoomId ?? 'no-room'">
+    <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
       <TabsList>
         <TabsTrigger value="overview">
           <Icon name="lucide:layout-grid" class="mr-1.5 size-3.5" />
@@ -71,23 +71,23 @@ const activeTab = ref('overview')
       </TabsList>
 
       <TabsContent value="overview" class="mt-6">
-        <ListingOverviewTab :listing="listing" :active-room="activeRoom" @switch-tab="activeTab = $event" />
+        <ListingOverviewTab :listing="listing" :active-unit="activeUnit" @switch-tab="activeTab = $event" />
       </TabsContent>
 
       <TabsContent value="pricing" class="mt-6">
-        <ListingPricingTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
+        <ListingPricingTab :listing="listing" :active-unit="activeUnit" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="calendar" class="mt-6">
-        <ListingCalendarTab :listing="listing" :active-room="activeRoom" />
+        <ListingCalendarTab :listing="listing" :active-unit="activeUnit" />
       </TabsContent>
 
       <TabsContent value="reviews" class="mt-6">
-        <ListingReviewsTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
+        <ListingReviewsTab :listing="listing" :active-unit="activeUnit" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="maintenance" class="mt-6">
-        <ListingMaintenanceTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
+        <ListingMaintenanceTab :listing="listing" :active-unit="activeUnit" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="settings" class="mt-6">

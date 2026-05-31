@@ -85,7 +85,7 @@ export interface ListingMaintenance {
   tasks: MaintenanceTask[]
 }
 
-export interface Room {
+export interface Unit {
   id: string
   name: string
   capacity: number
@@ -100,8 +100,8 @@ export interface Listing {
   otaConnected: string[]
   amenities: string[]
   room: string
-  rooms?: Room[]
-  activeRoomId?: string
+  units?: Unit[]
+  activeUnitId?: string
   capacity: number
   aiStatus: 'active' | 'paused' | 'not_set'
   unitType: 'single' | 'multi'
@@ -133,11 +133,11 @@ export const listings = ref<Listing[]>([
     otaConnected: ['Airbnb'],
     amenities: ['Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden'],
     room: 'Master Suite',
-    rooms: [
-      { id: 'rm-1', name: 'Master Suite', capacity: 2 },
-      { id: 'rm-2', name: 'Garden Room', capacity: 2 },
-      { id: 'rm-3', name: 'Pool Bungalow', capacity: 4 },
-      { id: 'rm-4', name: 'Loft Studio', capacity: 2 },
+    units: [
+      { id: 'un-1', name: 'Master Suite', capacity: 2 },
+      { id: 'un-2', name: 'Garden Unit', capacity: 2 },
+      { id: 'un-3', name: 'Pool Unit', capacity: 4 },
+      { id: 'un-4', name: 'Loft Unit', capacity: 2 },
     ],
     capacity: 10,
     aiStatus: 'active',
