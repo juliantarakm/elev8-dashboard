@@ -8,6 +8,64 @@ export interface AiSchedule {
   }
 }
 
+export interface ListingStats {
+  monthlyRevenue: number
+  revenueTrend: number
+  occupancyRate: number
+  occupancyTrend: number
+  avgRating: number
+  totalReviews: number
+}
+
+export interface ListingPricing {
+  nightlyRate: number
+  cleaningFee: number
+  serviceFee: number
+  weeklyDiscount: number
+  monthlyDiscount: number
+  seasonalRates: Array<{ startDate: string; endDate: string; rate: number; label: string }>
+}
+
+export interface Booking {
+  id: string
+  guestName: string
+  checkIn: string
+  checkOut: string
+  nights: number
+  status: 'confirmed' | 'pending' | 'cancelled'
+  revenue: number
+  source: string
+}
+
+export interface Review {
+  id: string
+  guestName: string
+  date: string
+  rating: number
+  text: string
+  hostReply?: string
+  categories: {
+    cleanliness: number
+    communication: number
+    location: number
+    value: number
+  }
+}
+
+export interface MaintenanceTask {
+  id: string
+  title: string
+  date: string
+  assignedTo: string
+  status: 'pending' | 'in_progress' | 'completed'
+  type: 'cleaning' | 'repair' | 'inspection'
+}
+
+export interface ListingMaintenance {
+  cleaningSchedule: Array<{ task: string; frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' }>
+  tasks: MaintenanceTask[]
+}
+
 export interface Listing {
   id: string
   name: string
@@ -21,6 +79,12 @@ export interface Listing {
   aiStatus: 'active' | 'paused' | 'not_set'
   photos: string[]
   aiSchedule: AiSchedule
+  stats: ListingStats
+  pricing: ListingPricing
+  bookings: Booking[]
+  blockedDates: string[]
+  reviews: Review[]
+  maintenance: ListingMaintenance
 }
 
 export const listings = ref<Listing[]>([
@@ -46,6 +110,49 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: {
+      monthlyRevenue: 4280,
+      revenueTrend: 12,
+      occupancyRate: 78,
+      occupancyTrend: 5,
+      avgRating: 4.8,
+      totalReviews: 24,
+    },
+    pricing: {
+      nightlyRate: 185,
+      cleaningFee: 45,
+      serviceFee: 25,
+      weeklyDiscount: 10,
+      monthlyDiscount: 20,
+      seasonalRates: [
+        { startDate: '2026-07-01', endDate: '2026-08-31', rate: 220, label: 'Peak Season' },
+        { startDate: '2026-12-20', endDate: '2027-01-05', rate: 250, label: 'Holiday' },
+      ],
+    },
+    bookings: [
+      { id: 'bk-1', guestName: 'Sarah Mitchell', checkIn: '2026-06-05', checkOut: '2026-06-09', nights: 4, status: 'confirmed', revenue: 740, source: 'Airbnb' },
+      { id: 'bk-2', guestName: 'James Kim', checkIn: '2026-06-12', checkOut: '2026-06-15', nights: 3, status: 'confirmed', revenue: 555, source: 'Booking.com' },
+      { id: 'bk-3', guestName: 'Emma Wilson', checkIn: '2026-06-20', checkOut: '2026-06-25', nights: 5, status: 'pending', revenue: 925, source: 'Airbnb' },
+    ],
+    blockedDates: ['2026-06-10', '2026-06-11'],
+    reviews: [
+      { id: 'rv-1', guestName: 'Sarah Mitchell', date: '2026-05-20', rating: 5, text: 'Amazing villa! The pool was perfect and staff was incredibly helpful. Would definitely come back.', categories: { cleanliness: 5, communication: 5, location: 4, value: 5 } },
+      { id: 'rv-2', guestName: 'David Lee', date: '2026-05-10', rating: 4, text: 'Great location and beautiful property. WiFi could be better but overall a wonderful stay.', hostReply: 'Thank you David! We have upgraded our WiFi since your visit.', categories: { cleanliness: 4, communication: 5, location: 5, value: 4 } },
+      { id: 'rv-3', guestName: 'Anna Chen', date: '2026-04-28', rating: 5, text: 'Absolutely stunning property. The garden is beautiful and the rooms are spacious and clean.', categories: { cleanliness: 5, communication: 5, location: 5, value: 5 } },
+    ],
+    maintenance: {
+      cleaningSchedule: [
+        { task: 'Pool cleaning', frequency: 'daily' },
+        { task: 'Garden maintenance', frequency: 'weekly' },
+        { task: 'Deep clean', frequency: 'biweekly' },
+        { task: 'AC filter replacement', frequency: 'monthly' },
+      ],
+      tasks: [
+        { id: 'mt-1', title: 'Fix leaking faucet - Master bathroom', date: '2026-06-03', assignedTo: 'Wayan Adi', status: 'pending', type: 'repair' },
+        { id: 'mt-2', title: 'Pre-arrival deep clean', date: '2026-06-04', assignedTo: 'Made Surya', status: 'in_progress', type: 'cleaning' },
+        { id: 'mt-3', title: 'Pool pump inspection', date: '2026-05-28', assignedTo: 'Wayan Adi', status: 'completed', type: 'inspection' },
+      ],
+    },
   },
   {
     id: 'lst-2',
@@ -69,6 +176,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-3',
@@ -92,6 +205,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-4',
@@ -115,6 +234,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-5',
@@ -138,6 +263,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-6',
@@ -161,6 +292,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-7',
@@ -184,6 +321,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-8',
@@ -207,6 +350,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-9',
@@ -230,6 +379,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-10',
@@ -253,6 +408,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-11',
@@ -276,6 +437,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-12',
@@ -299,6 +466,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-13',
@@ -322,6 +495,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-14',
@@ -345,6 +524,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-15',
@@ -368,6 +553,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
   {
     id: 'lst-16',
@@ -391,6 +582,12 @@ export const listings = ref<Listing[]>([
       activeDays: [1, 2, 3, 4, 5],
       activeHours: { start: '08:00', end: '22:00' },
     },
+    stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
+    pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
+    bookings: [],
+    blockedDates: [],
+    reviews: [],
+    maintenance: { cleaningSchedule: [], tasks: [] },
   },
 ])
 

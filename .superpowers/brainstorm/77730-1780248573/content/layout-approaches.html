@@ -1,0 +1,125 @@
+<h2>Listing Details — Layout Approaches</h2>
+<p class="subtitle">Clean & spacious Airbnb-style, with new sections: pricing, calendar, performance, reviews, maintenance</p>
+
+<div class="cards">
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:#ccc;">
+        <div style="background:#2d2d44;border-radius:6px;padding:8px;display:flex;gap:8px;">
+          <div style="background:#444;border-radius:4px;width:80px;height:50px;"></div>
+          <div style="flex:1;">
+            <div style="background:#555;height:10px;width:70%;border-radius:2px;margin-bottom:4px;"></div>
+            <div style="background:#444;height:8px;width:40%;border-radius:2px;"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+          <div style="background:#2d2d44;border-radius:4px;padding:6px;text-align:center;font-size:9px;">Revenue<br><span style="color:#6ee7b7;">$4.2k</span></div>
+          <div style="background:#2d2d44;border-radius:4px;padding:6px;text-align:center;font-size:9px;">Occupancy<br><span style="color:#6ee7b7;">78%</span></div>
+          <div style="background:#2d2d44;border-radius:4px;padding:6px;text-align:center;font-size:9px;">Rating<br><span style="color:#6ee7b7;">4.8</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            📅 Calendar<br><span style="color:#888;">Upcoming bookings</span>
+          </div>
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            💰 Pricing<br><span style="color:#888;">Nightly rates</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            ⭐ Reviews<br><span style="color:#888;">Guest feedback</span>
+          </div>
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            🧹 Maintenance<br><span style="color:#888;">Schedule</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A) Single-Page Scroll</h3>
+      <p>Semua konten di satu halaman panjang, scroll vertikal. Hero compact di atas, lalu sections berurutan ke bawah. Mirip Airbnb listing page.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Semua info visible tanpa navigasi</li><li>Flow natural — scan dari atas ke bawah</li><li>Paling simple untuk implement</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Page bisa jadi panjang dengan 8+ sections</li><li>Harus scroll jauh untuk section bawah</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="display:flex;gap:8px;font-size:11px;color:#ccc;">
+        <div style="width:60px;display:flex;flex-direction:column;gap:4px;">
+          <div style="background:#4f46e5;border-radius:4px;padding:4px;font-size:8px;text-align:center;">Overview</div>
+          <div style="background:#2d2d44;border-radius:4px;padding:4px;font-size:8px;text-align:center;">Pricing</div>
+          <div style="background:#2d2d44;border-radius:4px;padding:4px;font-size:8px;text-align:center;">Calendar</div>
+          <div style="background:#2d2d44;border-radius:4px;padding:4px;font-size:8px;text-align:center;">Reviews</div>
+          <div style="background:#2d2d44;border-radius:4px;padding:4px;font-size:8px;text-align:center;">Settings</div>
+          <div style="background:#2d2d44;border-radius:4px;padding:4px;font-size:8px;text-align:center;">AI</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#2d2d44;border-radius:4px;padding:6px;font-size:9px;">
+            <div style="background:#555;height:8px;width:50%;border-radius:2px;margin-bottom:4px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+              <div style="background:#333;border-radius:3px;padding:4px;text-align:center;font-size:8px;">$4.2k</div>
+              <div style="background:#333;border-radius:3px;padding:4px;text-align:center;font-size:8px;">78%</div>
+              <div style="background:#333;border-radius:3px;padding:4px;text-align:center;font-size:8px;">4.8★</div>
+            </div>
+          </div>
+          <div style="background:#2d2d44;border-radius:4px;padding:6px;height:60px;font-size:9px;">
+            Main content area<br><span style="color:#888;">Changes per section</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B) Sticky Sidebar Nav + Content</h3>
+      <p>Sidebar kiri dengan navigation links, konten utama di kanan. Hero tetap di atas full-width. Sidebar sticky saat scroll.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Quick jump ke section manapun</li><li>Konten area tetap focused</li><li>Scalable — mudah tambah section baru</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Sidebar makan space horizontal</li><li>Di mobile perlu collapse/hide</li><li>Slightly more complex</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; background: #1a1a2e;">
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:#ccc;">
+        <div style="background:#2d2d44;border-radius:6px;padding:8px;display:flex;gap:8px;">
+          <div style="background:#444;border-radius:4px;width:80px;height:50px;"></div>
+          <div style="flex:1;">
+            <div style="background:#555;height:10px;width:70%;border-radius:2px;margin-bottom:4px;"></div>
+            <div style="background:#444;height:8px;width:40%;border-radius:2px;"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;font-size:8px;">
+          <div style="background:#4f46e5;border-radius:10px;padding:3px 8px;">Overview</div>
+          <div style="background:#2d2d44;border-radius:10px;padding:3px 8px;">Pricing</div>
+          <div style="background:#2d2d44;border-radius:10px;padding:3px 8px;">Calendar</div>
+          <div style="background:#2d2d44;border-radius:10px;padding:3px 8px;">Reviews</div>
+          <div style="background:#2d2d44;border-radius:10px;padding:3px 8px;">More ▾</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            Stats cards<br><span style="color:#6ee7b7;">$4.2k / 78%</span>
+          </div>
+          <div style="background:#2d2d44;border-radius:4px;padding:8px;font-size:9px;">
+            Quick info<br><span style="color:#888;">Amenities, etc</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C) Horizontal Tabs (Improved)</h3>
+      <p>Mirip sekarang tapi tabs diperbanyak & diperbaiki. Hero compact, lalu horizontal tab bar (scrollable), konten per tab lebih focused & spacious.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Familiar pattern — user sudah kenal tabs</li><li>Setiap tab clean & tidak overwhelming</li><li>Least disruptive dari current design</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Banyak tabs bisa crowded</li><li>Konten tersembunyi di balik tab</li><li>Kurang "at a glance" overview</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 24px;">💡 Rekomendasi saya: <strong>Option A (Single-Page Scroll)</strong> — paling cocok dengan vibe Airbnb yang clean & spacious. Semua info langsung visible, tinggal scroll. Bisa ditambah sticky header kecil untuk quick-jump kalau page terlalu panjang.</p>
