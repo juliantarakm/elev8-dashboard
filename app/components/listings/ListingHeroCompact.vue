@@ -138,7 +138,7 @@ watch(copyTagPopoverOpen, (open) => {
 
 const filteredCopyListings = computed(() => otherListings.value.filter((l) => {
   const matchesSearch = !copySearch.value || l.name.toLowerCase().includes(copySearch.value.toLowerCase())
-  const matchesTags = copyTagFilters.value.length === 0 || copyTagFilters.value.some(t => l.tags.includes(t))
+  const matchesTags = copyTagFilters.value.length === 0 || copyTagFilters.value.every(t => l.tags.includes(t))
   return matchesSearch && matchesTags
 }))
 
