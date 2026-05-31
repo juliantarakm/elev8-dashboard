@@ -26,6 +26,15 @@ function selectPhoto(index: number) {
   emit('update', { ...props.listing, photos })
   showPhotoDialog.value = false
 }
+
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+const scheduleSummary = computed(() => {
+  const s = props.listing.aiSchedule
+  if (props.listing.aiStatus !== 'active' || !s.enabled) return null
+  const days = [...s.activeDays].sort((a, b) => a - b).map(d => dayNames[d]).join(', ')
+  return { days: days || 'No days', hours: `${s.activeHours.start}–${s.activeHours.end}` }
+})
 </script>
 
 <template>
@@ -74,6 +83,17 @@ function selectPhoto(index: number) {
             <Icon :name="otaIcon(ota)" class="size-3" />
             <span class="text-xs">{{ ota }}</span>
           </div>
+        </div>
+
+        <div v-if="scheduleSummary" class="flex items-center gap-3 text-xs text-muted-foreground">
+          <span class="flex items-center gap-1.5">
+            <Icon name="lucide:calendar-clock" class="size-3.5 text-[#C8A84B]" />
+            {{ scheduleSummary.days }}
+          </span>
+          <span class="flex items-center gap-1.5">
+            <Icon name="lucide:clock" class="size-3.5 text-[#C8A84B]" />
+            {{ scheduleSummary.hours }}
+          </span>
         </div>
       </div>
     </div>
