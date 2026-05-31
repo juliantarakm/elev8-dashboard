@@ -33,7 +33,7 @@ const activePhotoIndex = ref(0)
 
     <div class="flex flex-col lg:flex-row gap-6">
       <div class="lg:w-1/2 flex flex-col gap-3">
-        <div class="relative overflow-hidden rounded-lg aspect-[4/3] bg-muted">
+        <div class="relative overflow-hidden rounded-lg aspect-[4/3] max-w-md bg-muted">
           <img
             :src="listing.photos[activePhotoIndex]"
             :alt="listing.name"
