@@ -72,6 +72,19 @@ function switchRoom(roomId: string) {
   emit('update', { ...props.listing, activeRoomId: roomId })
 }
 
+function addRoom() {
+  const newRoom: Room = {
+    id: `rm-${Date.now()}`,
+    name: `Room ${(props.listing.rooms?.length ?? 0) + 1}`,
+    capacity: 2,
+  }
+  emit('update', {
+    ...props.listing,
+    rooms: [...(props.listing.rooms ?? []), newRoom],
+    activeRoomId: newRoom.id,
+  })
+}
+
 // AI Schedule
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const showScheduleSheet = ref(false)
@@ -286,22 +299,37 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         </div>
 
         <!-- Unit / room switcher button (full width of photo) -->
-        <DropdownMenu v-if="listing.rooms && listing.rooms.length > 1">
+        <DropdownMenu v-if="listing.rooms && listing.rooms.length > 0 || listing.unitType === 'multi'">
           <DropdownMenuTrigger as-child>
             <button class="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-accent">
               <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                <Icon name="lucide:door-open" class="size-4 text-muted-foreground" />
+                <Icon :name="activeRoom ? 'lucide:door-open' : 'lucide:building-2'" class="size-4 text-muted-foreground" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">{{ activeRoom ? activeRoom.name : 'Multi-Unit' }}</span>
-                <span class="truncate text-xs text-muted-foreground">{{ activeRoom ? `${activeRoom.capacity} guests` : `${listing.rooms.length} rooms` }}</span>
+                <span class="truncate text-xs text-muted-foreground">
+                  {{ activeRoom ? `${activeRoom.capacity} guests` : `${listing.rooms?.length ?? 0} rooms` }}
+                </span>
               </div>
               <Icon name="lucide:chevrons-up-down" class="size-4 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent class="w-48" align="start">
-            <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Room</DropdownMenuLabel>
+
+          <DropdownMenuContent class="w-56" align="start">
+            <!-- Property section -->
+            <DropdownMenuLabel class="text-xs text-muted-foreground">Property</DropdownMenuLabel>
+            <DropdownMenuItem class="flex items-center gap-2 cursor-default opacity-70" disabled>
+              <Icon name="lucide:building-2" class="size-4" />
+              <div class="flex flex-col leading-tight">
+                <span class="text-sm font-medium">{{ listing.property }}</span>
+                <span class="text-xs text-muted-foreground">{{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}</span>
+              </div>
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
+
+            <!-- Rooms section -->
+            <DropdownMenuLabel class="text-xs text-muted-foreground">Rooms</DropdownMenuLabel>
             <DropdownMenuItem
               v-for="room in listing.rooms"
               :key="room.id"
@@ -312,12 +340,20 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 <span class="text-sm font-medium">{{ room.name }}</span>
                 <span class="text-xs text-muted-foreground">{{ room.capacity }} guests</span>
               </div>
-              <Icon v-if="room.id === (listing.activeRoomId ?? listing.rooms?.[0]?.id)" name="lucide:check" class="size-4 shrink-0 text-primary" />
+              <Icon v-if="room.id === listing.activeRoomId" name="lucide:check" class="size-4 shrink-0 text-primary" />
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem class="flex items-center gap-2 cursor-pointer text-muted-foreground" @click="addRoom">
+              <Icon name="lucide:plus" class="size-4" />
+              <span class="text-sm">Add Room</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Badge v-else variant="outline" class="w-full justify-center text-xs">
+        <!-- Single unit (no rooms) -->
+        <Badge v-if="listing.unitType === 'single' && !listing.rooms?.length" variant="outline" class="w-full justify-center text-xs">
           <Icon name="lucide:home" class="size-3 mr-1" />
           Single Unit
         </Badge>

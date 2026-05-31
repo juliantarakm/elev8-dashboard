@@ -139,7 +139,6 @@ export const listings = ref<Listing[]>([
       { id: 'rm-3', name: 'Pool Bungalow', capacity: 4 },
       { id: 'rm-4', name: 'Loft Studio', capacity: 2 },
     ],
-    activeRoomId: 'rm-1',
     capacity: 10,
     aiStatus: 'active',
     unitType: 'multi',
