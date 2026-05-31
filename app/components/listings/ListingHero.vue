@@ -19,6 +19,10 @@ const aiStatusLabel: Record<string, string> = {
   not_set: 'AI Not Set',
 }
 
+function otaIcon(ota: string) {
+  return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
+}
+
 const activePhotoIndex = ref(0)
 </script>
 
@@ -67,6 +71,23 @@ const activePhotoIndex = ref(0)
         <div class="flex items-center gap-2 text-muted-foreground">
           <Icon name="lucide:map-pin" class="size-4" />
           <span class="text-sm">{{ listing.location }}</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div
+            v-for="ota in listing.otaConnected"
+            :key="ota"
+            class="flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+          >
+            <Icon :name="otaIcon(ota)" class="size-3.5" />
+            <span class="text-xs">{{ ota }}</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+          <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-[10px] px-1.5 py-0">
+            {{ tag }}
+          </Badge>
         </div>
       </div>
     </div>

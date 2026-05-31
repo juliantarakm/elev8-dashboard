@@ -16,10 +16,6 @@ const stats = computed(() => [
   { label: 'Location', value: props.listing.location, icon: 'lucide:map-pin' },
 ])
 
-function otaIcon(ota: string) {
-  return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
-}
-
 const allAmenities = [
   'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
   'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
@@ -104,29 +100,6 @@ function removeAmenity(amenity: string) {
           >
             {{ amenity }}
             <Icon name="lucide:x" class="size-3" />
-          </Badge>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">OTA Connections</h3>
-        <div class="flex flex-wrap gap-3">
-          <div
-            v-for="ota in listing.otaConnected"
-            :key="ota"
-            class="flex items-center gap-2 rounded-full border px-3 py-1.5"
-          >
-            <Icon :name="otaIcon(ota)" class="size-4" />
-            <span class="text-sm">{{ ota }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Tags</h3>
-        <div class="flex flex-wrap gap-2">
-          <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-xs">
-            {{ tag }}
           </Badge>
         </div>
       </div>
