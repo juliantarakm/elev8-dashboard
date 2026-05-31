@@ -223,60 +223,80 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       Back
     </Button>
 
-    <div class="flex items-center gap-4">
-      <!-- Editable Photo -->
-      <div class="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
-        <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Icon name="lucide:pencil" class="size-4 text-white" />
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center gap-2">
-          <h1 class="text-xl font-semibold tracking-tight">{{ listing.name }}</h1>
-
-          <!-- AI Status Button -->
-          <button
-            class="flex items-center gap-2 rounded-full border px-3 py-1 transition-colors hover:bg-accent"
-            :class="listing.aiStatus === 'active' ? 'border-[#C8A84B]/40 bg-[#C8A84B]/10' : 'border-border'"
-            @click="showScheduleSheet = true"
-          >
-            <Icon
-              :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'"
-              class="size-3.5"
-              :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'"
-            />
-            <div class="flex flex-col items-start leading-tight">
-              <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
-              <span v-if="summary" class="text-[10px] text-muted-foreground">{{ summary }}</span>
+    <!-- Listing Switcher Button -->
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button class="flex w-full items-center gap-3 overflow-hidden rounded-lg border p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <!-- Landscape photo -->
+          <div class="relative w-24 h-14 shrink-0 overflow-hidden rounded-md bg-muted group cursor-pointer" @click.stop="showPhotoDialog = true">
+            <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Icon name="lucide:pencil" class="size-3.5 text-white" />
             </div>
-            <Icon name="lucide:chevron-right" class="size-3 text-muted-foreground" />
-          </button>
-        </div>
-
-        <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Icon name="lucide:map-pin" class="size-3.5" />
-          <span>{{ listing.location }}</span>
-          <span class="text-muted-foreground/50">·</span>
-          <span>{{ listing.property }}</span>
-          <span class="text-muted-foreground/50">·</span>
-          <Badge variant="outline" class="text-xs">
-            <Icon :name="listing.unitType === 'multi' ? 'lucide:building-2' : 'lucide:home'" class="size-3 mr-1" />
-            {{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}
-          </Badge>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <div
-            v-for="ota in listing.otaConnected"
-            :key="ota"
-            class="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5"
-          >
-            <Icon :name="otaIcon(ota)" class="size-3" />
-            <span class="text-xs">{{ ota }}</span>
           </div>
+
+          <!-- Info -->
+          <div class="grid flex-1 text-left text-sm leading-tight min-w-0">
+            <span class="truncate font-semibold">{{ listing.name }}</span>
+            <span class="truncate text-xs text-muted-foreground flex items-center gap-1">
+              <Icon :name="listing.unitType === 'multi' ? 'lucide:building-2' : 'lucide:home'" class="size-3 shrink-0" />
+              {{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}
+            </span>
+          </div>
+
+          <Icon name="lucide:chevrons-up-down" class="ml-auto size-4 shrink-0 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent class="w-72" align="start">
+        <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Listing</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          v-for="l in listings"
+          :key="l.id"
+          class="flex items-center gap-3 p-2 cursor-pointer"
+          :class="l.id === listing.id ? 'bg-accent' : ''"
+          @click="router.push(`/listings/${l.id}`)"
+        >
+          <div class="w-12 h-8 shrink-0 overflow-hidden rounded bg-muted">
+            <img :src="l.photos[0]" :alt="l.name" class="size-full object-cover" />
+          </div>
+          <div class="grid flex-1 min-w-0 text-sm leading-tight">
+            <span class="truncate font-medium">{{ l.name }}</span>
+            <span class="truncate text-xs text-muted-foreground">{{ l.location }}</span>
+          </div>
+          <Icon v-if="l.id === listing.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+
+    <!-- AI Status + OTA row -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- AI Status Button -->
+      <button
+        class="flex items-center gap-2 rounded-full border px-3 py-1 transition-colors hover:bg-accent"
+        :class="listing.aiStatus === 'active' ? 'border-[#C8A84B]/40 bg-[#C8A84B]/10' : 'border-border'"
+        @click="showScheduleSheet = true"
+      >
+        <Icon
+          :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'"
+          class="size-3.5"
+          :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'"
+        />
+        <div class="flex flex-col items-start leading-tight">
+          <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
+          <span v-if="summary" class="text-[10px] text-muted-foreground">{{ summary }}</span>
         </div>
+        <Icon name="lucide:chevron-right" class="size-3 text-muted-foreground" />
+      </button>
+
+      <div
+        v-for="ota in listing.otaConnected"
+        :key="ota"
+        class="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5"
+      >
+        <Icon :name="otaIcon(ota)" class="size-3" />
+        <span class="text-xs">{{ ota }}</span>
       </div>
     </div>
 
