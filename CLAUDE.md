@@ -14,6 +14,7 @@
 - **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
 - **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
+- **Listings** — Property management with tabbed detail page (Overview, Property Settings, AI Schedule)
 - **Upsells** — Full request system: Catalog CRUD, Order tracking with lifecycle (pending→confirmed→completed/cancelled), Cancellation flow with refund policies, Staff/Guest notifications, Inbox integration (UpsellOrderCreator, UpsellOfferCard in chat, linked orders in ReservationPanel)
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
@@ -47,6 +48,28 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 ---
 
 ## 📊 Architecture Quick Reference
+
+### Listing Module (`app/components/listings/`)
+
+#### Data + Types (`app/components/listings/data/listings.ts`)
+- `Listing` type with `photos: string[]`, `aiSchedule: AiSchedule`
+- `AiSchedule` type with `enabled`, `repeatType: 'weekly' | 'monthly'`, `activeDays: number[]`, `activeHours: { start, end }`
+- Reactive: `listings` uses `ref<Listing[]>` — mutations use `listings.value[index] = updated`
+- Helper exports: `allTags`, `allLocations`, `allProperties`, `allOtas` (computed)
+- Mock data: 16 listings with Unsplash photos
+
+#### Page (`app/pages/listings/[id].vue`)
+- Tabbed layout: Overview | Property Settings | AI Schedule
+- Imports child components explicitly (not auto-imported)
+
+#### Child Components
+- **`ListingHero.vue`** — Photo gallery (360px grid) + name/location/AI badge + tags + OTA connections
+- **`ListingOverview.vue`** — Stats cards + editable amenities (add/remove via Popover)
+- **`ListingPropertySettings.vue`** — Sub-tabs: Details form + Distribution Channels
+- **`ListingAiSchedule.vue`** — AI toggle (Switch) + schedule config (repeat type, days, hours, timeline preview)
+
+#### Listings Index (`app/pages/listings/index.vue`)
+- TanStack Table with search, tag filter, AI status filter
 
 ### Inbox Module (`app/components/inbox/`)
 
@@ -619,6 +642,14 @@ app/
 │   │   └── DateRangePicker.vue
 │   ├── dashboard/
 │   │   └── TotalVisitors.vue
+│   ├── listings/
+│   │   ├── data/
+│   │   │   └── listings.ts        ← Listing type, AiSchedule, ref<Listing[]>, allTags/allLocations/allProperties/allOtas (computed)
+│   │   ├── ListingHero.vue        ← Photo gallery (360px) + name/location/AI badge + tags + OTA connections
+│   │   ├── ListingOverview.vue    ← Stats cards + editable amenities (add/remove via Popover)
+│   │   ├── ListingPropertySettings.vue ← Sub-tabs: Details form + Distribution Channels
+│   │   ├── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
+│   │   └── ListingAiSchedule.vue  ← AI toggle (Switch) + schedule config (repeat type, days, hours, timeline preview)
 │   ├── finance/
 │   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
 │   │   ├── CostDetailDrawer.vue  ← Shows linked material/task entries in drawer
@@ -770,6 +801,9 @@ app/
     ├── inbox.vue
     ├── index.vue               # Dashboard home
     ├── kanban.vue
+    ├── listings/
+    │   ├── index.vue           # Listings table (TanStack Table + search/tag/AI filters)
+    │   └── [id].vue            # Listing detail page (Hero + Overview/PropertySettings/AiSchedule tabs)
     ├── settings/
     │   ├── account.vue
     │   ├── appearance.vue
