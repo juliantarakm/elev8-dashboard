@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 import { listings } from '~/components/listings/data/listings'
+import ListingHero from '~/components/listings/ListingHero.vue'
+import ListingOverview from '~/components/listings/ListingOverview.vue'
+import ListingPropertySettings from '~/components/listings/ListingPropertySettings.vue'
+import ListingAiSchedule from '~/components/listings/ListingAiSchedule.vue'
 
 definePageMeta({ layout: 'default' })
 
