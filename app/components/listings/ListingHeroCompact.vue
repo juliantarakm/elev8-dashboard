@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot } from '~/components/listings/data/listings'
-import { listings } from '~/components/listings/data/listings'
+import { listings, allTags } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listing: Listing }>()
@@ -120,7 +120,34 @@ function saveSchedule() {
 // Copy to other listings
 const showCopyDialog = ref(false)
 const copyTargets = ref<string[]>([])
+const copySearch = ref('')
+const copyTagFilters = ref<string[]>([])
 const otherListings = computed(() => listings.value.filter(l => l.id !== props.listing.id))
+
+const filteredCopyListings = computed(() => otherListings.value.filter((l) => {
+  const matchesSearch = !copySearch.value || l.name.toLowerCase().includes(copySearch.value.toLowerCase())
+  const matchesTags = copyTagFilters.value.length === 0 || copyTagFilters.value.some(t => l.tags.includes(t))
+  return matchesSearch && matchesTags
+}))
+
+const allFilteredSelected = computed(() =>
+  filteredCopyListings.value.length > 0 && filteredCopyListings.value.every(l => copyTargets.value.includes(l.id))
+)
+
+function toggleCopyTag(tag: string) {
+  copyTagFilters.value = copyTagFilters.value.includes(tag)
+    ? copyTagFilters.value.filter(t => t !== tag)
+    : [...copyTagFilters.value, tag]
+}
+
+function toggleSelectAll() {
+  const ids = filteredCopyListings.value.map(l => l.id)
+  if (allFilteredSelected.value) {
+    copyTargets.value = copyTargets.value.filter(id => !ids.includes(id))
+  } else {
+    copyTargets.value = [...new Set([...copyTargets.value, ...ids])]
+  }
+}
 
 function toggleTarget(id: string) {
   copyTargets.value = copyTargets.value.includes(id)
@@ -135,6 +162,8 @@ function applyCopy() {
   )
   toast.success(`Copied to ${copyTargets.value.length} listing${copyTargets.value.length > 1 ? 's' : ''}`)
   copyTargets.value = []
+  copySearch.value = ''
+  copyTagFilters.value = []
   showCopyDialog.value = false
 }
 
@@ -424,18 +453,63 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           <DialogTitle>Copy Schedule to Listings</DialogTitle>
           <DialogDescription>Apply this listing's AI schedule to other listings.</DialogDescription>
         </DialogHeader>
-        <ScrollArea class="max-h-72">
-          <div class="flex flex-col gap-1 py-2">
+
+        <!-- Search + Tag filter -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <Icon name="lucide:search" class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Input v-model="copySearch" placeholder="Search listings..." class="h-9 pl-8" />
+          </div>
+          <Popover>
+            <PopoverTrigger as-child>
+              <Button variant="outline" size="sm" class="h-9 gap-1.5">
+                <Icon name="lucide:tag" class="size-3.5" />
+                Tags
+                <Badge v-if="copyTagFilters.length" variant="secondary" class="ml-0.5 px-1.5 text-[10px]">{{ copyTagFilters.length }}</Badge>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-48 p-0" align="end">
+              <ScrollArea class="max-h-60">
+                <div class="flex flex-col p-1">
+                  <label
+                    v-for="tag in allTags"
+                    :key="tag"
+                    class="flex items-center gap-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent"
+                  >
+                    <Checkbox :model-value="copyTagFilters.includes(tag)" @update:model-value="() => toggleCopyTag(tag)" />
+                    <span class="text-sm">{{ tag }}</span>
+                  </label>
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <!-- Select all -->
+        <div class="flex items-center justify-between border-b pb-2">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <Checkbox :model-value="allFilteredSelected" @update:model-value="toggleSelectAll" />
+            <span class="text-xs font-medium">Select all</span>
+          </label>
+          <span class="text-xs text-muted-foreground">{{ copyTargets.length }} selected</span>
+        </div>
+
+        <ScrollArea class="max-h-64">
+          <div class="flex flex-col gap-1">
             <label
-              v-for="l in otherListings"
+              v-for="l in filteredCopyListings"
               :key="l.id"
               class="flex items-center gap-3 rounded-md px-2 py-2 cursor-pointer hover:bg-accent"
             >
               <Checkbox :model-value="copyTargets.includes(l.id)" @update:model-value="() => toggleTarget(l.id)" />
               <span class="text-sm truncate">{{ l.name }}</span>
             </label>
+            <p v-if="filteredCopyListings.length === 0" class="text-sm text-muted-foreground text-center py-6">
+              No listings found.
+            </p>
           </div>
         </ScrollArea>
+
         <DialogFooter>
           <Button variant="outline" @click="showCopyDialog = false">Cancel</Button>
           <Button :disabled="copyTargets.length === 0" @click="applyCopy">
