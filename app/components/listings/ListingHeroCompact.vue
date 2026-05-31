@@ -5,21 +5,14 @@ const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 const router = useRouter()
 
-const aiStatusLabel: Record<string, string> = {
-  active: 'AI Active',
-  paused: 'AI Paused',
-  not_set: 'AI Not Set',
-}
-
 function otaIcon(ota: string) {
   return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
 }
 
+// Photo editing
 const showPhotoDialog = ref(false)
-const activePhotoIndex = ref(0)
 
 function selectPhoto(index: number) {
-  // Move selected photo to front
   const photos = [...props.listing.photos]
   const [selected] = photos.splice(index, 1)
   photos.unshift(selected!)
@@ -27,14 +20,40 @@ function selectPhoto(index: number) {
   showPhotoDialog.value = false
 }
 
+// AI Schedule
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+const schedule = computed(() => props.listing.aiSchedule)
+const showScheduleDialog = ref(false)
+
+const aiStatusLabel: Record<string, string> = {
+  active: 'AI Active',
+  paused: 'AI Paused',
+  not_set: 'AI Not Set',
+}
 
 const scheduleSummary = computed(() => {
-  const s = props.listing.aiSchedule
+  const s = schedule.value
   if (props.listing.aiStatus !== 'active' || !s.enabled) return null
   const days = [...s.activeDays].sort((a, b) => a - b).map(d => dayNames[d]).join(', ')
-  return { days: days || 'No days', hours: `${s.activeHours.start}–${s.activeHours.end}` }
+  return `${days || 'No days'} · ${s.activeHours.start}–${s.activeHours.end}`
 })
+
+function toggleAi() {
+  const newStatus = props.listing.aiStatus === 'active' ? 'paused' : 'active'
+  emit('update', { ...props.listing, aiStatus: newStatus, aiSchedule: { ...schedule.value, enabled: newStatus === 'active' } })
+}
+
+function updateSchedule(patch: Partial<typeof schedule.value>) {
+  emit('update', { ...props.listing, aiSchedule: { ...schedule.value, ...patch } })
+}
+
+function toggleDay(day: number) {
+  const days = schedule.value.activeDays.includes(day)
+    ? schedule.value.activeDays.filter(d => d !== day)
+    : [...schedule.value.activeDays, day]
+  updateSchedule({ activeDays: days })
+}
 </script>
 
 <template>
@@ -56,10 +75,24 @@ const scheduleSummary = computed(() => {
       <div class="flex flex-col gap-1.5">
         <div class="flex items-center gap-2">
           <h1 class="text-xl font-semibold tracking-tight">{{ listing.name }}</h1>
-          <Badge :variant="listing.aiStatus === 'active' ? 'default' : 'secondary'" class="text-xs shrink-0">
-            <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-3 mr-1" />
-            {{ aiStatusLabel[listing.aiStatus] }}
-          </Badge>
+
+          <!-- AI Status Button -->
+          <button
+            class="flex items-center gap-2 rounded-full border px-3 py-1 transition-colors hover:bg-accent"
+            :class="listing.aiStatus === 'active' ? 'border-[#C8A84B]/40 bg-[#C8A84B]/10' : 'border-border'"
+            @click="showScheduleDialog = true"
+          >
+            <Icon
+              :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'"
+              class="size-3.5"
+              :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'"
+            />
+            <div class="flex flex-col items-start leading-tight">
+              <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
+              <span v-if="scheduleSummary" class="text-[10px] text-muted-foreground">by schedule</span>
+            </div>
+            <Icon name="lucide:chevron-down" class="size-3 text-muted-foreground" />
+          </button>
         </div>
 
         <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -84,17 +117,6 @@ const scheduleSummary = computed(() => {
             <span class="text-xs">{{ ota }}</span>
           </div>
         </div>
-
-        <div v-if="scheduleSummary" class="flex items-center gap-3 text-xs text-muted-foreground">
-          <span class="flex items-center gap-1.5">
-            <Icon name="lucide:calendar-clock" class="size-3.5 text-[#C8A84B]" />
-            {{ scheduleSummary.days }}
-          </span>
-          <span class="flex items-center gap-1.5">
-            <Icon name="lucide:clock" class="size-3.5 text-[#C8A84B]" />
-            {{ scheduleSummary.hours }}
-          </span>
-        </div>
       </div>
     </div>
 
@@ -114,6 +136,69 @@ const scheduleSummary = computed(() => {
           >
             <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
           </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- AI Schedule Dialog -->
+    <Dialog v-model:open="showScheduleDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>ElevAI Schedule</DialogTitle>
+        </DialogHeader>
+
+        <div class="flex flex-col gap-5 py-2">
+          <!-- Toggle -->
+          <div class="flex items-center justify-between rounded-lg border p-3">
+            <div class="flex items-center gap-3">
+              <div class="flex size-9 items-center justify-center rounded-full" :class="listing.aiStatus === 'active' ? 'bg-[#C8A84B]/10' : 'bg-muted'">
+                <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-4" :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'" />
+              </div>
+              <div>
+                <p class="text-sm font-medium">{{ aiStatusLabel[listing.aiStatus] }}</p>
+                <p class="text-xs text-muted-foreground">Automated guest messaging</p>
+              </div>
+            </div>
+            <Switch :checked="listing.aiStatus === 'active'" @update:checked="toggleAi" />
+          </div>
+
+          <template v-if="schedule.enabled">
+            <!-- Active Days -->
+            <div class="flex flex-col gap-2">
+              <Label>Active Days</Label>
+              <div class="flex flex-wrap gap-1.5">
+                <Button
+                  v-for="(day, index) in dayNames"
+                  :key="index"
+                  variant="outline"
+                  size="sm"
+                  class="h-8 w-11 text-xs"
+                  :class="schedule.activeDays.includes(index) ? 'border-primary text-primary bg-primary/5' : ''"
+                  @click="toggleDay(index)"
+                >{{ day }}</Button>
+              </div>
+            </div>
+
+            <!-- Active Hours -->
+            <div class="flex flex-col gap-2">
+              <Label>Active Hours</Label>
+              <div class="flex items-center gap-3">
+                <Select :model-value="schedule.activeHours.start" @update:model-value="(val) => updateSchedule({ activeHours: { ...schedule.activeHours, start: val as string } })">
+                  <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span class="text-sm text-muted-foreground">to</span>
+                <Select :model-value="schedule.activeHours.end" @update:model-value="(val) => updateSchedule({ activeHours: { ...schedule.activeHours, end: val as string } })">
+                  <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </template>
         </div>
       </DialogContent>
     </Dialog>
