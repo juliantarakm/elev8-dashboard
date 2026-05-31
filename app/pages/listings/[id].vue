@@ -56,7 +56,7 @@ function handleOpenSchedule() {
 
     <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
       <div class="overflow-x-auto">
-        <TabsList class="w-max min-w-full">
+        <TabsList>
           <TabsTrigger value="overview">
             <Icon name="lucide:layout-grid" class="mr-1.5 size-3.5" />
             Overview
