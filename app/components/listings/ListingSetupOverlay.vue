@@ -13,21 +13,27 @@ const showResources = ref(false)
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex flex-col bg-background">
       <!-- Header -->
-      <div class="relative flex items-center justify-center border-b px-5 py-3 flex-shrink-0">
-        <div class="flex flex-col items-center gap-0.5">
+      <div class="flex items-center justify-between border-b px-4 py-3 flex-shrink-0 gap-2">
+        <!-- Left spacer (mobile: resources toggle) -->
+        <div class="flex items-center gap-1 min-w-[80px]">
+          <Button variant="ghost" size="sm" class="lg:hidden gap-1.5 text-xs h-8" @click="showResources = !showResources">
+            <Icon name="lucide:database" class="size-3.5" />
+            <span class="hidden sm:inline">Resources</span>
+          </Button>
+        </div>
+
+        <!-- Center: title -->
+        <div class="flex flex-col items-center gap-0.5 flex-1 text-center min-w-0">
           <div class="flex items-center gap-2">
-            <Icon name="lucide:layout-panel-left" class="size-4 text-muted-foreground" />
+            <Icon name="lucide:layout-panel-left" class="size-4 text-muted-foreground shrink-0" />
             <h2 class="text-base font-semibold">Listing Setup</h2>
           </div>
-          <span class="text-xs text-muted-foreground truncate max-w-[200px]">{{ listing.name }}</span>
+          <span class="text-xs text-muted-foreground truncate w-full">{{ listing.name }}</span>
         </div>
-        <div class="absolute right-4 flex items-center gap-1">
-          <!-- Resources toggle (mobile only) -->
-          <Button variant="ghost" size="sm" class="lg:hidden gap-1.5 text-xs" @click="showResources = !showResources">
-            <Icon name="lucide:database" class="size-3.5" />
-            Resources
-          </Button>
-          <Button variant="ghost" size="sm" class="gap-1.5" @click="emit('update:open', false)">
+
+        <!-- Right: close -->
+        <div class="flex items-center min-w-[80px] justify-end">
+          <Button variant="ghost" size="sm" class="gap-1.5 h-8" @click="emit('update:open', false)">
             <Icon name="lucide:x" class="size-4" />
             <span class="hidden sm:inline">Close</span>
           </Button>
