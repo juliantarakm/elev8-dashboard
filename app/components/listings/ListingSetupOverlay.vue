@@ -10,13 +10,15 @@ const emit = defineEmits<{ 'update:open': [val: boolean]; update: [listing: List
 <template>
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-50 flex flex-col bg-background">
-      <div class="flex items-center justify-between border-b px-5 py-3 flex-shrink-0">
-        <div class="flex items-center gap-3">
-          <Icon name="lucide:layout-panel-left" class="size-5 text-muted-foreground" />
-          <h2 class="text-base font-semibold">Listing Setup</h2>
-          <span class="text-sm text-muted-foreground">{{ listing.name }}</span>
+      <div class="relative flex items-center justify-center border-b px-5 py-3 flex-shrink-0">
+        <div class="flex flex-col items-center gap-0.5">
+          <div class="flex items-center gap-2">
+            <Icon name="lucide:layout-panel-left" class="size-4 text-muted-foreground" />
+            <h2 class="text-base font-semibold">Listing Setup</h2>
+          </div>
+          <span class="text-xs text-muted-foreground">{{ listing.name }}</span>
         </div>
-        <Button variant="ghost" size="sm" class="gap-1.5" @click="emit('update:open', false)">
+        <Button variant="ghost" size="sm" class="absolute right-4 gap-1.5" @click="emit('update:open', false)">
           <Icon name="lucide:x" class="size-4" />
           Close
         </Button>

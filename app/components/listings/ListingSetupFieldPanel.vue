@@ -49,18 +49,19 @@ const isFilled = (val?: string) => !!val?.trim()
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <Tabs v-model="activeTab" class="flex flex-col h-full overflow-hidden">
-      <TabsList class="flex-shrink-0 w-full justify-start rounded-none border-b bg-transparent px-4 h-auto pb-0 gap-0">
-        <TabsTrigger
-          v-for="tab in ['basics', 'listing-details', 'amenities', 'sops', 'topics', 'upsells']"
-          :key="tab"
-          :value="tab"
-          class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-2 text-xs"
-        >
-          {{ { basics: 'Basics', 'listing-details': 'Listing Details', amenities: 'Amenities', sops: 'SOPs', topics: 'Topics to Avoid', upsells: 'Property Upsells' }[tab] }}
-        </TabsTrigger>
-      </TabsList>
+      <!-- Tab bar using standard shadcn TabsList -->
+      <div class="flex-shrink-0 border-b px-6 pt-3">
+        <TabsList>
+          <TabsTrigger value="basics">Basics</TabsTrigger>
+          <TabsTrigger value="listing-details">Listing Details</TabsTrigger>
+          <TabsTrigger value="amenities">Amenities</TabsTrigger>
+          <TabsTrigger value="sops">SOPs</TabsTrigger>
+          <TabsTrigger value="topics">Topics to Avoid</TabsTrigger>
+          <TabsTrigger value="upsells">Property Upsells</TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="basics" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="basics" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col gap-1.5">
             <Label>Property Name</Label>
@@ -96,9 +97,9 @@ const isFilled = (val?: string) => !!val?.trim()
           <Label>Neighborhood Info</Label>
           <Textarea :model-value="basics.neighborhood ?? ''" rows="3" placeholder="Nearby attractions, transport..." @update:model-value="(v) => updateBasics({ neighborhood: String(v) })" />
         </div>
-      </TabsContent>
+      </div></TabsContent>
 
-      <TabsContent value="listing-details" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="listing-details" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
             <Label>Full Listing Description</Label>
@@ -110,9 +111,9 @@ const isFilled = (val?: string) => !!val?.trim()
             placeholder="Full description for OTA listings..."
             @update:model-value="(v) => updateResources({ listingDetails: String(v) })" />
         </div>
-      </TabsContent>
+      </div></TabsContent>
 
-      <TabsContent value="amenities" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="amenities" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <div class="flex items-center justify-between">
           <Label>Amenities</Label>
           <Popover v-model:open="amenityPopoverOpen">
@@ -139,18 +140,18 @@ const isFilled = (val?: string) => !!val?.trim()
             {{ a }} <Icon name="lucide:x" class="size-3" />
           </Badge>
         </div>
-      </TabsContent>
+      </div></TabsContent>
 
-      <TabsContent value="sops" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="sops" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <div class="flex flex-col gap-1.5">
           <Label>Standard Operating Procedures</Label>
           <Textarea :model-value="listing.resources.sops ?? ''" rows="14"
             placeholder="e.g. Check-in procedure, cleaning checklist, emergency contacts..."
             @update:model-value="(v) => updateResources({ sops: String(v) })" />
         </div>
-      </TabsContent>
+      </div></TabsContent>
 
-      <TabsContent value="topics" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="topics" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <div class="flex flex-col gap-2">
           <Label>Topics to Avoid</Label>
           <p class="text-xs text-muted-foreground">Topics the AI should not discuss with guests.</p>
@@ -164,12 +165,12 @@ const isFilled = (val?: string) => !!val?.trim()
             </Badge>
           </div>
         </div>
-      </TabsContent>
+      </div></TabsContent>
 
-      <TabsContent value="upsells" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+      <TabsContent value="upsells" class="flex-1 overflow-y-auto mt-0"><div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
         <p class="text-sm text-muted-foreground">Link upsell services the AI can promote to guests.</p>
         <p class="text-xs text-muted-foreground italic">Upsell catalog integration coming soon.</p>
-      </TabsContent>
+      </div></TabsContent>
     </Tabs>
   </div>
 </template>
