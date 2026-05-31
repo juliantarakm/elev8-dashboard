@@ -37,6 +37,12 @@ export const navMenu: NavMenu[] = [
         link: '/inventory',
         new: true,
       },
+      {
+        title: 'Listings',
+        icon: 'i-lucide-building',
+        link: '/listings',
+        new: true,
+      },
     ],
   },
   {
