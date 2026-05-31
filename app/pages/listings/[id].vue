@@ -37,7 +37,7 @@ const activeTab = ref('overview')
   </div>
 
   <div v-else class="flex flex-col gap-6">
-    <ListingHeroCompact :listing="listing" />
+    <ListingHeroCompact :listing="listing" @update="updateListing" />
 
     <Tabs v-model="activeTab">
       <TabsList>

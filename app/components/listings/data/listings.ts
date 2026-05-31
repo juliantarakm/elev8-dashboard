@@ -77,6 +77,7 @@ export interface Listing {
   room: string
   capacity: number
   aiStatus: 'active' | 'paused' | 'not_set'
+  unitType: 'single' | 'multi'
   photos: string[]
   aiSchedule: AiSchedule
   stats: ListingStats
@@ -99,6 +100,7 @@ export const listings = ref<Listing[]>([
     room: 'Master Suite',
     capacity: 10,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&h=600&fit=crop',
@@ -165,6 +167,7 @@ export const listings = ref<Listing[]>([
     room: 'Studio Suite',
     capacity: 4,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=600&fit=crop',
@@ -194,6 +197,7 @@ export const listings = ref<Listing[]>([
     room: 'Mezzanine Studio',
     capacity: 2,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=800&h=600&fit=crop',
@@ -223,6 +227,7 @@ export const listings = ref<Listing[]>([
     room: '4-Bedroom Villa',
     capacity: 8,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop',
@@ -252,6 +257,7 @@ export const listings = ref<Listing[]>([
     room: 'Garden Room',
     capacity: 2,
     aiStatus: 'paused',
+    unitType: 'single',
     photos: [
       'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&h=600&fit=crop',
@@ -281,6 +287,7 @@ export const listings = ref<Listing[]>([
     room: 'Pool Villa',
     capacity: 4,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&h=600&fit=crop',
@@ -310,6 +317,7 @@ export const listings = ref<Listing[]>([
     room: '1-Bedroom Suite',
     capacity: 3,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop',
@@ -339,6 +347,7 @@ export const listings = ref<Listing[]>([
     room: '3-Bedroom Villa',
     capacity: 6,
     aiStatus: 'not_set',
+    unitType: 'single',
     photos: [
       'https://images.unsplash.com/photo-1499793983394-12dec4e36d3b?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1549294413-26f195200c16?w=800&h=600&fit=crop',
@@ -368,6 +377,7 @@ export const listings = ref<Listing[]>([
     room: 'Treehouse',
     capacity: 2,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1515496281361-44a3de5b3482?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?w=800&h=600&fit=crop',
@@ -397,6 +407,7 @@ export const listings = ref<Listing[]>([
     room: 'Bungalow',
     capacity: 4,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1573755111591-8a8e12c93f74?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1615571022219-eb45cf7faa36?w=800&h=600&fit=crop',
@@ -426,6 +437,7 @@ export const listings = ref<Listing[]>([
     room: '2-Bedroom Villa',
     capacity: 5,
     aiStatus: 'paused',
+    unitType: 'single',
     photos: [
       'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
@@ -455,6 +467,7 @@ export const listings = ref<Listing[]>([
     room: 'Studio',
     capacity: 2,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
@@ -484,6 +497,7 @@ export const listings = ref<Listing[]>([
     room: '3-Bedroom Villa',
     capacity: 6,
     aiStatus: 'not_set',
+    unitType: 'single',
     photos: [
       'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1599809275671-b5942cabc7a2?w=800&h=600&fit=crop',
@@ -513,6 +527,7 @@ export const listings = ref<Listing[]>([
     room: '2-Bedroom Suite',
     capacity: 4,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&h=600&fit=crop',
@@ -542,6 +557,7 @@ export const listings = ref<Listing[]>([
     room: 'Penthouse',
     capacity: 6,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop',
@@ -571,6 +587,7 @@ export const listings = ref<Listing[]>([
     room: 'Bamboo Suite',
     capacity: 2,
     aiStatus: 'active',
+    unitType: 'multi',
     photos: [
       'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&h=600&fit=crop',

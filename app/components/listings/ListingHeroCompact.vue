@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-defineProps<{ listing: Listing }>()
+const props = defineProps<{ listing: Listing }>()
+const emit = defineEmits<{ update: [listing: Listing] }>()
 const router = useRouter()
 
 const aiStatusLabel: Record<string, string> = {
@@ -13,6 +14,18 @@ const aiStatusLabel: Record<string, string> = {
 function otaIcon(ota: string) {
   return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
 }
+
+const showPhotoDialog = ref(false)
+const activePhotoIndex = ref(0)
+
+function selectPhoto(index: number) {
+  // Move selected photo to front
+  const photos = [...props.listing.photos]
+  const [selected] = photos.splice(index, 1)
+  photos.unshift(selected!)
+  emit('update', { ...props.listing, photos })
+  showPhotoDialog.value = false
+}
 </script>
 
 <template>
@@ -23,8 +36,12 @@ function otaIcon(ota: string) {
     </Button>
 
     <div class="flex items-center gap-4">
-      <div class="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+      <!-- Editable Photo -->
+      <div class="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
         <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Icon name="lucide:pencil" class="size-4 text-white" />
+        </div>
       </div>
 
       <div class="flex flex-col gap-1.5">
@@ -41,6 +58,11 @@ function otaIcon(ota: string) {
           <span>{{ listing.location }}</span>
           <span class="text-muted-foreground/50">·</span>
           <span>{{ listing.property }}</span>
+          <span class="text-muted-foreground/50">·</span>
+          <Badge variant="outline" class="text-xs">
+            <Icon :name="listing.unitType === 'multi' ? 'lucide:building-2' : 'lucide:home'" class="size-3 mr-1" />
+            {{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}
+          </Badge>
         </div>
 
         <div class="flex items-center gap-2">
@@ -55,5 +77,25 @@ function otaIcon(ota: string) {
         </div>
       </div>
     </div>
+
+    <!-- Photo Selection Dialog -->
+    <Dialog v-model:open="showPhotoDialog">
+      <DialogContent class="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Change Cover Photo</DialogTitle>
+        </DialogHeader>
+        <div class="grid grid-cols-3 gap-3 py-4">
+          <button
+            v-for="(photo, index) in listing.photos"
+            :key="index"
+            class="aspect-[4/3] overflow-hidden rounded-lg border-2 transition-colors"
+            :class="index === 0 ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'"
+            @click="selectPhoto(index)"
+          >
+            <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
