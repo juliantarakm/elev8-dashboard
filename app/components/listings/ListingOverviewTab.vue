@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-const props = defineProps<{ listing: Listing }>()
+import type { Room } from '~/components/listings/data/listings'
+const props = defineProps<{ listing: Listing; activeRoom?: Room | null }>()
 const emit = defineEmits<{ switchTab: [tab: string] }>()
 
 const stats = computed(() => [
@@ -29,6 +30,11 @@ function renderStars(rating: number) {
 
 <template>
   <div class="flex flex-col gap-6">
+    <div v-if="activeRoom" class="flex items-center gap-2 rounded-lg border bg-muted/40 px-4 py-2.5">
+      <Icon name="lucide:door-open" class="size-4 text-muted-foreground" />
+      <span class="text-sm font-medium">{{ activeRoom.name }}</span>
+      <span class="text-xs text-muted-foreground">· {{ activeRoom.capacity }} guests</span>
+    </div>
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <Card v-for="stat in stats" :key="stat.label" class="p-5">
         <div class="flex items-center gap-3">

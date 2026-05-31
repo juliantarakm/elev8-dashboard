@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-const props = defineProps<{ listing: Listing }>()
+import type { Room } from '~/components/listings/data/listings'
+const props = defineProps<{ listing: Listing; activeRoom?: Room | null }>()
 
 const bookingStatusColors: Record<string, string> = {
   confirmed: 'default',

@@ -23,6 +23,9 @@ function updateListing(updated: Listing) {
   }
 }
 
+const activeRoomId = computed(() => listing.value?.activeRoomId ?? listing.value?.rooms?.[0]?.id ?? null)
+const activeRoom = computed(() => listing.value?.rooms?.find(r => r.id === activeRoomId.value) ?? null)
+
 const activeTab = ref('overview')
 </script>
 
@@ -39,7 +42,7 @@ const activeTab = ref('overview')
   <div v-else class="flex flex-col gap-6">
     <ListingHeroCompact :listing="listing" @update="updateListing" />
 
-    <Tabs v-model="activeTab">
+    <Tabs v-model="activeTab" :key="activeRoomId ?? 'no-room'">
       <TabsList>
         <TabsTrigger value="overview">
           <Icon name="lucide:layout-grid" class="mr-1.5 size-3.5" />
@@ -68,23 +71,23 @@ const activeTab = ref('overview')
       </TabsList>
 
       <TabsContent value="overview" class="mt-6">
-        <ListingOverviewTab :listing="listing" @switch-tab="activeTab = $event" />
+        <ListingOverviewTab :listing="listing" :active-room="activeRoom" @switch-tab="activeTab = $event" />
       </TabsContent>
 
       <TabsContent value="pricing" class="mt-6">
-        <ListingPricingTab :listing="listing" @update="updateListing" />
+        <ListingPricingTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="calendar" class="mt-6">
-        <ListingCalendarTab :listing="listing" />
+        <ListingCalendarTab :listing="listing" :active-room="activeRoom" />
       </TabsContent>
 
       <TabsContent value="reviews" class="mt-6">
-        <ListingReviewsTab :listing="listing" @update="updateListing" />
+        <ListingReviewsTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="maintenance" class="mt-6">
-        <ListingMaintenanceTab :listing="listing" @update="updateListing" />
+        <ListingMaintenanceTab :listing="listing" :active-room="activeRoom" @update="updateListing" />
       </TabsContent>
 
       <TabsContent value="settings" class="mt-6">

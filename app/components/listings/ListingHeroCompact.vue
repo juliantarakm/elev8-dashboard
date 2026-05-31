@@ -288,12 +288,15 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <!-- Unit / room switcher button (full width of photo) -->
         <DropdownMenu v-if="listing.rooms && listing.rooms.length > 1">
           <DropdownMenuTrigger as-child>
-            <button class="flex w-full items-center justify-between gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors hover:bg-accent">
-              <span class="flex items-center gap-1.5">
-                <Icon name="lucide:building-2" class="size-3" />
-                {{ activeRoom ? activeRoom.name : 'Multi-Unit' }}
-              </span>
-              <Icon name="lucide:chevrons-up-down" class="size-3 text-muted-foreground" />
+            <button class="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-accent">
+              <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                <Icon name="lucide:door-open" class="size-4 text-muted-foreground" />
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">{{ activeRoom ? activeRoom.name : 'Multi-Unit' }}</span>
+                <span class="truncate text-xs text-muted-foreground">{{ activeRoom ? `${activeRoom.capacity} guests` : `${listing.rooms.length} rooms` }}</span>
+              </div>
+              <Icon name="lucide:chevrons-up-down" class="size-4 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent class="w-48" align="start">
@@ -348,6 +351,10 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Icon name="lucide:map-pin" class="size-3.5" />
           {{ listing.location }}
+        </span>
+        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Icon name="lucide:building-2" class="size-3.5" />
+          {{ listing.property }}
         </span>
 
         <!-- Editable tags -->
