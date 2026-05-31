@@ -323,15 +323,18 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       <!-- Listing info -->
       <div class="flex flex-col gap-2 min-w-0">
         <!-- Editable name -->
-        <div v-if="editingName" class="flex items-center gap-2">
+        <div v-if="editingName" class="flex flex-col gap-2">
           <input
             ref="nameInputEl"
             v-model="nameInput"
             class="w-full text-2xl font-bold tracking-tight bg-transparent border-b border-primary outline-none"
-            @blur="saveName"
             @keydown.enter="saveName"
             @keydown.escape="editingName = false"
           />
+          <div class="flex items-center gap-2">
+            <Button size="sm" class="h-7 text-xs" @click="saveName">Save</Button>
+            <Button size="sm" variant="ghost" class="h-7 text-xs" @click="editingName = false">Cancel</Button>
+          </div>
         </div>
         <h1
           v-else
