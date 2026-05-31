@@ -1,10 +1,11 @@
+export type OverrideAudience = 'future' | 'current' | 'inquiry'
+
 export interface DayHours {
   enabled: boolean
   start: string // 24h "HH:MM"
   end: string
+  activeFor: OverrideAudience[]
 }
-
-export type OverrideAudience = 'future' | 'current' | 'inquiry'
 
 export interface DateOverride {
   id: string
@@ -104,7 +105,7 @@ export interface Listing {
 function alwaysOn(): AiSchedule {
   return {
     always: true,
-    days: Array.from({ length: 7 }, () => ({ enabled: true, start: '00:00', end: '23:59' })),
+    days: Array.from({ length: 7 }, () => ({ enabled: true, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] as OverrideAudience[] })),
     dateOverrides: [],
   }
 }
@@ -130,13 +131,13 @@ export const listings = ref<Listing[]>([
     aiSchedule: {
       always: false,
       days: [
-        { enabled: true, start: '08:00', end: '22:00' },
-        { enabled: true, start: '08:00', end: '22:00' },
-        { enabled: true, start: '08:00', end: '22:00' },
-        { enabled: true, start: '08:00', end: '22:00' },
-        { enabled: true, start: '08:00', end: '22:00' },
-        { enabled: false, start: '00:00', end: '23:59' },
-        { enabled: false, start: '00:00', end: '23:59' },
+        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: true, start: '08:00', end: '22:00', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: false, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] },
+        { enabled: false, start: '00:00', end: '23:59', activeFor: ['future', 'current', 'inquiry'] },
       ],
       dateOverrides: [],
     },

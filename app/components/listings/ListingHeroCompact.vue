@@ -54,6 +54,14 @@ function updateDay(index: number, patch: Partial<AiSchedule['days'][number]>) {
   patchSchedule({ days })
 }
 
+function toggleDayAudience(index: number, value: OverrideAudience) {
+  const day = schedule.value.days[index]!
+  const activeFor = day.activeFor.includes(value)
+    ? day.activeFor.filter(a => a !== value)
+    : [...day.activeFor, value]
+  updateDay(index, { activeFor })
+}
+
 function clearAll() {
   patchSchedule({ days: schedule.value.days.map(d => ({ ...d, enabled: false })) })
 }
@@ -206,13 +214,14 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
     <!-- AI Schedule Sheet -->
     <Sheet v-model:open="showScheduleSheet">
-      <SheetContent class="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent class="w-full sm:max-w-md p-0">
         <SheetHeader>
           <SheetTitle>Schedule</SheetTitle>
           <SheetDescription>{{ listing.name }}</SheetDescription>
         </SheetHeader>
 
-        <div class="flex flex-col gap-5 px-4 pb-6">
+        <!-- Scrollable body -->
+        <div class="flex-1 overflow-y-auto px-4">
           <Tabs v-model="scheduleTab">
             <TabsList class="w-full">
               <TabsTrigger value="weekly" class="flex-1">Weekly Schedule</TabsTrigger>
@@ -234,32 +243,35 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 <Switch :checked="schedule.always" @update:checked="setAlways" />
               </div>
 
-              <!-- Custom Schedule -->
-              <div v-if="!schedule.always" class="flex flex-col gap-3">
+              <!-- Custom Schedule (disabled when 24/7 on) -->
+              <div class="flex flex-col gap-3" :class="schedule.always ? 'pointer-events-none opacity-50' : ''">
                 <span class="text-sm font-medium">Custom Schedule</span>
                 <div
                   v-for="(day, index) in schedule.days"
                   :key="index"
-                  class="flex items-center gap-3 rounded-lg border p-3"
+                  class="flex flex-col gap-2 rounded-lg border p-3"
                 >
-                  <Switch :checked="day.enabled" class="shrink-0" @update:checked="(val: boolean) => updateDay(index, { enabled: val })" />
-                  <span class="w-9 shrink-0 text-sm font-medium">{{ dayNames[index] }}</span>
-                  <div v-if="day.enabled" class="flex items-center gap-1.5 flex-1">
-                    <Input type="time" :model-value="day.start" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { start: String(val) })" />
-                    <span class="text-xs text-muted-foreground">to</span>
-                    <Input type="time" :model-value="day.end" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { end: String(val) })" />
+                  <div class="flex items-center gap-3">
+                    <Switch :checked="day.enabled" class="shrink-0" @update:checked="(val: boolean) => updateDay(index, { enabled: val })" />
+                    <span class="w-9 shrink-0 text-sm font-medium">{{ dayNames[index] }}</span>
+                    <div v-if="day.enabled" class="flex items-center gap-1.5 flex-1">
+                      <Input type="time" :model-value="day.start" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { start: String(val) })" />
+                      <span class="text-xs text-muted-foreground">to</span>
+                      <Input type="time" :model-value="day.end" class="h-8 text-xs" @update:model-value="(val) => updateDay(index, { end: String(val) })" />
+                    </div>
+                    <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
                   </div>
-                  <span v-else class="flex-1 text-xs text-muted-foreground">Unavailable</span>
-                </div>
 
-                <div class="flex items-center justify-between gap-2 pt-1">
-                  <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">Clear All</Button>
-                  <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
-                      <Icon name="lucide:copy" class="size-3" />
-                      Copy to Properties
-                    </Button>
-                    <Button size="sm" class="text-xs" @click="saveSchedule">Save Schedule</Button>
+                  <div v-if="day.enabled" class="flex flex-wrap gap-1.5 pl-12">
+                    <Button
+                      v-for="opt in audienceOptions"
+                      :key="opt.value"
+                      variant="outline"
+                      size="sm"
+                      class="h-6 text-[11px] px-2"
+                      :class="day.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
+                      @click="toggleDayAudience(index, opt.value)"
+                    >{{ opt.label }}</Button>
                   </div>
                 </div>
               </div>
@@ -322,19 +334,27 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 No date overrides yet.
               </p>
 
-              <div class="flex items-center justify-between gap-2 pt-1">
-                <Button variant="outline" size="sm" class="gap-1.5" @click="addOverride">
-                  <Icon name="lucide:plus" class="size-4" />
-                  Add Date Range
-                </Button>
-                <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
-                  <Icon name="lucide:copy" class="size-3" />
-                  Copy to Properties
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" class="w-fit gap-1.5" @click="addOverride">
+                <Icon name="lucide:plus" class="size-4" />
+                Add Date Range
+              </Button>
             </TabsContent>
           </Tabs>
         </div>
+
+        <!-- Fixed Footer -->
+        <SheetFooter class="border-t">
+          <div class="flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">Clear All</Button>
+            <div class="flex items-center gap-2">
+              <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
+                <Icon name="lucide:copy" class="size-3" />
+                Copy to Properties
+              </Button>
+              <Button size="sm" class="text-xs" @click="saveSchedule">Save Schedule</Button>
+            </div>
+          </div>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
 
