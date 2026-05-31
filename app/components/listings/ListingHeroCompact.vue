@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Listing } from '~/components/listings/data/listings'
+import type { Listing, AiScheduleEntry } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
@@ -20,11 +20,13 @@ function selectPhoto(index: number) {
   showPhotoDialog.value = false
 }
 
-// AI Schedule
+// AI Schedules
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
-const schedule = computed(() => props.listing.aiSchedule)
-const showScheduleDialog = ref(false)
+const monthDays = Array.from({ length: 31 }, (_, i) => i + 1)
+
+const showScheduleSheet = ref(false)
+const repeatTab = ref<'weekly' | 'monthly'>('weekly')
 
 const aiStatusLabel: Record<string, string> = {
   active: 'AI Active',
@@ -32,27 +34,41 @@ const aiStatusLabel: Record<string, string> = {
   not_set: 'AI Not Set',
 }
 
-const scheduleSummary = computed(() => {
-  const s = schedule.value
-  if (props.listing.aiStatus !== 'active' || !s.enabled) return null
-  const days = [...s.activeDays].sort((a, b) => a - b).map(d => dayNames[d]).join(', ')
-  return `${days || 'No days'} · ${s.activeHours.start}–${s.activeHours.end}`
-})
+const enabledCount = computed(() => props.listing.aiSchedules.filter(s => s.enabled).length)
+const filteredSchedules = computed(() => props.listing.aiSchedules.filter(s => s.repeatType === repeatTab.value))
+
+function commit(schedules: AiScheduleEntry[]) {
+  emit('update', { ...props.listing, aiSchedules: schedules })
+}
 
 function toggleAi() {
   const newStatus = props.listing.aiStatus === 'active' ? 'paused' : 'active'
-  emit('update', { ...props.listing, aiStatus: newStatus, aiSchedule: { ...schedule.value, enabled: newStatus === 'active' } })
+  emit('update', { ...props.listing, aiStatus: newStatus })
 }
 
-function updateSchedule(patch: Partial<typeof schedule.value>) {
-  emit('update', { ...props.listing, aiSchedule: { ...schedule.value, ...patch } })
+function updateSchedule(id: string, patch: Partial<AiScheduleEntry>) {
+  commit(props.listing.aiSchedules.map(s => s.id === id ? { ...s, ...patch } : s))
 }
 
-function toggleDay(day: number) {
-  const days = schedule.value.activeDays.includes(day)
-    ? schedule.value.activeDays.filter(d => d !== day)
-    : [...schedule.value.activeDays, day]
-  updateSchedule({ activeDays: days })
+function toggleDay(s: AiScheduleEntry, day: number) {
+  const days = s.activeDays.includes(day) ? s.activeDays.filter(d => d !== day) : [...s.activeDays, day]
+  updateSchedule(s.id, { activeDays: days })
+}
+
+function addSchedule() {
+  const entry: AiScheduleEntry = {
+    id: `sch-${Date.now()}`,
+    name: 'New Schedule',
+    repeatType: repeatTab.value,
+    activeDays: [],
+    activeHours: { start: '09:00', end: '21:00' },
+    enabled: true,
+  }
+  commit([...props.listing.aiSchedules, entry])
+}
+
+function removeSchedule(id: string) {
+  commit(props.listing.aiSchedules.filter(s => s.id !== id))
 }
 </script>
 
@@ -80,7 +96,7 @@ function toggleDay(day: number) {
           <button
             class="flex items-center gap-2 rounded-full border px-3 py-1 transition-colors hover:bg-accent"
             :class="listing.aiStatus === 'active' ? 'border-[#C8A84B]/40 bg-[#C8A84B]/10' : 'border-border'"
-            @click="showScheduleDialog = true"
+            @click="showScheduleSheet = true"
           >
             <Icon
               :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'"
@@ -89,9 +105,11 @@ function toggleDay(day: number) {
             />
             <div class="flex flex-col items-start leading-tight">
               <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
-              <span v-if="scheduleSummary" class="text-[10px] text-muted-foreground">by schedule</span>
+              <span v-if="listing.aiStatus === 'active' && enabledCount > 0" class="text-[10px] text-muted-foreground">
+                {{ enabledCount }} schedule{{ enabledCount > 1 ? 's' : '' }}
+              </span>
             </div>
-            <Icon name="lucide:chevron-down" class="size-3 text-muted-foreground" />
+            <Icon name="lucide:chevron-right" class="size-3 text-muted-foreground" />
           </button>
         </div>
 
@@ -140,15 +158,16 @@ function toggleDay(day: number) {
       </DialogContent>
     </Dialog>
 
-    <!-- AI Schedule Dialog -->
-    <Dialog v-model:open="showScheduleDialog">
-      <DialogContent class="max-w-md">
-        <DialogHeader>
-          <DialogTitle>ElevAI Schedule</DialogTitle>
-        </DialogHeader>
+    <!-- AI Schedule Sheet -->
+    <Sheet v-model:open="showScheduleSheet">
+      <SheetContent class="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>ElevAI Schedules</SheetTitle>
+          <SheetDescription>Manage automated guest messaging schedules</SheetDescription>
+        </SheetHeader>
 
-        <div class="flex flex-col gap-5 py-2">
-          <!-- Toggle -->
+        <div class="flex flex-col gap-5 px-4 pb-6">
+          <!-- Master Toggle -->
           <div class="flex items-center justify-between rounded-lg border p-3">
             <div class="flex items-center gap-3">
               <div class="flex size-9 items-center justify-center rounded-full" :class="listing.aiStatus === 'active' ? 'bg-[#C8A84B]/10' : 'bg-muted'">
@@ -156,51 +175,90 @@ function toggleDay(day: number) {
               </div>
               <div>
                 <p class="text-sm font-medium">{{ aiStatusLabel[listing.aiStatus] }}</p>
-                <p class="text-xs text-muted-foreground">Automated guest messaging</p>
+                <p class="text-xs text-muted-foreground">Master switch</p>
               </div>
             </div>
             <Switch :checked="listing.aiStatus === 'active'" @update:checked="toggleAi" />
           </div>
 
-          <template v-if="schedule.enabled">
-            <!-- Active Days -->
-            <div class="flex flex-col gap-2">
-              <Label>Active Days</Label>
-              <div class="flex flex-wrap gap-1.5">
+          <!-- Weekly / Monthly Tabs -->
+          <Tabs v-model="repeatTab">
+            <TabsList class="w-full">
+              <TabsTrigger value="weekly" class="flex-1">Weekly</TabsTrigger>
+              <TabsTrigger value="monthly" class="flex-1">Monthly</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <!-- Schedule List -->
+          <div class="flex flex-col gap-3">
+            <div
+              v-for="s in filteredSchedules"
+              :key="s.id"
+              class="flex flex-col gap-3 rounded-lg border p-4"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <Input :model-value="s.name" class="h-8 text-sm font-medium" @update:model-value="(val) => updateSchedule(s.id, { name: String(val) })" />
+                <Switch :checked="s.enabled" @update:checked="(val: boolean) => updateSchedule(s.id, { enabled: val })" />
+                <Button variant="ghost" size="icon" class="size-8 shrink-0 text-muted-foreground hover:text-destructive" @click="removeSchedule(s.id)">
+                  <Icon name="lucide:trash-2" class="size-4" />
+                </Button>
+              </div>
+
+              <!-- Weekly day selector -->
+              <div v-if="s.repeatType === 'weekly'" class="flex flex-wrap gap-1.5">
                 <Button
                   v-for="(day, index) in dayNames"
                   :key="index"
                   variant="outline"
                   size="sm"
-                  class="h-8 w-11 text-xs"
-                  :class="schedule.activeDays.includes(index) ? 'border-primary text-primary bg-primary/5' : ''"
-                  @click="toggleDay(index)"
+                  class="h-8 w-10 text-xs"
+                  :class="s.activeDays.includes(index) ? 'border-primary text-primary bg-primary/5' : ''"
+                  @click="toggleDay(s, index)"
                 >{{ day }}</Button>
+              </div>
+
+              <!-- Monthly day selector -->
+              <div v-else class="flex flex-wrap gap-1">
+                <Button
+                  v-for="d in monthDays"
+                  :key="d"
+                  variant="outline"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-[10px]"
+                  :class="s.activeDays.includes(d) ? 'border-primary text-primary bg-primary/5' : ''"
+                  @click="toggleDay(s, d)"
+                >{{ d }}</Button>
+              </div>
+
+              <!-- Hours -->
+              <div class="flex items-center gap-2">
+                <Select :model-value="s.activeHours.start" @update:model-value="(val) => updateSchedule(s.id, { activeHours: { ...s.activeHours, start: val as string } })">
+                  <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span class="text-xs text-muted-foreground">to</span>
+                <Select :model-value="s.activeHours.end" @update:model-value="(val) => updateSchedule(s.id, { activeHours: { ...s.activeHours, end: val as string } })">
+                  <SelectTrigger class="h-8 w-24 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <!-- Active Hours -->
-            <div class="flex flex-col gap-2">
-              <Label>Active Hours</Label>
-              <div class="flex items-center gap-3">
-                <Select :model-value="schedule.activeHours.start" @update:model-value="(val) => updateSchedule({ activeHours: { ...schedule.activeHours, start: val as string } })">
-                  <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <span class="text-sm text-muted-foreground">to</span>
-                <Select :model-value="schedule.activeHours.end" @update:model-value="(val) => updateSchedule({ activeHours: { ...schedule.activeHours, end: val as string } })">
-                  <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </template>
+            <p v-if="filteredSchedules.length === 0" class="text-sm text-muted-foreground text-center py-6">
+              No {{ repeatTab }} schedules yet.
+            </p>
+
+            <Button variant="outline" class="w-full gap-1.5" @click="addSchedule">
+              <Icon name="lucide:plus" class="size-4" />
+              Add {{ repeatTab === 'weekly' ? 'Weekly' : 'Monthly' }} Schedule
+            </Button>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   </div>
 </template>

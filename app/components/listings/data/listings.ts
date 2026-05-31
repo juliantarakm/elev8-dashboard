@@ -1,11 +1,13 @@
-export interface AiSchedule {
-  enabled: boolean
+export interface AiScheduleEntry {
+  id: string
+  name: string
   repeatType: 'weekly' | 'monthly'
   activeDays: number[]
   activeHours: {
     start: string
     end: string
   }
+  enabled: boolean
 }
 
 export interface ListingStats {
@@ -79,7 +81,7 @@ export interface Listing {
   aiStatus: 'active' | 'paused' | 'not_set'
   unitType: 'single' | 'multi'
   photos: string[]
-  aiSchedule: AiSchedule
+  aiSchedules: AiScheduleEntry[]
   stats: ListingStats
   pricing: ListingPricing
   bookings: Booking[]
@@ -106,12 +108,11 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+      { id: 'sch-2', name: 'Weekend Late', repeatType: 'weekly', activeDays: [0, 6], activeHours: { start: '10:00', end: '23:00' }, enabled: true },
+      { id: 'sch-3', name: 'Month-End Check-ins', repeatType: 'monthly', activeDays: [28, 29, 30, 31], activeHours: { start: '09:00', end: '21:00' }, enabled: false },
+    ],
     stats: {
       monthlyRevenue: 4280,
       revenueTrend: 12,
@@ -173,12 +174,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -203,12 +201,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -233,12 +228,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -263,12 +255,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: false,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: false },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -293,12 +282,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -323,12 +309,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -353,12 +336,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1549294413-26f195200c16?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: false,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: false },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -383,12 +363,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -413,12 +390,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1615571022219-eb45cf7faa36?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -443,12 +417,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: false,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: false },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -473,12 +444,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1468413253725-0d5181091126?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -503,12 +471,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1599809275671-b5942cabc7a2?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: false,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: false },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -533,12 +498,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -563,12 +525,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
@@ -593,12 +552,9 @@ export const listings = ref<Listing[]>([
       'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=800&h=600&fit=crop',
     ],
-    aiSchedule: {
-      enabled: true,
-      repeatType: 'weekly',
-      activeDays: [1, 2, 3, 4, 5],
-      activeHours: { start: '08:00', end: '22:00' },
-    },
+    aiSchedules: [
+      { id: 'sch-1', name: 'Weekday Coverage', repeatType: 'weekly', activeDays: [1, 2, 3, 4, 5], activeHours: { start: '08:00', end: '22:00' }, enabled: true },
+    ],
     stats: { monthlyRevenue: 2800, revenueTrend: 5, occupancyRate: 65, occupancyTrend: 2, avgRating: 4.5, totalReviews: 12 },
     pricing: { nightlyRate: 120, cleaningFee: 30, serviceFee: 20, weeklyDiscount: 8, monthlyDiscount: 15, seasonalRates: [] },
     bookings: [],
