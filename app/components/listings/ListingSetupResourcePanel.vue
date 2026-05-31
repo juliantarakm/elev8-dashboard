@@ -85,7 +85,7 @@ function copyFromProperty(sourceId: string) {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="px-4 py-3 border-b flex-shrink-0">
+    <div class="px-4 border-b flex-shrink-0 flex items-center" style="height: calc(36px + 1.5rem)">
       <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resources</span>
     </div>
 
