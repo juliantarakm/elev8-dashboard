@@ -93,6 +93,12 @@ export interface ListingDocument {
   uploadedAt: string
 }
 
+export type ReservationStage = 'pre_booking' | 'confirmed' | 'checked_in' | 'checked_out'
+
+export interface FieldConfig {
+  stages: ReservationStage[]
+}
+
 export interface ListingResources {
   documents: ListingDocument[]
   basics: {
@@ -106,6 +112,7 @@ export interface ListingResources {
   sops?: string
   topicsToAvoid?: string[]
   propertyUpsells?: string[]
+  fieldConfig?: Record<string, FieldConfig>
 }
 
 export interface Unit {
