@@ -22,6 +22,17 @@ function selectPhoto(index: number) {
   showPhotoDialog.value = false
 }
 
+// Room switcher
+const activeRoom = computed(() =>
+  props.listing.rooms?.find(r => r.id === props.listing.activeRoomId)
+  ?? props.listing.rooms?.[0]
+  ?? null
+)
+
+function switchRoom(roomId: string) {
+  emit('update', { ...props.listing, activeRoomId: roomId })
+}
+
 // AI Schedule
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const showScheduleSheet = ref(false)
@@ -223,7 +234,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       Back
     </Button>
 
-    <!-- Listing Switcher Button -->
+    <!-- Room Switcher Button -->
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <button class="flex w-full items-center gap-3 overflow-hidden rounded-lg border p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -240,32 +251,28 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
             <span class="truncate font-semibold">{{ listing.name }}</span>
             <span class="truncate text-xs text-muted-foreground flex items-center gap-1">
               <Icon :name="listing.unitType === 'multi' ? 'lucide:building-2' : 'lucide:home'" class="size-3 shrink-0" />
-              {{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}
+              {{ activeRoom ? activeRoom.name : (listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit') }}
             </span>
           </div>
 
-          <Icon name="lucide:chevrons-up-down" class="ml-auto size-4 shrink-0 text-muted-foreground" />
+          <Icon v-if="listing.rooms && listing.rooms.length > 1" name="lucide:chevrons-up-down" class="ml-auto size-4 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent class="w-72" align="start">
-        <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Listing</DropdownMenuLabel>
+      <DropdownMenuContent v-if="listing.rooms && listing.rooms.length > 1" class="w-56" align="start">
+        <DropdownMenuLabel class="text-xs text-muted-foreground">Switch Room</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          v-for="l in listings"
-          :key="l.id"
-          class="flex items-center gap-3 p-2 cursor-pointer"
-          :class="l.id === listing.id ? 'bg-accent' : ''"
-          @click="router.push(`/listings/${l.id}`)"
+          v-for="room in listing.rooms"
+          :key="room.id"
+          class="flex items-center justify-between cursor-pointer"
+          @click="switchRoom(room.id)"
         >
-          <div class="w-12 h-8 shrink-0 overflow-hidden rounded bg-muted">
-            <img :src="l.photos[0]" :alt="l.name" class="size-full object-cover" />
+          <div class="flex flex-col leading-tight">
+            <span class="text-sm font-medium">{{ room.name }}</span>
+            <span class="text-xs text-muted-foreground">{{ room.capacity }} guests</span>
           </div>
-          <div class="grid flex-1 min-w-0 text-sm leading-tight">
-            <span class="truncate font-medium">{{ l.name }}</span>
-            <span class="truncate text-xs text-muted-foreground">{{ l.location }}</span>
-          </div>
-          <Icon v-if="l.id === listing.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
+          <Icon v-if="room.id === (listing.activeRoomId ?? listing.rooms?.[0]?.id)" name="lucide:check" class="size-4 shrink-0 text-primary" />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
