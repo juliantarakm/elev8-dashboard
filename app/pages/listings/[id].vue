@@ -23,7 +23,7 @@ function updateListing(updated: Listing) {
   }
 }
 
-const activeRoomId = computed(() => listing.value?.activeRoomId ?? listing.value?.rooms?.[0]?.id ?? null)
+const activeRoomId = computed(() => listing.value?.activeRoomId ?? null)
 const activeRoom = computed(() => listing.value?.rooms?.find(r => r.id === activeRoomId.value) ?? null)
 
 const activeTab = ref('overview')

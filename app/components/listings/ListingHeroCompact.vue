@@ -63,9 +63,7 @@ function addTag(tag: string) {
 
 // Room switcher
 const activeRoom = computed(() =>
-  props.listing.rooms?.find(r => r.id === props.listing.activeRoomId)
-  ?? props.listing.rooms?.[0]
-  ?? null
+  props.listing.rooms?.find(r => r.id === props.listing.activeRoomId) ?? null
 )
 
 function switchRoom(roomId: string) {
@@ -318,12 +316,18 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           <DropdownMenuContent class="w-56" align="start">
             <!-- Property section -->
             <DropdownMenuLabel class="text-xs text-muted-foreground">Property</DropdownMenuLabel>
-            <DropdownMenuItem class="flex items-center gap-2 cursor-default opacity-70" disabled>
-              <Icon name="lucide:building-2" class="size-4" />
-              <div class="flex flex-col leading-tight">
-                <span class="text-sm font-medium">{{ listing.property }}</span>
-                <span class="text-xs text-muted-foreground">{{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}</span>
+            <DropdownMenuItem
+              class="flex items-center justify-between cursor-pointer"
+              @click="emit('update', { ...listing, activeRoomId: undefined })"
+            >
+              <div class="flex items-center gap-2">
+                <Icon name="lucide:building-2" class="size-4" />
+                <div class="flex flex-col leading-tight">
+                  <span class="text-sm font-medium">{{ listing.property }}</span>
+                  <span class="text-xs text-muted-foreground">{{ listing.unitType === 'multi' ? 'Multi-Unit' : 'Single Unit' }}</span>
+                </div>
               </div>
+              <Icon v-if="!listing.activeRoomId" name="lucide:check" class="size-4 shrink-0 text-primary" />
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
