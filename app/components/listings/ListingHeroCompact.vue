@@ -11,15 +11,45 @@ function otaIcon(ota: string) {
   return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
 }
 
-// Photo editing
+// Photo manager
 const showPhotoDialog = ref(false)
+const fileInputEl = ref<HTMLInputElement | null>(null)
+const dragIndex = ref<number | null>(null)
+const MAX_PHOTOS = 20
+const MAX_SIZE = 10 * 1024 * 1024
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
 
-function selectPhoto(index: number) {
-  const photos = [...props.listing.photos]
-  const [selected] = photos.splice(index, 1)
-  photos.unshift(selected!)
+function uploadPhotos(files: FileList | null) {
+  if (!files) return
+  const current = props.listing.photos.length
+  const remaining = MAX_PHOTOS - current
+  const toProcess = Array.from(files).slice(0, remaining)
+  toProcess.forEach((file) => {
+    if (!ALLOWED.includes(file.type)) return
+    if (file.size > MAX_SIZE) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const src = e.target?.result as string
+      emit('update', { ...props.listing, photos: [...props.listing.photos, src] })
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+function deletePhoto(index: number) {
+  const photos = props.listing.photos.filter((_, i) => i !== index)
   emit('update', { ...props.listing, photos })
-  showPhotoDialog.value = false
+}
+
+function onDragStart(index: number) { dragIndex.value = index }
+function onDragOver(e: DragEvent) { e.preventDefault() }
+function onDrop(targetIndex: number) {
+  if (dragIndex.value === null || dragIndex.value === targetIndex) return
+  const photos = [...props.listing.photos]
+  const [moved] = photos.splice(dragIndex.value, 1)
+  photos.splice(targetIndex, 0, moved!)
+  emit('update', { ...props.listing, photos })
+  dragIndex.value = null
 }
 
 // Inline name editing
@@ -471,23 +501,63 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       </div>
     </div>
 
-    <!-- Photo Selection Dialog -->
+    <!-- Photo Manager Dialog -->
     <Dialog v-model:open="showPhotoDialog">
-      <DialogContent class="max-w-lg">
+      <DialogContent class="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Change Cover Photo</DialogTitle>
+          <DialogTitle>Manage Photos</DialogTitle>
+          <DialogDescription>
+            Drag to reorder · First photo is the thumbnail · Max {{ MAX_PHOTOS }} photos · Max 10MB per file · JPEG, PNG, WebP
+          </DialogDescription>
         </DialogHeader>
-        <div class="grid grid-cols-3 gap-3 py-4">
-          <button
-            v-for="(photo, index) in listing.photos"
-            :key="index"
-            class="aspect-[4/3] overflow-hidden rounded-lg border-2 transition-colors"
-            :class="index === 0 ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'"
-            @click="selectPhoto(index)"
-          >
-            <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
-          </button>
-        </div>
+
+        <ScrollArea class="max-h-[60vh]">
+          <div class="grid grid-cols-3 gap-3 p-1">
+            <!-- Existing photos -->
+            <div
+              v-for="(photo, index) in listing.photos"
+              :key="photo"
+              class="group relative aspect-video overflow-hidden rounded-lg border-2 cursor-grab transition-colors"
+              :class="index === 0 ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'"
+              draggable="true"
+              @dragstart="onDragStart(index)"
+              @dragover="onDragOver"
+              @drop="onDrop(index)"
+            >
+              <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <Icon name="lucide:grip" class="size-4 text-white" />
+              </div>
+              <Badge v-if="index === 0" class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0">Thumbnail</Badge>
+              <button
+                class="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                @click.stop="deletePhoto(index)"
+              >
+                <Icon name="lucide:x" class="size-3.5" />
+              </button>
+            </div>
+
+            <!-- Upload slot -->
+            <button
+              v-if="listing.photos.length < MAX_PHOTOS"
+              class="aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              @click="fileInputEl?.click()"
+            >
+              <Icon name="lucide:plus" class="size-6" />
+              <span class="text-xs">Add photo</span>
+              <span class="text-[10px]">{{ listing.photos.length }}/{{ MAX_PHOTOS }}</span>
+            </button>
+          </div>
+        </ScrollArea>
+
+        <input
+          ref="fileInputEl"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          class="hidden"
+          @change="uploadPhotos(($event.target as HTMLInputElement).files)"
+        />
       </DialogContent>
     </Dialog>
 
