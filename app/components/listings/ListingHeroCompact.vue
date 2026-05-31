@@ -234,33 +234,26 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       Back
     </Button>
 
-    <!-- Hero: large photo + listing info -->
-    <div class="flex flex-col gap-3">
-      <!-- Landscape photo (large) -->
-      <div class="relative w-full h-40 overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
-        <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
-        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Icon name="lucide:pencil" class="size-5 text-white" />
+    <!-- Hero: photo + info -->
+    <div class="flex gap-4 items-start">
+      <!-- Photo + unit button (same width) -->
+      <div class="w-64 shrink-0 flex flex-col gap-1.5">
+        <!-- 16/9 landscape photo -->
+        <div class="relative w-full aspect-video overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
+          <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Icon name="lucide:pencil" class="size-5 text-white" />
+          </div>
         </div>
-      </div>
 
-      <!-- Listing name (large) -->
-      <h1 class="text-2xl font-bold tracking-tight leading-tight">{{ listing.name }}</h1>
-
-      <!-- Location + unit type dropdown -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Icon name="lucide:map-pin" class="size-3.5" />
-          {{ listing.location }}
-        </span>
-        <span class="text-muted-foreground/40">·</span>
-
-        <!-- Unit type / room switcher (dropdown only for multi-unit with rooms) -->
+        <!-- Unit / room switcher button (full width of photo) -->
         <DropdownMenu v-if="listing.rooms && listing.rooms.length > 1">
           <DropdownMenuTrigger as-child>
-            <button class="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-accent">
-              <Icon name="lucide:building-2" class="size-3" />
-              {{ activeRoom ? activeRoom.name : 'Multi-Unit' }}
+            <button class="flex w-full items-center justify-between gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors hover:bg-accent">
+              <span class="flex items-center gap-1.5">
+                <Icon name="lucide:building-2" class="size-3" />
+                {{ activeRoom ? activeRoom.name : 'Multi-Unit' }}
+              </span>
               <Icon name="lucide:chevrons-up-down" class="size-3 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
@@ -282,11 +275,19 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <!-- Single unit badge (no dropdown) -->
-        <Badge v-else variant="outline" class="text-xs">
+        <Badge v-else variant="outline" class="w-full justify-center text-xs">
           <Icon name="lucide:home" class="size-3 mr-1" />
           Single Unit
         </Badge>
+      </div>
+
+      <!-- Listing info -->
+      <div class="flex flex-col gap-2 min-w-0">
+        <h1 class="text-2xl font-bold tracking-tight leading-tight">{{ listing.name }}</h1>
+        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Icon name="lucide:map-pin" class="size-3.5" />
+          {{ listing.location }}
+        </span>
       </div>
     </div>
 
