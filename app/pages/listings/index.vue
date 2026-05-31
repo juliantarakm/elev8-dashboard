@@ -226,7 +226,7 @@ watch(activeAiFilter, (val) => {
         </p>
       </div>
       <Badge variant="secondary" class="text-xs">
-        {{ listings.value.length }} listings
+        {{ listings.length }} listings
       </Badge>
     </div>
 
