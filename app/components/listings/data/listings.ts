@@ -93,7 +93,7 @@ export interface ListingDocument {
   uploadedAt: string
 }
 
-export type ReservationStage = 'pre_booking' | 'confirmed' | 'checked_in' | 'checked_out'
+export type ReservationStage = 'future' | 'inquiry_past' | 'current'
 
 export interface FieldConfig {
   stages: ReservationStage[]

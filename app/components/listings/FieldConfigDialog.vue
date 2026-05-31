@@ -12,14 +12,13 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:open': [val: boolean]; update: [listing: Listing] }>()
 
 const stages: { value: ReservationStage; label: string }[] = [
-  { value: 'pre_booking', label: 'Pre-booking' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'checked_in', label: 'Checked-in' },
-  { value: 'checked_out', label: 'Checked-out' },
+  { value: 'future', label: 'Future' },
+  { value: 'inquiry_past', label: 'Inquiry / Past' },
+  { value: 'current', label: 'Current' },
 ]
 
 const currentConfig = computed<FieldConfig>(() =>
-  props.listing.resources.fieldConfig?.[props.fieldKey] ?? { stages: ['pre_booking', 'confirmed', 'checked_in', 'checked_out'] }
+  props.listing.resources.fieldConfig?.[props.fieldKey] ?? { stages: ['future', 'inquiry_past', 'current'] }
 )
 
 const localStages = ref<ReservationStage[]>([...currentConfig.value.stages])
