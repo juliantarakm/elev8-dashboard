@@ -1,0 +1,175 @@
+<script setup lang="ts">
+import type { Listing } from '~/components/listings/data/listings'
+
+const props = defineProps<{ listing: Listing }>()
+const emit = defineEmits<{ update: [listing: Listing] }>()
+
+const activeTab = ref('basics')
+
+const basics = computed(() => props.listing.resources.basics)
+
+function updateBasics(patch: Partial<typeof basics.value>) {
+  emit('update', { ...props.listing, resources: { ...props.listing.resources, basics: { ...basics.value, ...patch } } })
+}
+
+function updateResources(patch: Partial<Listing['resources']>) {
+  emit('update', { ...props.listing, resources: { ...props.listing.resources, ...patch } })
+}
+
+const allAmenities = [
+  'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
+  'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
+  'Ocean View', 'Cliff Deck', 'Surfboard Storage', 'Mountain View', 'Hot Tub',
+  'Fireplace', 'River View', 'Bamboo Construction',
+]
+const amenitySearch = ref('')
+const amenityPopoverOpen = ref(false)
+const filteredAmenities = computed(() => {
+  const available = allAmenities.filter(a => !props.listing.amenities.includes(a))
+  if (!amenitySearch.value) return available
+  return available.filter(a => a.toLowerCase().includes(amenitySearch.value.toLowerCase()))
+})
+function addAmenity(a: string) { emit('update', { ...props.listing, amenities: [...props.listing.amenities, a] }) }
+function removeAmenity(a: string) { emit('update', { ...props.listing, amenities: props.listing.amenities.filter(x => x !== a) }) }
+
+const topicInput = ref('')
+function addTopic() {
+  const t = topicInput.value.trim()
+  if (!t || props.listing.resources.topicsToAvoid?.includes(t)) return
+  updateResources({ topicsToAvoid: [...(props.listing.resources.topicsToAvoid ?? []), t] })
+  topicInput.value = ''
+}
+function removeTopic(t: string) {
+  updateResources({ topicsToAvoid: props.listing.resources.topicsToAvoid?.filter(x => x !== t) })
+}
+
+const isFilled = (val?: string) => !!val?.trim()
+</script>
+
+<template>
+  <div class="flex flex-col h-full overflow-hidden">
+    <Tabs v-model="activeTab" class="flex flex-col h-full overflow-hidden">
+      <TabsList class="flex-shrink-0 w-full justify-start rounded-none border-b bg-transparent px-4 h-auto pb-0 gap-0">
+        <TabsTrigger
+          v-for="tab in ['basics', 'listing-details', 'amenities', 'sops', 'topics', 'upsells']"
+          :key="tab"
+          :value="tab"
+          class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-2 text-xs"
+        >
+          {{ { basics: 'Basics', 'listing-details': 'Listing Details', amenities: 'Amenities', sops: 'SOPs', topics: 'Topics to Avoid', upsells: 'Property Upsells' }[tab] }}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="basics" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <Label>Property Name</Label>
+            <Input :model-value="listing.name" @update:model-value="(v) => emit('update', { ...listing, name: String(v) })" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <Label>Location</Label>
+            <Input :model-value="listing.location" @update:model-value="(v) => emit('update', { ...listing, location: String(v) })" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <Label>Check-in Time</Label>
+            <Input type="time" :model-value="basics.checkInTime ?? '14:00'" @update:model-value="(v) => updateBasics({ checkInTime: String(v) })" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <Label>Check-out Time</Label>
+            <Input type="time" :model-value="basics.checkOutTime ?? '11:00'" @update:model-value="(v) => updateBasics({ checkOutTime: String(v) })" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <Label>Property Description</Label>
+            <span v-if="isFilled(basics.description)" class="text-[10px] text-primary flex items-center gap-1">
+              <Icon name="lucide:sparkles" class="size-3" /> AI filled
+            </span>
+          </div>
+          <Textarea :model-value="basics.description ?? ''" rows="5" placeholder="Describe your property..." @update:model-value="(v) => updateBasics({ description: String(v) })" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <Label>House Rules</Label>
+          <Textarea :model-value="basics.houseRules ?? ''" rows="3" placeholder="e.g. No smoking, no parties..." @update:model-value="(v) => updateBasics({ houseRules: String(v) })" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <Label>Neighborhood Info</Label>
+          <Textarea :model-value="basics.neighborhood ?? ''" rows="3" placeholder="Nearby attractions, transport..." @update:model-value="(v) => updateBasics({ neighborhood: String(v) })" />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="listing-details" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <Label>Full Listing Description</Label>
+            <span v-if="isFilled(listing.resources.listingDetails)" class="text-[10px] text-primary flex items-center gap-1">
+              <Icon name="lucide:sparkles" class="size-3" /> AI filled
+            </span>
+          </div>
+          <Textarea :model-value="listing.resources.listingDetails ?? ''" rows="12"
+            placeholder="Full description for OTA listings..."
+            @update:model-value="(v) => updateResources({ listingDetails: String(v) })" />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="amenities" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <Label>Amenities</Label>
+          <Popover v-model:open="amenityPopoverOpen">
+            <PopoverTrigger as-child>
+              <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs">
+                <Icon name="lucide:plus" class="size-3" /> Add
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-56 p-0" align="end">
+              <div class="p-2"><Input v-model="amenitySearch" placeholder="Search..." class="h-7 text-xs" /></div>
+              <ScrollArea class="h-48">
+                <div class="space-y-1">
+                  <div v-for="a in filteredAmenities" :key="a"
+                    class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                    @click="addAmenity(a)">{{ a }}</div>
+                  <p v-if="filteredAmenities.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">No amenities found.</p>
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Badge v-for="a in listing.amenities" :key="a" variant="secondary" class="text-xs gap-1 cursor-pointer" @click="removeAmenity(a)">
+            {{ a }} <Icon name="lucide:x" class="size-3" />
+          </Badge>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="sops" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <Label>Standard Operating Procedures</Label>
+          <Textarea :model-value="listing.resources.sops ?? ''" rows="14"
+            placeholder="e.g. Check-in procedure, cleaning checklist, emergency contacts..."
+            @update:model-value="(v) => updateResources({ sops: String(v) })" />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="topics" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <Label>Topics to Avoid</Label>
+          <p class="text-xs text-muted-foreground">Topics the AI should not discuss with guests.</p>
+          <div class="flex gap-2">
+            <Input v-model="topicInput" placeholder="e.g. competitor pricing" class="flex-1" @keydown.enter="addTopic" />
+            <Button size="sm" @click="addTopic">Add</Button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <Badge v-for="t in listing.resources.topicsToAvoid" :key="t" variant="secondary" class="text-xs gap-1 cursor-pointer" @click="removeTopic(t)">
+              {{ t }} <Icon name="lucide:x" class="size-3" />
+            </Badge>
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="upsells" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
+        <p class="text-sm text-muted-foreground">Link upsell services the AI can promote to guests.</p>
+        <p class="text-xs text-muted-foreground italic">Upsell catalog integration coming soon.</p>
+      </TabsContent>
+    </Tabs>
+  </div>
+</template>

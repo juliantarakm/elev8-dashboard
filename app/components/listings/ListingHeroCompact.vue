@@ -3,7 +3,7 @@ import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot, Uni
 import { listings, allTags } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
-const props = defineProps<{ listing: Listing }>()
+const props = defineProps<{ listing: Listing; openSchedule?: boolean }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 const router = useRouter()
 
@@ -139,6 +139,9 @@ function addUnit() {
 // AI Schedule
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const showScheduleSheet = ref(false)
+watch(() => props.openSchedule, (val) => {
+  if (val) showScheduleSheet.value = true
+})
 const scheduleTab = ref<'weekly' | 'overrides'>('weekly')
 const schedule = computed(() => props.listing.aiSchedule)
 

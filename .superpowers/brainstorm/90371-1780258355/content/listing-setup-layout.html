@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Listing Setup — Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Floating menu bar */
+  .floating-bar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1e1e2e; border: 1px solid #333; border-radius: 999px;
+    padding: 6px 10px; display: flex; gap: 4px; z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .floating-btn {
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    border: none; color: #aaa; background: transparent; transition: all 0.15s;
+  }
+  .floating-btn:hover { background: #2d2d44; color: #fff; }
+  .floating-btn.active { background: #4f46e5; color: #fff; }
+
+  /* Full-screen overlay */
+  .overlay {
+    position: fixed; inset: 0; background: #0f0f1a; z-index: 50;
+    display: flex; flex-direction: column;
+  }
+  .overlay-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 1px solid #2d2d44; flex-shrink: 0;
+  }
+  .overlay-header h2 { font-size: 15px; font-weight: 600; }
+  .close-btn {
+    background: #2d2d44; border: none; color: #aaa; border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; font-size: 12px;
+  }
+  .close-btn:hover { color: #fff; }
+
+  /* Two-panel layout */
+  .panels { display: flex; flex: 1; overflow: hidden; }
+
+  /* Left: field panel (wider) */
+  .field-panel {
+    flex: 1; display: flex; flex-direction: column; border-right: 1px solid #2d2d44; overflow: hidden;
+  }
+  .tab-bar {
+    display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid #2d2d44; flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 7px 14px; font-size: 12px; cursor: pointer; color: #888;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .tab.active { color: #fff; border-bottom-color: #4f46e5; }
+  .field-content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 11px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-input {
+    background: #1e1e2e; border: 1px solid #2d2d44; border-radius: 6px;
+    padding: 8px 12px; color: #e2e8f0; font-size: 13px; width: 100%;
+  }
+  .field-input.filled { border-color: #4f46e5; background: #1e1e2e; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #4f46e5/20; border: 1px solid #4f46e5/40; color: #818cf8;
+    border-radius: 4px; padding: 2px 6px; font-size: 10px; margin-top: 4px;
+  }
+
+  /* Right: resource panel (narrower) */
+  .resource-panel {
+    width: 300px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .resource-header {
+    padding: 12px 16px; border-bottom: 1px solid #2d2d44; flex-shrink: 0;
+    font-size: 12px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .resource-content { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+  .resource-section { display: flex; flex-direction: column; gap: 6px; }
+  .resource-section-title { font-size: 11px; font-weight: 600; color: #fff; }
+  .resource-item {
+    display: flex; align-items: center; gap-8px; padding: 8px 10px;
+    background: #1e1e2e; border-radius: 6px; border: 1px solid #2d2d44;
+    font-size: 12px; color: #ccc; cursor: pointer; gap: 8px;
+  }
+  .resource-item:hover { border-color: #4f46e5; color: #fff; }
+  .resource-item .icon { font-size: 14px; flex-shrink: 0; }
+  .resource-item .label { flex: 1; }
+  .resource-item .badge {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    background: #22c55e/20; color: #22c55e; border: 1px solid #22c55e/30;
+  }
+  .resource-item .badge.gray { background: #2d2d44; color: #888; border-color: #333; }
+
+  .doc-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    background: #1e1e2e; border-radius: 6px; border: 1px solid #2d2d44; font-size: 11px; color: #aaa;
+  }
+  .doc-item .doc-icon { color: #f59e0b; font-size: 13px; }
+
+  .upload-btn {
+    display: flex; align-items: center; gap: 6px; padding: 7px 10px;
+    border: 1px dashed #333; border-radius: 6px; color: #888; font-size: 12px;
+    cursor: pointer; background: transparent; width: 100%; text-align: left;
+  }
+  .upload-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+
+  .action-btn {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-radius: 6px; font-size: 12px; cursor: pointer; border: none; width: 100%; text-align: left;
+  }
+  .action-btn.primary { background: #4f46e5; color: #fff; }
+  .action-btn.primary:hover { background: #4338ca; }
+  .action-btn.secondary { background: #1e1e2e; border: 1px solid #2d2d44; color: #ccc; }
+  .action-btn.secondary:hover { border-color: #4f46e5; color: #fff; }
+
+  .separator { height: 1px; background: #2d2d44; margin: 4px 0; }
+
+  /* Page behind (dimmed) */
+  .page-behind {
+    flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 20px;
+    opacity: 0.15; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- Dimmed page behind -->
+<div class="page-behind">
+  <div style="height:40px;background:#1e1e2e;border-radius:8px;"></div>
+  <div style="height:20px;background:#1e1e2e;border-radius:4px;width:60%;"></div>
+  <div style="height:120px;background:#1e1e2e;border-radius:8px;"></div>
+</div>
+
+<!-- Floating menu -->
+<div class="floating-bar">
+  <button class="floating-btn active">📋 Listing Setup</button>
+  <button class="floating-btn">🤖 Test AI</button>
+  <button class="floating-btn">🗓 AI Schedule</button>
+</div>
+
+<!-- Full-screen overlay -->
+<div class="overlay">
+  <div class="overlay-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:16px;">📋</span>
+      <h2>Listing Setup</h2>
+      <span style="font-size:11px;color:#888;">5BR Pool the R Villa Luwa</span>
+    </div>
+    <button class="close-btn">✕ Close</button>
+  </div>
+
+  <div class="panels">
+    <!-- Left: Field Panel -->
+    <div class="field-panel">
+      <div class="tab-bar">
+        <div class="tab active">Basics</div>
+        <div class="tab">Listing Details</div>
+        <div class="tab">Amenities</div>
+        <div class="tab">SOPs</div>
+        <div class="tab">Topics to Avoid</div>
+        <div class="tab">Property Upsells</div>
+      </div>
+
+      <div class="field-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:14px;font-weight:600;">Basics</div>
+          <div style="font-size:11px;color:#4f46e5;cursor:pointer;">✨ Auto-fill all from Resources</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <div class="field-label">Property Name</div>
+            <input class="field-input filled" value="5BR Pool the R Villa Luwa" />
+            <span class="ai-badge">✨ AI filled</span>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Location</div>
+            <input class="field-input filled" value="Canggu, Bali" />
+            <span class="ai-badge">✨ AI filled</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <div class="field-label">Capacity</div>
+            <input class="field-input" value="10 guests" />
+          </div>
+          <div class="field-group">
+            <div class="field-label">Room Type</div>
+            <input class="field-input" value="Master Suite" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Property Description</div>
+          <textarea class="field-input" rows="4" style="resize:none;">A serene 5-bedroom villa with private pool near Canggu beach. Perfect for families and groups seeking a luxurious Bali experience...</textarea>
+          <span class="ai-badge">✨ AI filled</span>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Check-in / Check-out</div>
+          <div class="field-row">
+            <input class="field-input" value="14:00" />
+            <input class="field-input" value="11:00" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Resource Panel -->
+    <div class="resource-panel">
+      <div class="resource-header">Resources</div>
+      <div class="resource-content">
+
+        <!-- Property Documents -->
+        <div class="resource-section">
+          <div class="resource-section-title">Property Documents</div>
+          <button class="upload-btn">＋ Upload New Document</button>
+          <div class="doc-item">
+            <span class="doc-icon">📄</span>
+            <span style="flex:1;truncate;">Villa_Luwa_Info.pdf</span>
+            <span style="font-size:10px;color:#4f46e5;cursor:pointer;">Use</span>
+          </div>
+          <div class="doc-item">
+            <span class="doc-icon">📝</span>
+            <span style="flex:1;">SOPs_Template.docx</span>
+            <span style="font-size:10px;color:#4f46e5;cursor:pointer;">Use</span>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <!-- HostBuddy Knowledge Base -->
+        <div class="resource-section">
+          <div class="resource-section-title">HostBuddy Knowledge Base</div>
+
+          <div class="resource-item">
+            <span class="icon">🔗</span>
+            <span class="label">Beds24 Connected</span>
+            <span class="badge">Live</span>
+          </div>
+
+          <div style="font-size:11px;color:#888;padding:0 2px;margin-top:2px;">PMS Integration</div>
+          <div style="padding-left:8px;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;">
+              <span style="color:#22c55e;">✓</span> PMS property details
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;">
+              <span style="color:#22c55e;">✓</span> Property availability
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;">
+              <span style="color:#22c55e;">✓</span> Guest & reservation data
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;">
+              <span style="color:#22c55e;">✓</span> Past conversations (6 months)
+            </div>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <!-- Property Profile -->
+        <div class="resource-section">
+          <div class="resource-section-title">Property Profile</div>
+          <div style="font-size:11px;color:#888;margin-bottom:4px;">Data entered manually</div>
+          <button class="action-btn primary">✨ Auto-Fill Property Details</button>
+          <button class="action-btn secondary" style="margin-top:4px;">📋 Pull Internal Notes</button>
+          <button class="action-btn secondary" style="margin-top:4px;">⎘ Copy Data From Other Property</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

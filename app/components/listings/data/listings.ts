@@ -85,6 +85,29 @@ export interface ListingMaintenance {
   tasks: MaintenanceTask[]
 }
 
+export interface ListingDocument {
+  id: string
+  name: string
+  url: string
+  size: number
+  uploadedAt: string
+}
+
+export interface ListingResources {
+  documents: ListingDocument[]
+  basics: {
+    description?: string
+    houseRules?: string
+    neighborhood?: string
+    checkInTime?: string
+    checkOutTime?: string
+  }
+  listingDetails?: string
+  sops?: string
+  topicsToAvoid?: string[]
+  propertyUpsells?: string[]
+}
+
 export interface Unit {
   id: string
   name: string
@@ -113,6 +136,7 @@ export interface Listing {
   blockedDates: string[]
   reviews: Review[]
   maintenance: ListingMaintenance
+  resources: ListingResources
 }
 
 function alwaysOn(): AiSchedule {
@@ -203,6 +227,19 @@ export const listings = ref<Listing[]>([
         { id: 'mt-3', title: 'Pool pump inspection', date: '2026-05-28', assignedTo: 'Wayan Adi', status: 'completed', type: 'inspection' },
       ],
     },
+    resources: {
+      documents: [
+        { id: 'doc-1', name: 'Villa_Luwa_Info.pdf', url: '', size: 245000, uploadedAt: '2026-05-15' },
+        { id: 'doc-2', name: 'SOPs_Template.docx', url: '', size: 89000, uploadedAt: '2026-05-20' },
+      ],
+      basics: {
+        description: 'A serene 5-bedroom villa with private pool near Canggu beach. Perfect for families and groups seeking a luxurious Bali experience with modern amenities and traditional Balinese architecture.',
+        checkInTime: '14:00',
+        checkOutTime: '11:00',
+      },
+      topicsToAvoid: ['competitor pricing', 'refund disputes'],
+      propertyUpsells: [],
+    },
   },
   {
     id: 'lst-2',
@@ -228,6 +265,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-3',
@@ -253,6 +291,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-4',
@@ -278,6 +317,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-5',
@@ -303,6 +343,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-6',
@@ -328,6 +369,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-7',
@@ -353,6 +395,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-8',
@@ -378,6 +421,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-9',
@@ -403,6 +447,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-10',
@@ -428,6 +473,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-11',
@@ -453,6 +499,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-12',
@@ -478,6 +525,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-13',
@@ -503,6 +551,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-14',
@@ -528,6 +577,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-15',
@@ -553,6 +603,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
   {
     id: 'lst-16',
@@ -578,6 +629,7 @@ export const listings = ref<Listing[]>([
     blockedDates: [],
     reviews: [],
     maintenance: { cleaningSchedule: [], tasks: [] },
+    resources: { documents: [], basics: {}, topicsToAvoid: [], propertyUpsells: [] },
   },
 ])
 

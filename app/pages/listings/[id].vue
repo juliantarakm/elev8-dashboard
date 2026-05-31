@@ -8,6 +8,9 @@ import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingReviewsTab from '~/components/listings/ListingReviewsTab.vue'
 import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingSettingsTab from '~/components/listings/ListingSettingsTab.vue'
+import ListingFloatingMenu from '~/components/listings/ListingFloatingMenu.vue'
+import ListingSetupOverlay from '~/components/listings/ListingSetupOverlay.vue'
+import ListingTestAIDialog from '~/components/listings/ListingTestAIDialog.vue'
 
 definePageMeta({ layout: 'default' })
 
@@ -27,6 +30,15 @@ const activeUnitId = computed(() => listing.value?.activeUnitId ?? null)
 const activeUnit = computed(() => listing.value?.units?.find(u => u.id === activeUnitId.value) ?? null)
 
 const activeTab = ref('overview')
+
+const showSetup = ref(false)
+const showTestAi = ref(false)
+const openSchedule = ref(false)
+
+function handleOpenSchedule() {
+  openSchedule.value = true
+  nextTick(() => { openSchedule.value = false })
+}
 </script>
 
 <template>
@@ -40,7 +52,7 @@ const activeTab = ref('overview')
   </div>
 
   <div v-else class="flex flex-col gap-6">
-    <ListingHeroCompact :listing="listing" @update="updateListing" />
+    <ListingHeroCompact :listing="listing" :open-schedule="openSchedule" @update="updateListing" />
 
     <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
       <TabsList>
@@ -94,5 +106,25 @@ const activeTab = ref('overview')
         <ListingSettingsTab :listing="listing" @update="updateListing" />
       </TabsContent>
     </Tabs>
+
+    <ListingFloatingMenu
+      @open-setup="showSetup = true"
+      @open-test-ai="showTestAi = true"
+      @open-schedule="handleOpenSchedule"
+    />
+
+    <ListingSetupOverlay
+      v-if="showSetup"
+      :listing="listing"
+      :open="showSetup"
+      @update:open="showSetup = $event"
+      @update="updateListing"
+    />
+
+    <ListingTestAIDialog
+      :listing="listing"
+      :open="showTestAi"
+      @update:open="showTestAi = $event"
+    />
   </div>
 </template>
