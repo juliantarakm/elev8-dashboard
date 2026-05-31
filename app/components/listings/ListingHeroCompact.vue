@@ -341,9 +341,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
     </Button>
 
     <!-- Hero: photo + info -->
-    <div class="flex gap-4 items-start">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start">
       <!-- Photo + unit button (same width) -->
-      <div class="w-64 shrink-0 flex flex-col gap-1.5">
+      <div class="w-full md:w-64 shrink-0 flex flex-col gap-1.5">
         <!-- 16/9 landscape photo -->
         <div class="relative w-full aspect-video overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
           <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />

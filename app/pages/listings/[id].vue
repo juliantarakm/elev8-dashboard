@@ -55,32 +55,34 @@ function handleOpenSchedule() {
     <ListingHeroCompact :listing="listing" :open-schedule="openSchedule" @update="updateListing" />
 
     <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
-      <TabsList>
-        <TabsTrigger value="overview">
-          <Icon name="lucide:layout-grid" class="mr-1.5 size-3.5" />
-          Overview
-        </TabsTrigger>
-        <TabsTrigger value="pricing">
-          <Icon name="lucide:dollar-sign" class="mr-1.5 size-3.5" />
-          Pricing
-        </TabsTrigger>
-        <TabsTrigger value="calendar">
-          <Icon name="lucide:calendar" class="mr-1.5 size-3.5" />
-          Calendar
-        </TabsTrigger>
-        <TabsTrigger value="reviews">
-          <Icon name="lucide:star" class="mr-1.5 size-3.5" />
-          Reviews
-        </TabsTrigger>
-        <TabsTrigger value="maintenance">
-          <Icon name="lucide:wrench" class="mr-1.5 size-3.5" />
-          Maintenance
-        </TabsTrigger>
-        <TabsTrigger value="settings">
-          <Icon name="lucide:settings" class="mr-1.5 size-3.5" />
-          Settings
-        </TabsTrigger>
-      </TabsList>
+      <div class="overflow-x-auto">
+        <TabsList class="w-max min-w-full">
+          <TabsTrigger value="overview">
+            <Icon name="lucide:layout-grid" class="mr-1.5 size-3.5" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="pricing">
+            <Icon name="lucide:dollar-sign" class="mr-1.5 size-3.5" />
+            Pricing
+          </TabsTrigger>
+          <TabsTrigger value="calendar">
+            <Icon name="lucide:calendar" class="mr-1.5 size-3.5" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="reviews">
+            <Icon name="lucide:star" class="mr-1.5 size-3.5" />
+            Reviews
+          </TabsTrigger>
+          <TabsTrigger value="maintenance">
+            <Icon name="lucide:wrench" class="mr-1.5 size-3.5" />
+            Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Icon name="lucide:settings" class="mr-1.5 size-3.5" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="overview" class="mt-6">
         <ListingOverviewTab :listing="listing" :active-unit="activeUnit" @switch-tab="activeTab = $event" />
