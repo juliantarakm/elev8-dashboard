@@ -22,6 +22,33 @@ function selectPhoto(index: number) {
   showPhotoDialog.value = false
 }
 
+// Inline name editing
+const editingName = ref(false)
+const nameInput = ref(props.listing.name)
+
+function saveName() {
+  if (nameInput.value.trim()) emit('update', { ...props.listing, name: nameInput.value.trim() })
+  editingName.value = false
+}
+
+// Tag editing
+const tagPopoverOpen = ref(false)
+const tagSearch = ref('')
+const availableTags = computed(() => allTags.value.filter(t => !props.listing.tags.includes(t)))
+const filteredAvailableTags = computed(() => {
+  if (!tagSearch.value) return availableTags.value
+  return availableTags.value.filter(t => t.toLowerCase().includes(tagSearch.value.toLowerCase()))
+})
+
+function removeTag(tag: string) {
+  emit('update', { ...props.listing, tags: props.listing.tags.filter(t => t !== tag) })
+}
+
+function addTag(tag: string) {
+  emit('update', { ...props.listing, tags: [...props.listing.tags, tag] })
+  tagSearch.value = ''
+}
+
 // Room switcher
 const activeRoom = computed(() =>
   props.listing.rooms?.find(r => r.id === props.listing.activeRoomId)
@@ -283,11 +310,69 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
       <!-- Listing info -->
       <div class="flex flex-col gap-2 min-w-0">
-        <h1 class="text-2xl font-bold tracking-tight leading-tight">{{ listing.name }}</h1>
+        <!-- Editable name -->
+        <div v-if="editingName" class="flex items-center gap-2">
+          <Input
+            v-model="nameInput"
+            class="text-2xl font-bold h-auto py-0 border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+            autofocus
+            @blur="saveName"
+            @keydown.enter="saveName"
+            @keydown.escape="editingName = false"
+          />
+        </div>
+        <h1
+          v-else
+          class="text-2xl font-bold tracking-tight leading-tight cursor-pointer hover:text-muted-foreground transition-colors group flex items-center gap-2"
+          @click="nameInput = listing.name; editingName = true"
+        >
+          {{ listing.name }}
+          <Icon name="lucide:pencil" class="size-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+        </h1>
+
         <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Icon name="lucide:map-pin" class="size-3.5" />
           {{ listing.location }}
         </span>
+
+        <!-- Editable tags -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <Badge
+            v-for="tag in listing.tags"
+            :key="tag"
+            variant="secondary"
+            class="text-xs gap-1 cursor-pointer"
+            @click="removeTag(tag)"
+          >
+            {{ tag }}
+            <Icon name="lucide:x" class="size-3" />
+          </Badge>
+
+          <Popover v-model:open="tagPopoverOpen">
+            <PopoverTrigger as-child>
+              <button class="flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                <Icon name="lucide:plus" class="size-3" />
+                Add tag
+              </button>
+            </PopoverTrigger>
+            <PopoverContent class="w-48 p-0" align="start">
+              <div class="p-2">
+                <Input v-model="tagSearch" placeholder="Search tags..." class="h-7 text-xs" />
+              </div>
+              <ScrollArea class="h-40">
+                <div class="space-y-0.5 p-1">
+                  <div
+                    v-for="tag in filteredAvailableTags"
+                    :key="tag"
+                    class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                    @click="addTag(tag); tagPopoverOpen = false"
+                  >{{ tag }}</div>
+                  <p v-if="filteredAvailableTags.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">No tags found.</p>
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
     </div>
 
