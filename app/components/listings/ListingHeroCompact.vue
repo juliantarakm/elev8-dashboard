@@ -14,6 +14,9 @@ function otaIcon(ota: string) {
 // Photo manager
 const showPhotoDialog = ref(false)
 const fileInputEl = ref<HTMLInputElement | null>(null)
+const replaceInputEl = ref<HTMLInputElement | null>(null)
+const replaceIndex = ref<number | null>(null)
+const previewPhoto = ref<string | null>(null)
 const dragIndex = ref<number | null>(null)
 const MAX_PHOTOS = 20
 const MAX_SIZE = 10 * 1024 * 1024
@@ -34,6 +37,26 @@ function uploadPhotos(files: FileList | null) {
     }
     reader.readAsDataURL(file)
   })
+}
+
+function replacePhoto(files: FileList | null) {
+  if (!files || replaceIndex.value === null) return
+  const file = files[0]
+  if (!file || !ALLOWED.includes(file.type) || file.size > MAX_SIZE) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const src = e.target?.result as string
+    const photos = [...props.listing.photos]
+    photos[replaceIndex.value!] = src
+    emit('update', { ...props.listing, photos })
+    replaceIndex.value = null
+  }
+  reader.readAsDataURL(file)
+}
+
+function startReplace(index: number) {
+  replaceIndex.value = index
+  replaceInputEl.value?.click()
 }
 
 function deletePhoto(index: number) {
@@ -503,7 +526,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
     <!-- Photo Manager Dialog -->
     <Dialog v-model:open="showPhotoDialog">
-      <DialogContent class="max-w-2xl">
+      <DialogContent class="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Manage Photos</DialogTitle>
           <DialogDescription>
@@ -511,9 +534,8 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea class="max-h-[60vh]">
-          <div class="grid grid-cols-3 gap-3 p-1">
-            <!-- Existing photos -->
+        <ScrollArea class="max-h-[65vh]">
+          <div class="grid grid-cols-4 gap-3 p-1">
             <div
               v-for="(photo, index) in listing.photos"
               :key="photo"
@@ -525,16 +547,33 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               @drop="onDrop(index)"
             >
               <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <Icon name="lucide:grip" class="size-4 text-white" />
+
+              <!-- Hover overlay -->
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                  class="flex size-8 items-center justify-center rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors"
+                  title="View full"
+                  @click.stop="previewPhoto = photo"
+                >
+                  <Icon name="lucide:expand" class="size-4" />
+                </button>
+                <button
+                  class="flex size-8 items-center justify-center rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors"
+                  title="Replace"
+                  @click.stop="startReplace(index)"
+                >
+                  <Icon name="lucide:image-plus" class="size-4" />
+                </button>
+                <button
+                  class="flex size-8 items-center justify-center rounded-full bg-white/20 hover:bg-red-500/80 text-white transition-colors"
+                  title="Delete"
+                  @click.stop="deletePhoto(index)"
+                >
+                  <Icon name="lucide:trash-2" class="size-4" />
+                </button>
               </div>
+
               <Badge v-if="index === 0" class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0">Thumbnail</Badge>
-              <button
-                class="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
-                @click.stop="deletePhoto(index)"
-              >
-                <Icon name="lucide:x" class="size-3.5" />
-              </button>
             </div>
 
             <!-- Upload slot -->
@@ -550,14 +589,18 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </div>
         </ScrollArea>
 
-        <input
-          ref="fileInputEl"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          class="hidden"
-          @change="uploadPhotos(($event.target as HTMLInputElement).files)"
-        />
+        <!-- Hidden file inputs -->
+        <input ref="fileInputEl" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
+          @change="uploadPhotos(($event.target as HTMLInputElement).files)" />
+        <input ref="replaceInputEl" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"
+          @change="replacePhoto(($event.target as HTMLInputElement).files)" />
+      </DialogContent>
+    </Dialog>
+
+    <!-- Full preview lightbox -->
+    <Dialog :open="!!previewPhoto" @update:open="(v) => { if (!v) previewPhoto = null }">
+      <DialogContent class="max-w-5xl p-2 bg-black/90 border-0">
+        <img v-if="previewPhoto" :src="previewPhoto" class="w-full max-h-[85vh] object-contain rounded" />
       </DialogContent>
     </Dialog>
 
