@@ -14,7 +14,7 @@
 - **Inbox** — Guest messaging system (4-panel layout) with Phone call tab
 - **Notification Center** — Bell icon in header with dropdown for CRITICAL/WARNING alerts
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
-- **Listings** — Property management with tabbed detail page (Overview, Property Settings, AI Schedule)
+- **Listings** — Property management with 6-tab detail page (Overview, Pricing, Calendar, Reviews, Maintenance, Settings) + compact hero with AI schedule Sheet (HostBuddy concept)
 - **Upsells** — Full request system: Catalog CRUD, Order tracking with lifecycle (pending→confirmed→completed/cancelled), Cancellation flow with refund policies, Staff/Guest notifications, Inbox integration (UpsellOrderCreator, UpsellOfferCard in chat, linked orders in ReservationPanel)
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
@@ -44,6 +44,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Notification Center Plan** → `docs/superpowers/plans/2026-05-07-notification-center-plan.md`
 - **Auto-Translate Spec** → `docs/superpowers/specs/2026-05-25-auto-translate-design.md`
 - **Auto-Translate Plan** → `docs/superpowers/plans/2026-05-25-auto-translate.md`
+- **Listing Details Redesign Spec** → `docs/superpowers/specs/2026-06-01-listing-details-redesign.md`
+- **Listing Details Redesign Plan** → `docs/superpowers/plans/2026-06-01-listing-details-redesign.md`
 
 ---
 
@@ -52,24 +54,38 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 ### Listing Module (`app/components/listings/`)
 
 #### Data + Types (`app/components/listings/data/listings.ts`)
-- `Listing` type with `photos: string[]`, `aiSchedule: AiSchedule`
-- `AiSchedule` type with `enabled`, `repeatType: 'weekly' | 'monthly'`, `activeDays: number[]`, `activeHours: { start, end }`
+- `Listing` type with `photos: string[]`, `unitType: 'single' | 'multi'`, `aiSchedule: AiSchedule`, plus `stats`, `pricing`, `bookings`, `blockedDates`, `reviews`, `maintenance`
+- **AI schedule (HostBuddy concept)**:
+  - `AiSchedule` = `{ always: boolean (24/7), days: DayHours[] (7, Mon→Sun), dateOverrides: DateOverride[] }`
+  - `DayHours` = `{ enabled, slots: TimeSlot[], activeFor: OverrideAudience[] }` — multiple time ranges per day
+  - `TimeSlot` = `{ id, start, end }` (24h "HH:MM")
+  - `DateOverride` = `{ id, startDate, startTime, endDate, endTime, activeFor }` — date RANGES that override the weekly schedule
+  - `OverrideAudience` = `'future' | 'current' | 'inquiry'`
+  - `alwaysOn()` factory builds a 24/7 default schedule
+- `ListingStats`, `ListingPricing` (nightlyRate/fees/discounts/seasonalRates), `Booking`, `Review`, `MaintenanceTask`, `ListingMaintenance`
 - Reactive: `listings` uses `ref<Listing[]>` — mutations use `listings.value[index] = updated`
 - Helper exports: `allTags`, `allLocations`, `allProperties`, `allOtas` (computed)
-- Mock data: 16 listings with Unsplash photos
+- Mock data: 16 listings with Unsplash photos (lst-1 has rich mock data + custom schedule; rest use `alwaysOn()` + defaults)
 
 #### Page (`app/pages/listings/[id].vue`)
-- Tabbed layout: Overview | Property Settings | AI Schedule
+- 6-tab layout: Overview | Pricing | Calendar | Reviews | Maintenance | Settings
 - Imports child components explicitly (not auto-imported)
+- `ListingHeroCompact` emits `update`; tabs emit `update`/`switchTab` (Overview links to Calendar/Reviews tabs)
 
 #### Child Components
-- **`ListingHero.vue`** — Photo gallery (360px grid) + name/location/AI badge + tags + OTA connections
-- **`ListingOverview.vue`** — Stats cards + editable amenities (add/remove via Popover)
-- **`ListingPropertySettings.vue`** — Sub-tabs: Details form + Distribution Channels
-- **`ListingAiSchedule.vue`** — AI toggle (Switch) + schedule config (repeat type, days, hours, timeline preview)
+- **`ListingHeroCompact.vue`** — Compact hero: editable cover photo (click → photo picker dialog), name, unit-type badge (single/multi), location, OTA badges, AI status **button** that opens a **Sheet** to manage schedules. The Sheet has Weekly Schedule + Date Overrides tabs, fixed footer (Clear All / Copy to Properties / Save Schedule), and a Copy-to-Listings dialog (search + tag filter + select all)
+- **`ListingOverviewTab.vue`** — Stats cards (revenue/occupancy/rating/rate) + upcoming bookings + recent reviews
+- **`ListingPricingTab.vue`** — Base pricing, discounts, seasonal rates table
+- **`ListingCalendarTab.vue`** — Bookings list + blocked dates
+- **`ListingReviewsTab.vue`** — Rating summary (category Progress bars) + filter + review cards with host reply
+- **`ListingMaintenanceTab.vue`** — Cleaning schedule + tasks + add-task dialog
+- **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
+- **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
+
+> **Schedule overlap rule**: time slots within a day auto-adjust to never overlap (`normalizeSlots` sorts by start and pushes each start past the previous end). Clear All resets hours+audience only (keeps enabled state). When 24/7 is on, the Custom Schedule is shown dimmed + non-editable.
 
 #### Listings Index (`app/pages/listings/index.vue`)
-- TanStack Table with search, tag filter, AI status filter
+- TanStack Table with search, tag filter (AND logic), AI status filter
 
 ### Inbox Module (`app/components/inbox/`)
 
@@ -346,6 +362,24 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 ### Action Needed Status
 - Only `action_needed` or `null` (NO `needs_reply`, `waiting_on_guest`, `done`)
 - Badge shown ONLY when `status === 'action_needed'` (destructive variant)
+
+### reka-ui Form Controls (Switch / Checkbox) ⚠️
+
+- **`Switch` and `Checkbox` use `model-value` / `@update:model-value`** — NOT `checked` / `@update:checked`. Using `:checked`/`@update:checked` silently does nothing (toggle appears dead).
+  ```vue
+  <Switch :model-value="isOn" @update:model-value="(v) => isOn = v" />
+  ```
+- **Never wrap a reka-ui `Checkbox` in a `<label>`** — the label re-dispatches the click to the underlying button, causing a double-toggle (net no change). For clickable rows, use a `div @click` with a custom checkbox visual instead (the Listings page tag-filter pattern):
+  ```vue
+  <div class="flex items-center gap-2 cursor-pointer" @click="toggle(item)">
+    <div class="flex size-4 items-center justify-center rounded-[4px] border"
+         :class="selected ? 'border-primary bg-primary text-primary-foreground' : 'border-input'">
+      <Icon v-if="selected" name="lucide:check" class="size-3" />
+    </div>
+    <span>{{ item }}</span>
+  </div>
+  ```
+- **Tag/multi-select filter pattern** (match Listings index): Popover + inner search `Input` + `ScrollArea` of custom-checkbox rows + "Clear all" footer. Selected items use AND logic (`every`), not OR.
 
 ### Date Range Picker
 - `app/components/base/DateRangePicker.vue`
@@ -644,12 +678,15 @@ app/
 │   │   └── TotalVisitors.vue
 │   ├── listings/
 │   │   ├── data/
-│   │   │   └── listings.ts        ← Listing type, AiSchedule, ref<Listing[]>, allTags/allLocations/allProperties/allOtas (computed)
-│   │   ├── ListingHero.vue        ← Photo gallery (360px) + name/location/AI badge + tags + OTA connections
-│   │   ├── ListingOverview.vue    ← Stats cards + editable amenities (add/remove via Popover)
-│   │   ├── ListingPropertySettings.vue ← Sub-tabs: Details form + Distribution Channels
-│   │   ├── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
-│   │   └── ListingAiSchedule.vue  ← AI toggle (Switch) + schedule config (repeat type, days, hours, timeline preview)
+│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance), AiSchedule (always/days/dateOverrides), ref<Listing[]>, allTags/allLocations/allProperties/allOtas (computed)
+│   │   ├── ListingHeroCompact.vue ← Compact hero: editable photo, unit-type badge, AI status button → schedule Sheet (Weekly/Date Overrides) + Copy-to-Listings dialog
+│   │   ├── ListingOverviewTab.vue ← Stats cards + upcoming bookings + recent reviews
+│   │   ├── ListingPricingTab.vue  ← Base pricing, discounts, seasonal rates
+│   │   ├── ListingCalendarTab.vue ← Bookings list + blocked dates
+│   │   ├── ListingReviewsTab.vue  ← Rating summary + filter + reviews with host reply
+│   │   ├── ListingMaintenanceTab.vue ← Cleaning schedule + tasks + add-task dialog
+│   │   ├── ListingSettingsTab.vue ← Property details form + amenities + distribution channels
+│   │   └── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
 │   ├── finance/
 │   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
 │   │   ├── CostDetailDrawer.vue  ← Shows linked material/task entries in drawer
@@ -803,7 +840,7 @@ app/
     ├── kanban.vue
     ├── listings/
     │   ├── index.vue           # Listings table (TanStack Table + search/tag/AI filters)
-    │   └── [id].vue            # Listing detail page (Hero + Overview/PropertySettings/AiSchedule tabs)
+    │   └── [id].vue            # Listing detail page (HeroCompact + Overview/Pricing/Calendar/Reviews/Maintenance/Settings tabs)
     ├── settings/
     │   ├── account.vue
     │   ├── appearance.vue
@@ -825,6 +862,8 @@ app/
 - ❌ Create new component when shadcn exists → **customize existing via props/slots**
 - ❌ Use raw HTML for layouts → **compose with existing molecules/organisms**
 - ❌ Forget aria-labels on icon-only buttons → **always add accessible labels**
+- ❌ Use `:checked`/`@update:checked` on `Switch`/`Checkbox` → **use `model-value`/`@update:model-value`**
+- ❌ Wrap reka-ui `Checkbox` in `<label>` → **double-toggle bug; use `div @click` + custom checkbox visual**
 
 ---
 
