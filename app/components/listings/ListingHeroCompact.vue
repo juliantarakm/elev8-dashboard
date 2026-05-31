@@ -25,6 +25,13 @@ function selectPhoto(index: number) {
 // Inline name editing
 const editingName = ref(false)
 const nameInput = ref(props.listing.name)
+const nameInputEl = ref<HTMLInputElement | null>(null)
+
+function startEditName() {
+  nameInput.value = props.listing.name
+  editingName.value = true
+  nextTick(() => nameInputEl.value?.focus())
+}
 
 function saveName() {
   if (nameInput.value.trim()) emit('update', { ...props.listing, name: nameInput.value.trim() })
@@ -39,13 +46,18 @@ const filteredAvailableTags = computed(() => {
   if (!tagSearch.value) return availableTags.value
   return availableTags.value.filter(t => t.toLowerCase().includes(tagSearch.value.toLowerCase()))
 })
+const canCreateTag = computed(() =>
+  tagSearch.value.trim().length > 0 && !props.listing.tags.includes(tagSearch.value.trim())
+)
 
 function removeTag(tag: string) {
   emit('update', { ...props.listing, tags: props.listing.tags.filter(t => t !== tag) })
 }
 
 function addTag(tag: string) {
-  emit('update', { ...props.listing, tags: [...props.listing.tags, tag] })
+  const t = tag.trim()
+  if (!t || props.listing.tags.includes(t)) return
+  emit('update', { ...props.listing, tags: [...props.listing.tags, t] })
   tagSearch.value = ''
 }
 
@@ -312,10 +324,10 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       <div class="flex flex-col gap-2 min-w-0">
         <!-- Editable name -->
         <div v-if="editingName" class="flex items-center gap-2">
-          <Input
+          <input
+            ref="nameInputEl"
             v-model="nameInput"
-            class="text-2xl font-bold h-auto py-0 border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
-            autofocus
+            class="w-full text-2xl font-bold tracking-tight bg-transparent border-b border-primary outline-none"
             @blur="saveName"
             @keydown.enter="saveName"
             @keydown.escape="editingName = false"
@@ -324,7 +336,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <h1
           v-else
           class="text-2xl font-bold tracking-tight leading-tight cursor-pointer hover:text-muted-foreground transition-colors group flex items-center gap-2"
-          @click="nameInput = listing.name; editingName = true"
+          @click="startEditName"
         >
           {{ listing.name }}
           <Icon name="lucide:pencil" class="size-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
@@ -362,12 +374,20 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               <ScrollArea class="h-40">
                 <div class="space-y-0.5 p-1">
                   <div
+                    v-if="canCreateTag"
+                    class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
+                    @click="addTag(tagSearch); tagPopoverOpen = false"
+                  >
+                    <Icon name="lucide:plus" class="size-3.5 text-muted-foreground" />
+                    Create <span class="font-medium">"{{ tagSearch.trim() }}"</span>
+                  </div>
+                  <div
                     v-for="tag in filteredAvailableTags"
                     :key="tag"
                     class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                     @click="addTag(tag); tagPopoverOpen = false"
                   >{{ tag }}</div>
-                  <p v-if="filteredAvailableTags.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">No tags found.</p>
+                  <p v-if="filteredAvailableTags.length === 0 && !canCreateTag" class="px-2 py-1.5 text-xs text-muted-foreground">No tags found.</p>
                 </div>
               </ScrollArea>
             </PopoverContent>
