@@ -10,7 +10,6 @@ const emit = defineEmits<{
 }>()
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const dayFullNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const schedule = computed(() => props.listing.aiSchedule)
 

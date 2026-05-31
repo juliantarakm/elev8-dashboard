@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
-import { allTags } from '~/components/listings/data/listings'
 
 const props = defineProps<{
   listing: Listing

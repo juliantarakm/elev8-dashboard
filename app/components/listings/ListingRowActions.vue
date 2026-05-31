@@ -8,44 +8,24 @@ const props = defineProps<{
 const router = useRouter()
 
 const aiStatusLabel = computed(() => {
-  if (props.listing.aiStatus === 'active') return 'Pause AI'
-  return 'Activate AI'
+  return props.listing.aiStatus === 'active' ? 'Pause AI' : 'Activate AI'
 })
 
 const aiStatusIcon = computed(() => {
   return props.listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'
 })
 
-const listingStatus = computed(() => {
-  return true
-})
-
-const listingStatusLabel = computed(() => {
-  return listingStatus.value ? 'Deactivate' : 'Activate'
-})
-
-const listingStatusIcon = computed(() => {
-  return listingStatus.value ? 'lucide:toggle-right' : 'lucide:toggle-left'
-})
-
-const open = ref(false)
-
 function viewDetail() {
-  open.value = false
   router.push(`/listings/${props.listing.id}`)
 }
 
-function toggleListing() {
-  open.value = false
-}
+function toggleListing() {}
 
-function toggleAi() {
-  open.value = false
-}
+function toggleAi() {}
 </script>
 
 <template>
-  <DropdownMenu v-model:open="open">
+  <DropdownMenu>
     <DropdownMenuTrigger as-child>
       <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
         <Icon name="lucide:ellipsis-vertical" class="size-4" />
@@ -59,8 +39,8 @@ function toggleAi() {
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="gap-2" @click="toggleListing">
-        <Icon :name="listingStatusIcon" class="size-4" />
-        {{ listingStatusLabel }} Listing
+        <Icon name="lucide:toggle-right" class="size-4" />
+        Deactivate Listing
       </DropdownMenuItem>
       <DropdownMenuItem class="gap-2" @click="toggleAi">
         <Icon :name="aiStatusIcon" class="size-4" />

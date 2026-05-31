@@ -23,7 +23,7 @@ export interface Listing {
   aiSchedule: AiSchedule
 }
 
-export const listings: Listing[] = [
+export const listings = ref<Listing[]>([
   {
     id: 'lst-1',
     name: '5BR Pool the R Villa Luwa – Serene near Canggu',
@@ -392,15 +392,15 @@ export const listings: Listing[] = [
       activeHours: { start: '08:00', end: '22:00' },
     },
   },
-]
+])
 
-export const allTags = [...new Set(listings.flatMap(l => l.tags))].sort()
+export const allTags = computed(() => [...new Set(listings.value.flatMap(l => l.tags))].sort())
 
-export const allLocations = [...new Set(listings.map(l => l.location))].sort()
+export const allLocations = computed(() => [...new Set(listings.value.map(l => l.location))].sort())
 
-export const allProperties = [...new Set(listings.map(l => l.property))].sort()
+export const allProperties = computed(() => [...new Set(listings.value.map(l => l.property))].sort())
 
-export const allOtas = [...new Set(listings.flatMap(l => l.otaConnected))].sort()
+export const allOtas = computed(() => [...new Set(listings.value.flatMap(l => l.otaConnected))].sort())
 
 export const aiStatusOptions = [
   { value: 'active', label: 'Active' },

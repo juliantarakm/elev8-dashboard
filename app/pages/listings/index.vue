@@ -17,12 +17,18 @@ import { Badge } from '~/components/ui/badge'
 import { Icon } from '#components'
 import ListingRowActions from '~/components/listings/ListingRowActions.vue'
 
+const router = useRouter()
+
+function listingUrl(id: string) {
+  return router.resolve({ path: `/listings/${id}` }).href
+}
+
 const searchValue = ref('')
 
 const filteredData = computed(() => {
-  if (!searchValue.value) return listings
+  if (!searchValue.value) return listings.value
   const q = searchValue.value.toLowerCase()
-  return listings.filter(l =>
+  return listings.value.filter(l =>
     l.name.toLowerCase().includes(q)
     || l.location.toLowerCase().includes(q)
     || l.tags.some(t => t.toLowerCase().includes(q)),
@@ -50,7 +56,14 @@ const columns: ColumnDef<Listing, any>[] = [
     accessorKey: 'name',
     header: 'Listing Name',
     enableHiding: false,
-    cell: ({ row }) => h('div', { class: 'max-w-[300px] truncate font-medium' }, row.getValue('name')),
+    cell: ({ row }) => h('a', {
+      href: listingUrl(row.original.id),
+      class: 'max-w-[300px] truncate font-medium hover:underline hover:text-primary transition-colors',
+      onClick: (e: Event) => {
+        e.preventDefault()
+        router.push(`/listings/${row.original.id}`)
+      },
+    }, row.getValue('name')),
   },
   {
     accessorKey: 'location',
@@ -169,9 +182,9 @@ const tagSearch = ref('')
 const tagPopoverOpen = ref(false)
 
 const filteredTags = computed(() => {
-  if (!tagSearch.value) return allTags
+  if (!tagSearch.value) return allTags.value
   const q = tagSearch.value.toLowerCase()
-  return allTags.filter(t => t.toLowerCase().includes(q))
+  return allTags.value.filter(t => t.toLowerCase().includes(q))
 })
 
 function toggleTag(tag: string) {
@@ -213,7 +226,7 @@ watch(activeAiFilter, (val) => {
         </p>
       </div>
       <Badge variant="secondary" class="text-xs">
-        {{ listings.length }} listings
+        {{ listings.value.length }} listings
       </Badge>
     </div>
 

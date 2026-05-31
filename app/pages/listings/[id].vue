@@ -7,12 +7,12 @@ definePageMeta({ layout: 'default' })
 const route = useRoute()
 const router = useRouter()
 
-const listingIndex = computed(() => listings.findIndex(l => l.id === route.params.id))
-const listing = computed(() => listingIndex.value !== -1 ? listings[listingIndex.value] : undefined)
+const listingIndex = computed(() => listings.value.findIndex(l => l.id === route.params.id))
+const listing = computed(() => listingIndex.value !== -1 ? listings.value[listingIndex.value] : undefined)
 
 function updateListing(updated: Listing) {
   if (listingIndex.value !== -1) {
-    listings[listingIndex.value] = updated
+    listings.value[listingIndex.value] = updated
   }
 }
 
