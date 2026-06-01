@@ -87,8 +87,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
 - **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
 - **`ListingFloatingMenu.vue`** — Fixed floating pill bar at bottom of page: Listing Setup · Test AI · AI Schedule
-- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header centered + two-panel layout)
-- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
+- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Unit toggle** + two-panel layout + **footer with Save Changes**). Toggle allows switching between property-level info and unit-specific info for multi-unit listings. Unit button is a **dropdown menu** when multiple units exist, allowing selection of which unit to edit. Footer includes **"Copy to Other Units"** button (unit view only) and **"Save Changes"** button with toast confirmation.
+- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). **Supports Property/Unit view modes** — Property view shows property-level fields (name, location, check-in/out), Unit view shows unit-specific fields (unit name, capacity). Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
 - **`ListingSetupResourcePanel.vue`** — Right panel (300px): Property Documents (upload PDF/DOCX/TXT, download, delete), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
 - **`FieldConfigDialog.vue`** — Per-field config: Property Type info, Reservation Stages (Future/Inquiry Past/Current), Copy to Other Properties
 - **`ListingTestAIDialog.vue`** — Guest chat simulation dialog with mock AI responses based on listing data (check-in time, amenities, etc.)

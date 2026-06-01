@@ -243,6 +243,17 @@ const copyTagSearch = ref('')
 const copyTagPopoverOpen = ref(false)
 const otherListings = computed(() => listings.value.filter(l => l.id !== props.listing.id))
 
+// Listing switcher
+const listingSwitchSearch = ref('')
+const filteredListingsForSwitch = computed(() => {
+  if (!listingSwitchSearch.value) return listings.value
+  const q = listingSwitchSearch.value.toLowerCase()
+  return listings.value.filter(l =>
+    l.name.toLowerCase().includes(q) ||
+    l.location.toLowerCase().includes(q)
+  )
+})
+
 const filteredCopyTags = computed(() => {
   if (!copyTagSearch.value) return allTags.value
   const q = copyTagSearch.value.toLowerCase()
@@ -335,10 +346,61 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button variant="ghost" size="sm" class="h-8 w-fit gap-1.5 pl-2" @click="router.push('/listings')">
-      <Icon name="lucide:arrow-left" class="size-4" />
-      Back
-    </Button>
+    <!-- Navigation: Back button + Listing switcher -->
+    <div class="flex items-center justify-between gap-2">
+      <Button variant="ghost" size="sm" class="h-8 gap-1.5 pl-2" @click="router.push('/listings')">
+        <Icon name="lucide:arrow-left" class="size-4" />
+        Back
+      </Button>
+      
+      <!-- Listing switcher dropdown -->
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="ghost" size="sm" class="h-8 gap-1.5">
+            <Icon name="lucide:building-2" class="size-4" />
+            Switch Listing
+            <Icon name="lucide:chevron-down" class="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        
+        <DropdownMenuContent class="w-72 max-h-96" align="start">
+          <div class="px-2 py-1.5">
+            <div class="relative">
+              <Icon name="lucide:search" class="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Input
+                v-model="listingSwitchSearch"
+                placeholder="Search listings..."
+                class="h-8 pl-7 text-xs"
+              />
+            </div>
+          </div>
+          
+          <DropdownMenuSeparator />
+          
+          <ScrollArea class="h-64">
+            <DropdownMenuItem
+              v-for="l in filteredListingsForSwitch"
+              :key="l.id"
+              class="flex items-center gap-3 cursor-pointer"
+              @click="router.push(`/listings/${l.id}`)"
+            >
+              <div class="size-10 rounded overflow-hidden bg-muted shrink-0">
+                <img :src="l.photos[0]" :alt="l.name" class="size-full object-cover" />
+              </div>
+              <div class="flex flex-col flex-1 min-w-0 leading-tight">
+                <span class="text-sm font-medium truncate">{{ l.name }}</span>
+                <span class="text-xs text-muted-foreground truncate">{{ l.location }}</span>
+              </div>
+              <Icon v-if="l.id === listing.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
+            </DropdownMenuItem>
+            
+            <div v-if="filteredListingsForSwitch.length === 0" class="px-2 py-6 text-center text-sm text-muted-foreground">
+              No listings found
+            </div>
+          </ScrollArea>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
 
     <!-- Hero: photo + info -->
     <div class="flex flex-col gap-4 md:flex-row md:items-start">
