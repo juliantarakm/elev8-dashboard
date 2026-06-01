@@ -175,6 +175,11 @@ export const navMenu: NavMenu[] = [
             link: '/settings/account',
           },
           {
+            title: 'Integrations',
+            icon: 'i-lucide-circle',
+            link: '/settings/integrations',
+          },
+          {
             title: 'Appearance',
             icon: 'i-lucide-circle',
             link: '/settings/appearance',

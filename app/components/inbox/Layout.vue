@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Reservation } from '~/components/inbox/data/conversations'
 import { useMediaQuery } from '@vueuse/core'
 import { cn } from '~/lib/utils'
 
@@ -32,6 +33,30 @@ const sortOptions = [
   { value: 'oldest', label: 'Oldest' },
   { value: 'unread', label: 'Unread' },
 ]
+
+const effectiveReservation = computed<Reservation | undefined>(() => {
+  if (selectedReservation.value) return selectedReservation.value
+  if (!selectedConversation.value) return undefined
+  const c = selectedConversation.value
+  return {
+    id: c.id,
+    propertyName: c.propertyName,
+    roomName: c.listingName,
+    listingName: c.listingName,
+    otaSource: c.otaSource,
+    checkIn: c.checkIn || '',
+    checkOut: c.checkOut || '',
+    nights: 0,
+    guestCount: 1,
+    totalPrice: 0,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: { name: c.guestName, email: '', phone: c.guestName, previousStays: 0, notes: 'Unknown sender — not linked to any reservation.', language: '' },
+    listingDetails: { name: c.listingName, property: c.propertyName, room: '', amenities: [] },
+    tasks: [],
+    activity: [],
+  }
+})
 
 const isCollapsed = ref(props.defaultCollapsed)
 const debouncedSearch = refDebounced(searchValue, 250)
@@ -105,10 +130,10 @@ watch(() => isMobile.value, () => {
         :min-size="20"
         collapsible
       >
-        <template v-if="selectedConversation && selectedReservation">
+        <template v-if="selectedConversation && effectiveReservation">
           <InboxReservationPanel
             :conversation="selectedConversation"
-            :reservation="selectedReservation"
+            :reservation="effectiveReservation"
           />
         </template>
         <template v-else>

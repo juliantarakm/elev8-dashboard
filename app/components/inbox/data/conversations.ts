@@ -4,7 +4,7 @@ export type MessageSender = 'guest' | 'host' | 'system' | 'ai'
 export type ActionSeverity = 'warning' | 'urgent' | 'info'
 export type ActivityEventColor = 'gold' | 'green' | 'blue' | 'gray'
 
-export type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
+export type StayStatus = 'inquiry' | 'current' | 'future' | 'past' | 'unmatched'
 export type GuestVerification = 'unverified' | 'verified' | 'check_in' | 'check_out'
 export type CleaningStatus = 'need_cleaning' | 'in_progress' | 'cleaning_finished'
 
@@ -58,6 +58,7 @@ export interface Conversation {
   cleaningStatus?: CleaningStatus
   linkedUpsellOrderIds?: string[]
   guestLanguage?: string
+  waWindowExpired?: boolean
 }
 
 export interface UpsellOfferItem {
@@ -95,6 +96,8 @@ export interface Message {
   senderRole?: string
   upsellOffer?: UpsellOffer
   translatedContent?: string
+  mediaUrl?: string
+  mediaDims?: string
 }
 
 export interface SmartAction {
@@ -752,6 +755,157 @@ export const conversations: Conversation[] = [
     verification: 'unverified',
     cleaningStatus: 'need_cleaning',
     linkedUpsellOrderIds: ['ord-011'],
+  },
+  {
+    id: 'conv-wa-1',
+    guestName: 'Max Müller',
+    guestInitials: 'MM',
+    listingName: 'Villa Sunset',
+    propertyName: 'Canggu Properties',
+    otaSource: 'WhatsApp',
+    reservationId: 'res-wa-1',
+    status: null,
+    lastMessage: 'Is parking available?',
+    lastMessageAt: '2026-04-26T14:02:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: ['Canggu', 'Pool'],
+    labels: [],
+    sentiment: 'positive',
+    sentimentNote: 'Friendly pre-arrival question',
+    stayStatus: 'future',
+    checkIn: '2026-07-05T15:00:00Z',
+    checkOut: '2026-07-08T11:00:00Z',
+    verification: 'verified',
+    cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
+    guestLanguage: 'German',
+  },
+  {
+    id: 'conv-wa-2',
+    guestName: 'Lisa Park',
+    guestInitials: 'LP',
+    listingName: 'Villa Ocean',
+    propertyName: 'Umalas Villas',
+    otaSource: 'WhatsApp',
+    reservationId: 'res-wa-2',
+    status: 'action_needed',
+    lastMessage: 'I want a refund! The pool was dirty',
+    lastMessageAt: '2026-04-26T14:01:00Z',
+    unreadCount: 2,
+    isAssignedToMe: true,
+    assignedTo: 'staff-2',
+    tags: ['Umalas', 'Pool'],
+    labels: ['complaint', 'urgent'],
+    sentiment: 'negative',
+    sentimentNote: 'Upset about pool condition, sent photos',
+    stayStatus: 'current',
+    checkIn: '2026-07-10T15:00:00Z',
+    checkOut: '2026-07-14T11:00:00Z',
+    verification: 'check_in',
+    cleaningStatus: 'in_progress',
+    linkedUpsellOrderIds: [],
+    guestLanguage: 'English',
+  },
+  {
+    id: 'conv-wa-3',
+    guestName: 'Marcel Weber',
+    guestInitials: 'MW',
+    listingName: 'Garden Loft',
+    propertyName: 'Ubud Retreats',
+    otaSource: 'WhatsApp',
+    reservationId: 'res-wa-3',
+    status: null,
+    lastMessage: 'Can I check in early?',
+    lastMessageAt: '2026-04-25T12:30:00Z',
+    unreadCount: 0,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: ['Ubud', 'Garden'],
+    labels: [],
+    sentiment: 'neutral',
+    sentimentNote: 'Asked about early check-in yesterday',
+    stayStatus: 'future',
+    checkIn: '2026-06-10T15:00:00Z',
+    checkOut: '2026-06-12T11:00:00Z',
+    verification: 'verified',
+    cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
+    guestLanguage: 'German',
+    waWindowExpired: true,
+  },
+  {
+    id: 'conv-um-1',
+    guestName: '+62 812 3456789',
+    guestInitials: '?',
+    listingName: 'Unknown',
+    propertyName: 'Unknown',
+    otaSource: 'WhatsApp',
+    reservationId: '',
+    status: 'action_needed',
+    lastMessage: 'Halo, saya mau booking',
+    lastMessageAt: '2026-04-26T10:00:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: [],
+    labels: ['unmatched'],
+    sentiment: 'neutral',
+    sentimentNote: '',
+    stayStatus: 'unmatched',
+    checkIn: '',
+    checkOut: '',
+    cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
+  },
+  {
+    id: 'conv-um-2',
+    guestName: '+49 151 2345678',
+    guestInitials: '?',
+    listingName: 'Unknown',
+    propertyName: 'Unknown',
+    otaSource: 'WhatsApp',
+    reservationId: '',
+    status: null,
+    lastMessage: 'Hello, is this the villa rental?',
+    lastMessageAt: '2026-04-26T09:00:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: [],
+    labels: ['unmatched'],
+    sentiment: 'neutral',
+    sentimentNote: '',
+    stayStatus: 'unmatched',
+    checkIn: '',
+    checkOut: '',
+    cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
+  },
+  {
+    id: 'conv-um-3',
+    guestName: '+61 400 111222',
+    guestInitials: '?',
+    listingName: 'Unknown',
+    propertyName: 'Unknown',
+    otaSource: 'WhatsApp',
+    reservationId: '',
+    status: null,
+    lastMessage: 'Do you have availability in August?',
+    lastMessageAt: '2026-04-26T07:30:00Z',
+    unreadCount: 1,
+    isAssignedToMe: false,
+    assignedTo: null,
+    tags: [],
+    labels: ['unmatched'],
+    sentiment: 'neutral',
+    sentimentNote: '',
+    stayStatus: 'unmatched',
+    checkIn: '',
+    checkOut: '',
+    cleaningStatus: 'cleaning_finished',
+    linkedUpsellOrderIds: [],
   },
 ]
 
@@ -1530,6 +1684,103 @@ export const messages: Record<string, Message[]> = {
       channel: 'Airbnb',
       timestamp: '2026-05-20T15:45:00Z',
     },
+  ],
+  'conv-wa-1': [
+    {
+      id: 'msg-wa-1-1',
+      conversationId: 'conv-wa-1',
+      sender: 'guest',
+      senderName: 'Max Müller',
+      content: 'Is parking available?',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:02:00Z',
+    },
+    {
+      id: 'msg-wa-1-2',
+      conversationId: 'conv-wa-1',
+      sender: 'host',
+      senderName: 'You',
+      senderRole: 'Owner',
+      content: 'Hi Max! Yes, Villa Sunset has 2 free parking spots. No reservation needed.',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:02:30Z',
+      aiWritten: true,
+    },
+  ],
+  'conv-wa-2': [
+    {
+      id: 'msg-wa-2-1',
+      conversationId: 'conv-wa-2',
+      sender: 'guest',
+      senderName: 'Lisa Park',
+      content: 'I want a refund! The pool was dirty',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:00:00Z',
+    },
+    {
+      id: 'msg-wa-2-2',
+      conversationId: 'conv-wa-2',
+      sender: 'guest',
+      senderName: 'Lisa Park',
+      content: 'Look at this! The pool is green',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:01:00Z',
+      mediaUrl: 'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?w=400&q=60',
+      mediaDims: '1200x900',
+    },
+    {
+      id: 'msg-wa-2-3',
+      conversationId: 'conv-wa-2',
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Hi Lisa, I\'m sorry about that. Our team is checking the pool now. I\'ll update you within 30 minutes.',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:05:00Z',
+    },
+    {
+      id: 'msg-wa-2-4',
+      conversationId: 'conv-wa-2',
+      sender: 'host',
+      senderName: 'Komang Juliantara',
+      senderRole: 'Guest Relations',
+      content: 'Pool has been cleaned. Here\'s how it looks now. Sorry for the inconvenience!',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-26T14:35:00Z',
+      mediaUrl: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=400&q=60',
+      mediaDims: '1200x900',
+    },
+  ],
+  'conv-wa-3': [
+    {
+      id: 'msg-wa-3-1',
+      conversationId: 'conv-wa-3',
+      sender: 'guest',
+      senderName: 'Marcel Weber',
+      content: 'Can I check in early?',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-25T12:30:00Z',
+    },
+    {
+      id: 'msg-wa-3-2',
+      conversationId: 'conv-wa-3',
+      sender: 'host',
+      senderName: 'You',
+      senderRole: 'Owner',
+      content: 'Check-in is from 15:00. I\'ve noted your early check-in request — the team will confirm closer to your arrival.',
+      channel: 'WhatsApp',
+      timestamp: '2026-04-25T12:31:00Z',
+      aiWritten: true,
+    },
+  ],
+  'conv-um-1': [
+    { id: 'msg-um-1-1', conversationId: 'conv-um-1', sender: 'guest', senderName: '+62 812 3456789', content: 'Halo, saya mau booking', channel: 'WhatsApp', timestamp: '2026-04-26T10:00:00Z' },
+  ],
+  'conv-um-2': [
+    { id: 'msg-um-2-1', conversationId: 'conv-um-2', sender: 'guest', senderName: '+49 151 2345678', content: 'Hello, is this the villa rental?', channel: 'WhatsApp', timestamp: '2026-04-26T09:00:00Z' },
+  ],
+  'conv-um-3': [
+    { id: 'msg-um-3-1', conversationId: 'conv-um-3', sender: 'guest', senderName: '+61 400 111222', content: 'Do you have availability in August?', channel: 'WhatsApp', timestamp: '2026-04-26T07:30:00Z' },
   ],
 }
 
@@ -2760,11 +3011,89 @@ export const reservations: Record<string, Reservation> = {
       },
     ],
   },
+  'res-wa-1': {
+    id: 'res-wa-1',
+    propertyName: 'Canggu Properties',
+    roomName: 'Villa Sunset',
+    listingName: 'Villa Sunset',
+    otaSource: 'WhatsApp',
+    checkIn: '2026-07-05T15:00:00Z',
+    checkOut: '2026-07-08T11:00:00Z',
+    nights: 3,
+    guestCount: 2,
+    totalPrice: 540,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: { name: 'Max Müller', email: 'max.mueller@email.com', phone: '+49 170 1234567', previousStays: 0, notes: 'First-time guest. Arriving by rental car.', language: 'German' },
+    listingDetails: { name: 'Villa Sunset', property: 'Canggu Properties', room: 'Entire Villa', amenities: ['Pool', 'WiFi', 'AC', 'Parking', 'Kitchen'] },
+    tasks: [],
+    activity: [
+      { id: 'act-wa-1-1', type: 'reservation', title: 'Reservation Confirmed', description: 'Booking for 3 nights', actor: 'System', timestamp: '2026-06-20T10:00:00Z', colorDot: 'green' },
+    ],
+  },
+  'res-wa-2': {
+    id: 'res-wa-2',
+    propertyName: 'Umalas Villas',
+    roomName: 'Villa Ocean',
+    listingName: 'Villa Ocean',
+    otaSource: 'WhatsApp',
+    checkIn: '2026-07-10T15:00:00Z',
+    checkOut: '2026-07-14T11:00:00Z',
+    nights: 4,
+    guestCount: 3,
+    totalPrice: 960,
+    currency: 'USD',
+    smartActions: [
+      { id: 'act-wa-2-1', type: 'complaint', title: 'Pool Condition Complaint', description: 'Guest reports dirty pool and is requesting a refund. Photos attached.', severity: 'urgent', primaryAction: 'Assign Maintenance', dismissLabel: 'Mark as Noted', detectedBy: 'elevai' },
+    ],
+    guestDetails: { name: 'Lisa Park', email: 'lisa.park@email.com', phone: '+49 170 5555555', previousStays: 1, notes: 'Returning guest. Sensitive about cleanliness.', language: 'English' },
+    listingDetails: { name: 'Villa Ocean', property: 'Umalas Villas', room: 'Entire Villa', amenities: ['Pool', 'WiFi', 'AC', 'Parking', 'Garden'] },
+    tasks: [
+      { id: 'task-wa-2-1', title: 'Clean pool at Villa Ocean immediately', status: 'in_progress', assignee: 'Housekeeping', dueDate: '2026-04-26T14:30:00Z' },
+    ],
+    activity: [
+      { id: 'act-wa-2-2', type: 'task', title: 'Pool Complaint', description: 'Dirty pool reported via WhatsApp with photos', actor: 'Lisa Park', timestamp: '2026-04-26T14:01:00Z', channel: 'WhatsApp', colorDot: 'gold' },
+    ],
+  },
+  'res-wa-3': {
+    id: 'res-wa-3',
+    propertyName: 'Ubud Retreats',
+    roomName: 'Garden Loft',
+    listingName: 'Garden Loft',
+    otaSource: 'WhatsApp',
+    checkIn: '2026-06-10T15:00:00Z',
+    checkOut: '2026-06-12T11:00:00Z',
+    nights: 2,
+    guestCount: 2,
+    totalPrice: 280,
+    currency: 'USD',
+    smartActions: [],
+    guestDetails: { name: 'Marcel Weber', email: 'marcel.weber@email.com', phone: '+49 160 5556677', previousStays: 0, notes: 'Asked about early check-in.', language: 'German' },
+    listingDetails: { name: 'Garden Loft', property: 'Ubud Retreats', room: 'Loft', amenities: ['WiFi', 'AC', 'Garden', 'Breakfast Included'] },
+    tasks: [],
+    activity: [
+      { id: 'act-wa-3-1', type: 'message', title: 'Early Check-in Request', description: 'Guest asked about early check-in', actor: 'Marcel Weber', timestamp: '2026-04-25T12:30:00Z', channel: 'WhatsApp', colorDot: 'blue' },
+    ],
+  },
 }
 
 export const otaSources = [
   { name: 'Airbnb', color: '#FF5A5F', icon: 'logos:airbnb' },
   { name: 'Booking.com', color: '#003580', icon: 'simple-icons:bookingdotcom' },
+  { name: 'WhatsApp', color: '#25D366', icon: 'logos:whatsapp-icon' },
+]
+
+export interface UnmatchedMessage {
+  id: string
+  phone: string
+  text: string
+  receivedAt: string
+}
+
+export const unmatchedMessages: UnmatchedMessage[] = [
+  { id: 'um-1', phone: '+62 812 3456789', text: 'Halo, saya mau booking', receivedAt: '2026-04-26T10:00:00Z' },
+  { id: 'um-2', phone: '+49 151 2345678', text: 'Hello, is this the villa rental?', receivedAt: '2026-04-26T09:00:00Z' },
+  { id: 'um-3', phone: '+61 400 111222', text: 'Do you have availability in August?', receivedAt: '2026-04-26T07:30:00Z' },
 ]
 
 export const phoneCalls: Record<string, PhoneCall[]> = {
@@ -2799,7 +3128,7 @@ export const phoneCalls: Record<string, PhoneCall[]> = {
     { id: 'call-19-1', conversationId: 'conv-19', direction: 'inbound', status: 'missed', duration: 0, timestamp: '2026-04-26T09:15:00Z', from: '+7 495 123-45-67', to: 'Komang' },
     { id: 'call-19-2', conversationId: 'conv-19', direction: 'inbound', status: 'voicemail', duration: 15, timestamp: '2026-04-26T09:16:00Z', from: '+7 495 123-45-67', to: 'Komang', note: 'Guest asking about early check-in, requesting callback' },
   ],
-   'conv-20': [
+  'conv-20': [
     { id: 'call-20-1', conversationId: 'conv-20', direction: 'outbound', status: 'completed', duration: 252, timestamp: '2026-04-25T16:00:00Z', from: 'Komang', to: '+52 55 1234 5678', note: 'Confirmed late checkout at 2 PM, guest was happy' },
     { id: 'call-20-2', conversationId: 'conv-20', direction: 'inbound', status: 'completed', duration: 85, timestamp: '2026-04-24T10:30:00Z', from: '+52 55 1234 5678', to: 'Komang' },
   ],

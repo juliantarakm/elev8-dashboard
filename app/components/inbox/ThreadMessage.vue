@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Message } from '~/components/inbox/data/conversations'
-import { format, isToday, isYesterday, differenceInDays, formatDistanceToNow } from 'date-fns'
+import { differenceInDays, format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
 import { cn } from '~/lib/utils'
 
 interface ThreadMessageProps {
@@ -16,7 +16,7 @@ const senderTypeLabel: Record<string, string> = {
   ai: 'ElevAI',
 }
 
-const { retryMessage, autoTranslate, mockTranslate, selectedConversation } = useInbox()
+const { retryMessage, autoTranslate, selectedConversation } = useInbox()
 
 const mockTranslations: Record<string, string> = {
   'Hi! We\'re arriving tomorrow and wanted to confirm the check-in process.': 'Halo! Kami tiba besok dan ingin mengonfirmasi proses check-in.',
@@ -75,13 +75,15 @@ const translation = ref<string | null>(null)
 const isTranslating = ref(false)
 
 const targetLang = computed(() => {
-  if (!autoTranslate.value) return null
+  if (!autoTranslate.value)
+    return null
   return selectedConversation.value?.guestLanguage ?? 'English'
 })
 
 const translationLabel = computed(() => {
-  if (props.message.sender === 'guest') return 'Translated from English'
-  return 'Translated to ' + (targetLang.value ?? 'English')
+  if (props.message.sender === 'guest')
+    return 'Translated from English'
+  return `Translated to ${targetLang.value ?? 'English'}`
 })
 
 watch([() => props.message.content, autoTranslate], async ([content, enabled]) => {
@@ -90,7 +92,8 @@ watch([() => props.message.content, autoTranslate], async ([content, enabled]) =
     return
   }
 
-  if (!content) return
+  if (!content)
+    return
 
   isTranslating.value = true
   translation.value = null
@@ -99,9 +102,10 @@ watch([() => props.message.content, autoTranslate], async ([content, enabled]) =
 
   if (props.message.sender === 'guest') {
     translation.value = mockTranslations[content] ?? `[Diterjemahkan] ${content}`
-  } else {
+  }
+  else {
     const lang = targetLang.value ?? 'English'
-    const langMap = mockHostTranslations[lang] ?? mockHostTranslations['English']
+    const langMap = mockHostTranslations[lang] ?? mockHostTranslations.English
     translation.value = langMap[content] ?? `[Translated to ${lang}] ${content}`
   }
 
@@ -126,14 +130,18 @@ const isFromMe = computed(() => props.message.sender === 'host' && props.message
 const isAiWritten = computed(() => props.message.aiWritten === true)
 
 const displayName = computed(() => {
-  if (isAiWritten.value) return 'ElevAI'
+  if (isAiWritten.value)
+    return 'ElevAI'
   return props.message.senderName
 })
 
 const displayLabel = computed(() => {
-  if (isAiWritten.value) return null
-  if (isFromMe.value) return 'You'
-  if (props.message.senderRole) return props.message.senderRole
+  if (isAiWritten.value)
+    return null
+  if (isFromMe.value)
+    return 'You'
+  if (props.message.senderRole)
+    return props.message.senderRole
   return senderTypeLabel[props.message.sender]
 })
 
@@ -148,14 +156,14 @@ const bubbleClass = computed(() => {
 })
 
 const alignClass = computed(() => {
-  if (props.message.sender === 'system' || props.message.sender === 'ai') return 'justify-center'
-  if (props.message.sender === 'host') return 'justify-end'
+  if (props.message.sender === 'system' || props.message.sender === 'ai')
+    return 'justify-center'
+  if (props.message.sender === 'host')
+    return 'justify-end'
   return 'justify-start'
 })
 
 const isSystemMessage = computed(() => props.message.sender === 'system' || props.message.sender === 'ai')
-
-const systemBubbleClass = 'bg-muted/50 text-muted-foreground'
 
 const timeLabel = computed(() => {
   const date = new Date(props.message.timestamp)
@@ -167,10 +175,13 @@ const timeLabel = computed(() => {
 
 const dateLabel = computed(() => {
   const date = new Date(props.message.timestamp)
-  if (isToday(date)) return ''
-  if (isYesterday(date)) return 'Yesterday'
+  if (isToday(date))
+    return ''
+  if (isYesterday(date))
+    return 'Yesterday'
   const daysAgo = differenceInDays(new Date(), date)
-  if (daysAgo <= 3) return `${daysAgo} days ago`
+  if (daysAgo <= 3)
+    return `${daysAgo} days ago`
   return format(date, 'EEEE, d MMM yyyy')
 })
 </script>
@@ -200,6 +211,13 @@ const dateLabel = computed(() => {
           <span class="text-[10px] text-muted-foreground">{{ timeLabel }}</span>
         </div>
         <div :class="cn('rounded-2xl px-3 py-2 text-sm', bubbleClass)">
+          <div v-if="message.mediaUrl" class="mb-1.5 overflow-hidden rounded-lg">
+            <img :src="message.mediaUrl" :alt="message.content" class="max-h-56 w-full object-cover">
+            <div v-if="message.mediaDims" class="flex items-center gap-1 pt-1 text-[10px] opacity-70">
+              <Icon name="lucide:camera" class="size-3" />
+              {{ message.mediaDims }}
+            </div>
+          </div>
           <template v-if="autoTranslate && (message.sender === 'guest' || message.sender === 'host')">
             <div v-if="isTranslating" class="flex items-center gap-1.5">
               <Icon name="lucide:loader-2" class="size-3 animate-spin text-muted-foreground" />
@@ -212,9 +230,13 @@ const dateLabel = computed(() => {
                 {{ translationLabel }}
               </span>
             </template>
-            <p v-else>{{ message.content }}</p>
+            <p v-else>
+              {{ message.content }}
+            </p>
           </template>
-          <p v-else>{{ message.content }}</p>
+          <p v-else>
+            {{ message.content }}
+          </p>
         </div>
         <InboxUpsellOfferCard
           v-if="message.upsellOffer"
@@ -228,7 +250,9 @@ const dateLabel = computed(() => {
         <div v-else-if="message.sendStatus === 'failed'" class="flex items-center gap-1 text-[10px] text-destructive">
           <Icon name="lucide:alert-circle" class="size-2.5" />
           Failed to send
-          <button :disabled="isRetrying" class="underline ml-1 hover:text-destructive/80 disabled:opacity-50 disabled:no-underline" @click="handleRetry">{{ isRetrying ? 'Retrying...' : 'Retry' }}</button>
+          <button :disabled="isRetrying" class="underline ml-1 hover:text-destructive/80 disabled:opacity-50 disabled:no-underline" @click="handleRetry">
+            {{ isRetrying ? 'Retrying...' : 'Retry' }}
+          </button>
         </div>
       </div>
     </template>

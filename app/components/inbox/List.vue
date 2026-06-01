@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { Conversation } from '~/components/inbox/data/conversations'
-import { otaSources } from '~/components/inbox/data/conversations'
 import { Search } from 'lucide-vue-next'
+import { otaSources } from '~/components/inbox/data/conversations'
 import { cn } from '~/lib/utils'
 
 interface ListProps {
@@ -43,11 +43,16 @@ const filterOpen = ref(false)
 
 const activeFilterCount = computed(() => {
   let count = 0
-  if (showActionNeeded.value) count++
-  if (unreadFilter.value) count++
-  if (assignedToMeFilter.value) count++
-  if (activeChannelFilter.value) count++
-  if (activeStaffFilter.value.length > 0) count++
+  if (showActionNeeded.value)
+    count++
+  if (unreadFilter.value)
+    count++
+  if (assignedToMeFilter.value)
+    count++
+  if (activeChannelFilter.value)
+    count++
+  if (activeStaffFilter.value.length > 0)
+    count++
   return count
 })
 </script>
@@ -89,7 +94,9 @@ const activeFilterCount = computed(() => {
         </PopoverTrigger>
         <PopoverContent class="w-64 p-0" align="end" :side-offset="4">
           <div class="p-3">
-            <div class="text-xs font-medium text-muted-foreground mb-2">Status</div>
+            <div class="text-xs font-medium text-muted-foreground mb-2">
+              Status
+            </div>
             <div class="flex flex-col gap-1">
               <button
                 type="button"
@@ -97,10 +104,12 @@ const activeFilterCount = computed(() => {
                 :class="showActionNeeded ? 'bg-accent' : ''"
                 @click="showActionNeeded = !showActionNeeded"
               >
-                <div :class="cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                  showActionNeeded ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                )">
+                <div
+                  :class="cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                    showActionNeeded ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  )"
+                >
                   <Icon v-if="showActionNeeded" name="lucide:check" class="size-3" />
                 </div>
                 <Icon name="lucide:circle-alert" class="size-3.5 text-destructive" />
@@ -112,10 +121,12 @@ const activeFilterCount = computed(() => {
                 :class="unreadFilter ? 'bg-accent' : ''"
                 @click="unreadFilter = !unreadFilter"
               >
-                <div :class="cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                  unreadFilter ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                )">
+                <div
+                  :class="cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                    unreadFilter ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  )"
+                >
                   <Icon v-if="unreadFilter" name="lucide:check" class="size-3" />
                 </div>
                 <Icon name="lucide:mail" class="size-3.5" />
@@ -127,10 +138,12 @@ const activeFilterCount = computed(() => {
                 :class="assignedToMeFilter ? 'bg-accent' : ''"
                 @click="assignedToMeFilter = !assignedToMeFilter"
               >
-                <div :class="cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                  assignedToMeFilter ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                )">
+                <div
+                  :class="cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                    assignedToMeFilter ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  )"
+                >
                   <Icon v-if="assignedToMeFilter" name="lucide:check" class="size-3" />
                 </div>
                 <Icon name="lucide:user-check" class="size-3.5" />
@@ -142,7 +155,9 @@ const activeFilterCount = computed(() => {
           <Separator />
 
           <div class="p-3">
-            <div class="text-xs font-medium text-muted-foreground mb-2">Channel</div>
+            <div class="text-xs font-medium text-muted-foreground mb-2">
+              Channel
+            </div>
             <div class="flex flex-col gap-1">
               <button
                 type="button"
@@ -172,7 +187,9 @@ const activeFilterCount = computed(() => {
 
           <div class="p-3">
             <div class="flex items-center justify-between mb-2">
-              <div class="text-xs font-medium text-muted-foreground">Staff</div>
+              <div class="text-xs font-medium text-muted-foreground">
+                Staff
+              </div>
               <button
                 v-if="activeStaffFilter.length > 0"
                 type="button"
@@ -191,10 +208,12 @@ const activeFilterCount = computed(() => {
                 :class="activeStaffFilter.includes(staff.id) ? 'bg-accent' : ''"
                 @click="toggleStaffFilter(staff.id)"
               >
-                <div :class="cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                  activeStaffFilter.includes(staff.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                )">
+                <div
+                  :class="cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                    activeStaffFilter.includes(staff.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  )"
+                >
                   <Icon v-if="activeStaffFilter.includes(staff.id)" name="lucide:check" class="size-3" />
                 </div>
                 <div class="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-medium">
@@ -208,10 +227,12 @@ const activeFilterCount = computed(() => {
                 :class="activeStaffFilter.includes('unassigned') ? 'bg-accent' : ''"
                 @click="toggleStaffFilter('unassigned')"
               >
-                <div :class="cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                  activeStaffFilter.includes('unassigned') ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                )">
+                <div
+                  :class="cn(
+                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                    activeStaffFilter.includes('unassigned') ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  )"
+                >
                   <Icon v-if="activeStaffFilter.includes('unassigned')" name="lucide:check" class="size-3" />
                 </div>
                 <Icon name="lucide:user-x" class="size-3.5 text-muted-foreground" />
@@ -230,7 +251,7 @@ const activeFilterCount = computed(() => {
     </div>
 
     <!-- Date sub-filters for Current/Future -->
-    <div v-if="activeStayFilter === 'current' || activeStayFilter === 'future'" class="flex items-center gap-1.5 px-4 py-2 border-b">
+    <div v-if="activeStayFilter === 'current' || activeStayFilter === 'future'" class="flex shrink-0 items-center gap-1.5 border-b px-4 py-2">
       <span class="text-[10px] text-muted-foreground shrink-0">
         {{ activeStayFilter === 'future' ? 'Check-in' : 'Check-out' }}:
       </span>
@@ -245,7 +266,7 @@ const activeFilterCount = computed(() => {
       </Badge>
     </div>
 
-    <Separator />
+    <Separator class="shrink-0" />
 
     <ScrollArea class="flex-1 min-h-0">
       <div v-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 p-8 text-center">

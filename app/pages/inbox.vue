@@ -11,10 +11,12 @@ onMounted(() => {
 
 <template>
   <div class="-m-4 lg:-m-6 h-[calc(100dvh-6.5rem)] overflow-hidden">
-    <InboxLayout
-      :default-layout="[18, 25, 42, 15]"
-      :default-collapsed="false"
-      :nav-collapsed-size="4"
-    />
+    <ClientOnly>
+      <InboxLayout
+        :default-layout="[18, 25, 42, 15]"
+        :default-collapsed="false"
+        :nav-collapsed-size="4"
+      />
+    </ClientOnly>
   </div>
 </template>

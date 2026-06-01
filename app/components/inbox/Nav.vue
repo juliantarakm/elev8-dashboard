@@ -9,19 +9,21 @@ interface NavProps {
 
 defineProps<NavProps>()
 
-const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter, activeListingFilter, activeTagFilters, listingSearchText, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters, totalCount } = useInbox()
+const { showActionNeeded, unreadFilter, assignedToMeFilter, activeStayFilter, activeDateFilter, activeListingFilter, activeTagFilters, listingSearchText, stayCountByStatus, allListingOptions, listingOptions, listingTags, toggleListingFilter, clearListingFilters, toggleTagFilter, clearTagFilters, clearAllListingFilters, totalCount } = useInbox()
 
 const stayFilters = computed(() => [
   { key: 'current' as StayStatus, label: 'Current', icon: 'lucide:home', count: stayCountByStatus('current') },
   { key: 'future' as StayStatus, label: 'Future', icon: 'lucide:calendar-plus', count: stayCountByStatus('future') },
   { key: 'past' as StayStatus, label: 'Past', icon: 'lucide:history', count: stayCountByStatus('past') },
   { key: 'inquiry' as StayStatus, label: 'Inquiry', icon: 'lucide:help-circle', count: stayCountByStatus('inquiry') },
+  { key: 'unmatched' as StayStatus, label: 'Unmatched', icon: 'lucide:user-x', count: stayCountByStatus('unmatched') },
 ])
 
 const tagSearch = ref('')
 
 const filteredTags = computed(() => {
-  if (!tagSearch.value) return listingTags.value
+  if (!tagSearch.value)
+    return listingTags.value
   const q = tagSearch.value.toLowerCase()
   return listingTags.value.filter(t => t.tag.toLowerCase().includes(q))
 })
@@ -136,8 +138,6 @@ function clearAll() {
           </a>
         </template>
       </nav>
-
-
     </div>
 
     <Separator />
@@ -194,12 +194,14 @@ function clearAll() {
                   class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                   @click="toggleTagFilter(tagItem.tag)"
                 >
-                  <div :class="cn(
-                    'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
-                    activeTagFilters.includes(tagItem.tag)
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input',
-                  )">
+                  <div
+                    :class="cn(
+                      'flex size-4 shrink-0 items-center justify-center rounded-[4px] border',
+                      activeTagFilters.includes(tagItem.tag)
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-input',
+                    )"
+                  >
                     <Icon v-if="activeTagFilters.includes(tagItem.tag)" name="lucide:check" class="size-3" />
                   </div>
                   <span class="flex-1 truncate">{{ tagItem.tag }}</span>
@@ -255,12 +257,14 @@ function clearAll() {
             )"
             @click="toggleListingFilter(listing.name)"
           >
-            <div :class="cn(
-              'flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border',
-              activeListingFilter.includes(listing.name)
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-input',
-            )">
+            <div
+              :class="cn(
+                'flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border',
+                activeListingFilter.includes(listing.name)
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input',
+              )"
+            >
               <Icon v-if="activeListingFilter.includes(listing.name)" name="lucide:check" class="size-2.5" />
             </div>
             <span class="truncate">{{ listing.name }}</span>

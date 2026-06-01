@@ -30,6 +30,7 @@ const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
   current: { label: 'Current', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
   future: { label: 'Future', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   past: { label: 'Past', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  unmatched: { label: 'Unmatched', class: 'bg-background text-muted-foreground border' },
 }
 
 const cleaningIconColor: Record<CleaningStatus, string> = {
@@ -88,7 +89,7 @@ const stayDateLabel = computed(() => {
             </Badge>
           </div>
           <div class="flex items-center gap-1.5">
-            <Tooltip v-if="conversation.cleaningStatus" :delay-duration="0">
+            <Tooltip v-if="conversation.cleaningStatus && conversation.listingName !== 'Unknown'" :delay-duration="0">
               <TooltipTrigger as-child>
                 <span
                   role="button"

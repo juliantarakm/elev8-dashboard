@@ -18,6 +18,10 @@ const sidebarNavItems: Item[] = [
     href: '/settings/account',
   },
   {
+    title: 'Integrations',
+    href: '/settings/integrations',
+  },
+  {
     title: 'Appearance',
     href: '/settings/appearance',
   },

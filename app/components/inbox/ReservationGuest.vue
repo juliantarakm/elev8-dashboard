@@ -47,6 +47,7 @@ const stayStatusConfig: Record<StayStatus, { label: string, class: string }> = {
   current: { label: 'Current Stay', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
   future: { label: 'Upcoming', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   past: { label: 'Checked Out', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+  unmatched: { label: 'Unmatched', class: 'bg-background text-muted-foreground border' },
 }
 
 const verificationConfig: Record<GuestVerification, { label: string, icon: string, class: string }> = {
@@ -208,7 +209,7 @@ function handleElevaiDisable() {
         <Icon name="lucide:home" class="size-3.5 shrink-0 text-muted-foreground mt-0.5" />
         <div class="min-w-0 flex-1">
           <div class="text-sm font-medium truncate">{{ reservation.listingName }}</div>
-          <div v-if="cleaningCfg" class="mt-1.5">
+          <div v-if="cleaningCfg && conversation.listingName !== 'Unknown'" class="mt-1.5">
             <span :class="cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', cleaningCfg.class)">
               <Icon :name="cleaningCfg.icon" class="size-3" />
               {{ cleaningCfg.label }}

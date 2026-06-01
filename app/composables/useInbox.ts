@@ -1,14 +1,28 @@
-import type { Conversation, ConversationStatus, Message, Note, PhoneCall, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { conversations as conversationsData, messages as messagesData, phoneCalls as phoneCallsData, reservations, staffMembers } from '~/components/inbox/data/conversations'
-import { useUpsellOrders } from './useUpsellOrders'
+import type { Conversation, Message, Note, PhoneCall, Reservation, StayStatus, UnmatchedMessage } from '~/components/inbox/data/conversations'
 import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
+import { conversations as conversationsData, messages as messagesData, phoneCalls as phoneCallsData, reservations, staffMembers, unmatchedMessages as unmatchedData } from '~/components/inbox/data/conversations'
+import { useUpsellOrders } from './useUpsellOrders'
 
 export type SortOption = 'newest' | 'oldest' | 'unread'
 
 export function useInbox() {
   const conversations = useState<Conversation[]>('inbox-conversations', () => conversationsData)
+
+  // Ensure newly added seed conversations are always present
+  for (const seed of conversationsData) {
+    if (!conversations.value.find(c => c.id === seed.id)) {
+      conversations.value = [...conversations.value, seed]
+    }
+  }
   const selectedConversationId = useState<string | undefined>('inbox-selected-conversation', () => undefined)
   const messages = useState<Record<string, Message[]>>('inbox-messages', () => JSON.parse(JSON.stringify(messagesData)))
+
+  // Ensure any newly added seed messages (e.g. conv-um-*) are always present
+  for (const key of Object.keys(messagesData)) {
+    if (!messages.value[key]) {
+      messages.value = { ...messages.value, [key]: JSON.parse(JSON.stringify((messagesData as Record<string, Message[]>)[key])) }
+    }
+  }
 
   const selectedMessages = ref<Message[]>([])
 
@@ -22,20 +36,21 @@ export function useInbox() {
       const msgs = messages.value[id]
       selectedMessages.value = msgs ? [...msgs] : []
     },
-    { immediate: true }
+    { immediate: true },
   )
 
   watch(
     messages,
     () => {
       const id = selectedConversationId.value
-      if (!id) return
+      if (!id)
+        return
       const msgs = messages.value[id]
       if (msgs) {
         selectedMessages.value = [...msgs]
       }
     },
-    { deep: true }
+    { deep: true },
   )
 
   const showActionNeeded = useState<boolean>('inbox-show-action-needed', () => true)
@@ -97,6 +112,49 @@ export function useInbox() {
 
   const notes = useState<Record<string, Note[]>>('inbox-notes', () => ({}))
 
+  const unmatchedMessages = useState<UnmatchedMessage[]>('inbox-unmatched', () => unmatchedData)
+
+  function dismissUnmatched(id: string) {
+    // id is a conversation id for unmatched conversations
+    conversations.value = conversations.value.filter(c => c.id !== id)
+    if (selectedConversationId.value === id)
+      selectedConversationId.value = undefined
+  }
+
+  function matchUnmatched(unmatchedConvId: string, targetConvId: string) {
+    const umMsgs = (messages.value[unmatchedConvId] ?? []).map(m => ({ ...m, conversationId: targetConvId }))
+    const existing = messages.value[targetConvId] ?? []
+    messages.value = { ...messages.value, [targetConvId]: [...existing, ...umMsgs] }
+    const lastMsg = umMsgs[umMsgs.length - 1]
+    if (lastMsg) {
+      conversations.value = conversations.value.map(c =>
+        c.id === targetConvId
+          ? { ...c, lastMessage: lastMsg.content, lastMessageAt: lastMsg.timestamp, unreadCount: c.unreadCount + 1 }
+          : c,
+      )
+    }
+    conversations.value = conversations.value.filter(c => c.id !== unmatchedConvId)
+    selectedConversationId.value = targetConvId
+  }
+
+  function createFromUnmatched(unmatchedConvId: string) {
+    const um = conversations.value.find(c => c.id === unmatchedConvId)
+    if (!um)
+      return
+    const umMsgs = messages.value[unmatchedConvId] ?? []
+    const newId = `conv-wa-new-${Date.now()}`
+    const newConv: Conversation = {
+      ...um,
+      id: newId,
+      stayStatus: 'inquiry',
+      status: 'action_needed',
+      labels: [],
+    }
+    conversations.value = [newConv, ...conversations.value.filter(c => c.id !== unmatchedConvId)]
+    messages.value = { ...messages.value, [newId]: umMsgs.map(m => ({ ...m, conversationId: newId })) }
+    selectedConversationId.value = newId
+  }
+
   const filteredConversations = computed(() => {
     let result = conversations.value
 
@@ -125,10 +183,12 @@ export function useInbox() {
         const end = new Date(now)
         if (filter === 'today') {
           end.setHours(23, 59, 59, 999)
-        } else if (filter === 'next-3-days') {
+        }
+        else if (filter === 'next-3-days') {
           end.setDate(end.getDate() + 2)
           end.setHours(23, 59, 59, 999)
-        } else if (filter === 'next-week') {
+        }
+        else if (filter === 'next-week') {
           end.setDate(end.getDate() + 6)
           end.setHours(23, 59, 59, 999)
         }
@@ -137,9 +197,10 @@ export function useInbox() {
 
       const [rangeStart, rangeEnd] = getDateRange(activeDateFilter.value)
 
-      result = result.filter(c => {
+      result = result.filter((c) => {
         const dateField = activeStayFilter.value === 'future' ? c.checkIn : c.checkOut
-        if (!dateField) return false
+        if (!dateField)
+          return false
         const date = new Date(dateField)
         return date >= rangeStart && date <= rangeEnd
       })
@@ -154,9 +215,10 @@ export function useInbox() {
     }
 
     if (activeStaffFilter.value.length > 0) {
-      result = result.filter(c => {
+      result = result.filter((c) => {
         if (activeStaffFilter.value.includes('unassigned')) {
-          if (!c.assignedTo) return true
+          if (!c.assignedTo)
+            return true
         }
         return activeStaffFilter.value.some(id => id !== 'unassigned' && c.assignedTo === id)
       })
@@ -185,8 +247,10 @@ export function useInbox() {
         return new Date(a.lastMessageAt).getTime() - new Date(b.lastMessageAt).getTime()
       }
       if (sortBy.value === 'unread') {
-        if (a.unreadCount > 0 && b.unreadCount === 0) return -1
-        if (a.unreadCount === 0 && b.unreadCount > 0) return 1
+        if (a.unreadCount > 0 && b.unreadCount === 0)
+          return -1
+        if (a.unreadCount === 0 && b.unreadCount > 0)
+          return 1
         return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
       }
       return 0
@@ -200,7 +264,8 @@ export function useInbox() {
   })
 
   watch(selectedConversationId, (id) => {
-    if (!id) return
+    if (!id)
+      return
     const index = conversations.value.findIndex(c => c.id === id)
     if (index !== -1 && conversations.value[index].unreadCount > 0) {
       conversations.value[index] = { ...conversations.value[index], unreadCount: 0 }
@@ -220,8 +285,10 @@ export function useInbox() {
 
   function isElevaiEnabled(conversationId: string): boolean {
     const s = elevaiState.value[conversationId]
-    if (!s) return true
-    if (s.pausedUntil !== undefined) return Date.now() > s.pausedUntil
+    if (!s)
+      return true
+    if (s.pausedUntil !== undefined)
+      return Date.now() > s.pausedUntil
     return s.on
   }
 
@@ -273,19 +340,23 @@ export function useInbox() {
   }
 
   function getAssignedStaff(conv: Conversation) {
-    if (!conv.assignedTo) return null
+    if (!conv.assignedTo)
+      return null
     return staffMembers.find(s => s.id === conv.assignedTo) ?? null
   }
 
   function getNotes(conversationId: string): Note[] {
     const convNotes = notes.value[conversationId]
-    if (convNotes) return convNotes
+    if (convNotes)
+      return convNotes
     const conv = conversations.value.find(c => c.id === conversationId)
-    if (!conv) return []
+    if (!conv)
+      return []
     const resId = conv.reservationId
     const res = reservations[resId]
     const guestNotes = res?.guestDetails?.notes
-    if (!guestNotes) return []
+    if (!guestNotes)
+      return []
     const initial: Note[] = [{
       id: `note-guest-${conversationId}`,
       content: guestNotes,
@@ -458,7 +529,8 @@ export function useInbox() {
 
   function sendMessage(conversationId: string, content: string, channel: string, upsellOffer?: Message['upsellOffer']) {
     const conv = conversations.value.find(c => c.id === conversationId)
-    if (!conv || !content.trim()) return
+    if (!conv || !content.trim())
+      return
 
     const tempId = `msg-${conversationId}-${Date.now()}`
     const newMessage: Message = {
@@ -480,7 +552,8 @@ export function useInbox() {
     setTimeout(() => {
       const msgs = messages.value[conversationId] ?? []
       const msgIndex = msgs.findIndex(m => m.id === tempId)
-      if (msgIndex === -1) return
+      if (msgIndex === -1)
+        return
 
       const shouldFail = content.toLowerCase().includes('error') || Math.random() < 0.1
       const updatedMsg = { ...msgs[msgIndex], sendStatus: shouldFail ? 'failed' as const : 'sent' as const }
@@ -507,9 +580,11 @@ export function useInbox() {
   function retryMessage(conversationId: string, messageId: string) {
     const msgs = messages.value[conversationId] ?? []
     const msgIndex = msgs.findIndex(m => m.id === messageId)
-    if (msgIndex === -1) return
+    if (msgIndex === -1)
+      return
     const msg = msgs[msgIndex]
-    if (!msg || msg.sendStatus !== 'failed') return
+    if (!msg || msg.sendStatus !== 'failed')
+      return
 
     const updatedMsg = { ...msg, sendStatus: 'sending' as const }
     const updatedMessages = [...msgs]
@@ -519,7 +594,8 @@ export function useInbox() {
     setTimeout(() => {
       const currentMsgs = messages.value[conversationId] ?? []
       const currentMsgIndex = currentMsgs.findIndex(m => m.id === messageId)
-      if (currentMsgIndex === -1) return
+      if (currentMsgIndex === -1)
+        return
       const shouldFail = Math.random() < 0.1
       const retriedMsg = { ...currentMsgs[currentMsgIndex], sendStatus: shouldFail ? 'failed' as const : 'sent' as const }
       const retriedMessages = [...currentMsgs]
@@ -543,7 +619,8 @@ export function useInbox() {
   function getLinkedOrders(conversationId: string): UpsellOrder[] {
     const { orders } = useUpsellOrders()
     const conv = conversations.value.find(c => c.id === conversationId)
-    if (!conv?.linkedUpsellOrderIds?.length) return []
+    if (!conv?.linkedUpsellOrderIds?.length)
+      return []
     return orders.value.filter(o => conv.linkedUpsellOrderIds!.includes(o.id))
   }
 
@@ -617,5 +694,9 @@ export function useInbox() {
     getPhoneCalls,
     getLinkedOrders,
     linkOrderToConversation,
+    unmatchedMessages,
+    dismissUnmatched,
+    matchUnmatched,
+    createFromUnmatched,
   }
 }

@@ -24,7 +24,7 @@ const isNotInquiry = computed(() => props.stayStatus !== 'inquiry')
 
 const channelOptions = computed(() => {
   const opts = [
-    { value: 'ota', label: props.channel, icon: props.channel === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom' },
+    { value: 'ota', label: props.channel, icon: props.channel === 'Airbnb' ? 'logos:airbnb' : props.channel === 'WhatsApp' ? 'logos:whatsapp-icon' : 'simple-icons:bookingdotcom' },
     { value: 'email', label: 'Email', icon: 'lucide:mail' },
   ]
   if (isNotInquiry.value) {

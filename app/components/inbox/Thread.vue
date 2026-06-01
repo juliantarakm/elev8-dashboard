@@ -1,35 +1,58 @@
 <script lang="ts" setup>
-import type { Message, PhoneCall } from '~/components/inbox/data/conversations'
-import { isToday, isYesterday, differenceInDays, format } from 'date-fns'
+import type { PhoneCall } from '~/components/inbox/data/conversations'
+import { differenceInDays, format, isToday, isYesterday } from 'date-fns'
 import { toast } from 'vue-sonner'
 
-const { selectedConversation,
-  selectedMessages,
-  selectedReservation,
-  markAsHandled,
-  markAsUnread,
-  isElevaiEnabled,
-  useSuggestion,
-  getNotes,
-  addNote,
-  getPhoneCalls,
-  rightPanelCollapsed,
-  toggleRightPanel,
-  autoTranslate,
-} = useInbox()
+const { selectedConversation, selectedMessages, selectedReservation, markAsHandled, markAsUnread, isElevaiEnabled, useSuggestion, getNotes, addNote, getPhoneCalls, rightPanelCollapsed, toggleRightPanel, autoTranslate, matchUnmatched, createFromUnmatched, dismissUnmatched, conversations } = useInbox()
 
 const activeThreadTab = ref<'messages' | 'notes' | 'phone'>('messages')
+const templateOpen = ref(false)
+const { isConnected: whatsappConnected } = useWhatsApp()
+const matchOpen = ref(false)
+const matchSearch = ref('')
+
+const matchOptions = computed(() => {
+  const q = matchSearch.value.trim().toLowerCase()
+  return conversations.value
+    .filter(c => c.stayStatus !== 'unmatched' && (!q || c.guestName.toLowerCase().includes(q) || c.listingName.toLowerCase().includes(q)))
+    .slice(0, 12)
+})
+
+function handleMatch(conversationId: string) {
+  if (!selectedConversation.value)
+    return
+  matchUnmatched(selectedConversation.value.id, conversationId)
+  matchOpen.value = false
+  matchSearch.value = ''
+  toast.success('Matched to guest')
+}
+
+function handleCreateNew() {
+  if (!selectedConversation.value)
+    return
+  createFromUnmatched(selectedConversation.value.id)
+  toast.success('New conversation created')
+}
+
+function handleDismiss() {
+  if (!selectedConversation.value)
+    return
+  dismissUnmatched(selectedConversation.value.id)
+  toast.info('Conversation dismissed')
+}
 
 const newNoteContent = ref('')
 const newNoteVisibleToAI = ref(false)
 
 const conversationNotes = computed(() => {
-  if (!selectedConversation.value) return []
+  if (!selectedConversation.value)
+    return []
   return getNotes(selectedConversation.value.id)
 })
 
 const conversationPhoneCalls = computed(() => {
-  if (!selectedConversation.value) return []
+  if (!selectedConversation.value)
+    return []
   return getPhoneCalls(selectedConversation.value.id)
 })
 
@@ -37,7 +60,8 @@ const expandedTranscripts = ref(new Set<string>())
 
 function toggleTranscript(callId: string) {
   const next = new Set(expandedTranscripts.value)
-  if (next.has(callId)) next.delete(callId)
+  if (next.has(callId))
+    next.delete(callId)
   else next.add(callId)
   expandedTranscripts.value = next
 }
@@ -71,16 +95,21 @@ const aiSuggestion = computed(() =>
 
 function getDateLabel(timestamp: string) {
   const date = new Date(timestamp)
-  if (isToday(date)) return 'Today'
-  if (isYesterday(date)) return 'Yesterday'
+  if (isToday(date))
+    return 'Today'
+  if (isYesterday(date))
+    return 'Yesterday'
   const daysAgo = differenceInDays(new Date(), date)
-  if (daysAgo <= 3) return format(date, 'EEEE')
+  if (daysAgo <= 3)
+    return format(date, 'EEEE')
   return format(date, 'EEEE, d MMM yyyy')
 }
 
 const showSuggestion = computed(() => {
-  if (!aiSuggestion.value) return false
-  if (dismissedSuggestions.value.includes(aiSuggestion.value.id)) return false
+  if (!aiSuggestion.value)
+    return false
+  if (dismissedSuggestions.value.includes(aiSuggestion.value.id))
+    return false
   return selectedConversation.value ? isElevaiEnabled(selectedConversation.value.id) : false
 })
 
@@ -105,24 +134,28 @@ const statusLabelMap: Record<string, string> = {
 
 const stayDateLabel = computed(() => {
   const res = selectedReservation.value
-  if (!res?.checkIn || !res?.checkOut) return ''
+  if (!res?.checkIn || !res?.checkOut)
+    return ''
   return `${format(new Date(res.checkIn), 'd MMM yyyy')} – ${format(new Date(res.checkOut), 'd MMM yyyy')}`
 })
 
 function handleMarkAsHandled() {
-  if (!selectedConversation.value) return
+  if (!selectedConversation.value)
+    return
   markAsHandled(selectedConversation.value.id)
   toast.success('Marked as handled')
 }
 
 function handleMarkAsUnread() {
-  if (!selectedConversation.value) return
+  if (!selectedConversation.value)
+    return
   markAsUnread(selectedConversation.value.id)
   toast.info('Marked as unread')
 }
 
 function handleAddNote() {
-  if (!selectedConversation.value || !newNoteContent.value.trim()) return
+  if (!selectedConversation.value || !newNoteContent.value.trim())
+    return
   addNote(selectedConversation.value.id, newNoteContent.value.trim(), newNoteVisibleToAI.value)
   newNoteContent.value = ''
   newNoteVisibleToAI.value = false
@@ -140,7 +173,8 @@ function formatNoteDate(timestamp: string) {
 }
 
 function formatCallDuration(seconds: number): string {
-  if (seconds === 0) return '—'
+  if (seconds === 0)
+    return '—'
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return m > 0 ? `${m}m ${s}s` : `${s}s`
@@ -152,8 +186,10 @@ function formatCallTime(timestamp: string): string {
 
 function formatCallDate(timestamp: string): string {
   const date = new Date(timestamp)
-  if (isToday(date)) return 'Today'
-  if (isYesterday(date)) return 'Yesterday'
+  if (isToday(date))
+    return 'Today'
+  if (isYesterday(date))
+    return 'Yesterday'
   return format(date, 'd MMM yyyy')
 }
 </script>
@@ -161,7 +197,9 @@ function formatCallDate(timestamp: string): string {
 <template>
   <div v-if="!selectedConversation" class="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
     <Icon name="lucide:message-square" class="size-12" />
-    <p class="text-sm">Select a conversation</p>
+    <p class="text-sm">
+      Select a conversation
+    </p>
   </div>
 
   <div v-else class="flex flex-col h-full overflow-hidden">
@@ -212,7 +250,9 @@ function formatCallDate(timestamp: string): string {
                   <Icon name="lucide:languages" class="size-4 text-muted-foreground" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-sm font-medium">Translation</div>
+                  <div class="text-sm font-medium">
+                    Translation
+                  </div>
                   <div class="text-xs text-muted-foreground">
                     {{ selectedConversation?.guestName }} speaks {{ selectedConversation?.guestLanguage ?? 'unknown' }}
                   </div>
@@ -221,8 +261,12 @@ function formatCallDate(timestamp: string): string {
               <Separator />
               <div class="flex items-center justify-between">
                 <div>
-                  <div class="text-sm">Auto-translate</div>
-                  <div class="text-[11px] text-muted-foreground">Your preferred language: Bahasa Indonesia</div>
+                  <div class="text-sm">
+                    Auto-translate
+                  </div>
+                  <div class="text-[11px] text-muted-foreground">
+                    Your preferred language: Bahasa Indonesia
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -274,27 +318,75 @@ function formatCallDate(timestamp: string): string {
     </div>
     <Separator />
 
-      <div class="flex flex-col flex-1 overflow-hidden">
-        <div class="flex items-center h-8 px-4 shrink-0 border-b">
-          <button
-            :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'messages' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
-            @click="activeThreadTab = 'messages'"
-          >
-            Messages
-          </button>
-          <button
-            :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'notes' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
-            @click="activeThreadTab = 'notes'"
-          >
-          Notes
-          <Badge v-if="conversationNotes.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">{{ conversationNotes.length }}</Badge>
+    <!-- Unmatched action bar -->
+    <div v-if="selectedConversation.stayStatus === 'unmatched'" class="flex items-center gap-2 border-b bg-muted/50 px-4 py-2">
+      <Icon name="lucide:user-x" class="size-4 shrink-0 text-muted-foreground" />
+      <span class="flex-1 text-xs text-muted-foreground">Unknown sender — not linked to any guest</span>
+      <Button size="sm" variant="outline" class="h-7 text-xs" @click="matchOpen = true">
+        Match to Guest
+      </Button>
+      <Button size="sm" variant="ghost" class="h-7 text-xs text-muted-foreground" @click="handleDismiss">
+        Dismiss
+      </Button>
+    </div>
+
+    <Dialog v-model:open="matchOpen">
+      <DialogContent class="flex max-h-[80vh] flex-col sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Match to guest</DialogTitle>
+          <DialogDescription>Pick a conversation to attach this message to.</DialogDescription>
+        </DialogHeader>
+        <Input v-model="matchSearch" placeholder="Search guest or listing..." class="h-9 shrink-0" />
+        <div class="min-h-0 flex-1 overflow-y-auto">
+          <div class="space-y-1 pr-1">
+            <button
+              v-for="c of matchOptions"
+              :key="c.id"
+              type="button"
+              class="flex w-full flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left hover:bg-accent"
+              @click="handleMatch(c.id)"
+            >
+              <span class="text-sm font-medium">{{ c.guestName }}</span>
+              <span class="text-xs text-muted-foreground truncate">{{ c.listingName }}</span>
+            </button>
+            <div v-if="matchOptions.length === 0" class="flex flex-col items-center gap-2 py-6 text-center">
+              <p class="text-sm text-muted-foreground">
+                No existing conversations found.
+              </p>
+              <Button size="sm" variant="outline" @click="handleCreateNew">
+                Create new conversation
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <div class="flex flex-col flex-1 overflow-hidden">
+      <div class="flex items-center h-8 px-4 shrink-0 border-b">
+        <button
+          class="text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2" :class="[activeThreadTab === 'messages' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
+          @click="activeThreadTab = 'messages'"
+        >
+          Messages
         </button>
         <button
-          :class="['text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2', activeThreadTab === 'phone' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
+          class="text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2" :class="[activeThreadTab === 'notes' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
+          @click="activeThreadTab = 'notes'"
+        >
+          Notes
+          <Badge v-if="conversationNotes.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">
+            {{ conversationNotes.length }}
+          </Badge>
+        </button>
+        <button
+          class="text-xs px-2.5 py-1 font-medium transition-colors h-full border-b-2" :class="[activeThreadTab === 'phone' ? 'text-foreground border-primary' : 'text-muted-foreground hover:text-foreground border-transparent']"
           @click="activeThreadTab = 'phone'"
         >
           Phone
-          <Badge v-if="conversationPhoneCalls.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">{{ conversationPhoneCalls.length }}</Badge>
+          <Badge v-if="conversationPhoneCalls.length" variant="secondary" class="ml-1 text-[10px] h-4 px-1">
+            {{ conversationPhoneCalls.length }}
+          </Badge>
         </button>
       </div>
 
@@ -340,7 +432,39 @@ function formatCallDate(timestamp: string): string {
         </div>
 
         <div class="shrink-0 border-t bg-background">
+          <div v-if="selectedConversation.otaSource === 'WhatsApp' && !whatsappConnected" class="p-3">
+            <div class="rounded-md border bg-muted p-3">
+              <p class="flex items-center gap-1.5 text-sm font-medium">
+                <Icon name="lucide:message-circle" class="size-4 text-muted-foreground" />
+                WhatsApp not connected
+              </p>
+              <p class="mt-1 text-xs text-muted-foreground">
+                Connect your WhatsApp Business account to send and receive messages.
+              </p>
+              <Button size="sm" variant="outline" class="mt-2 gap-1" as-child>
+                <NuxtLink to="/settings/integrations">
+                  Connect WhatsApp
+                  <Icon name="lucide:arrow-right" class="size-3.5" />
+                </NuxtLink>
+              </Button>
+            </div>
+          </div>
+          <div v-else-if="selectedConversation.otaSource === 'WhatsApp' && selectedConversation.waWindowExpired" class="p-3">
+            <div class="rounded-md border border-orange-200 bg-orange-50 p-3 dark:border-orange-900 dark:bg-orange-950/30">
+              <p class="flex items-center gap-1.5 text-sm font-medium text-orange-700 dark:text-orange-300">
+                <Icon name="lucide:triangle-alert" class="size-4" />
+                Conversation window expired
+              </p>
+              <p class="mt-1 text-xs text-orange-700/80 dark:text-orange-300/80">
+                You can only send template messages now. Free-form replies require the guest to message first.
+              </p>
+              <Button size="sm" class="mt-2" @click="templateOpen = true">
+                Send Template Message
+              </Button>
+            </div>
+          </div>
           <InboxReplyBox
+            v-else
             :channel="selectedConversation.otaSource"
             :conversation-id="selectedConversation.id"
             :stay-status="selectedConversation.stayStatus"
@@ -352,7 +476,7 @@ function formatCallDate(timestamp: string): string {
         <ScrollArea class="flex-1 min-h-0">
           <div class="p-4 space-y-3 pb-32">
             <!-- Call notes from phone calls -->
-            <template v-for="call of conversationPhoneCalls" :key="'call-note-' + call.id">
+            <template v-for="call of conversationPhoneCalls" :key="`call-note-${call.id}`">
               <div v-if="call.summary" class="rounded-lg border bg-muted/50 p-3">
                 <div class="flex items-center gap-2 mb-2">
                   <Icon name="lucide:phone" class="size-3.5 text-muted-foreground" />
@@ -362,12 +486,16 @@ function formatCallDate(timestamp: string): string {
                     ElevAI
                   </span>
                 </div>
-                <p class="text-sm leading-relaxed whitespace-pre-line">{{ call.summary }}</p>
+                <p class="text-sm leading-relaxed whitespace-pre-line">
+                  {{ call.summary }}
+                </p>
               </div>
             </template>
 
             <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
-              <p class="text-sm leading-relaxed">{{ note.content }}</p>
+              <p class="text-sm leading-relaxed">
+                {{ note.content }}
+              </p>
               <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
                 <span>{{ note.authorName }}</span>
                 <span>·</span>
@@ -380,7 +508,9 @@ function formatCallDate(timestamp: string): string {
             </div>
             <div v-if="!conversationNotes.length && !conversationPhoneCalls.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Icon name="lucide:sticky-note" class="size-10 mb-2" />
-              <p class="text-sm">No notes yet</p>
+              <p class="text-sm">
+                No notes yet
+              </p>
             </div>
           </div>
         </ScrollArea>
@@ -424,8 +554,12 @@ function formatCallDate(timestamp: string): string {
                 <Icon name="lucide:phone" class="size-4 text-primary" />
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium truncate">{{ selectedReservation.guestDetails.phone }}</div>
-                <div class="text-[10px] text-muted-foreground">Guest phone number</div>
+                <div class="text-sm font-medium truncate">
+                  {{ selectedReservation.guestDetails.phone }}
+                </div>
+                <div class="text-[10px] text-muted-foreground">
+                  Guest phone number
+                </div>
               </div>
               <Button size="sm" class="gap-1.5">
                 <Icon name="lucide:phone" class="size-3.5" />
@@ -441,7 +575,8 @@ function formatCallDate(timestamp: string): string {
               </div>
               <div class="rounded-lg border">
                 <div class="flex items-start gap-3 p-3">
-                  <div class="flex size-8 shrink-0 items-center justify-center rounded-full"
+                  <div
+                    class="flex size-8 shrink-0 items-center justify-center rounded-full"
                     :class="{
                       'bg-green-100 dark:bg-green-900': call.status === 'completed' && call.direction === 'outbound',
                       'bg-blue-100 dark:bg-blue-900': call.status === 'completed' && call.direction === 'inbound',
@@ -508,11 +643,20 @@ function formatCallDate(timestamp: string): string {
 
             <div v-if="!conversationPhoneCalls.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Icon name="lucide:phone-off" class="size-10 mb-2" />
-              <p class="text-sm">No call history</p>
+              <p class="text-sm">
+                No call history
+              </p>
             </div>
           </div>
         </ScrollArea>
       </div>
     </div>
+
+    <InboxWhatsAppSendModal
+      v-model:open="templateOpen"
+      :guest-name="selectedConversation.guestName"
+      :phone="selectedReservation?.guestDetails?.phone ?? ''"
+      :vars="{ property_name: selectedConversation.listingName }"
+    />
   </div>
 </template>

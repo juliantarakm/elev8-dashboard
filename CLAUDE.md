@@ -48,6 +48,7 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Listing Details Redesign Plan** → `docs/superpowers/plans/2026-06-01-listing-details-redesign.md`
 - **Listing Floating Menu + AI Auto-Fill Spec** → `docs/superpowers/specs/2026-06-01-listing-floating-menu-ai-autofill.md`
 - **Listing Floating Menu + AI Auto-Fill Plan** → `docs/superpowers/plans/2026-06-01-listing-floating-menu-ai-autofill.md`
+- **WhatsApp Integration UI Spec** → `docs/superpowers/specs/2026-06-01-whatsapp-ui-spec.md`
 
 ---
 
@@ -108,6 +109,7 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - `GuestDetails` type with `language: string`
 - `StaffMember` list: You/Admin, Komang Juliantara/Guest Relations, Made Surya/Housekeeping, Wayan Adi/Maintenance
 - `Reservation` type + mock data (6 conversations)
+- **WhatsApp additions**: `otaSources` includes `WhatsApp` (`logos:whatsapp-icon`, green); `Conversation.waWindowExpired?: boolean` (24h window); `Message.mediaUrl?`/`mediaDims?` (photo messages); `StayStatus` includes `'unmatched'`; `UnmatchedMessage` type. WhatsApp conversations seeded: Max Müller (normal), Lisa Park (complaint + pool photos), Marcel Weber (window expired), + 3 `conv-um-*` unmatched (phone-number as guestName, `listingName: 'Unknown'`)
 
 #### Shared State (`app/composables/useInbox.ts`)
 - **Reactive**: `conversations` uses `useState<Conversation[]>` — mutations MUST use spread syntax to trigger Vue reactivity
@@ -133,6 +135,35 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - Phone tab in Thread.vue — call history with transcript expand/collapse, download recording
 - Call summaries in Notes tab (tagged ElevAI for AI consumption)
 - Phone call entries in Activity timeline with Send button for unsent templates
+
+### WhatsApp Integration (`app/components/settings/` + `app/components/inbox/`)
+
+> **Full UI spec** → `docs/superpowers/specs/2026-06-01-whatsapp-ui-spec.md` (Phase 1–4 wireframes, states, design tokens)
+
+WhatsApp Business is integrated **into the existing inbox** (not a separate page). Mock/demo only — no real Meta API.
+
+#### Settings → Integrations (`app/pages/settings/integrations.vue`)
+- Route added to `SettingsSidebarNav.vue` + `constants/menus.ts`
+- **`SettingsWhatsAppIntegration.vue`** — connection card: disconnected (Connect WhatsApp + Meta signup sim) / connected (phone, business name, date, Disconnect + Test Send) + disconnect confirmation `Dialog`
+- **`SettingsWhatsAppRoutingRules.vue`** — Phase 4 routing rules list (drag handle, active toggle, condition + route-to text) + Add/Edit Rule `Dialog`. Shown only when connected.
+
+#### Composables
+- **`useWhatsApp.ts`** — `useState('whatsapp-connection')`; `connection`, `isConnected`, `connect()`, `disconnect()`. Defaults to connected. Shared with inbox.
+- **`useWhatsAppRules.ts`** — `useState('whatsapp-rules')`; `RoutingRule` type, `conditionTypeLabels`, `routeToLabels`, `ruleConditionText()`, `saveRule()`, `deleteRule()`, `toggleRule()`
+- **`useWhatsAppTemplates.ts`** — `waTemplates` (booking_confirmation, checkin_instructions, upsell_early_checkin, review_request) + `renderTemplate()`
+
+#### Inbox features (reuse existing channel filter / notes / assignment / AI / send-status)
+- **Channel**: WhatsApp appears automatically in the List.vue Filters → Channel (from `otaSource`)
+- **`WhatsAppSendModal.vue`** (`InboxWhatsAppSendModal`) — template picker + live preview; used by Thread (window-expired fallback) and reusable for reservation detail
+- **Media messages** — `ThreadMessage.vue` renders `mediaUrl` image + dims caption inside bubble
+- **24h window** — `Thread.vue` shows "window expired" banner + Send Template button when `otaSource === 'WhatsApp' && waWindowExpired`
+- **Not-connected state** — `Thread.vue` shows "WhatsApp not connected" banner (link to `/settings/integrations`) when `otaSource === 'WhatsApp' && !useWhatsApp().isConnected`; takes priority over window-expired
+- **Unmatched queue** — unmatched messages are conversations with `stayStatus: 'unmatched'`, filterable via the new "Unmatched" sidebar filter (`Nav.vue`). Thread shows an action bar (Match to Guest / Dismiss). `useInbox`: `matchUnmatched(umConvId, targetConvId)` (moves messages into target conv), `createFromUnmatched(umConvId)`, `dismissUnmatched(id)`
+- **Automation channel** — Journeys builder (`JourneyStepSidebar.vue`) already had a `whatsapp` channel option
+- **NOT implemented** (descoped per user): Claim/Release buttons, routing-mode badges (HostBuddy/Staff/Review) — `action_needed` status already covers escalation
+
+#### Inbox SSR note
+- `app/pages/inbox.vue` wraps `<InboxLayout>` in `<ClientOnly>` to avoid Reka UI `ScrollArea` hydration mismatches. `useInbox` merges fresh seed conversations/messages into `useState` so newly added seed data always appears.
 
 ### Notification Center Module (`app/components/notifications/`)
 
@@ -635,6 +666,9 @@ const table = useVueTable({
 | `useUpsellServices` | `app/composables/useUpsellServices.ts` | Upsells Catalog state + CRUD | `services`, filters, `addService()`, `updateService()`, `deleteService()` |
 | `useUpsellOrders` | `app/composables/useUpsellOrders.ts` | Upsell Orders state + CRUD | `orders`, `filteredOrders`, `statusCounts`, `totalRevenue`, `updateStatus()`, `addOrder()`, `cancelOrder()` |
 | `useUpsellNotifications` | `app/composables/useUpsellNotifications.ts` | Upsell Notifications state | `notifications`, `unreadCount`, `createNotification()`, `markAsRead()` |
+| `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `connection`, `isConnected`, `connect()`, `disconnect()` |
+| `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
+| `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -746,6 +780,7 @@ app/
 │   │   ├── Thread.vue              ← Phone tab + UpsellOfferCard in messages
 │   │   ├── UpsellOfferCard.vue     ← Upsell offer UI in chat (status, pricing, actions)
 │   │   ├── UpsellOrderCreator.vue  ← Mini drawer for creating orders from chat
+│   │   ├── WhatsAppSendModal.vue   ← Template picker + live preview (window-expired fallback)
 │   │   └── data/
 │   │       └── conversations.ts    ← UpsellOffer type, linkedUpsellOrderIds, conv-21
 │   ├── notifications/          ← Notification Center (new)
@@ -794,7 +829,9 @@ app/
 │   │   ├── Layout.vue
 │   │   ├── NotificationsForm.vue
 │   │   ├── ProfileForm.vue
-│   │   └── SidebarNav.vue
+│   │   ├── SidebarNav.vue
+│   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
+│   │   └── WhatsAppRoutingRules.vue ← Phase 4 routing rules list + editor
 │   └── tasks/
 │       ├── components/
 │       │   ├── columns.ts
@@ -824,7 +861,10 @@ app/
 │   ├── useUpsells.ts
 │   ├── useUpsellServices.ts       ← Catalog CRUD
 │   ├── useUpsellOrders.ts         ← Orders CRUD + cancelOrder()
-│   └── useUpsellNotifications.ts  ← Notification state + createNotification()
+│   ├── useUpsellNotifications.ts  ← Notification state + createNotification()
+│   ├── useWhatsApp.ts             ← WhatsApp connection state (connect/disconnect)
+│   ├── useWhatsAppRules.ts        ← Routing rules CRUD
+│   └── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout
@@ -864,6 +904,7 @@ app/
     │   ├── account.vue
     │   ├── appearance.vue
     │   ├── display.vue
+    │   ├── integrations.vue        ← WhatsApp connection + routing rules
     │   ├── notifications.vue
     │   └── profile.vue
     └── tasks.vue
