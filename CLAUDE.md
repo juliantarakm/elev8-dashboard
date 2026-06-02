@@ -113,8 +113,8 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - `Unit.otaConnected?: string[]` — per-unit OTA override (falls back to listing OTA)
 - **Multi-unit logic**: property status derived from units — all inactive = property inactive
 - **Deactivate cascade**: turning off listing/unit also pauses AI
-- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; per-unit toggle with AI badge (click to toggle AI) + OTA icons + Switch
-- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic
+- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; per-unit toggle with AI badge (click to toggle AI) + OTA icons + Switch; shows `toast.info/success` on property-level and per-unit toggle
+- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic; shows `toast.info/success` on activate/deactivate
 - **`ListingRowActions.vue`** — "Activate/Deactivate Listing" in dropdown; implemented with spread mutation
 
 ### Inbox Module (`app/components/inbox/`)
