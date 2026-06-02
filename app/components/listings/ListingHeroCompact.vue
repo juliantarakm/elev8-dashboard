@@ -4,7 +4,7 @@ import { listings, allTags } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listing: Listing; openSchedule?: boolean }>()
-const emit = defineEmits<{ update: [listing: Listing] }>()
+const emit = defineEmits<{ update: [listing: Listing]; openSetup: []; openTestAi: []; openSchedule: [] }>()
 const router = useRouter()
 
 function otaIcon(ota: string) {
@@ -403,7 +403,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
     </div>
 
     <!-- Hero: photo + info -->
-    <div class="flex flex-col gap-4 md:flex-row md:items-start">
+    <div class="flex flex-col gap-4 md:flex-row md:items-stretch">
       <!-- Photo + unit button (same width) -->
       <div class="w-full md:w-64 shrink-0 flex flex-col gap-1.5">
         <!-- 16/9 landscape photo -->
@@ -414,73 +414,61 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </div>
         </div>
 
-        <!-- Unit switcher button (full width of photo) -->
-        <DropdownMenu v-if="listing.units && listing.units.length > 0 || listing.unitType === 'multi'">
-          <DropdownMenuTrigger as-child>
-            <button class="flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-accent">
-              <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                <Icon :name="activeUnit ? 'lucide:door-open' : 'lucide:building-2'" class="size-4 text-muted-foreground" />
-              </div>
-              <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold">{{ activeUnit ? activeUnit.name : 'Multi-Unit' }}</span>
-                <span class="truncate text-xs text-muted-foreground">
-                  {{ activeUnit ? `${activeUnit.capacity} guests` : `${listing.units?.length ?? 0} units` }}
-                </span>
-              </div>
-              <Icon name="lucide:chevrons-up-down" class="size-4 shrink-0 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent class="w-56" align="start">
-            <!-- Property overview -->
-            <DropdownMenuItem
-              class="flex items-center justify-between cursor-pointer"
-              @click="emit('update', { ...listing, activeUnitId: undefined })"
-            >
-              <div class="flex items-center gap-2">
-                <div class="flex size-7 items-center justify-center rounded-md bg-muted">
-                  <Icon name="lucide:building-2" class="size-3.5 text-muted-foreground" />
+        <!-- Unit switcher + Action buttons row -->
+        <div class="flex items-center gap-2">
+          <DropdownMenu v-if="listing.units && listing.units.length > 0 || listing.unitType === 'multi'">
+            <DropdownMenuTrigger as-child>
+              <button class="flex flex-1 items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-accent">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                  <Icon :name="activeUnit ? 'lucide:door-open' : 'lucide:building-2'" class="size-4 text-muted-foreground" />
                 </div>
+                <div class="grid flex-1 text-left text-sm leading-tight">
+                  <span class="truncate font-semibold">{{ activeUnit ? activeUnit.name : 'Multi-Unit' }}</span>
+                  <span class="truncate text-xs text-muted-foreground">
+                    {{ activeUnit ? `${activeUnit.capacity} guests` : `${listing.units?.length ?? 0} units` }}
+                  </span>
+                </div>
+                <Icon name="lucide:chevrons-up-down" class="size-4 shrink-0 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-56" align="start">
+              <DropdownMenuItem class="flex items-center justify-between cursor-pointer" @click="emit('update', { ...listing, activeUnitId: undefined })">
+                <div class="flex items-center gap-2">
+                  <div class="flex size-7 items-center justify-center rounded-md bg-muted">
+                    <Icon name="lucide:building-2" class="size-3.5 text-muted-foreground" />
+                  </div>
+                  <div class="flex flex-col leading-tight">
+                    <span class="text-sm font-medium">Multi-Unit</span>
+                    <span class="text-xs text-muted-foreground">{{ listing.units?.length ?? 0 }} units</span>
+                  </div>
+                </div>
+                <Icon v-if="!listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel class="text-xs text-muted-foreground">Units</DropdownMenuLabel>
+              <DropdownMenuItem v-for="unit in listing.units" :key="unit.id" class="flex items-center justify-between cursor-pointer" @click="switchUnit(unit.id)">
                 <div class="flex flex-col leading-tight">
-                  <span class="text-sm font-medium">Multi-Unit</span>
-                  <span class="text-xs text-muted-foreground">{{ listing.units?.length ?? 0 }} units</span>
+                  <span class="text-sm font-medium">{{ unit.name }}</span>
+                  <span class="text-xs text-muted-foreground">{{ unit.capacity }} guests</span>
                 </div>
-              </div>
-              <Icon v-if="!listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel class="text-xs text-muted-foreground">Units</DropdownMenuLabel>
-            <DropdownMenuItem
-              v-for="unit in listing.units"
-              :key="unit.id"
-              class="flex items-center justify-between cursor-pointer"
-              @click="switchUnit(unit.id)"
-            >
-              <div class="flex flex-col leading-tight">
-                <span class="text-sm font-medium">{{ unit.name }}</span>
-                <span class="text-xs text-muted-foreground">{{ unit.capacity }} guests</span>
-              </div>
-              <Icon v-if="unit.id === listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem class="flex items-center gap-2 cursor-pointer text-muted-foreground" @click="addUnit">
-              <Icon name="lucide:plus" class="size-4" />
-              <span class="text-sm">Add Unit</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <!-- Single unit (no units) -->
-        <Badge v-if="listing.unitType === 'single' && !listing.units?.length" variant="outline" class="w-full justify-center text-xs">
-          <Icon name="lucide:home" class="size-3 mr-1" />
-          Single Unit
-        </Badge>
+                <Icon v-if="unit.id === listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="flex items-center gap-2 cursor-pointer text-muted-foreground" @click="addUnit">
+                <Icon name="lucide:plus" class="size-4" />
+                <span class="text-sm">Add Unit</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Badge v-else variant="outline" class="flex-1 justify-center text-xs py-2">
+            <Icon name="lucide:home" class="size-3 mr-1" />
+            Single Unit
+          </Badge>
+        </div>
       </div>
 
       <!-- Listing info -->
+      <div class="flex flex-col gap-4 flex-1 min-w-0 justify-between">
       <div class="flex flex-col gap-2 min-w-0">
         <!-- Editable name -->
         <div v-if="editingName" class="flex flex-col gap-2">
@@ -557,35 +545,22 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
           </Popover>
         </div>
       </div>
-    </div>
 
-    <!-- AI Status + OTA row -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <!-- AI Status Button -->
-      <button
-        class="flex items-center gap-2 rounded-full border px-3 py-1 transition-colors hover:bg-accent"
-        :class="listing.aiStatus === 'active' ? 'border-[#C8A84B]/40 bg-[#C8A84B]/10' : 'border-border'"
-        @click="showScheduleSheet = true"
-      >
-        <Icon
-          :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'"
-          class="size-3.5"
-          :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'"
-        />
-        <div class="flex flex-col items-start leading-tight">
-          <span class="text-xs font-medium">{{ aiStatusLabel[listing.aiStatus] }}</span>
-          <span v-if="summary" class="text-[10px] text-muted-foreground">{{ summary }}</span>
-        </div>
-        <Icon name="lucide:chevron-right" class="size-3 text-muted-foreground" />
-      </button>
-
-      <div
-        v-for="ota in listing.otaConnected"
-        :key="ota"
-        class="flex items-center gap-1.5 rounded-full border px-2.5 py-0.5"
-      >
-        <Icon :name="otaIcon(ota)" class="size-3" />
-        <span class="text-xs">{{ ota }}</span>
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2 mt-auto self-end">
+        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSetup')">
+          <Icon name="lucide:pencil" class="size-4" />
+          Edit Listing
+        </Button>
+        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openTestAi')">
+          <Icon name="lucide:bot" class="size-4" />
+          Test AI
+        </Button>
+        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSchedule')">
+          <Icon name="lucide:clock" class="size-4" />
+          Schedule
+        </Button>
+      </div>
       </div>
     </div>
 

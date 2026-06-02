@@ -51,19 +51,53 @@ function otaIcon(ota: string) {
   return ota === 'Airbnb' ? 'logos:airbnb' : 'simple-icons:bookingdotcom'
 }
 
+const expandedRows = ref<Set<string>>(new Set())
+
+function toggleExpand(id: string) {
+  const next = new Set(expandedRows.value)
+  next.has(id) ? next.delete(id) : next.add(id)
+  expandedRows.value = next
+}
+
 const columns: ColumnDef<Listing, any>[] = [
   {
     accessorKey: 'name',
     header: 'Listing Name',
     enableHiding: false,
-    cell: ({ row }) => h('a', {
-      href: listingUrl(row.original.id),
-      class: 'max-w-[300px] truncate font-medium hover:underline hover:text-primary transition-colors',
-      onClick: (e: Event) => {
-        e.preventDefault()
-        router.push(`/listings/${row.original.id}`)
-      },
-    }, row.getValue('name')),
+    cell: ({ row }) => {
+      const listing = row.original
+      const isMulti = listing.unitType === 'multi'
+      const isExpanded = expandedRows.value.has(listing.id)
+
+      return h('div', { class: 'flex items-start gap-1.5 min-w-0' }, [
+        isMulti && h('button', {
+          type: 'button',
+          class: 'mt-0.5 shrink-0 text-muted-foreground hover:text-foreground transition-colors',
+          onClick: (e: Event) => { e.stopPropagation(); toggleExpand(listing.id) },
+        }, h(Icon, { name: isExpanded ? 'lucide:chevron-down' : 'lucide:chevron-right', class: 'size-4' })),
+        !isMulti && h('span', { class: 'w-4 shrink-0' }),
+        h('div', { class: 'min-w-0' }, [
+          h('a', {
+            href: listingUrl(listing.id),
+            class: 'font-medium hover:underline hover:text-primary transition-colors line-clamp-2',
+            onClick: (e: Event) => { e.preventDefault(); router.push(`/listings/${listing.id}`) },
+          }, listing.name),
+          h('div', { class: 'flex items-center gap-1 mt-0.5' }, [
+            h('span', { class: 'text-[11px] text-muted-foreground' },
+              isMulti ? `Multi-unit · ${listing.units?.length ?? 0} units` : 'Single unit'),
+          ]),
+          isExpanded && isMulti && h('div', { class: 'mt-1.5 space-y-0.5 pl-1' },
+            (listing.units ?? []).map(unit =>
+              h('div', { key: unit.id, class: 'flex items-center gap-1.5 text-xs text-muted-foreground' }, [
+                h(Icon, { name: 'lucide:door-open', class: 'size-3 shrink-0' }),
+                h('span', unit.name),
+                h('span', { class: 'text-muted-foreground/60' }, `· ${unit.capacity} guest${unit.capacity !== 1 ? 's' : ''}`),
+              ]),
+            ),
+          ),
+        ]),
+      ])
+    },
   },
   {
     accessorKey: 'location',

@@ -8,7 +8,6 @@ import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingReviewsTab from '~/components/listings/ListingReviewsTab.vue'
 import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingSettingsTab from '~/components/listings/ListingSettingsTab.vue'
-import ListingFloatingMenu from '~/components/listings/ListingFloatingMenu.vue'
 import ListingSetupOverlay from '~/components/listings/ListingSetupOverlay.vue'
 import ListingTestAIDialog from '~/components/listings/ListingTestAIDialog.vue'
 
@@ -52,7 +51,14 @@ function handleOpenSchedule() {
   </div>
 
   <div v-else class="flex flex-col gap-6">
-    <ListingHeroCompact :listing="listing" :open-schedule="openSchedule" @update="updateListing" />
+    <ListingHeroCompact
+      :listing="listing"
+      :open-schedule="openSchedule"
+      @update="updateListing"
+      @open-setup="showSetup = true"
+      @open-test-ai="showTestAi = true"
+      @open-schedule="handleOpenSchedule"
+    />
 
     <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
       <div class="overflow-x-auto">
@@ -108,12 +114,6 @@ function handleOpenSchedule() {
         <ListingSettingsTab :listing="listing" @update="updateListing" />
       </TabsContent>
     </Tabs>
-
-    <ListingFloatingMenu
-      @open-setup="showSetup = true"
-      @open-test-ai="showTestAi = true"
-      @open-schedule="handleOpenSchedule"
-    />
 
     <ListingSetupOverlay
       v-if="showSetup"
