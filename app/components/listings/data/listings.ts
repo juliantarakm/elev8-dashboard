@@ -119,6 +119,9 @@ export interface Unit {
   id: string
   name: string
   capacity: number
+  status?: 'active' | 'inactive'
+  aiStatus?: 'active' | 'paused' | 'not_set'
+  otaConnected?: string[]
 }
 
 export interface Listing {
@@ -134,6 +137,7 @@ export interface Listing {
   activeUnitId?: string
   capacity: number
   aiStatus: 'active' | 'paused' | 'not_set'
+  status?: 'active' | 'inactive'
   unitType: 'single' | 'multi'
   photos: string[]
   aiSchedule: AiSchedule

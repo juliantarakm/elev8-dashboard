@@ -16,6 +16,8 @@ import { listings, allTags, aiStatusOptions, aiStatusLabels } from '~/components
 import { Badge } from '~/components/ui/badge'
 import { Icon } from '#components'
 import ListingRowActions from '~/components/listings/ListingRowActions.vue'
+import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
+import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
 
 const router = useRouter()
 
@@ -53,6 +55,10 @@ function otaIcon(ota: string) {
 
 const expandedRows = ref<Set<string>>(new Set())
 
+const listingsKey = computed(() =>
+  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${(l.units ?? []).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|')
+)
+
 function toggleExpand(id: string) {
   const next = new Set(expandedRows.value)
   next.has(id) ? next.delete(id) : next.add(id)
@@ -61,6 +67,15 @@ function toggleExpand(id: string) {
 
 const columns: ColumnDef<Listing, any>[] = [
   {
+    id: 'status',
+    header: '',
+    enableHiding: false,
+    size: 48,
+    cell: ({ row }) => h('div', { class: 'flex justify-center' }, [
+      h(ListingSingleToggle, { listingId: row.original.id, onClick: (e: Event) => e.stopPropagation() }),
+    ]),
+  },
+  {
     accessorKey: 'name',
     header: 'Listing Name',
     enableHiding: false,
@@ -68,6 +83,10 @@ const columns: ColumnDef<Listing, any>[] = [
       const listing = row.original
       const isMulti = listing.unitType === 'multi'
       const isExpanded = expandedRows.value.has(listing.id)
+      const live = listings.value.find(l => l.id === listing.id)
+      const isInactive = live?.unitType === 'multi'
+        ? (live.units ?? []).every(u => u.status === 'inactive')
+        : live?.status === 'inactive'
 
       return h('div', { class: 'flex items-start gap-1.5 min-w-0' }, [
         isMulti && h('button', {
@@ -77,24 +96,19 @@ const columns: ColumnDef<Listing, any>[] = [
         }, h(Icon, { name: isExpanded ? 'lucide:chevron-down' : 'lucide:chevron-right', class: 'size-4' })),
         !isMulti && h('span', { class: 'w-4 shrink-0' }),
         h('div', { class: 'min-w-0' }, [
-          h('a', {
-            href: listingUrl(listing.id),
-            class: 'font-medium hover:underline hover:text-primary transition-colors line-clamp-2',
-            onClick: (e: Event) => { e.preventDefault(); router.push(`/listings/${listing.id}`) },
-          }, listing.name),
+          h('div', { class: 'flex items-center gap-1.5' }, [
+            h('a', {
+              href: listingUrl(listing.id),
+              class: `font-medium hover:underline hover:text-primary transition-colors line-clamp-2${isInactive ? ' opacity-40' : ''}`,
+              onClick: (e: Event) => { e.preventDefault(); router.push(`/listings/${listing.id}`) },
+            }, listing.name),
+            isInactive && h(Badge, { variant: 'outline', class: 'text-[10px] px-1.5 py-0 text-muted-foreground shrink-0' }, () => 'Inactive'),
+          ]),
           h('div', { class: 'flex items-center gap-1 mt-0.5' }, [
             h('span', { class: 'text-[11px] text-muted-foreground' },
               isMulti ? `Multi-unit · ${listing.units?.length ?? 0} units` : 'Single unit'),
           ]),
-          isExpanded && isMulti && h('div', { class: 'mt-1.5 space-y-0.5 pl-1' },
-            (listing.units ?? []).map(unit =>
-              h('div', { key: unit.id, class: 'flex items-center gap-1.5 text-xs text-muted-foreground' }, [
-                h(Icon, { name: 'lucide:door-open', class: 'size-3 shrink-0' }),
-                h('span', unit.name),
-                h('span', { class: 'text-muted-foreground/60' }, `· ${unit.capacity} guest${unit.capacity !== 1 ? 's' : ''}`),
-              ]),
-            ),
-          ),
+          isExpanded && isMulti && h(ListingExpandRow, { listingId: listing.id }),
         ]),
       ])
     },
@@ -128,8 +142,10 @@ const columns: ColumnDef<Listing, any>[] = [
       return status === filterValue
     },
     cell: ({ row }) => {
-      const status = row.getValue('aiStatus') as string
-      return h('div', { class: 'flex items-center gap-1.5' }, [
+      const live = listings.value.find(l => l.id === row.original.id)
+      const status = live?.aiStatus ?? row.getValue('aiStatus') as string
+      const inactive = live?.status === 'inactive'
+      return h('div', { class: `flex items-center gap-1.5 ${inactive ? 'opacity-40' : ''}` }, [
         h(Icon, { name: aiStatusIcon[status] || 'lucide:bot', class: `size-4 ${aiStatusColor[status] || ''}` }),
         h('span', { class: 'text-sm' }, aiStatusLabels[status] || status),
       ])
@@ -139,8 +155,10 @@ const columns: ColumnDef<Listing, any>[] = [
     accessorKey: 'otaConnected',
     header: 'OTA',
     cell: ({ row }) => {
-      const otas = row.getValue('otaConnected') as string[]
-      return h('div', { class: 'flex items-center gap-2' },
+      const live = listings.value.find(l => l.id === row.original.id)
+      const otas = live?.otaConnected ?? row.getValue('otaConnected') as string[]
+      const inactive = live?.status === 'inactive'
+      return h('div', { class: `flex items-center gap-2 ${inactive ? 'opacity-40' : ''}` },
         otas.map(ota => h(Icon, { name: otaIcon(ota), class: 'size-4', key: ota })),
       )
     },
@@ -351,11 +369,11 @@ watch(activeAiFilter, (val) => {
       </Button>
     </div>
 
-    <div class="border rounded-md">
+    <div class="border rounded-md" :key="listingsKey">
       <Table>
         <TableHeader>
           <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <TableHead v-for="header in headerGroup.headers" :key="header.id">
+            <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="header.column.id === 'status' ? 'w-12 pr-1' : ''">
               <template v-if="header.column.id === 'actions'">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
@@ -386,7 +404,7 @@ watch(activeAiFilter, (val) => {
         <TableBody>
           <template v-if="table.getRowModel().rows?.length">
             <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.id === 'status' ? 'w-12 pr-1' : ''">
                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </TableCell>
             </TableRow>

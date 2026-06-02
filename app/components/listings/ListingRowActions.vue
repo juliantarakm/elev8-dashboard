@@ -1,27 +1,45 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
+import { listings } from '~/components/listings/data/listings'
+import { toast } from 'vue-sonner'
 
-const props = defineProps<{
-  listing: Listing
-}>()
-
+const props = defineProps<{ listing: Listing }>()
 const router = useRouter()
 
-const aiStatusLabel = computed(() => {
-  return props.listing.aiStatus === 'active' ? 'Pause AI' : 'Activate AI'
-})
+const isInactive = computed(() => props.listing.status === 'inactive')
 
-const aiStatusIcon = computed(() => {
-  return props.listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'
-})
+const aiStatusLabel = computed(() => props.listing.aiStatus === 'active' ? 'Pause AI' : 'Activate AI')
+const aiStatusIcon = computed(() => props.listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off')
 
 function viewDetail() {
   router.push(`/listings/${props.listing.id}`)
 }
 
-function toggleListing() {}
+function toggleListing() {
+  const idx = listings.value.findIndex(l => l.id === props.listing.id)
+  if (idx === -1) return
+  const newStatus = isInactive.value ? 'active' : 'inactive'
+  listings.value[idx] = { ...listings.value[idx], status: newStatus }
+  toast.success(`Listing ${newStatus === 'inactive' ? 'deactivated' : 'activated'}`)
+}
 
-function toggleAi() {}
+function toggleUnit(unitId: string) {
+  const idx = listings.value.findIndex(l => l.id === props.listing.id)
+  if (idx === -1) return
+  const units = (listings.value[idx]!.units ?? []).map(u =>
+    u.id === unitId ? { ...u, status: (u.status === 'inactive' ? 'active' : 'inactive') as 'active' | 'inactive' } : u
+  )
+  listings.value[idx] = { ...listings.value[idx]!, units }
+  const unit = units.find(u => u.id === unitId)
+  toast.success(`${unit?.name} ${unit?.status === 'inactive' ? 'deactivated' : 'activated'}`)
+}
+
+function toggleAi() {
+  const idx = listings.value.findIndex(l => l.id === props.listing.id)
+  if (idx === -1) return
+  const aiStatus = listings.value[idx]!.aiStatus === 'active' ? 'paused' : 'active'
+  listings.value[idx] = { ...listings.value[idx]!, aiStatus }
+}
 </script>
 
 <template>
@@ -32,16 +50,17 @@ function toggleAi() {}
         <span class="sr-only">Open menu</span>
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" class="w-44">
+    <DropdownMenuContent align="end" class="w-48">
       <DropdownMenuItem class="gap-2" @click="viewDetail">
         <Icon name="lucide:eye" class="size-4" />
         View Detail
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem class="gap-2" @click="toggleListing">
-        <Icon name="lucide:toggle-right" class="size-4" />
-        Deactivate Listing
+        <Icon :name="isInactive ? 'lucide:toggle-right' : 'lucide:toggle-left'" class="size-4" />
+        {{ isInactive ? 'Activate Listing' : 'Deactivate Listing' }}
       </DropdownMenuItem>
+      <DropdownMenuSeparator />
       <DropdownMenuItem class="gap-2" @click="toggleAi">
         <Icon :name="aiStatusIcon" class="size-4" />
         {{ aiStatusLabel }}

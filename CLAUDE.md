@@ -100,6 +100,22 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 
 #### Listings Index (`app/pages/listings/index.vue`)
 - TanStack Table with search, tag filter (AND logic), AI status filter
+- **Status toggle column** (leftmost) — `ListingSingleToggle` component per row; Switch reactive via `listings` store
+- **Unit type label** — "Single unit" / "Multi-unit · N units" (grey text) below listing name
+- **Expand row** (multi-unit only) — chevron expands `ListingExpandRow` with per-unit toggles
+- **Inactive dim** — name, AI Status, OTA columns all dim (`opacity-40`) when listing/all-units inactive
+- `listingsKey` computed forces table re-render on status/aiStatus changes
+
+#### Listing Status System
+- `Listing.status?: 'active' | 'inactive'` — listing-level status
+- `Unit.status?: 'active' | 'inactive'` — per-unit status
+- `Unit.aiStatus?: 'active' | 'paused' | 'not_set'` — per-unit AI override
+- `Unit.otaConnected?: string[]` — per-unit OTA override (falls back to listing OTA)
+- **Multi-unit logic**: property status derived from units — all inactive = property inactive
+- **Deactivate cascade**: turning off listing/unit also pauses AI
+- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; per-unit toggle with AI badge (click to toggle AI) + OTA icons + Switch
+- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic
+- **`ListingRowActions.vue`** — "Activate/Deactivate Listing" in dropdown; implemented with spread mutation
 
 ### Inbox Module (`app/components/inbox/`)
 
