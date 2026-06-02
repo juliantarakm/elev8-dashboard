@@ -144,8 +144,8 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 
 #### Settings → Integrations (`app/pages/settings/integrations.vue`)
 - Route added to `SettingsSidebarNav.vue` + `constants/menus.ts`
+- Shows only `SettingsWhatsAppIntegration` (routing rules removed)
 - **`SettingsWhatsAppIntegration.vue`** — connection card: disconnected (Connect WhatsApp + Meta signup sim) / connected (phone, business name, date, Disconnect + Test Send) + disconnect confirmation `Dialog`
-- **`SettingsWhatsAppRoutingRules.vue`** — Phase 4 routing rules list (drag handle, active toggle, condition + route-to text) + Add/Edit Rule `Dialog`. Shown only when connected.
 
 #### Composables
 - **`useWhatsApp.ts`** — `useState('whatsapp-connection')`; `connection`, `isConnected`, `connect()`, `disconnect()`. Defaults to connected. Shared with inbox.
@@ -164,6 +164,21 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 
 #### Inbox SSR note
 - `app/pages/inbox.vue` wraps `<InboxLayout>` in `<ClientOnly>` to avoid Reka UI `ScrollArea` hydration mismatches. `useInbox` merges fresh seed conversations/messages into `useState` so newly added seed data always appears.
+
+### Inbox Settings (gear icon in inbox header)
+
+A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`. Clicking it opens a **Popover** with two options:
+
+- **Integrations** → opens a Sheet with `SettingsWhatsAppIntegration`
+- **AI Conversation Settings** → opens `InboxAiSettings` Sheet
+
+#### `InboxAiSettings.vue` (`app/components/inbox/AiSettings.vue`)
+- `Sheet` (640px wide) with two-column layout: config sidebar (left, 192px) + form (right, scrollable)
+- Multi-config support: **default** config (applies to all unlisted properties) + custom configs per listing
+- Custom configs have a listing picker (checkboxes from `allProperties`) to select which listings they apply to
+- Config form fields: Defer Behavior (5 options), Direct Contact, Use Signature + textarea, Conversation Closing, AI Transparency, Language (guest/always), Stop on Negative Sentiment, Message Delay (min/max), Customize Tone
+- `defineModel<boolean>('open')` — controlled by parent
+- `inboxView` state was added to `useInbox` but is unused (kept for future use)
 
 ### Notification Center Module (`app/components/notifications/`)
 

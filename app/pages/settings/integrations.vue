@@ -1,7 +1,3 @@
-<script setup lang="ts">
-const { isConnected } = useWhatsApp()
-</script>
-
 <template>
   <SettingsLayout>
     <div class="space-y-6">
@@ -14,7 +10,6 @@ const { isConnected } = useWhatsApp()
         </p>
       </div>
       <SettingsWhatsAppIntegration />
-      <SettingsWhatsAppRoutingRules v-if="isConnected" />
     </div>
   </SettingsLayout>
 </template>

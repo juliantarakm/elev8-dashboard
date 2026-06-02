@@ -53,6 +53,7 @@ export function useInbox() {
     { deep: true },
   )
 
+  const inboxView = useState<'conversations' | 'integrations'>('inbox-view', () => 'conversations')
   const showActionNeeded = useState<boolean>('inbox-show-action-needed', () => true)
   const assignedToMeFilter = useState<boolean>('inbox-assigned-to-me-filter', () => false)
   const unreadFilter = useState<boolean>('inbox-unread-filter', () => false)
@@ -634,6 +635,7 @@ export function useInbox() {
 
   return {
     selectedConversationId,
+    inboxView,
     showActionNeeded,
     assignedToMeFilter,
     unreadFilter,

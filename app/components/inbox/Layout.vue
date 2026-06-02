@@ -78,6 +78,16 @@ const isMobile = useMediaQuery('(max-width: 768px)')
 watch(() => isMobile.value, () => {
   isCollapsed.value = isMobile.value
 })
+
+const settingsPopoverOpen = ref(false)
+const integrationsOpen = ref(false)
+const aiSettingsOpen = ref(false)
+
+function openSheet(type: 'integrations' | 'ai') {
+  settingsPopoverOpen.value = false
+  if (type === 'integrations') integrationsOpen.value = true
+  else aiSettingsOpen.value = true
+}
 </script>
 
 <template>
@@ -103,9 +113,24 @@ watch(() => isMobile.value, () => {
             <Icon name="lucide:inbox" class="size-5 text-muted-foreground" />
           </template>
           <template v-else>
-            <h1 class="text-xl font-bold">
+            <h1 class="text-xl font-bold flex-1">
               Inbox
             </h1>
+            <Popover v-model:open="settingsPopoverOpen">
+              <PopoverTrigger as-child>
+                <Button variant="ghost" size="icon" class="size-8">
+                  <Icon name="lucide:settings-2" class="size-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent class="w-52 p-1.5 text-left" align="end" :side-offset="4">
+                <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('integrations')">
+                  <Icon name="lucide:plug" class="size-4 shrink-0 text-muted-foreground" /><span>Integrations</span>
+                </button>
+                <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('ai')">
+                  <Icon name="lucide:sparkles" class="size-4 shrink-0 text-muted-foreground" /><span>AI Conversation Settings</span>
+                </button>
+              </PopoverContent>
+            </Popover>
           </template>
         </div>
         <Separator />
@@ -122,7 +147,7 @@ watch(() => isMobile.value, () => {
       <ResizablePanel id="inbox-thread-panel" :default-size="defaultLayout[2]" :min-size="30" class="flex flex-col overflow-hidden">
         <InboxThread />
       </ResizablePanel>
-<ResizableHandle id="inbox-handle-3" with-handle />
+      <ResizableHandle id="inbox-handle-3" with-handle />
       <ResizablePanel
         v-if="!rightPanelCollapsed"
         id="inbox-reservation-panel"
@@ -146,5 +171,21 @@ watch(() => isMobile.value, () => {
         </template>
       </ResizablePanel>
     </ResizablePanelGroup>
+
+    <!-- Integrations Sheet -->
+    <Sheet v-model:open="integrationsOpen">
+      <SheetContent class="w-[480px] sm:max-w-[480px] flex flex-col p-0 gap-0">
+        <SheetHeader class="px-6 pt-5 pb-4 border-b shrink-0">
+          <SheetTitle>Integrations</SheetTitle>
+          <SheetDescription>Connect external channels to send and receive guest messages.</SheetDescription>
+        </SheetHeader>
+        <div class="flex-1 overflow-y-auto p-6">
+          <SettingsWhatsAppIntegration />
+        </div>
+      </SheetContent>
+    </Sheet>
+
+    <!-- AI Conversation Settings Sheet -->
+    <InboxAiSettings v-model:open="aiSettingsOpen" />
   </TooltipProvider>
 </template>
