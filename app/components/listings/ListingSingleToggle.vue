@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { listings } from '~/components/listings/data/listings'
+import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listingId: string }>()
 
@@ -19,9 +20,11 @@ function toggle() {
       aiStatus: newUnitStatus === 'inactive' ? 'paused' : ('active' as 'active' | 'paused'),
     }))
     listings.value[idx] = { ...listings.value[idx]!, status: newUnitStatus, aiStatus: newUnitStatus === 'inactive' ? 'paused' : 'active', units }
+    toast[newUnitStatus === 'inactive' ? 'info' : 'success'](`Listing ${newUnitStatus === 'inactive' ? 'deactivated' : 'activated'}`)
   }
   else {
     listings.value[idx] = { ...listings.value[idx]!, status: newStatus, aiStatus: newStatus === 'inactive' ? 'paused' : 'active' }
+    toast[newStatus === 'inactive' ? 'info' : 'success'](`Listing ${newStatus === 'inactive' ? 'deactivated' : 'activated'}`)
   }
 }
 </script>
