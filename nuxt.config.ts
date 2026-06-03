@@ -43,6 +43,12 @@ export default defineNuxtConfig({
     preference: 'light',
   },
 
+  icon: {
+    serverBundle: {
+      collections: ['lucide', 'logos', 'simple-icons'],
+    },
+  },
+
   eslint: {
     config: {
       standalone: false

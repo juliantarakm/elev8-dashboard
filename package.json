@@ -68,6 +68,8 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.19.0",
+    "@iconify-json/logos": "^1.2.11",
+    "@iconify-json/simple-icons": "^1.2.85",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/fonts": "0.11.4",
     "@nuxt/icon": "^1.15.0",
