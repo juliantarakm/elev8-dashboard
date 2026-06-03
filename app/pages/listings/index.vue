@@ -363,8 +363,9 @@ watch(activeAiFilter, (val) => {
       </Button>
     </div>
 
-    <div class="border rounded-md" :key="listingsKey">
-      <Table>
+    <ClientOnly>
+      <div class="border rounded-md" :key="listingsKey">
+        <Table>
         <TableHeader>
           <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
             <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="header.column.id === 'status' ? 'w-12 pr-1' : ''">
@@ -412,7 +413,13 @@ watch(activeAiFilter, (val) => {
           </TableRow>
         </TableBody>
       </Table>
-    </div>
+      </div>
+      <template #fallback>
+        <div class="border rounded-md h-96 flex items-center justify-center text-sm text-muted-foreground">
+          Loading listings…
+        </div>
+      </template>
+    </ClientOnly>
 
     <div class="flex items-center justify-between px-2">
       <div class="flex-1 text-sm text-muted-foreground">
