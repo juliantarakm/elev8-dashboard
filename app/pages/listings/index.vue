@@ -19,6 +19,7 @@ import ListingRowActions from '~/components/listings/ListingRowActions.vue'
 import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
 import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
 import ListingAiStatusCell from '~/components/listings/ListingAiStatusCell.vue'
+import ListingOtaCell from '~/components/listings/ListingOtaCell.vue'
 
 const router = useRouter()
 
@@ -398,7 +399,8 @@ watch(activeAiFilter, (val) => {
           <template v-if="table.getRowModel().rows?.length">
             <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
               <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.id === 'status' ? 'w-12 pr-1' : ''">
-                <ListingAiStatusCell v-if="cell.column.id === 'aiStatus'" :listing-id="row.original.id" />
+                <ListingAiStatusCell v-if="cell.column.id === 'aiStatus'" :key="`ai-${row.original.id}`" :listing-id="row.original.id" />
+                <ListingOtaCell v-else-if="cell.column.id === 'otaConnected'" :key="`ota-${row.original.id}`" :listing-id="row.original.id" />
                 <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </TableCell>
             </TableRow>
