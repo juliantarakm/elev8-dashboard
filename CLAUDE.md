@@ -105,6 +105,9 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **Expand row** (multi-unit only) — chevron expands `ListingExpandRow` with per-unit toggles
 - **Inactive dim** — name, AI Status, OTA columns all dim (`opacity-40`) when listing/all-units inactive
 - `listingsKey` computed forces table re-render on status/aiStatus changes
+- **`ListingAiStatusCell.vue` / `ListingOtaCell.vue`** — AI Status and OTA columns are dedicated reactive components rendered directly in the template (`v-if cell.column.id === ...` with explicit `ai-${id}`/`ota-${id}` keys), NOT via `h(Icon)` in TanStack column `cell` functions.
+- ⚠️ **Table wrapped in `<ClientOnly>`** (with a `#fallback` skeleton). **Required** — without it, SSR hydration mismatch causes adjacent icon-bearing columns (AI Status ↔ OTA) to reuse each other's DOM `<span>`/`<svg>` nodes, so the AI Status column shows an OTA logo until a `listingsKey` change (e.g. toggling a listing) forces a full table remount. Same pattern as `app/pages/inbox.vue`.
+- **Icon mode** — `nuxt.config.ts` sets `icon.mode: 'svg'` + `serverBundle.collections: ['lucide', 'logos', 'simple-icons']` (deps: `@iconify-json/logos`, `@iconify-json/simple-icons`). SVG mode avoids CSS-mode `<span class="iconify i-...">` DOM reuse across icons.
 
 #### Listing Status System
 - `Listing.status?: 'active' | 'inactive'` — listing-level status
@@ -963,6 +966,7 @@ app/
 - **Adoption report mismatch?** → Check `codebase-index.json` freshness; regenerate via script
 - **Component marked unused but you know it's used?** → Verify imports use full path (not stem collision)
 - **Reactivity issue?** → Check spread syntax in mutations; avoid direct property assignment
+- **Icon shows wrong glyph (e.g. AI Status column renders OTA logo) and only fixes after an interaction?** → SSR hydration mismatch in a TanStack table — adjacent icon columns reuse each other's DOM nodes. Wrap the table in `<ClientOnly>` (see `listings/index.vue`). Per-cell `key`s and svg mode alone don't fix hydration-level reuse.
 - **Style not applying?** → Check `cn()` merge order; ensure dark mode class is set
 - **shadcn component not working?** → Check `app.config.ts` for component registration; verify import path
 - **Build errors?** → Check `components.json` for shadcn-vue config; verify `lib/utils.ts` exports
