@@ -146,7 +146,7 @@ const columns: ColumnDef<Listing, any>[] = [
       const status = live?.aiStatus ?? row.getValue('aiStatus') as string
       const inactive = live?.status === 'inactive'
       return h('div', { class: `flex items-center gap-1.5 ${inactive ? 'opacity-40' : ''}` }, [
-        h(Icon, { name: aiStatusIcon[status] || 'lucide:bot', class: `size-4 ${aiStatusColor[status] || ''}` }),
+        h(Icon, { key: status, name: aiStatusIcon[status] || 'lucide:bot', class: `size-4 ${aiStatusColor[status] || ''}` }),
         h('span', { class: 'text-sm' }, aiStatusLabels[status] || status),
       ])
     },
