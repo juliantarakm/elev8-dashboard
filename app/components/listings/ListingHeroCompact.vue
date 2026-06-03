@@ -469,7 +469,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
       <!-- Listing info -->
       <div class="flex flex-col gap-4 flex-1 min-w-0 justify-between">
-      <div class="flex flex-col gap-2 min-w-0">
+      <div class="flex flex-col gap-2 w-full min-w-0">
         <!-- Editable name -->
         <div v-if="editingName" class="flex flex-col gap-2">
           <input
