@@ -18,6 +18,7 @@ import { Icon } from '#components'
 import ListingRowActions from '~/components/listings/ListingRowActions.vue'
 import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
 import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
+import ListingAiStatusCell from '~/components/listings/ListingAiStatusCell.vue'
 
 const router = useRouter()
 
@@ -141,15 +142,7 @@ const columns: ColumnDef<Listing, any>[] = [
       if (!filterValue) return true
       return status === filterValue
     },
-    cell: ({ row }) => {
-      const live = listings.value.find(l => l.id === row.original.id)
-      const status = live?.aiStatus ?? row.getValue('aiStatus') as string
-      const inactive = live?.status === 'inactive'
-      return h('div', { class: `flex items-center gap-1.5 ${inactive ? 'opacity-40' : ''}` }, [
-        h(Icon, { key: status, name: aiStatusIcon[status] || 'lucide:bot', class: `size-4 ${aiStatusColor[status] || ''}` }),
-        h('span', { class: 'text-sm' }, aiStatusLabels[status] || status),
-      ])
-    },
+    cell: ({ row }) => h(ListingAiStatusCell, { listingId: row.original.id }),
   },
   {
     accessorKey: 'otaConnected',
