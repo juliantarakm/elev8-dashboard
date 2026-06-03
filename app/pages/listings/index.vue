@@ -142,7 +142,7 @@ const columns: ColumnDef<Listing, any>[] = [
       if (!filterValue) return true
       return status === filterValue
     },
-    cell: ({ row }) => h(ListingAiStatusCell, { listingId: row.original.id }),
+    cell: ({ row }) => h(ListingAiStatusCell, { key: row.original.id, listingId: row.original.id }),
   },
   {
     accessorKey: 'otaConnected',
@@ -398,7 +398,8 @@ watch(activeAiFilter, (val) => {
           <template v-if="table.getRowModel().rows?.length">
             <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
               <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.id === 'status' ? 'w-12 pr-1' : ''">
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                <ListingAiStatusCell v-if="cell.column.id === 'aiStatus'" :listing-id="row.original.id" />
+                <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </TableCell>
             </TableRow>
           </template>
