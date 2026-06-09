@@ -19,10 +19,14 @@ export type AlertType =
   | 'DYNAMIC_TEMPLATE_FAILED'
   | 'WARRANTY_EXPIRING_SOON'
   | 'WARRANTY_EXPIRED'
-  // Upsell alert types (managed via useUpsellNotifications, surfaced here for display)
-  // 'UPSELL_ORDER_REQUESTED' | 'UPSELL_ORDER_CONFIRMED' | 'UPSELL_ORDER_CANCELLED'
+  | 'UPSELL_ORDER_REQUESTED'
+  | 'UPSELL_ORDER_APPROVED'
+  | 'UPSELL_ORDER_DECLINED'
+  | 'UPSELL_PAYMENT_RECEIVED'
+  | 'UPSELL_FULFILLMENT_STARTED'
+  | 'UPSELL_FULFILLMENT_COMPLETED'
 
-export type AlertSeverity = 'CRITICAL' | 'WARNING'
+export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
 export interface Alert {
   alert_id: string
@@ -59,6 +63,12 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   DYNAMIC_TEMPLATE_FAILED: 'Automated Message — Failed to Send',
   WARRANTY_EXPIRING_SOON: 'Inventory — Warranty Expiring Soon',
   WARRANTY_EXPIRED: 'Inventory — Warranty Expired',
+  UPSELL_ORDER_REQUESTED: 'Upsell Order Requested',
+  UPSELL_ORDER_APPROVED: 'Upsell Order Approved',
+  UPSELL_ORDER_DECLINED: 'Upsell Order Declined',
+  UPSELL_PAYMENT_RECEIVED: 'Upsell Payment Received',
+  UPSELL_FULFILLMENT_STARTED: 'Upsell Fulfillment Started',
+  UPSELL_FULFILLMENT_COMPLETED: 'Upsell Fulfillment Completed',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -82,6 +92,12 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   DYNAMIC_TEMPLATE_FAILED: '/',
   WARRANTY_EXPIRING_SOON: '/inventory',
   WARRANTY_EXPIRED: '/inventory',
+  UPSELL_ORDER_REQUESTED: '/upsells?tab=orders',
+  UPSELL_ORDER_APPROVED: '/upsells?tab=orders',
+  UPSELL_ORDER_DECLINED: '/upsells?tab=orders',
+  UPSELL_PAYMENT_RECEIVED: '/upsells?tab=orders',
+  UPSELL_FULFILLMENT_STARTED: '/upsells?tab=orders',
+  UPSELL_FULFILLMENT_COMPLETED: '/upsells?tab=orders',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -122,6 +138,18 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
       return `${context.itemName} warranty expires on ${context.expiryDate}.`
     case 'WARRANTY_EXPIRED':
       return `${context.itemName} warranty expired on ${context.expiryDate}.`
+    case 'UPSELL_ORDER_REQUESTED':
+      return `${context.guestName || 'Guest'} requested ${context.serviceName || 'an upsell'}.`
+    case 'UPSELL_ORDER_APPROVED':
+      return `${context.serviceName || 'Upsell'} approved and payment link sent.`
+    case 'UPSELL_ORDER_DECLINED':
+      return `${context.serviceName || 'Upsell'} declined.`
+    case 'UPSELL_PAYMENT_RECEIVED':
+      return `${context.serviceName || 'Upsell'} payment received.`
+    case 'UPSELL_FULFILLMENT_STARTED':
+      return `${context.serviceName || 'Upsell'} moved to fulfillment.`
+    case 'UPSELL_FULFILLMENT_COMPLETED':
+      return `${context.serviceName || 'Upsell'} completed.`
     default:
       return ''
   }

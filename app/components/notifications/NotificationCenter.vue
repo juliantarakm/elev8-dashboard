@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { Alert } from '~/components/notifications/data/alerts'
-import type { SeverityFilter } from '~/composables/useNotifications'
+import type { NotificationKindFilter, SeverityFilter } from '~/composables/useNotifications'
+import { toast } from 'vue-sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { toast } from 'vue-sonner'
 import NotificationItem from './NotificationItem.vue'
 
 const popoverOpen = ref(false)
@@ -14,17 +14,29 @@ const popoverOpen = ref(false)
 const {
   unreadCount,
   selectedSeverity,
+  selectedKind,
   filteredAlerts,
   markAllAsRead,
   dismiss,
   navigateToAlert,
 } = useNotifications()
 
-const tabs: { label: string; value: SeverityFilter }[] = [
+const tabs: { label: string, value: SeverityFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'Critical', value: 'critical' },
   { label: 'Warning', value: 'warning' },
+  { label: 'Info', value: 'info' },
 ]
+
+const kindTabs: { label: string, value: NotificationKindFilter }[] = [
+  { label: 'All Types', value: 'all' },
+  { label: 'System', value: 'system' },
+  { label: 'Upsell', value: 'upsell' },
+]
+
+function alertKind(alert: Alert) {
+  return alert.type.startsWith('UPSELL_') ? 'Upsell' : 'System'
+}
 
 function handleNavigate(alert: Alert) {
   navigateToAlert(alert)
@@ -34,6 +46,11 @@ function handleNavigate(alert: Alert) {
 function handleMarkAllRead() {
   markAllAsRead()
   toast.success('All notifications marked as read')
+}
+
+function resetFilters() {
+  selectedSeverity.value = 'all'
+  selectedKind.value = 'all'
 }
 
 function handleDismiss(alertId: string) {
@@ -56,20 +73,41 @@ function handleDismiss(alertId: string) {
         </Badge>
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-[380px] p-0 overflow-hidden" align="end" :side-offset="8">
+    <PopoverContent class="flex h-[min(32rem,calc(100vh-6rem))] w-[380px] min-h-0 flex-col overflow-hidden p-0" align="end" :side-offset="8">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3">
-        <h3 class="text-sm font-semibold">Notifications</h3>
-        <button
-          v-if="unreadCount > 0"
-          class="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          @click="handleMarkAllRead"
-        >
-          Mark All Read
-        </button>
+        <h3 class="text-sm font-semibold">
+          Notifications
+        </h3>
+        <div class="flex items-center gap-2">
+          <button
+            class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            @click="resetFilters"
+          >
+            Reset Filters
+          </button>
+          <button v-if="unreadCount > 0" class="text-xs text-muted-foreground hover:text-foreground transition-colors" @click="handleMarkAllRead">
+            Mark All Read
+          </button>
+        </div>
       </div>
 
       <Separator />
+
+      <!-- Kind Tabs -->
+      <div class="flex gap-1 px-4 py-2">
+        <button
+          v-for="tab in kindTabs"
+          :key="tab.value"
+          class="px-3 py-1 text-xs font-medium rounded-full transition-colors"
+          :class="selectedKind === tab.value
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted/60 text-muted-foreground hover:text-foreground'"
+          @click="selectedKind = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
 
       <!-- Filter Tabs -->
       <div class="flex gap-1 px-4 py-2">
@@ -79,7 +117,7 @@ function handleDismiss(alertId: string) {
           class="px-3 py-1 text-xs font-medium rounded-full transition-colors"
           :class="selectedSeverity === tab.value
             ? 'bg-muted text-foreground'
-            : 'text-muted-foreground hover:text-foreground'"
+            : 'bg-muted/30 text-muted-foreground hover:text-foreground'"
           @click="selectedSeverity = tab.value"
         >
           {{ tab.label }}
@@ -89,23 +127,25 @@ function handleDismiss(alertId: string) {
       <Separator />
 
       <!-- Notification List / Empty State -->
-      <ScrollArea class="max-h-[400px]">
+      <ScrollArea class="min-h-0 flex-1 overflow-hidden">
         <div
           v-if="filteredAlerts.length === 0"
           class="flex flex-col items-center justify-center py-12 text-muted-foreground"
         >
           <Icon name="i-lucide-bell-off" class="size-8 mb-2" />
-          <p class="text-sm">No notifications</p>
+          <p class="text-sm">
+            No notifications
+          </p>
         </div>
         <NotificationItem
           v-for="alert in filteredAlerts"
           :key="alert.alert_id"
           :alert="alert"
+          :kind="alertKind(alert)"
           @click="handleNavigate(alert)"
           @dismiss="handleDismiss"
         />
       </ScrollArea>
-
     </PopoverContent>
   </Popover>
 </template>

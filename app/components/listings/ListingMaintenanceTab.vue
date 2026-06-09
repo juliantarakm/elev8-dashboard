@@ -2,11 +2,16 @@
 import type { Listing, MaintenanceTask } from '~/components/listings/data/listings'
 
 import type { Unit } from '~/components/listings/data/listings'
+import CleaningJobForm from '~/components/cleaning/CleaningJobForm.vue'
+import { useCleaningJobs } from '~/composables/useCleaningJobs'
+
 const props = defineProps<{ listing: Listing; activeUnit?: Unit | null }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 
 const showAddDialog = ref(false)
+const showCleaningDialog = ref(false)
 const newTask = ref({ title: '', assignedTo: '', type: 'cleaning' as MaintenanceTask['type'] })
+const { createJob, jobsForListing, resolveCleanerName } = useCleaningJobs()
 
 const statusColors: Record<string, string> = {
   pending: 'secondary',
@@ -23,6 +28,7 @@ const frequencyLabels: Record<string, string> = {
 
 const pendingTasks = computed(() => props.listing.maintenance.tasks.filter(t => t.status !== 'completed'))
 const completedTasks = computed(() => props.listing.maintenance.tasks.filter(t => t.status === 'completed'))
+const cleaningJobs = computed(() => jobsForListing(props.listing.id))
 
 function addTask() {
   if (!newTask.value.title.trim()) return
@@ -45,6 +51,16 @@ function addTask() {
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
+  createJob({
+    ...jobInput,
+    listingId: props.listing.id,
+    listingName: props.listing.name,
+    cleanerName: jobInput.cleanerId ? resolveCleanerName(jobInput.cleanerId) : null,
+  })
+  showCleaningDialog.value = false
+}
 </script>
 
 <template>
@@ -66,6 +82,52 @@ function formatDate(dateStr: string) {
         </TableBody>
       </Table>
       <p v-else class="text-sm text-muted-foreground">No cleaning schedule configured.</p>
+    </Card>
+
+    <Card class="p-5">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-semibold">Cleaning Jobs</h3>
+          <p class="text-xs text-muted-foreground">All cleaning work for this listing.</p>
+        </div>
+        <Dialog v-model:open="showCleaningDialog">
+          <DialogTrigger as-child>
+            <Button size="sm" variant="outline" class="h-7 gap-1 text-xs">
+              <Icon name="lucide:plus" class="size-3" />
+              New Cleaning
+            </Button>
+          </DialogTrigger>
+          <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>New Cleaning Job</DialogTitle>
+              <DialogDescription>Create or update a cleaning assignment for this listing.</DialogDescription>
+            </DialogHeader>
+            <CleaningJobForm
+              :default-listing-id="listing.id"
+              :default-listing-name="listing.name"
+              @cancel="showCleaningDialog = false"
+              @save="handleSaveCleaningJob"
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div v-if="cleaningJobs.length > 0" class="flex flex-col gap-3">
+        <div v-for="job in cleaningJobs" :key="job.id" class="rounded-lg border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <p class="text-sm font-medium">{{ job.scheduledAt.slice(0, 10) }}</p>
+              <p class="text-xs text-muted-foreground">{{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Unassigned' }}</p>
+              <p class="text-xs text-muted-foreground">{{ job.notes }}</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <Badge variant="secondary" class="text-xs">{{ job.status.replace('_', ' ') }}</Badge>
+              <Badge variant="outline" class="text-xs">{{ job.priority }}</Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p v-else class="py-4 text-center text-sm text-muted-foreground">No cleaning jobs yet.</p>
     </Card>
 
     <Card class="p-5">

@@ -121,9 +121,9 @@ function handleCreate() {
   linkOrderToConversation(props.conversation.id, newOrder.id)
 
   if (!isAlways) {
-    createNotification(newOrder, 'order_requested')
+    createNotification(newOrder, 'UPSELL_ORDER_REQUESTED')
   } else {
-    createNotification(newOrder, 'order_confirmed')
+    createNotification(newOrder, 'UPSELL_ORDER_APPROVED')
   }
 
   const upsellOffer = {

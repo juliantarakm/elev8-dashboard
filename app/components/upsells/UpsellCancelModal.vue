@@ -34,7 +34,7 @@ function handleCancel() {
   }
 
   declineOrder(props.order.id, cancelReason.value.trim(), cancelledBy.value)
-  createNotification(props.order, 'order_cancelled')
+  createNotification(props.order, 'UPSELL_ORDER_DECLINED')
   toast.success('Request declined.')
 
   onOpenChange(false)

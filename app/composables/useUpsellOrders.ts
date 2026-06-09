@@ -184,9 +184,6 @@ export function useUpsellOrders() {
       case 'requested':
         reopenDeclinedOrder(id)
         break
-      case 'approved':
-        approveOrder(id)
-        break
       case 'awaiting_payment':
         markPaymentAwaiting(id)
         break

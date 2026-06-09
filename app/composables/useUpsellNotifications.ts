@@ -1,58 +1,41 @@
+import type { Alert } from '~/components/notifications/data/alerts'
 import { computed } from 'vue'
-import type { UpsellStaffNotification, UpsellNotificationType } from '@/components/upsells/data/upsell-notifications'
-import { mockUpsellNotifications, ORDER_NOTIFICATION_TEMPLATES } from '@/components/upsells/data/upsell-notifications'
-import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
 
 export function useUpsellNotifications() {
-  const notifications = useState<UpsellStaffNotification[]>('upsell-notifications', () =>
-    mockUpsellNotifications.map(n => ({ ...n })),
-  )
+  const { alerts, createUpsellAlert, markAsRead, markAllAsRead, unreadCount } = useNotifications()
 
-  const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+  const upsellAlerts = computed(() =>
+    alerts.value.filter(a => a.type.startsWith('UPSELL_')),
+  )
 
   const unreadNotifications = computed(() =>
-    notifications.value.filter(n => !n.read).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    upsellAlerts.value.filter(a => a.status === 'ACTIVE'),
   )
 
-  const allNotifications = computed(() =>
-    [...notifications.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-  )
+  const allNotifications = computed(() => [...upsellAlerts.value].sort((a, b) => new Date(b.triggered_at).getTime() - new Date(a.triggered_at).getTime()))
 
-  function markAsRead(id: string) {
-    notifications.value = notifications.value.map(n =>
-      n.id === id ? { ...n, read: true } : n,
-    )
-  }
-
-  function markAllAsRead() {
-    notifications.value = notifications.value.map(n => ({ ...n, read: true }))
-  }
-
-  function createNotification(order: UpsellOrder, type: UpsellNotificationType, recipientStaffId: string = 'staff-2') {
-    const template = ORDER_NOTIFICATION_TEMPLATES[type]
-    const id = `notif-${String(notifications.value.length + 1).padStart(3, '0')}`
-    const now = new Date().toISOString()
-
-    const notif: UpsellStaffNotification = {
-      id,
-      type,
-      severity: template.severity,
-      title: template.title,
-      message: template.message(order.id, order.guestName, order.serviceName, order.serviceDate),
+  function createNotification(
+    order: {
+      id: string
+      guestName: string
+      serviceName: string
+      serviceDate: string
+      listing?: string
+    },
+    type: Extract<Alert['type'], `UPSELL_${string}`>,
+  ) {
+    createUpsellAlert(type, {
       orderId: order.id,
-      recipientStaffId,
-      read: false,
-      createdAt: now,
-      actionUrl: `/upsells?tab=orders&order=${order.id}`,
-      category: 'upsell',
-      autoResolve: true,
-    }
-
-    notifications.value = [notif, ...notifications.value]
+      guestName: order.guestName,
+      serviceName: order.serviceName,
+      serviceDate: order.serviceDate,
+      listing_id: order.listing ?? null,
+      listing_name: order.listing ?? undefined,
+    })
   }
 
   return {
-    notifications,
+    notifications: upsellAlerts,
     unreadCount,
     unreadNotifications,
     allNotifications,

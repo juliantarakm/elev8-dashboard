@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { Alert } from '~/components/notifications/data/alerts'
-import { alertDisplayLabels, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
 import { formatDistanceToNow } from 'date-fns'
+import { alertDisplayLabels, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
 
 const props = defineProps<{
   alert: Alert
+  kind?: string
 }>()
 
 const emit = defineEmits<{
@@ -14,16 +15,10 @@ const emit = defineEmits<{
 
 const severityClasses = computed(() => {
   return props.alert.severity === 'CRITICAL'
-    ? {
-        bg: 'bg-red-50/50 hover:bg-red-50',
-        border: 'border-l-4 border-red-500',
-        dot: 'text-red-500',
-      }
-    : {
-        bg: 'bg-amber-50/50 hover:bg-amber-50',
-        border: 'border-l-4 border-amber-500',
-        dot: 'text-amber-500',
-      }
+    ? { bg: 'bg-red-50/50 hover:bg-red-50', border: 'border-l-4 border-red-500', dot: 'text-red-500' }
+    : props.alert.severity === 'WARNING'
+      ? { bg: 'bg-amber-50/50 hover:bg-amber-50', border: 'border-l-4 border-amber-500', dot: 'text-amber-500' }
+      : { bg: 'bg-muted/30 hover:bg-muted/50', border: 'border-l-4 border-primary/40', dot: 'text-primary' }
 })
 
 function handleClick() {
@@ -61,11 +56,19 @@ function getTimeAgo(isoString: string): string {
   >
     <Icon
       name="i-lucide-circle"
-      :class="['mt-0.5 size-2.5 shrink-0 fill-current', severityClasses.dot]"
+      class="mt-0.5 size-2.5 shrink-0 fill-current"
+      :class="severityClasses.dot"
     />
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium truncate">
         {{ displayLabel }}
+      </p>
+      <p
+        v-if="kind"
+        class="inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+        :class="kind === 'Upsell' ? 'bg-cyan-50 text-cyan-700' : 'bg-muted text-muted-foreground'"
+      >
+        {{ kind }}
       </p>
       <p class="text-xs text-muted-foreground truncate mt-0.5">
         {{ description }}
