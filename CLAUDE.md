@@ -350,7 +350,7 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 
 #### Data + Types
 - **`upsell-services.ts`** — `UpsellItem` (with `description?`, `image?`), `UpsellService` (with `availability: 'always' | 'by_request'`, `pricingEnabled`, `taxPercent`, `servicePercent`), 10 mock services
-- **`upsell-orders.ts`** — `UpsellOrder` interface with `serviceDate`, `serviceEndDate?`, `source` ('direct' | 'inbox'), `conversationId?`, `cancellationReason?`, `cancellationBy?`, `invoice?`; `OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'`; 11 mock orders
+- **`upsell-orders.ts`** — `UpsellOrder` interface with `serviceDate`, `serviceEndDate?`, `source` ('manual' | 'inbox' | 'web'), `conversationId?`, `approvalStatus`, `paymentStatus`, `fulfillmentStatus`, `cancellationReason?`, `cancellationBy?`, `invoice?`; `OrderStatus` derived from lifecycle (`requested`, `awaiting_payment`, `paid_in_progress`, `completed`, `declined`); 11 mock orders
 - **`upsell-notifications.ts`** — 7 notification types (order_created, order_confirmed, order_completed, order_cancelled, refund_issued, reminder_24h, reminder_1h), notification template system, 10 mock notifications
 - **`cancellation-policies.ts`** — Per-service refund calculator (48h/24h/late windows); staff cancel = 100% refund always; guest cancel depends on timing
 
@@ -364,9 +364,9 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 - **`UpsellFilterBar.vue`** — Category pills + Status filter + Listing filter + Search input
 - **`UpsellDrawer.vue`** — 2-tab Sheet drawer (Details + Items); Details: name, description, image upload (FileReader→base64), YouTube links, listings, availability selector, tax/service section; Items: modal dialog for adding items, vuedraggable sort with grip handle
 - **`UpsellOrderTable.vue`** — Orders table with status filter pills, KPI cards
-- **`UpsellOrderDrawer.vue`** — Order detail with reactive computed lookup from `useUpsellOrders` state, cancel button, notification log section
+- **`UpsellOrderDrawer.vue`** — Order detail with reactive computed lookup from `useUpsellOrders` state, fulfillment section, approval/decline + payment actions, no notification log section
 - **`UpsellNotificationList.vue`** — Staff notification list with unread/all filter, severity icons
-- **`UpsellCancelModal.vue`** — Cancellation reason textarea + cancelled-by toggle (guest/staff)
+- **`UpsellCancelModal.vue`** — Decline reason textarea + handled-by toggle (guest/staff)
 
 #### Page (`app/pages/upsells.vue`)
 - 3 tabs: Catalog / Orders / Notifications with KPI cards

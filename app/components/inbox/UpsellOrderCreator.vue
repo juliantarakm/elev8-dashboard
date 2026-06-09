@@ -92,7 +92,9 @@ function handleCreate() {
     serviceAmount,
     grandTotal,
     currency: selectedService.value.currency,
-    status: isAlways ? 'confirmed' : 'pending',
+    approvalStatus: isAlways ? 'approved' : 'requested',
+    paymentStatus: isAlways ? 'awaiting_payment' : 'unpaid',
+    fulfillmentStatus: 'not_started',
     orderDate: new Date().toISOString().split('T')[0] as string,
     serviceDate: serviceDate.value,
     checkInDate: props.conversation.checkIn,
@@ -103,6 +105,9 @@ function handleCreate() {
     source: 'inbox',
     conversationId: props.conversation.id,
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: isAlways ? new Date().toISOString() : new Date().toISOString(),
+    approvedAt: isAlways ? new Date().toISOString() : undefined,
+    paymentLinkSentAt: isAlways ? new Date().toISOString() : undefined,
   }
 
   addOrder(orderData)

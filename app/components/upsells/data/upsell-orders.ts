@@ -1,4 +1,12 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
+export type OrderApprovalStatus = 'requested' | 'approved' | 'declined'
+export type OrderPaymentStatus = 'unpaid' | 'awaiting_payment' | 'paid'
+export type OrderFulfillmentStatus = 'not_started' | 'in_progress' | 'completed'
+export type OrderStatus =
+  | 'requested'
+  | 'awaiting_payment'
+  | 'paid_in_progress'
+  | 'completed'
+  | 'declined'
 
 export interface UpsellOrderItem {
   id: string
@@ -21,7 +29,9 @@ export interface UpsellOrder {
   serviceAmount: number
   grandTotal: number
   currency: string
-  status: OrderStatus
+  approvalStatus: OrderApprovalStatus
+  paymentStatus: OrderPaymentStatus
+  fulfillmentStatus: OrderFulfillmentStatus
   orderDate: string
   serviceDate: string
   serviceEndDate?: string
@@ -31,11 +41,20 @@ export interface UpsellOrder {
   channel: string
   notes: string
   invoice?: string
+  decisionReason?: string
   cancellationReason?: string
   cancellationBy?: 'guest' | 'staff'
+  paymentMethod?: 'link' | 'manual' | 'cash' | 'card'
   source: 'inbox' | 'manual' | 'web'
   conversationId?: string
   createdByStaffId: string
+  approvalRequestedAt?: string
+  approvedAt?: string
+  declinedAt?: string
+  paymentLinkSentAt?: string
+  paidAt?: string
+  fulfillmentStartedAt?: string
+  completedAt?: string
   guestNotifiedAt?: string
   staffNotifiedAt?: string
   staffAssigned?: string
@@ -43,18 +62,44 @@ export interface UpsellOrder {
   updatedAt: string
 }
 
+export interface OrderStatusMeta {
+  status: OrderStatus
+  label: string
+  color: string
+}
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
+  requested: 'Requested',
+  awaiting_payment: 'Awaiting Payment',
+  paid_in_progress: 'Paid - In Progress',
   completed: 'Completed',
-  cancelled: 'Cancelled',
+  declined: 'Declined',
 }
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: 'text-amber-700 bg-amber-50',
-  confirmed: 'text-emerald-700 bg-emerald-50',
+  requested: 'text-amber-700 bg-amber-50',
+  awaiting_payment: 'text-indigo-700 bg-indigo-50',
+  paid_in_progress: 'text-cyan-700 bg-cyan-50',
   completed: 'text-slate-700 bg-slate-100',
-  cancelled: 'text-destructive bg-destructive/10',
+  declined: 'text-destructive bg-destructive/10',
+}
+
+export function getOrderStatus(order: Pick<UpsellOrder, 'approvalStatus' | 'paymentStatus' | 'fulfillmentStatus'>): OrderStatus {
+  if (order.approvalStatus === 'declined') return 'declined'
+  if (order.fulfillmentStatus === 'completed') return 'completed'
+  if (order.fulfillmentStatus === 'in_progress') return 'paid_in_progress'
+  if (order.paymentStatus === 'awaiting_payment') return 'awaiting_payment'
+  if (order.paymentStatus === 'paid') return 'paid_in_progress'
+  return 'requested'
+}
+
+export function getOrderStatusMeta(order: Pick<UpsellOrder, 'approvalStatus' | 'paymentStatus' | 'fulfillmentStatus'>): OrderStatusMeta {
+  const status = getOrderStatus(order)
+  return {
+    status,
+    label: ORDER_STATUS_LABELS[status],
+    color: ORDER_STATUS_COLORS[status],
+  }
 }
 
 export const mockUpsellOrders: UpsellOrder[] = [
@@ -74,7 +119,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 25000,
     grandTotal: 580000,
     currency: 'IDR',
-    status: 'completed',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    fulfillmentStatus: 'completed',
     orderDate: '2026-05-01',
     serviceDate: '2026-05-02',
     checkInDate: '2026-05-02',
@@ -86,6 +133,12 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-04-28T10:00:00Z',
+    approvedAt: '2026-04-28T10:15:00Z',
+    paymentLinkSentAt: '2026-04-28T10:15:00Z',
+    paidAt: '2026-04-28T11:00:00Z',
+    fulfillmentStartedAt: '2026-05-02T13:30:00Z',
+    completedAt: '2026-05-02T15:00:00Z',
     createdAt: '2026-04-28T10:00:00Z',
     updatedAt: '2026-05-01T15:00:00Z',
   },
@@ -105,7 +158,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 75000,
     grandTotal: 1740000,
     currency: 'IDR',
-    status: 'confirmed',
+    approvalStatus: 'approved',
+    paymentStatus: 'awaiting_payment',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-01',
     serviceDate: '2026-05-03',
     checkInDate: '2026-05-02',
@@ -117,6 +172,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-04-29T08:00:00Z',
+    approvedAt: '2026-04-29T08:20:00Z',
+    paymentLinkSentAt: '2026-04-29T08:20:00Z',
     createdAt: '2026-04-29T08:00:00Z',
     updatedAt: '2026-05-01T12:00:00Z',
   },
@@ -136,7 +194,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 35000,
     grandTotal: 812000,
     currency: 'IDR',
-    status: 'completed',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    fulfillmentStatus: 'completed',
     orderDate: '2026-05-01',
     serviceDate: '2026-05-03',
     checkInDate: '2026-05-03',
@@ -148,6 +208,12 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-04-30T09:00:00Z',
+    approvedAt: '2026-04-30T09:12:00Z',
+    paymentLinkSentAt: '2026-04-30T09:12:00Z',
+    paidAt: '2026-04-30T09:45:00Z',
+    fulfillmentStartedAt: '2026-05-03T07:00:00Z',
+    completedAt: '2026-05-03T08:15:00Z',
     createdAt: '2026-04-30T09:00:00Z',
     updatedAt: '2026-05-01T16:00:00Z',
   },
@@ -167,7 +233,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 2442000,
     currency: 'IDR',
-    status: 'completed',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    fulfillmentStatus: 'completed',
     orderDate: '2026-05-04',
     serviceDate: '2026-05-03',
     checkInDate: '2026-05-01',
@@ -179,6 +247,12 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-02T14:00:00Z',
+    approvedAt: '2026-05-02T14:40:00Z',
+    paymentLinkSentAt: '2026-05-02T14:40:00Z',
+    paidAt: '2026-05-02T15:10:00Z',
+    fulfillmentStartedAt: '2026-05-03T14:30:00Z',
+    completedAt: '2026-05-03T18:00:00Z',
     createdAt: '2026-05-02T14:00:00Z',
     updatedAt: '2026-05-04T18:00:00Z',
   },
@@ -198,7 +272,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 12000,
     grandTotal: 278400,
     currency: 'IDR',
-    status: 'confirmed',
+    approvalStatus: 'approved',
+    paymentStatus: 'paid',
+    fulfillmentStatus: 'in_progress',
     orderDate: '2026-05-06',
     serviceDate: '2026-05-07',
     serviceEndDate: '2026-05-09',
@@ -211,6 +287,11 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-04T10:00:00Z',
+    approvedAt: '2026-05-04T10:30:00Z',
+    paymentLinkSentAt: '2026-05-04T10:30:00Z',
+    paidAt: '2026-05-04T11:05:00Z',
+    fulfillmentStartedAt: '2026-05-07T09:00:00Z',
     createdAt: '2026-05-04T10:00:00Z',
     updatedAt: '2026-05-06T08:00:00Z',
   },
@@ -230,7 +311,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 32500,
     grandTotal: 754000,
     currency: 'IDR',
-    status: 'pending',
+    approvalStatus: 'requested',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-10',
     serviceDate: '2026-05-12',
     checkInDate: '2026-05-12',
@@ -241,6 +324,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-10T09:00:00Z',
     createdAt: '2026-05-08T11:00:00Z',
     updatedAt: '2026-05-10T09:00:00Z',
   },
@@ -260,7 +344,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 888000,
     currency: 'IDR',
-    status: 'pending',
+    approvalStatus: 'requested',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-11',
     serviceDate: '2026-05-12',
     checkInDate: '2026-05-10',
@@ -271,6 +357,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-11T10:00:00Z',
     createdAt: '2026-05-09T16:00:00Z',
     updatedAt: '2026-05-11T10:00:00Z',
   },
@@ -291,7 +378,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 1221000,
     currency: 'IDR',
-    status: 'confirmed',
+    approvalStatus: 'approved',
+    paymentStatus: 'awaiting_payment',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-11',
     serviceDate: '2026-05-12',
     checkInDate: '2026-05-10',
@@ -303,6 +392,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-09T10:00:00Z',
+    approvedAt: '2026-05-09T10:25:00Z',
+    paymentLinkSentAt: '2026-05-09T10:25:00Z',
     createdAt: '2026-05-09T10:00:00Z',
     updatedAt: '2026-05-11T14:00:00Z',
   },
@@ -322,7 +414,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 666000,
     currency: 'IDR',
-    status: 'pending',
+    approvalStatus: 'requested',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-12',
     serviceDate: '2026-05-13',
     checkInDate: '2026-05-08',
@@ -333,6 +427,7 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Made Surya',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-12T11:00:00Z',
     createdAt: '2026-05-10T08:00:00Z',
     updatedAt: '2026-05-12T11:00:00Z',
   },
@@ -352,7 +447,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 499500,
     currency: 'IDR',
-    status: 'cancelled',
+    approvalStatus: 'declined',
+    paymentStatus: 'unpaid',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-08',
     serviceDate: '2026-05-10',
     checkInDate: '2026-05-03',
@@ -363,8 +460,10 @@ export const mockUpsellOrders: UpsellOrder[] = [
     staffAssigned: 'Komang Juliantara',
     source: 'manual',
     createdByStaffId: 'staff-2',
+    decisionReason: 'Next-day booking blocked availability.',
     cancellationReason: 'Next-day booking blocked availability.',
     cancellationBy: 'staff',
+    declinedAt: '2026-05-08T16:00:00Z',
     createdAt: '2026-05-07T09:00:00Z',
     updatedAt: '2026-05-08T16:00:00Z',
   },
@@ -385,7 +484,9 @@ export const mockUpsellOrders: UpsellOrder[] = [
     serviceAmount: 0,
     grandTotal: 1887000,
     currency: 'IDR',
-    status: 'confirmed',
+    approvalStatus: 'approved',
+    paymentStatus: 'awaiting_payment',
+    fulfillmentStatus: 'not_started',
     orderDate: '2026-05-20',
     serviceDate: '2026-05-28',
     checkInDate: '2026-05-27',
@@ -397,6 +498,10 @@ export const mockUpsellOrders: UpsellOrder[] = [
     source: 'inbox',
     conversationId: 'conv-21',
     createdByStaffId: 'staff-2',
+    approvalRequestedAt: '2026-05-20T14:16:00Z',
+    approvedAt: '2026-05-20T14:35:00Z',
+    paymentLinkSentAt: '2026-05-20T14:35:00Z',
+    guestNotifiedAt: '2026-05-20T14:36:00Z',
     createdAt: '2026-05-20T14:16:00Z',
     updatedAt: '2026-05-20T15:30:00Z',
   },

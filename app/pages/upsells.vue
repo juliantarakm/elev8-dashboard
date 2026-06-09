@@ -88,8 +88,8 @@ const { unreadCount: upsellUnreadCount } = useUpsellNotifications()
         >
           <Icon name="lucide:shopping-cart" class="h-4 w-4" />
           Orders
-          <Badge v-if="statusCounts.pending > 0" variant="default" class="h-5 min-w-[1.25rem] px-1 text-[10px]">
-            {{ statusCounts.pending }}
+          <Badge v-if="statusCounts.requested > 0" variant="default" class="h-5 min-w-[1.25rem] px-1 text-[10px]">
+            {{ statusCounts.requested }}
           </Badge>
         </button>
         <button
@@ -121,16 +121,16 @@ const { unreadCount: upsellUnreadCount } = useUpsellNotifications()
           <p class="text-2xl font-bold">IDR {{ totalRevenue.toLocaleString('id-ID') }}</p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Pending</p>
-          <p class="text-2xl font-bold">{{ statusCounts.pending }}</p>
+          <p class="text-sm text-muted-foreground">Requested</p>
+          <p class="text-2xl font-bold">{{ statusCounts.requested }}</p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Confirmed</p>
-          <p class="text-2xl font-bold">{{ statusCounts.confirmed }}</p>
+          <p class="text-sm text-muted-foreground">Awaiting Payment</p>
+          <p class="text-2xl font-bold">{{ statusCounts.awaiting_payment }}</p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Completed</p>
-          <p class="text-2xl font-bold">{{ statusCounts.completed }}</p>
+          <p class="text-sm text-muted-foreground">Paid - In Progress</p>
+          <p class="text-2xl font-bold">{{ statusCounts.paid_in_progress }}</p>
         </div>
       </div>
       <UpsellsUpsellOrderTable @open-drawer="openOrderDrawer" />

@@ -4,6 +4,7 @@ import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
+  getOrderStatus,
 } from '@/components/upsells/data/upsell-orders'
 import type { OrderStatus, UpsellOrder } from '@/components/upsells/data/upsell-orders'
 
@@ -11,14 +12,30 @@ const emit = defineEmits<{
   openDrawer: [order: UpsellOrder]
 }>()
 
-const { filteredOrders, statusCounts, updateStatus, filterStatus, searchValue } = useUpsellOrders()
+const { filteredOrders, statusCounts, approveOrder, declineOrder, markPaid, completeFulfillment, startFulfillment, reopenDeclinedOrder, filterStatus, searchValue } = useUpsellOrders()
 
 function openDetail(order: UpsellOrder) {
   emit('openDrawer', order)
 }
 
 function handleStatusChange(id: string, status: OrderStatus) {
-  updateStatus(id, status)
+  switch (status) {
+    case 'requested':
+      reopenDeclinedOrder(id)
+      break
+    case 'awaiting_payment':
+      approveOrder(id)
+      break
+    case 'paid_in_progress':
+      startFulfillment(id)
+      break
+    case 'completed':
+      completeFulfillment(id)
+      break
+    case 'declined':
+      declineOrder(id, 'Declined by staff', 'staff')
+      break
+  }
   toast.success(`Order marked as ${ORDER_STATUS_LABELS[status]}.`)
 }
 
@@ -34,30 +51,31 @@ function formatCurrency(amount: number, currency: string) {
   return `${currency} ${amount.toLocaleString('id-ID')}`
 }
 
-const statusOptions: { label: string, value: OrderStatus | 'all', count: number }[] = [
-  { label: 'All', value: 'all', count: statusCounts.value.all },
-  { label: 'Pending', value: 'pending', count: statusCounts.value.pending },
-  { label: 'Confirmed', value: 'confirmed', count: statusCounts.value.confirmed },
-  { label: 'Completed', value: 'completed', count: statusCounts.value.completed },
-  { label: 'Cancelled', value: 'cancelled', count: statusCounts.value.cancelled },
-]
+const statusOptions = computed(() => [
+  { label: 'All', value: 'all' as const, count: statusCounts.value.all },
+  { label: 'Requested', value: 'requested' as const, count: statusCounts.value.requested },
+  { label: 'Awaiting Payment', value: 'awaiting_payment' as const, count: statusCounts.value.awaiting_payment },
+  { label: 'Paid - In Progress', value: 'paid_in_progress' as const, count: statusCounts.value.paid_in_progress },
+  { label: 'Completed', value: 'completed' as const, count: statusCounts.value.completed },
+  { label: 'Declined', value: 'declined' as const, count: statusCounts.value.declined },
+])
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <!-- Status filter pills -->
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        v-for="opt in statusOptions"
-        :key="opt.value"
-        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-        :class="
-          filterStatus === opt.value
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-        "
-        @click="filterStatus = opt.value"
-      >
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          v-for="opt in statusOptions"
+          :key="opt.value"
+          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+          :class="
+            filterStatus === opt.value
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          "
+          @click="filterStatus = opt.value"
+        >
         {{ opt.label }}
         <span
           class="inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
@@ -122,7 +140,7 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
               </div>
             </TableCell>
             <TableCell class="text-right font-semibold tabular-nums whitespace-nowrap">
-              <span :class="order.status === 'cancelled' ? 'line-through text-muted-foreground' : ''">
+              <span :class="getOrderStatus(order) === 'declined' ? 'line-through text-muted-foreground' : ''">
                 {{ formatCurrency(order.grandTotal, order.currency) }}
               </span>
             </TableCell>
@@ -130,9 +148,9 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
               <Badge
                 variant="secondary"
                 class="gap-1 text-xs"
-                :class="ORDER_STATUS_COLORS[order.status]"
+                :class="ORDER_STATUS_COLORS[getOrderStatus(order)]"
               >
-                {{ ORDER_STATUS_LABELS[order.status] }}
+                {{ ORDER_STATUS_LABELS[getOrderStatus(order)] }}
               </Badge>
             </TableCell>
             <TableCell class="text-center">
@@ -161,34 +179,29 @@ const statusOptions: { label: string, value: OrderStatus | 'all', count: number 
                     View Detail
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    v-if="order.status === 'pending'"
-                    @click="handleStatusChange(order.id, 'confirmed')"
-                  >
+                  <DropdownMenuItem v-if="order.approvalStatus === 'requested'" @click="approveOrder(order.id); toast.success('Payment link sent.')">
                     <Icon name="lucide:check-circle" class="mr-2 h-4 w-4 text-emerald-500" />
-                    Confirm Order
+                    Send Payment Link
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    v-if="order.status === 'confirmed'"
-                    @click="handleStatusChange(order.id, 'completed')"
-                  >
+                  <DropdownMenuItem v-if="order.approvalStatus === 'requested'" class="text-destructive" @click="handleCancel(order)">
+                    <Icon name="lucide:x-circle" class="mr-2 h-4 w-4" />
+                    Decline Request
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="order.paymentStatus === 'awaiting_payment'" @click="markPaid(order.id, 'manual'); toast.success('Payment recorded.')">
+                    <Icon name="lucide:wallet" class="mr-2 h-4 w-4 text-emerald-500" />
+                    Record Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="order.paymentStatus === 'paid' && order.fulfillmentStatus === 'not_started'" @click="handleStatusChange(order.id, 'paid_in_progress')">
+                    <Icon name="lucide:loader-2" class="mr-2 h-4 w-4 text-cyan-500" />
+                    Start Fulfillment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="order.fulfillmentStatus === 'in_progress'" @click="handleStatusChange(order.id, 'completed')">
                     <Icon name="lucide:check-check" class="mr-2 h-4 w-4 text-slate-500" />
                     Mark Completed
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    v-if="order.status === 'pending' || order.status === 'confirmed'"
-                    class="text-destructive"
-                    @click="handleCancel(order)"
-                  >
-                    <Icon name="lucide:x-circle" class="mr-2 h-4 w-4" />
-                    Cancel Order
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    v-if="order.status === 'cancelled'"
-                    @click="handleStatusChange(order.id, 'pending')"
-                  >
+                  <DropdownMenuItem v-if="order.approvalStatus === 'declined'" @click="handleStatusChange(order.id, 'requested')">
                     <Icon name="lucide:rotate-ccw" class="mr-2 h-4 w-4" />
-                    Reopen Order
+                    Reopen Request
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

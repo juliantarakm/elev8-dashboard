@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const props = defineProps<{
   order: UpsellOrder | null
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const { cancelOrder } = useUpsellOrders()
+const { declineOrder } = useUpsellOrders()
 const { createNotification } = useUpsellNotifications()
 
 const cancelReason = ref('')
@@ -33,14 +33,9 @@ function handleCancel() {
     return
   }
 
-  const refund = cancelOrder(props.order.id, cancelReason.value.trim(), cancelledBy.value)
-  if (refund) {
-    createNotification(
-      { ...props.order, status: 'cancelled' },
-      cancelledBy.value === 'guest' && refund.lateFee > 0 ? 'order_late_cancel' : 'order_cancelled',
-    )
-    toast.success(`Order cancelled. ${refund.reason}`)
-  }
+  declineOrder(props.order.id, cancelReason.value.trim(), cancelledBy.value)
+  createNotification(props.order, 'order_cancelled')
+  toast.success('Request declined.')
 
   onOpenChange(false)
 }
@@ -50,7 +45,7 @@ function handleCancel() {
   <Dialog :open="open" @update:open="onOpenChange">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Cancel Order</DialogTitle>
+      <DialogTitle>Decline Request</DialogTitle>
         <DialogDescription>
           {{ order?.id }} — {{ order?.guestName }}
         </DialogDescription>
@@ -61,13 +56,13 @@ function handleCancel() {
           <Label>Cancellation Reason <span class="text-destructive">*</span></Label>
           <Textarea
             v-model="cancelReason"
-            placeholder="Why is this order being cancelled?"
+            placeholder="Why is this request being declined?"
             rows="3"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <Label>Cancelled By</Label>
+          <Label>Handled By</Label>
           <div class="flex gap-2">
             <button
               type="button"
@@ -90,18 +85,18 @@ function handleCancel() {
 
         <div class="rounded-md bg-muted p-3 text-sm">
           <p class="text-muted-foreground">
-            Refund will be calculated based on cancellation policy and timing.
+            This marks the request as declined and keeps a reason for the audit trail.
           </p>
         </div>
       </div>
 
       <DialogFooter>
         <Button variant="outline" @click="onOpenChange(false)">
-          Keep Order
+          Keep Request
         </Button>
         <Button variant="destructive" @click="handleCancel">
           <Icon name="lucide:x-circle" class="mr-2 h-4 w-4" />
-          Confirm Cancel
+          Confirm Decline
         </Button>
       </DialogFooter>
     </DialogContent>
