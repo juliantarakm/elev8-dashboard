@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 import { listings } from '~/components/listings/data/listings'
+import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingHeroCompact from '~/components/listings/ListingHeroCompact.vue'
+import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingOverviewTab from '~/components/listings/ListingOverviewTab.vue'
 import ListingPricingTab from '~/components/listings/ListingPricingTab.vue'
-import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingReviewsTab from '~/components/listings/ListingReviewsTab.vue'
-import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingSettingsTab from '~/components/listings/ListingSettingsTab.vue'
 import ListingSetupOverlay from '~/components/listings/ListingSetupOverlay.vue'
 import ListingTestAIDialog from '~/components/listings/ListingTestAIDialog.vue'
@@ -43,7 +43,9 @@ function handleOpenSchedule() {
 <template>
   <div v-if="!listing" class="flex flex-col items-center justify-center gap-4 py-24">
     <Icon name="lucide:alert-circle" class="size-12 text-muted-foreground" />
-    <h2 class="text-lg font-semibold">Listing not found</h2>
+    <h2 class="text-lg font-semibold">
+      Listing not found
+    </h2>
     <Button variant="outline" size="sm" @click="router.push('/listings')">
       <Icon name="lucide:arrow-left" class="size-4" />
       Back to Listings
@@ -60,7 +62,7 @@ function handleOpenSchedule() {
       @open-schedule="handleOpenSchedule"
     />
 
-    <Tabs v-model="activeTab" :key="activeUnitId ?? 'no-unit'">
+    <Tabs :key="activeUnitId ?? 'no-unit'" v-model="activeTab">
       <div class="overflow-x-auto">
         <TabsList>
           <TabsTrigger value="overview">

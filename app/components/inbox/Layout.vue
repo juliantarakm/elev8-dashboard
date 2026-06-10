@@ -35,8 +35,10 @@ const sortOptions = [
 ]
 
 const effectiveReservation = computed<Reservation | undefined>(() => {
-  if (selectedReservation.value) return selectedReservation.value
-  if (!selectedConversation.value) return undefined
+  if (selectedReservation.value)
+    return selectedReservation.value
+  if (!selectedConversation.value)
+    return undefined
   const c = selectedConversation.value
   return {
     id: c.id,
@@ -85,7 +87,8 @@ const aiSettingsOpen = ref(false)
 
 function openSheet(type: 'integrations' | 'ai') {
   settingsPopoverOpen.value = false
-  if (type === 'integrations') integrationsOpen.value = true
+  if (type === 'integrations')
+    integrationsOpen.value = true
   else aiSettingsOpen.value = true
 }
 </script>

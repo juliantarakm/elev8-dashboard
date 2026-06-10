@@ -19,31 +19,38 @@ const integrationLabel: Record<string, { label: string, class: string }> = {
 }
 
 function formatAmount(amount: number, currency: string) {
-  if (currency === 'IDR') return `IDR ${amount.toLocaleString('id-ID')}`
+  if (currency === 'IDR')
+    return `IDR ${amount.toLocaleString('id-ID')}`
   return `${currency} ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
+  if (h === 0)
+    return `${m}m`
+  if (m === 0)
+    return `${h}h`
   return `${h}h ${m}m`
 }
 
-const typeDotClass = (type: string) => ({
-  'bg-slate-500': type === 'Manual',
-  'bg-teal-500': type === 'Cleaning',
-  'bg-purple-500': type === 'Activity',
-  'bg-orange-500': type === 'Task',
-})
+function typeDotClass(type: string) {
+  return {
+    'bg-slate-500': type === 'Manual',
+    'bg-teal-500': type === 'Cleaning',
+    'bg-purple-500': type === 'Activity',
+    'bg-orange-500': type === 'Task',
+  }
+}
 
-const typeBgClass = (type: string) => ({
-  'text-slate-700 bg-slate-100': type === 'Manual',
-  'text-teal-700 bg-teal-50': type === 'Cleaning',
-  'text-purple-700 bg-purple-50': type === 'Activity',
-  'text-orange-700 bg-orange-50': type === 'Task',
-})
+function typeBgClass(type: string) {
+  return {
+    'text-slate-700 bg-slate-100': type === 'Manual',
+    'text-teal-700 bg-teal-50': type === 'Cleaning',
+    'text-purple-700 bg-purple-50': type === 'Activity',
+    'text-orange-700 bg-orange-50': type === 'Task',
+  }
+}
 </script>
 
 <template>
@@ -64,7 +71,9 @@ const typeBgClass = (type: string) => ({
           <TableHead v-if="showConvertedColumn" class="w-36 text-right text-muted-foreground">
             Acctg. Amount
           </TableHead>
-          <TableHead class="w-24 text-right">Duration</TableHead>
+          <TableHead class="w-24 text-right">
+            Duration
+          </TableHead>
           <TableHead>Staff</TableHead>
           <TableHead class="w-20 text-center">
             Invoice

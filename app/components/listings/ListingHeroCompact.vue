@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { Listing, AiSchedule, DateOverride, OverrideAudience, TimeSlot, Unit } from '~/components/listings/data/listings'
-import { listings, allTags } from '~/components/listings/data/listings'
+import type { AiSchedule, DateOverride, Listing, OverrideAudience, TimeSlot, Unit } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { allTags, listings } from '~/components/listings/data/listings'
 
-const props = defineProps<{ listing: Listing; openSchedule?: boolean }>()
-const emit = defineEmits<{ update: [listing: Listing]; openSetup: []; openTestAi: []; openSchedule: [] }>()
+const props = defineProps<{ listing: Listing, openSchedule?: boolean }>()
+const emit = defineEmits<{ update: [listing: Listing], openSetup: [], openTestAi: [], openSchedule: [] }>()
 const router = useRouter()
 
 function otaIcon(ota: string) {
@@ -23,13 +23,16 @@ const MAX_SIZE = 10 * 1024 * 1024
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
 
 function uploadPhotos(files: FileList | null) {
-  if (!files) return
+  if (!files)
+    return
   const current = props.listing.photos.length
   const remaining = MAX_PHOTOS - current
   const toProcess = Array.from(files).slice(0, remaining)
   toProcess.forEach((file) => {
-    if (!ALLOWED.includes(file.type)) return
-    if (file.size > MAX_SIZE) return
+    if (!ALLOWED.includes(file.type))
+      return
+    if (file.size > MAX_SIZE)
+      return
     const reader = new FileReader()
     reader.onload = (e) => {
       const src = e.target?.result as string
@@ -40,9 +43,11 @@ function uploadPhotos(files: FileList | null) {
 }
 
 function replacePhoto(files: FileList | null) {
-  if (!files || replaceIndex.value === null) return
+  if (!files || replaceIndex.value === null)
+    return
   const file = files[0]
-  if (!file || !ALLOWED.includes(file.type) || file.size > MAX_SIZE) return
+  if (!file || !ALLOWED.includes(file.type) || file.size > MAX_SIZE)
+    return
   const reader = new FileReader()
   reader.onload = (e) => {
     const src = e.target?.result as string
@@ -67,7 +72,8 @@ function deletePhoto(index: number) {
 function onDragStart(index: number) { dragIndex.value = index }
 function onDragOver(e: DragEvent) { e.preventDefault() }
 function onDrop(targetIndex: number) {
-  if (dragIndex.value === null || dragIndex.value === targetIndex) return
+  if (dragIndex.value === null || dragIndex.value === targetIndex)
+    return
   const photos = [...props.listing.photos]
   const [moved] = photos.splice(dragIndex.value, 1)
   photos.splice(targetIndex, 0, moved!)
@@ -87,7 +93,8 @@ function startEditName() {
 }
 
 function saveName() {
-  if (nameInput.value.trim()) emit('update', { ...props.listing, name: nameInput.value.trim() })
+  if (nameInput.value.trim())
+    emit('update', { ...props.listing, name: nameInput.value.trim() })
   editingName.value = false
 }
 
@@ -96,11 +103,12 @@ const tagPopoverOpen = ref(false)
 const tagSearch = ref('')
 const availableTags = computed(() => allTags.value.filter(t => !props.listing.tags.includes(t)))
 const filteredAvailableTags = computed(() => {
-  if (!tagSearch.value) return availableTags.value
+  if (!tagSearch.value)
+    return availableTags.value
   return availableTags.value.filter(t => t.toLowerCase().includes(tagSearch.value.toLowerCase()))
 })
 const canCreateTag = computed(() =>
-  tagSearch.value.trim().length > 0 && !props.listing.tags.includes(tagSearch.value.trim())
+  tagSearch.value.trim().length > 0 && !props.listing.tags.includes(tagSearch.value.trim()),
 )
 
 function removeTag(tag: string) {
@@ -109,14 +117,15 @@ function removeTag(tag: string) {
 
 function addTag(tag: string) {
   const t = tag.trim()
-  if (!t || props.listing.tags.includes(t)) return
+  if (!t || props.listing.tags.includes(t))
+    return
   emit('update', { ...props.listing, tags: [...props.listing.tags, t] })
   tagSearch.value = ''
 }
 
 // Unit switcher
 const activeUnit = computed(() =>
-  props.listing.units?.find(r => r.id === props.listing.activeUnitId) ?? null
+  props.listing.units?.find(r => r.id === props.listing.activeUnitId) ?? null,
 )
 
 function switchUnit(roomId: string) {
@@ -140,7 +149,8 @@ function addUnit() {
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const showScheduleSheet = ref(false)
 watch(() => props.openSchedule, (val) => {
-  if (val) showScheduleSheet.value = true
+  if (val)
+    showScheduleSheet.value = true
 })
 const scheduleTab = ref<'weekly' | 'overrides'>('weekly')
 const schedule = computed(() => props.listing.aiSchedule)
@@ -152,8 +162,10 @@ const aiStatusLabel: Record<string, string> = {
 }
 
 const summary = computed(() => {
-  if (props.listing.aiStatus !== 'active') return null
-  if (schedule.value.always) return '24/7'
+  if (props.listing.aiStatus !== 'active')
+    return null
+  if (schedule.value.always)
+    return '24/7'
   const count = schedule.value.days.filter(d => d.enabled).length
   return count > 0 ? `${count} day${count > 1 ? 's' : ''}` : 'Off'
 })
@@ -193,8 +205,10 @@ function normalizeSlots(slots: TimeSlot[]): TimeSlot[] {
   return sorted.map((s) => {
     let start = s.start
     let end = s.end
-    if (start < prevEnd) start = prevEnd
-    if (end <= start) end = addMinutes(start, 60)
+    if (start < prevEnd)
+      start = prevEnd
+    if (end <= start)
+      end = addMinutes(start, 60)
     prevEnd = end
     return { ...s, start, end }
   })
@@ -246,22 +260,25 @@ const otherListings = computed(() => listings.value.filter(l => l.id !== props.l
 // Listing switcher
 const listingSwitchSearch = ref('')
 const filteredListingsForSwitch = computed(() => {
-  if (!listingSwitchSearch.value) return listings.value
+  if (!listingSwitchSearch.value)
+    return listings.value
   const q = listingSwitchSearch.value.toLowerCase()
   return listings.value.filter(l =>
-    l.name.toLowerCase().includes(q) ||
-    l.location.toLowerCase().includes(q)
+    l.name.toLowerCase().includes(q)
+    || l.location.toLowerCase().includes(q),
   )
 })
 
 const filteredCopyTags = computed(() => {
-  if (!copyTagSearch.value) return allTags.value
+  if (!copyTagSearch.value)
+    return allTags.value
   const q = copyTagSearch.value.toLowerCase()
   return allTags.value.filter(t => t.toLowerCase().includes(q))
 })
 
 watch(copyTagPopoverOpen, (open) => {
-  if (!open) copyTagSearch.value = ''
+  if (!open)
+    copyTagSearch.value = ''
 })
 
 const filteredCopyListings = computed(() => otherListings.value.filter((l) => {
@@ -271,7 +288,7 @@ const filteredCopyListings = computed(() => otherListings.value.filter((l) => {
 }))
 
 const allFilteredSelected = computed(() =>
-  filteredCopyListings.value.length > 0 && filteredCopyListings.value.every(l => copyTargets.value.includes(l.id))
+  filteredCopyListings.value.length > 0 && filteredCopyListings.value.every(l => copyTargets.value.includes(l.id)),
 )
 
 function toggleCopyTag(tag: string) {
@@ -284,7 +301,8 @@ function toggleSelectAll() {
   const ids = filteredCopyListings.value.map(l => l.id)
   if (allFilteredSelected.value) {
     copyTargets.value = copyTargets.value.filter(id => !ids.includes(id))
-  } else {
+  }
+  else {
     copyTargets.value = [...new Set([...copyTargets.value, ...ids])]
   }
 }
@@ -298,7 +316,7 @@ function toggleTarget(id: string) {
 function applyCopy() {
   const clone = JSON.parse(JSON.stringify(schedule.value)) as AiSchedule
   listings.value = listings.value.map(l =>
-    copyTargets.value.includes(l.id) ? { ...l, aiSchedule: JSON.parse(JSON.stringify(clone)) } : l
+    copyTargets.value.includes(l.id) ? { ...l, aiSchedule: JSON.parse(JSON.stringify(clone)) } : l,
   )
   toast.success(`Copied to ${copyTargets.value.length} listing${copyTargets.value.length > 1 ? 's' : ''}`)
   copyTargets.value = []
@@ -309,7 +327,7 @@ function applyCopy() {
 }
 
 // Date overrides
-const audienceOptions: { value: OverrideAudience; label: string }[] = [
+const audienceOptions: { value: OverrideAudience, label: string }[] = [
   { value: 'future', label: 'Future' },
   { value: 'current', label: 'Current' },
   { value: 'inquiry', label: 'Inquiry' },
@@ -352,7 +370,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <Icon name="lucide:arrow-left" class="size-4" />
         Back
       </Button>
-      
+
       <!-- Listing switcher dropdown -->
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
@@ -362,7 +380,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
             <Icon name="lucide:chevron-down" class="size-3.5" />
           </Button>
         </DropdownMenuTrigger>
-        
+
         <DropdownMenuContent class="w-72 max-h-96" align="start">
           <div class="px-2 py-1.5">
             <div class="relative">
@@ -374,9 +392,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               />
             </div>
           </div>
-          
+
           <DropdownMenuSeparator />
-          
+
           <ScrollArea class="h-64">
             <DropdownMenuItem
               v-for="l in filteredListingsForSwitch"
@@ -385,7 +403,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               @click="router.push(`/listings/${l.id}`)"
             >
               <div class="size-10 rounded overflow-hidden bg-muted shrink-0">
-                <img :src="l.photos[0]" :alt="l.name" class="size-full object-cover" />
+                <img :src="l.photos[0]" :alt="l.name" class="size-full object-cover">
               </div>
               <div class="flex flex-col flex-1 min-w-0 leading-tight">
                 <span class="text-sm font-medium truncate">{{ l.name }}</span>
@@ -393,7 +411,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               </div>
               <Icon v-if="l.id === listing.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
             </DropdownMenuItem>
-            
+
             <div v-if="filteredListingsForSwitch.length === 0" class="px-2 py-6 text-center text-sm text-muted-foreground">
               No listings found
             </div>
@@ -408,7 +426,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
       <div class="w-full md:w-64 shrink-0 flex flex-col gap-1.5">
         <!-- 16/9 landscape photo -->
         <div class="relative w-full aspect-video overflow-hidden rounded-lg bg-muted group cursor-pointer" @click="showPhotoDialog = true">
-          <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+          <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover">
           <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Icon name="lucide:pencil" class="size-5 text-white" />
           </div>
@@ -445,7 +463,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 <Icon v-if="!listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Units</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Units
+              </DropdownMenuLabel>
               <DropdownMenuItem v-for="unit in listing.units" :key="unit.id" class="flex items-center justify-between cursor-pointer" @click="switchUnit(unit.id)">
                 <div class="flex flex-col leading-tight">
                   <span class="text-sm font-medium">{{ unit.name }}</span>
@@ -469,98 +489,106 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
       <!-- Listing info -->
       <div class="flex flex-col gap-4 flex-1 w-full min-w-0 justify-between">
-      <div class="flex flex-col gap-2 w-full min-w-0">
-        <!-- Editable name -->
-        <div v-if="editingName" class="flex flex-col gap-2">
-          <input
-            ref="nameInputEl"
-            v-model="nameInput"
-            class="w-full text-2xl font-bold tracking-tight bg-transparent border-b border-primary outline-none"
-            @keydown.enter="saveName"
-            @keydown.escape="editingName = false"
-          />
-          <div class="flex items-center gap-2">
-            <Button size="sm" class="h-7 text-xs" @click="saveName">Save</Button>
-            <Button size="sm" variant="ghost" class="h-7 text-xs" @click="editingName = false">Cancel</Button>
+        <div class="flex flex-col gap-2 w-full min-w-0">
+          <!-- Editable name -->
+          <div v-if="editingName" class="flex flex-col gap-2">
+            <input
+              ref="nameInputEl"
+              v-model="nameInput"
+              class="w-full text-2xl font-bold tracking-tight bg-transparent border-b border-primary outline-none"
+              @keydown.enter="saveName"
+              @keydown.escape="editingName = false"
+            >
+            <div class="flex items-center gap-2">
+              <Button size="sm" class="h-7 text-xs" @click="saveName">
+                Save
+              </Button>
+              <Button size="sm" variant="ghost" class="h-7 text-xs" @click="editingName = false">
+                Cancel
+              </Button>
+            </div>
+          </div>
+          <h1
+            v-else
+            class="text-2xl font-bold tracking-tight leading-tight cursor-pointer hover:text-muted-foreground transition-colors group flex items-center gap-2"
+            @click="startEditName"
+          >
+            {{ listing.name }}
+            <Icon name="lucide:pencil" class="size-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+          </h1>
+
+          <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Icon name="lucide:map-pin" class="size-3.5" />
+            {{ listing.location }}
+          </span>
+
+          <!-- Editable tags -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <Badge
+              v-for="tag in listing.tags"
+              :key="tag"
+              variant="secondary"
+              class="text-xs gap-1 cursor-pointer"
+              @click="removeTag(tag)"
+            >
+              {{ tag }}
+              <Icon name="lucide:x" class="size-3" />
+            </Badge>
+
+            <Popover v-model:open="tagPopoverOpen">
+              <PopoverTrigger as-child>
+                <button class="flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                  <Icon name="lucide:plus" class="size-3" />
+                  Add tag
+                </button>
+              </PopoverTrigger>
+              <PopoverContent class="w-48 p-0" align="start">
+                <div class="p-2">
+                  <Input v-model="tagSearch" placeholder="Search tags..." class="h-7 text-xs" />
+                </div>
+                <ScrollArea class="h-40">
+                  <div class="space-y-0.5 p-1">
+                    <div
+                      v-if="canCreateTag"
+                      class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
+                      @click="addTag(tagSearch); tagPopoverOpen = false"
+                    >
+                      <Icon name="lucide:plus" class="size-3.5 text-muted-foreground" />
+                      Create <span class="font-medium">"{{ tagSearch.trim() }}"</span>
+                    </div>
+                    <div
+                      v-for="tag in filteredAvailableTags"
+                      :key="tag"
+                      class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                      @click="addTag(tag); tagPopoverOpen = false"
+                    >
+                      {{ tag }}
+                    </div>
+                    <p v-if="filteredAvailableTags.length === 0 && !canCreateTag" class="px-2 py-1.5 text-xs text-muted-foreground">
+                      No tags found.
+                    </p>
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
-        <h1
-          v-else
-          class="text-2xl font-bold tracking-tight leading-tight cursor-pointer hover:text-muted-foreground transition-colors group flex items-center gap-2"
-          @click="startEditName"
-        >
-          {{ listing.name }}
-          <Icon name="lucide:pencil" class="size-3.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-        </h1>
 
-        <span class="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Icon name="lucide:map-pin" class="size-3.5" />
-          {{ listing.location }}
-        </span>
-
-        <!-- Editable tags -->
-        <div class="flex flex-wrap items-center gap-1.5">
-          <Badge
-            v-for="tag in listing.tags"
-            :key="tag"
-            variant="secondary"
-            class="text-xs gap-1 cursor-pointer"
-            @click="removeTag(tag)"
-          >
-            {{ tag }}
-            <Icon name="lucide:x" class="size-3" />
-          </Badge>
-
-          <Popover v-model:open="tagPopoverOpen">
-            <PopoverTrigger as-child>
-              <button class="flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                <Icon name="lucide:plus" class="size-3" />
-                Add tag
-              </button>
-            </PopoverTrigger>
-            <PopoverContent class="w-48 p-0" align="start">
-              <div class="p-2">
-                <Input v-model="tagSearch" placeholder="Search tags..." class="h-7 text-xs" />
-              </div>
-              <ScrollArea class="h-40">
-                <div class="space-y-0.5 p-1">
-                  <div
-                    v-if="canCreateTag"
-                    class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
-                    @click="addTag(tagSearch); tagPopoverOpen = false"
-                  >
-                    <Icon name="lucide:plus" class="size-3.5 text-muted-foreground" />
-                    Create <span class="font-medium">"{{ tagSearch.trim() }}"</span>
-                  </div>
-                  <div
-                    v-for="tag in filteredAvailableTags"
-                    :key="tag"
-                    class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                    @click="addTag(tag); tagPopoverOpen = false"
-                  >{{ tag }}</div>
-                  <p v-if="filteredAvailableTags.length === 0 && !canCreateTag" class="px-2 py-1.5 text-xs text-muted-foreground">No tags found.</p>
-                </div>
-              </ScrollArea>
-            </PopoverContent>
-          </Popover>
+        <!-- Action buttons -->
+        <div class="flex items-center gap-2 mt-auto self-end">
+          <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSetup')">
+            <Icon name="lucide:pencil" class="size-4" />
+            Edit Listing
+          </Button>
+          <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openTestAi')">
+            <Icon name="lucide:bot" class="size-4" />
+            Test AI
+          </Button>
+          <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSchedule')">
+            <Icon name="lucide:clock" class="size-4" />
+            Schedule
+          </Button>
         </div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="flex items-center gap-2 mt-auto self-end">
-        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSetup')">
-          <Icon name="lucide:pencil" class="size-4" />
-          Edit Listing
-        </Button>
-        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openTestAi')">
-          <Icon name="lucide:bot" class="size-4" />
-          Test AI
-        </Button>
-        <Button variant="outline" size="sm" class="h-9 gap-2 px-3 text-sm" @click="emit('openSchedule')">
-          <Icon name="lucide:clock" class="size-4" />
-          Schedule
-        </Button>
-      </div>
       </div>
     </div>
 
@@ -586,7 +614,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               @dragover="onDragOver"
               @drop="onDrop(index)"
             >
-              <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover" />
+              <img :src="photo" :alt="`Photo ${index + 1}`" class="size-full object-cover">
 
               <!-- Hover overlay -->
               <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -613,7 +641,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 </button>
               </div>
 
-              <Badge v-if="index === 0" class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0">Thumbnail</Badge>
+              <Badge v-if="index === 0" class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0">
+                Thumbnail
+              </Badge>
             </div>
 
             <!-- Upload slot -->
@@ -630,17 +660,21 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         </ScrollArea>
 
         <!-- Hidden file inputs -->
-        <input ref="fileInputEl" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
-          @change="uploadPhotos(($event.target as HTMLInputElement).files)" />
-        <input ref="replaceInputEl" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"
-          @change="replacePhoto(($event.target as HTMLInputElement).files)" />
+        <input
+          ref="fileInputEl" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
+          @change="uploadPhotos(($event.target as HTMLInputElement).files)"
+        >
+        <input
+          ref="replaceInputEl" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"
+          @change="replacePhoto(($event.target as HTMLInputElement).files)"
+        >
       </DialogContent>
     </Dialog>
 
     <!-- Full preview lightbox -->
     <Dialog :open="!!previewPhoto" @update:open="(v) => { if (!v) previewPhoto = null }">
       <DialogContent class="max-w-5xl p-2 bg-black/90 border-0">
-        <img v-if="previewPhoto" :src="previewPhoto" class="w-full max-h-[85vh] object-contain rounded" />
+        <img v-if="previewPhoto" :src="previewPhoto" class="w-full max-h-[85vh] object-contain rounded">
       </DialogContent>
     </Dialog>
 
@@ -656,8 +690,12 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <div class="flex-1 overflow-y-auto px-4">
           <Tabs v-model="scheduleTab">
             <TabsList class="w-full">
-              <TabsTrigger value="weekly" class="flex-1">Weekly Schedule</TabsTrigger>
-              <TabsTrigger value="overrides" class="flex-1">Date Overrides</TabsTrigger>
+              <TabsTrigger value="weekly" class="flex-1">
+                Weekly Schedule
+              </TabsTrigger>
+              <TabsTrigger value="overrides" class="flex-1">
+                Date Overrides
+              </TabsTrigger>
             </TabsList>
 
             <!-- Weekly Schedule -->
@@ -715,7 +753,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                         class="h-6 text-[11px] px-2"
                         :class="day.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
                         @click="toggleDayAudience(index, opt.value)"
-                      >{{ opt.label }}</Button>
+                      >
+                        {{ opt.label }}
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -770,7 +810,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                       class="h-7 text-xs"
                       :class="o.activeFor.includes(opt.value) ? 'border-primary text-primary bg-primary/5' : ''"
                       @click="toggleAudience(o, opt.value)"
-                    >{{ opt.label }}</Button>
+                    >
+                      {{ opt.label }}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -790,13 +832,17 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         <!-- Fixed Footer -->
         <SheetFooter class="border-t">
           <div class="flex items-center justify-between gap-2">
-            <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">Clear All</Button>
+            <Button variant="ghost" size="sm" class="text-xs text-muted-foreground" @click="clearAll">
+              Clear All
+            </Button>
             <div class="flex items-center gap-2">
               <Button variant="outline" size="sm" class="text-xs gap-1" @click="showCopyDialog = true">
                 <Icon name="lucide:copy" class="size-3" />
                 Copy to Properties
               </Button>
-              <Button size="sm" class="text-xs" @click="saveSchedule">Save Schedule</Button>
+              <Button size="sm" class="text-xs" @click="saveSchedule">
+                Save Schedule
+              </Button>
             </div>
           </div>
         </SheetFooter>
@@ -822,7 +868,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
               <Button variant="outline" size="sm" class="h-9 gap-1.5 text-xs" :class="copyTagFilters.length > 0 ? 'border-primary text-primary' : ''">
                 <Icon name="lucide:tag" class="size-3.5" />
                 Tags
-                <Badge v-if="copyTagFilters.length > 0" variant="default" class="ml-0.5 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ copyTagFilters.length }}</Badge>
+                <Badge v-if="copyTagFilters.length > 0" variant="default" class="ml-0.5 h-4 min-w-4 rounded-full px-1 text-[9px]">
+                  {{ copyTagFilters.length }}
+                </Badge>
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-56 p-0" align="end" :side-offset="4">
@@ -882,7 +930,9 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" @click="showCopyDialog = false">Cancel</Button>
+          <Button variant="outline" @click="showCopyDialog = false">
+            Cancel
+          </Button>
           <Button :disabled="copyTargets.length === 0" @click="applyCopy">
             Copy to {{ copyTargets.length || '' }} listing{{ copyTargets.length > 1 ? 's' : '' }}
           </Button>

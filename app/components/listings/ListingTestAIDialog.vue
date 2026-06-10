@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-const props = defineProps<{ listing: Listing; open: boolean }>()
+const props = defineProps<{ listing: Listing, open: boolean }>()
 const emit = defineEmits<{ 'update:open': [val: boolean] }>()
 
-interface Message { role: 'guest' | 'ai'; text: string }
+interface Message { role: 'guest' | 'ai', text: string }
 
 const messages = ref<Message[]>([
   { role: 'ai', text: `Hi! I'm the AI assistant for ${props.listing.name}. How can I help you today?` },
@@ -16,7 +16,7 @@ const scrollEl = ref<HTMLElement | null>(null)
 const starters = [
   'What time is check-in?',
   'Is there parking available?',
-  "What's the WiFi password?",
+  'What\'s the WiFi password?',
 ]
 
 function getMockResponse(question: string): string {
@@ -44,12 +44,13 @@ function getMockResponse(question: string): string {
       ? 'Yes! The property has a private pool available for guests. Pool hours are 7am–10pm.'
       : 'This property does not have a pool, but there are nearby facilities available.'
   }
-  return "That's a great question! I'll check with the host and get back to you shortly. Is there anything else I can help with?"
+  return 'That\'s a great question! I\'ll check with the host and get back to you shortly. Is there anything else I can help with?'
 }
 
 async function send(text?: string) {
   const msg = (text ?? input.value).trim()
-  if (!msg) return
+  if (!msg)
+    return
   input.value = ''
   messages.value.push({ role: 'guest', text: msg })
   isTyping.value = true
@@ -69,13 +70,16 @@ async function send(text?: string) {
       <DialogHeader class="px-5 py-4 border-b flex-shrink-0">
         <div class="flex items-center gap-2">
           <DialogTitle>Test AI</DialogTitle>
-          <Badge variant="secondary" class="text-xs">Simulating guest view</Badge>
+          <Badge variant="secondary" class="text-xs">
+            Simulating guest view
+          </Badge>
         </div>
         <DialogDescription>{{ listing.name }}</DialogDescription>
       </DialogHeader>
 
       <div ref="scrollEl" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-        <div v-for="(msg, i) in messages" :key="i"
+        <div
+          v-for="(msg, i) in messages" :key="i"
           class="flex"
           :class="msg.role === 'guest' ? 'justify-end' : 'justify-start'"
         >
@@ -83,7 +87,9 @@ async function send(text?: string) {
             <div class="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#C8A84B]/20">
               <Icon name="lucide:bot" class="size-4 text-[#C8A84B]" />
             </div>
-            <div class="rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-sm">{{ msg.text }}</div>
+            <div class="rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-sm">
+              {{ msg.text }}
+            </div>
           </div>
           <div v-else class="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
             {{ msg.text }}
@@ -101,14 +107,20 @@ async function send(text?: string) {
       </div>
 
       <div v-if="messages.length <= 1" class="flex flex-wrap gap-2 px-4 pb-2">
-        <button v-for="s in starters" :key="s"
+        <button
+          v-for="s in starters" :key="s"
           class="rounded-full border px-3 py-1 text-xs hover:bg-accent transition-colors"
-          @click="send(s)">{{ s }}</button>
+          @click="send(s)"
+        >
+          {{ s }}
+        </button>
       </div>
 
       <div class="flex gap-2 border-t px-4 py-3 flex-shrink-0">
-        <Input v-model="input" placeholder="Ask as a guest..." class="flex-1"
-          @keydown.enter="send()" />
+        <Input
+          v-model="input" placeholder="Ask as a guest..." class="flex-1"
+          @keydown.enter="send()"
+        />
         <Button size="sm" :disabled="!input.trim() || isTyping" @click="send()">
           <Icon name="lucide:send" class="size-4" />
         </Button>

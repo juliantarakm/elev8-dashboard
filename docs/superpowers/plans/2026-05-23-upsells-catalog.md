@@ -32,19 +32,19 @@
 - [ ] **Step 1: Create data file with types and mock data**
 
 ```ts
-export type UpsellCategory =
-  | 'Vehicle Rental'
-  | 'Airport Transport'
-  | 'Private Chef'
-  | 'Spa'
-  | 'Activity'
-  | 'Late Check-out'
-  | 'Early Check-in'
-  | 'Mid-stay Cleaning'
-  | 'Office Equipment'
-  | 'Baby'
-  | 'Miscellaneous'
-  | 'Pet'
+export type UpsellCategory
+  = | 'Vehicle Rental'
+    | 'Airport Transport'
+    | 'Private Chef'
+    | 'Spa'
+    | 'Activity'
+    | 'Late Check-out'
+    | 'Early Check-in'
+    | 'Mid-stay Cleaning'
+    | 'Office Equipment'
+    | 'Baby'
+    | 'Miscellaneous'
+    | 'Pet'
 
 export interface UpsellService {
   id: string
@@ -235,14 +235,13 @@ git commit -m "feat(upsells): add types and mock data for upsell services catalo
 - [ ] **Step 1: Create composable with reactive state + CRUD actions**
 
 ```ts
-import { computed } from 'vue'
 import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
+import { computed } from 'vue'
 import { mockUpsellServices } from '@/components/upsells/data/upsell-services'
 
 export function useUpsellServices() {
   const services = useState<UpsellService[]>('upsell-services', () =>
-    mockUpsellServices.map(s => ({ ...s })),
-  )
+    mockUpsellServices.map(s => ({ ...s })),)
 
   const filterCategory = ref<UpsellCategory | 'all'>('all')
   const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
@@ -250,9 +249,12 @@ export function useUpsellServices() {
 
   const filteredServices = computed(() => {
     return services.value.filter((s) => {
-      if (filterCategory.value !== 'all' && s.category !== filterCategory.value) return false
-      if (filterStatus.value !== 'all' && s.status !== filterStatus.value) return false
-      if (filterListing.value !== 'all' && !s.assignedListings.includes(filterListing.value)) return false
+      if (filterCategory.value !== 'all' && s.category !== filterCategory.value)
+        return false
+      if (filterStatus.value !== 'all' && s.status !== filterStatus.value)
+        return false
+      if (filterListing.value !== 'all' && !s.assignedListings.includes(filterListing.value))
+        return false
       return true
     })
   })
@@ -330,8 +332,8 @@ git commit -m "feat(upsells): add useUpsellServices composable with CRUD actions
 
 ```vue
 <script setup lang="ts">
-import { useUpsellServices } from '@/composables/useUpsellServices'
 import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
+import { useUpsellServices } from '@/composables/useUpsellServices'
 
 const { filterCategory, filterStatus, filterListing, clearFilters } = useUpsellServices()
 </script>
@@ -417,18 +419,18 @@ git commit -m "feat(upsells): add UpsellFilterBar component"
 
 ```vue
 <script setup lang="ts">
+import type { UpsellService } from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import { useUpsellServices } from '@/composables/useUpsellServices'
-import type { UpsellService } from '@/components/upsells/data/upsell-services'
+
+const emit = defineEmits<{
+  openDrawer: [service: UpsellService | null]
+}>()
 
 const { filteredServices, toggleStatus, deleteService } = useUpsellServices()
 
 const drawerOpen = ref(false)
 const editingService = ref<UpsellService | null>(null)
-
-const emit = defineEmits<{
-  openDrawer: [service: UpsellService | null]
-}>()
 
 function openEdit(service: UpsellService) {
   emit('openDrawer', service)
@@ -476,9 +478,15 @@ const categoryBadgeClass: Record<string, string> = {
           <TableHead class="w-12" />
           <TableHead>Name</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead class="text-right">Price</TableHead>
-          <TableHead class="text-center">Listings</TableHead>
-          <TableHead class="text-center">Status</TableHead>
+          <TableHead class="text-right">
+            Price
+          </TableHead>
+          <TableHead class="text-center">
+            Listings
+          </TableHead>
+          <TableHead class="text-center">
+            Status
+          </TableHead>
           <TableHead class="w-10" />
         </TableRow>
       </TableHeader>
@@ -501,8 +509,12 @@ const categoryBadgeClass: Record<string, string> = {
             </div>
           </TableCell>
           <TableCell>
-            <p class="font-medium">{{ svc.name }}</p>
-            <p class="max-w-64 truncate text-xs text-muted-foreground">{{ svc.description }}</p>
+            <p class="font-medium">
+              {{ svc.name }}
+            </p>
+            <p class="max-w-64 truncate text-xs text-muted-foreground">
+              {{ svc.description }}
+            </p>
           </TableCell>
           <TableCell>
             <span
@@ -576,10 +588,10 @@ git commit -m "feat(upsells): add UpsellTable component with columns and actions
 
 ```vue
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
-import { useUpsellServices } from '@/composables/useUpsellServices'
-import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
 import type { UpsellService } from '@/components/upsells/data/upsell-services'
+import { toast } from 'vue-sonner'
+import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
+import { useUpsellServices } from '@/composables/useUpsellServices'
 
 const props = defineProps<{
   service: UpsellService | null

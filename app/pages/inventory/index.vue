@@ -11,7 +11,8 @@ const { entries, lowStockCount } = useInventoryListings()
 const expiringSoonCount = computed(() => {
   const now = new Date()
   return items.value.filter((i) => {
-    if (!i.warrantyExpiry) return false
+    if (!i.warrantyExpiry)
+      return false
     const diff = (new Date(i.warrantyExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     return diff <= 30
   }).length
@@ -34,15 +35,25 @@ const expiringSoonCount = computed(() => {
     <!-- KPI Cards -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Active Assets</p>
-        <p class="text-2xl font-bold">{{ activeAssetCount }}</p>
+        <p class="text-sm text-muted-foreground">
+          Active Assets
+        </p>
+        <p class="text-2xl font-bold">
+          {{ activeAssetCount }}
+        </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Total Book Value</p>
-        <p class="text-xl font-bold truncate">IDR {{ totalBookValue.toLocaleString('id-ID') }}</p>
+        <p class="text-sm text-muted-foreground">
+          Total Book Value
+        </p>
+        <p class="text-xl font-bold truncate">
+          IDR {{ totalBookValue.toLocaleString('id-ID') }}
+        </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Under Maintenance</p>
+        <p class="text-sm text-muted-foreground">
+          Under Maintenance
+        </p>
         <p
           class="text-2xl font-bold"
           :class="underMaintenanceCount > 0 ? 'text-amber-600' : ''"
@@ -51,7 +62,9 @@ const expiringSoonCount = computed(() => {
         </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Maintenance Alerts</p>
+        <p class="text-sm text-muted-foreground">
+          Maintenance Alerts
+        </p>
         <p
           class="text-2xl font-bold"
           :class="maintenanceAlertCount > 0 ? 'text-destructive' : ''"
@@ -60,7 +73,9 @@ const expiringSoonCount = computed(() => {
         </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Warranty Expiring</p>
+        <p class="text-sm text-muted-foreground">
+          Warranty Expiring
+        </p>
         <p
           class="text-2xl font-bold"
           :class="expiringSoonCount > 0 ? 'text-amber-600' : ''"
@@ -69,7 +84,9 @@ const expiringSoonCount = computed(() => {
         </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Low Stock</p>
+        <p class="text-sm text-muted-foreground">
+          Low Stock
+        </p>
         <p
           class="text-2xl font-bold"
           :class="lowStockCount > 0 ? 'text-orange-500' : ''"

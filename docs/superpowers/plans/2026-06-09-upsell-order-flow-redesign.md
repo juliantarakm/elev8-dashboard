@@ -48,4 +48,3 @@
 - [ ] **Step 1: Add notification types for approval, payment, decline reopen, and fulfillment milestones.**
 - [ ] **Step 2: Create the matching helper calls from the new order transitions.**
 - [ ] **Step 3: Verify by running `pnpm typecheck`.**
-

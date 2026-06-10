@@ -13,7 +13,8 @@ const props = withDefaults(defineProps<ReservationUpsellsProps>(), {
 const { orders } = useUpsellOrders()
 
 const linkedOrders = computed(() => {
-  if (!props.linkedOrderIds || props.linkedOrderIds.length === 0) return []
+  if (!props.linkedOrderIds || props.linkedOrderIds.length === 0)
+    return []
   return orders.value.filter(o => props.linkedOrderIds.includes(o.id))
 })
 
@@ -35,7 +36,9 @@ function formatPrice(price: number, currency: string): string {
 <template>
   <div v-if="linkedOrders.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
     <Icon name="lucide:shopping-bag" class="size-8 text-muted-foreground mb-2" />
-    <p class="text-sm text-muted-foreground">No upsells purchased</p>
+    <p class="text-sm text-muted-foreground">
+      No upsells purchased
+    </p>
   </div>
 
   <div v-else class="space-y-3">
@@ -46,8 +49,12 @@ function formatPrice(price: number, currency: string): string {
     >
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <div class="font-medium text-sm">{{ order.serviceName }}</div>
-          <div class="text-xs text-muted-foreground">{{ order.guestName }}</div>
+          <div class="font-medium text-sm">
+            {{ order.serviceName }}
+          </div>
+          <div class="text-xs text-muted-foreground">
+            {{ order.guestName }}
+          </div>
         </div>
         <span :class="cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0', statusConfig[order.status].class)">
           {{ statusConfig[order.status].label }}

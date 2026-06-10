@@ -10,8 +10,10 @@ function otaIcon(ota: string) {
 const live = computed(() => listings.value.find(l => l.id === props.listingId))
 const otas = computed(() => live.value?.otaConnected ?? [])
 const inactive = computed(() => {
-  if (!live.value) return false
-  if (live.value.unitType === 'multi') return (live.value.units ?? []).every(u => u.status === 'inactive')
+  if (!live.value)
+    return false
+  if (live.value.unitType === 'multi')
+    return (live.value.units ?? []).every(u => u.status === 'inactive')
   return live.value.status === 'inactive'
 })
 </script>

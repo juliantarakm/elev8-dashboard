@@ -1,12 +1,12 @@
 export type OrderApprovalStatus = 'requested' | 'approved' | 'declined'
 export type OrderPaymentStatus = 'unpaid' | 'awaiting_payment' | 'paid'
 export type OrderFulfillmentStatus = 'not_started' | 'in_progress' | 'completed'
-export type OrderStatus =
-  | 'requested'
-  | 'awaiting_payment'
-  | 'paid_in_progress'
-  | 'completed'
-  | 'declined'
+export type OrderStatus
+  = | 'requested'
+    | 'awaiting_payment'
+    | 'paid_in_progress'
+    | 'completed'
+    | 'declined'
 
 export interface UpsellOrderItem {
   id: string
@@ -85,11 +85,16 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
 }
 
 export function getOrderStatus(order: Pick<UpsellOrder, 'approvalStatus' | 'paymentStatus' | 'fulfillmentStatus'>): OrderStatus {
-  if (order.approvalStatus === 'declined') return 'declined'
-  if (order.fulfillmentStatus === 'completed') return 'completed'
-  if (order.fulfillmentStatus === 'in_progress') return 'paid_in_progress'
-  if (order.paymentStatus === 'awaiting_payment') return 'awaiting_payment'
-  if (order.paymentStatus === 'paid') return 'paid_in_progress'
+  if (order.approvalStatus === 'declined')
+    return 'declined'
+  if (order.fulfillmentStatus === 'completed')
+    return 'completed'
+  if (order.fulfillmentStatus === 'in_progress')
+    return 'paid_in_progress'
+  if (order.paymentStatus === 'awaiting_payment')
+    return 'awaiting_payment'
+  if (order.paymentStatus === 'paid')
+    return 'paid_in_progress'
   return 'requested'
 }
 

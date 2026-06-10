@@ -1,16 +1,16 @@
 <script setup lang="ts">
+import type { CleaningJobPriority, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
 import { toast } from 'vue-sonner'
 import { columns } from '@/components/tasks/components/columns'
 import DataTable from '@/components/tasks/components/DataTable.vue'
-import { useTaskStore } from '@/composables/useTaskStore'
-import { useHostBuddyInventorySync } from '@/composables/useHostBuddyInventorySync'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { labels, priorities } from '@/components/tasks/data/data'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
+import { useHostBuddyInventorySync } from '@/composables/useHostBuddyInventorySync'
+import { useTaskStore } from '@/composables/useTaskStore'
 import CleaningCalendarBoard from '~/components/cleaning/CleaningCalendarBoard.vue'
 import CleaningFilters from '~/components/cleaning/CleaningFilters.vue'
 import CleaningJobForm from '~/components/cleaning/CleaningJobForm.vue'
 import { useCleaningJobs } from '~/composables/useCleaningJobs'
-import type { CleaningJobPriority, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
 
 const { tasks, addTask } = useTaskStore()
 const { detectInventoryItem } = useHostBuddyInventorySync()
@@ -34,7 +34,8 @@ const selectedStatuses = ref<CleaningJobStatus[]>([])
 const selectedPriorities = ref<CleaningJobPriority[]>([])
 
 const detected = computed(() => {
-  if (!newTitle.value.trim() || !newListing.value) return null
+  if (!newTitle.value.trim() || !newListing.value)
+    return null
   return detectInventoryItem(newTitle.value, newListing.value)
 })
 
@@ -61,7 +62,8 @@ function resetForm() {
 }
 
 function handleCreateTask() {
-  if (!newTitle.value.trim()) return
+  if (!newTitle.value.trim())
+    return
   const detection = detected.value
   addTask({
     title: newTitle.value.trim(),
@@ -92,7 +94,8 @@ function handleCreateCleaning(input: Parameters<typeof createJob>[0]) {
 }
 
 function handleUpdateCleaning(input: Parameters<typeof createJob>[0]) {
-  if (!editingCleaningJob.value) return
+  if (!editingCleaningJob.value)
+    return
   updateJob(editingCleaningJob.value.id, {
     ...input,
     cleanerName: input.cleanerId ? resolveCleanerName(input.cleanerId) : null,
@@ -110,7 +113,8 @@ function openCleaningEdit(id: string) {
 
 function handleMoveCleaning(payload: { id: string, listingId: string, scheduledAt: string }) {
   const job = jobs.value.find(item => item.id === payload.id)
-  if (!job) return
+  if (!job)
+    return
   updateJob(job.id, {
     listingId: payload.listingId,
     listingName: resolveListingName(payload.listingId),
@@ -131,15 +135,25 @@ function clearCleaningFilters() {
   <div class="w-full flex flex-col gap-4">
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">Tasks & Cleaning</h2>
-        <p class="text-muted-foreground">Operational tasks plus a multi-listing cleaning scheduler.</p>
+        <h2 class="text-2xl font-bold tracking-tight">
+          Tasks & Cleaning
+        </h2>
+        <p class="text-muted-foreground">
+          Operational tasks plus a multi-listing cleaning scheduler.
+        </p>
       </div>
       <div class="flex items-center gap-2">
         <Tabs v-model="view">
           <TabsList>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="tasks">
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="week">
+              Week
+            </TabsTrigger>
+            <TabsTrigger value="agenda">
+              Agenda
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Button variant="outline" @click="view === 'tasks' ? newTaskOpen = true : cleaningCreateOpen = true">
@@ -156,8 +170,12 @@ function clearCleaningFilters() {
     <div v-else class="grid gap-4">
       <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4 shadow-sm">
         <div>
-          <h3 class="text-sm font-semibold">Cleaning Calendar</h3>
-          <p class="text-xs text-muted-foreground">Guesty-style multi-listing scheduler with drag and drop.</p>
+          <h3 class="text-sm font-semibold">
+            Cleaning Calendar
+          </h3>
+          <p class="text-xs text-muted-foreground">
+            Guesty-style multi-listing scheduler with drag and drop.
+          </p>
         </div>
         <CleaningFilters
           :listing-ids="selectedListingIds"
@@ -198,18 +216,28 @@ function clearCleaningFilters() {
             <Select v-model="newListing">
               <SelectTrigger><SelectValue placeholder="Select a listing" /></SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">{{ listing }}</SelectItem>
+                <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
+                  {{ listing }}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div v-if="newTitle.trim() && newListing" class="rounded-md border px-3 py-2.5 flex items-start gap-2.5" :class="detected ? 'border-amber-200 bg-amber-50 dark:bg-amber-950/20' : 'border-border bg-muted/40'">
             <Icon :name="isDetecting ? 'lucide:loader-circle' : detected ? 'lucide:sparkles' : 'lucide:search'" class="h-4 w-4 mt-0.5 shrink-0" :class="[isDetecting ? 'animate-spin text-muted-foreground' : '', detected && !isDetecting ? 'text-[#C8A84B]' : '', !detected && !isDetecting ? 'text-muted-foreground' : '']" />
             <div class="flex flex-col gap-0.5">
-              <p class="text-xs font-semibold" :class="detected ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'">HostBuddy AI</p>
+              <p class="text-xs font-semibold" :class="detected ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'">
+                HostBuddy AI
+              </p>
               <p class="text-xs" :class="detected ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'">
-                <template v-if="isDetecting">Scanning for inventory items…</template>
-                <template v-else-if="detected">Detected: <strong>{{ detected.itemName }}</strong> — condition will update to <strong>Damaged</strong></template>
-                <template v-else>No matching inventory item found for this listing.</template>
+                <template v-if="isDetecting">
+                  Scanning for inventory items…
+                </template>
+                <template v-else-if="detected">
+                  Detected: <strong>{{ detected.itemName }}</strong> — condition will update to <strong>Damaged</strong>
+                </template>
+                <template v-else>
+                  No matching inventory item found for this listing.
+                </template>
               </p>
             </div>
           </div>
@@ -219,7 +247,9 @@ function clearCleaningFilters() {
               <Select v-model="newLabel">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="l in labels" :key="l.value" :value="l.value">{{ l.label }}</SelectItem>
+                  <SelectItem v-for="l in labels" :key="l.value" :value="l.value">
+                    {{ l.label }}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -228,7 +258,9 @@ function clearCleaningFilters() {
               <Select v-model="newPriority">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="p in priorities" :key="p.value" :value="p.value">{{ p.label }}</SelectItem>
+                  <SelectItem v-for="p in priorities" :key="p.value" :value="p.value">
+                    {{ p.label }}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -239,8 +271,12 @@ function clearCleaningFilters() {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="newTaskOpen = false; resetForm()">Cancel</Button>
-          <Button :disabled="!newTitle.trim()" @click="handleCreateTask">Create Task</Button>
+          <Button variant="outline" @click="newTaskOpen = false; resetForm()">
+            Cancel
+          </Button>
+          <Button :disabled="!newTitle.trim()" @click="handleCreateTask">
+            Create Task
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { CleaningStatus, Conversation, StayStatus } from '~/components/inbox/data/conversations'
-import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format, formatDistanceToNow } from 'date-fns'
-import { cn } from '~/lib/utils'
 import { toast } from 'vue-sonner'
+import { otaSources } from '~/components/inbox/data/conversations'
+import { cn } from '~/lib/utils'
 
 interface ListItemProps {
   conversation: Conversation
@@ -59,7 +59,8 @@ const otaIconMap: Record<string, string> = Object.fromEntries(otaSources.map(s =
 const stayConfig = computed(() => stayStatusConfig[props.conversation.stayStatus])
 
 const stayDateLabel = computed(() => {
-  if (!props.conversation.checkIn || !props.conversation.checkOut) return ''
+  if (!props.conversation.checkIn || !props.conversation.checkOut)
+    return ''
   const checkIn = new Date(props.conversation.checkIn)
   const checkOut = new Date(props.conversation.checkOut)
   return `${format(checkIn, 'd MMM yyyy')} – ${format(checkOut, 'd MMM yyyy')}`

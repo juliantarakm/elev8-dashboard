@@ -36,8 +36,8 @@
 export interface ListingDocument {
   id: string
   name: string
-  url: string        // base64 data URL or remote URL
-  size: number       // bytes
+  url: string // base64 data URL or remote URL
+  size: number // bytes
   uploadedAt: string // ISO date
 }
 
@@ -60,7 +60,7 @@ export interface ListingResources {
 - [ ] **Step 2: Add `resources` field to `Listing` interface** (after `maintenance`)
 
 ```ts
-  resources: ListingResources
+resources: ListingResources
 ```
 
 - [ ] **Step 3: Add default resources to lst-1 mock data** (after `maintenance` field)
@@ -159,8 +159,8 @@ git commit -m "feat(listings): add floating action bar component"
 ```vue
 <script setup lang="ts">
 import type { Listing, ListingDocument } from '~/components/listings/data/listings'
-import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
@@ -171,10 +171,12 @@ const MAX_SIZE = 10 * 1024 * 1024
 const ALLOWED = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
 
 function uploadDocs(files: FileList | null) {
-  if (!files) return
+  if (!files)
+    return
   const remaining = MAX_DOCS - props.listing.resources.documents.length
   Array.from(files).slice(0, remaining).forEach((file) => {
-    if (!ALLOWED.includes(file.type) || file.size > MAX_SIZE) return
+    if (!ALLOWED.includes(file.type) || file.size > MAX_SIZE)
+      return
     const reader = new FileReader()
     reader.onload = (e) => {
       const doc: ListingDocument = {
@@ -202,8 +204,10 @@ function downloadDoc(doc: ListingDocument) {
 }
 
 function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024)
+    return `${bytes} B`
+  if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
@@ -228,13 +232,15 @@ const showCopyDialog = ref(false)
 const copySearch = ref('')
 const otherListings = computed(() => listings.value.filter(l => l.id !== props.listing.id))
 const filteredCopyListings = computed(() => {
-  if (!copySearch.value) return otherListings.value
+  if (!copySearch.value)
+    return otherListings.value
   return otherListings.value.filter(l => l.name.toLowerCase().includes(copySearch.value.toLowerCase()))
 })
 
 function copyFromProperty(sourceId: string) {
   const source = listings.value.find(l => l.id === sourceId)
-  if (!source) return
+  if (!source)
+    return
   emit('update', { ...props.listing, resources: JSON.parse(JSON.stringify(source.resources)) })
   toast.success('Resources copied from property')
   showCopyDialog.value = false
@@ -250,17 +256,24 @@ function copyFromProperty(sourceId: string) {
 
     <ScrollArea class="flex-1">
       <div class="flex flex-col gap-4 p-4">
-
         <!-- Property Documents -->
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Property Documents</div>
-          <p class="text-xs text-muted-foreground">All documents are used automatically by Elev8 AI</p>
+          <div class="text-sm font-semibold">
+            Property Documents
+          </div>
+          <p class="text-xs text-muted-foreground">
+            All documents are used automatically by Elev8 AI
+          </p>
 
           <div v-for="doc in listing.resources.documents" :key="doc.id" class="flex items-center gap-2 rounded-lg border p-2.5">
             <Icon name="lucide:file-text" class="size-4 text-amber-500 shrink-0" />
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium truncate">{{ doc.name }}</p>
-              <p class="text-[10px] text-muted-foreground">{{ formatSize(doc.size) }}</p>
+              <p class="text-xs font-medium truncate">
+                {{ doc.name }}
+              </p>
+              <p class="text-[10px] text-muted-foreground">
+                {{ formatSize(doc.size) }}
+              </p>
             </div>
             <Button variant="ghost" size="icon" class="size-7 shrink-0" @click="downloadDoc(doc)">
               <Icon name="lucide:download" class="size-3.5" />
@@ -274,16 +287,22 @@ function copyFromProperty(sourceId: string) {
             <Icon name="lucide:plus" class="size-3.5" />
             Upload New Document
           </Button>
-          <input ref="fileInputEl" type="file" accept=".pdf,.docx,.txt" multiple class="hidden"
-            @change="uploadDocs(($event.target as HTMLInputElement).files)" />
+          <input
+            ref="fileInputEl" type="file" accept=".pdf,.docx,.txt" multiple class="hidden"
+            @change="uploadDocs(($event.target as HTMLInputElement).files)"
+          >
         </div>
 
         <Separator />
 
         <!-- Elev8 AI Integration -->
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Elev8 AI</div>
-          <div class="text-xs text-muted-foreground font-medium">Property Integration</div>
+          <div class="text-sm font-semibold">
+            Elev8 AI
+          </div>
+          <div class="text-xs text-muted-foreground font-medium">
+            Property Integration
+          </div>
           <div class="flex flex-col gap-1.5">
             <div v-for="item in ['Property details', 'Property availability and pricing', 'Guest and reservation data', 'Past conversations (last 6 months)']" :key="item" class="flex items-center gap-2 text-xs text-muted-foreground">
               <Icon name="lucide:check" class="size-3.5 text-green-500 shrink-0" />
@@ -296,7 +315,9 @@ function copyFromProperty(sourceId: string) {
 
         <!-- Property Profile Actions -->
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Property Profile</div>
+          <div class="text-sm font-semibold">
+            Property Profile
+          </div>
           <Button class="w-full gap-1.5" :disabled="isAutoFilling" @click="autoFill">
             <Icon v-if="isAutoFilling" name="lucide:loader-2" class="size-3.5 animate-spin" />
             <Icon v-else name="lucide:sparkles" class="size-3.5" />
@@ -307,7 +328,6 @@ function copyFromProperty(sourceId: string) {
             Copy Data From Other Property
           </Button>
         </div>
-
       </div>
     </ScrollArea>
 
@@ -324,11 +344,13 @@ function copyFromProperty(sourceId: string) {
         </div>
         <ScrollArea class="max-h-60">
           <div class="flex flex-col gap-1">
-            <div v-for="l in filteredCopyListings" :key="l.id"
+            <div
+              v-for="l in filteredCopyListings" :key="l.id"
               class="flex items-center gap-3 rounded-md px-2 py-2 cursor-pointer hover:bg-accent"
-              @click="copyFromProperty(l.id)">
+              @click="copyFromProperty(l.id)"
+            >
               <div class="size-8 rounded overflow-hidden bg-muted shrink-0">
-                <img :src="l.photos[0]" class="size-full object-cover" />
+                <img :src="l.photos[0]" class="size-full object-cover">
               </div>
               <span class="text-sm truncate">{{ l.name }}</span>
             </div>
@@ -368,7 +390,7 @@ const activeTab = ref('basics')
 // Basics form — synced with listing.resources.basics
 const basics = computed({
   get: () => props.listing.resources.basics,
-  set: (val) => emit('update', { ...props.listing, resources: { ...props.listing.resources, basics: val } }),
+  set: val => emit('update', { ...props.listing, resources: { ...props.listing.resources, basics: val } }),
 })
 
 function updateBasics(patch: Partial<typeof basics.value>) {
@@ -381,16 +403,33 @@ function updateResources(patch: Partial<Listing['resources']>) {
 
 // Amenities (reuse listing.amenities)
 const allAmenities = [
-  'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
-  'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
-  'Ocean View', 'Cliff Deck', 'Surfboard Storage', 'Mountain View', 'Hot Tub',
-  'Fireplace', 'River View', 'Bamboo Construction',
+  'Pool',
+  'WiFi',
+  'AC',
+  'Kitchen',
+  'Parking',
+  'Garden',
+  'Beach Access',
+  'Rooftop Deck',
+  'Plunge Pool',
+  'Yoga Deck',
+  'Hammock Deck',
+  'Nature Bath',
+  'Ocean View',
+  'Cliff Deck',
+  'Surfboard Storage',
+  'Mountain View',
+  'Hot Tub',
+  'Fireplace',
+  'River View',
+  'Bamboo Construction',
 ]
 const amenitySearch = ref('')
 const amenityPopoverOpen = ref(false)
 const filteredAmenities = computed(() => {
   const available = allAmenities.filter(a => !props.listing.amenities.includes(a))
-  if (!amenitySearch.value) return available
+  if (!amenitySearch.value)
+    return available
   return available.filter(a => a.toLowerCase().includes(amenitySearch.value.toLowerCase()))
 })
 function addAmenity(a: string) { emit('update', { ...props.listing, amenities: [...props.listing.amenities, a] }) }
@@ -400,7 +439,8 @@ function removeAmenity(a: string) { emit('update', { ...props.listing, amenities
 const topicInput = ref('')
 function addTopic() {
   const t = topicInput.value.trim()
-  if (!t || props.listing.resources.topicsToAvoid?.includes(t)) return
+  if (!t || props.listing.resources.topicsToAvoid?.includes(t))
+    return
   updateResources({ topicsToAvoid: [...(props.listing.resources.topicsToAvoid ?? []), t] })
   topicInput.value = ''
 }
@@ -415,11 +455,12 @@ const isFilled = (val?: string) => !!val?.trim()
   <div class="flex flex-col h-full overflow-hidden">
     <Tabs v-model="activeTab" class="flex flex-col h-full overflow-hidden">
       <TabsList class="flex-shrink-0 w-full justify-start rounded-none border-b bg-transparent px-4 h-auto pb-0 gap-0">
-        <TabsTrigger v-for="tab in ['basics', 'listing-details', 'amenities', 'sops', 'topics', 'upsells']" :key="tab"
+        <TabsTrigger
+          v-for="tab in ['basics', 'listing-details', 'amenities', 'sops', 'topics', 'upsells']" :key="tab"
           :value="tab"
           class="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-2 text-xs"
         >
-          {{ { basics: 'Basics', 'listing-details': 'Listing Details', amenities: 'Amenities', sops: 'SOPs', topics: 'Topics to Avoid', upsells: 'Property Upsells' }[tab] }}
+          {{ { "basics": 'Basics', 'listing-details': 'Listing Details', "amenities": 'Amenities', "sops": 'SOPs', "topics": 'Topics to Avoid', "upsells": 'Property Upsells' }[tab] }}
         </TabsTrigger>
       </TabsList>
 
@@ -471,9 +512,11 @@ const isFilled = (val?: string) => !!val?.trim()
               <Icon name="lucide:sparkles" class="size-3" /> AI filled
             </span>
           </div>
-          <Textarea :model-value="listing.resources.listingDetails ?? ''" rows="12"
+          <Textarea
+            :model-value="listing.resources.listingDetails ?? ''" rows="12"
             placeholder="Full description for OTA listings..."
-            @update:model-value="(v) => updateResources({ listingDetails: String(v) })" />
+            @update:model-value="(v) => updateResources({ listingDetails: String(v) })"
+          />
         </div>
       </TabsContent>
 
@@ -488,13 +531,21 @@ const isFilled = (val?: string) => !!val?.trim()
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-56 p-0" align="end">
-              <div class="p-2"><Input v-model="amenitySearch" placeholder="Search..." class="h-7 text-xs" /></div>
+              <div class="p-2">
+                <Input v-model="amenitySearch" placeholder="Search..." class="h-7 text-xs" />
+              </div>
               <ScrollArea class="h-48">
                 <div class="space-y-1">
-                  <div v-for="a in filteredAmenities" :key="a"
+                  <div
+                    v-for="a in filteredAmenities" :key="a"
                     class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                    @click="addAmenity(a)">{{ a }}</div>
-                  <p v-if="filteredAmenities.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">No amenities found.</p>
+                    @click="addAmenity(a)"
+                  >
+                    {{ a }}
+                  </div>
+                  <p v-if="filteredAmenities.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">
+                    No amenities found.
+                  </p>
                 </div>
               </ScrollArea>
             </PopoverContent>
@@ -511,9 +562,11 @@ const isFilled = (val?: string) => !!val?.trim()
       <TabsContent value="sops" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
         <div class="flex flex-col gap-1.5">
           <Label>Standard Operating Procedures</Label>
-          <Textarea :model-value="listing.resources.sops ?? ''" rows="14"
+          <Textarea
+            :model-value="listing.resources.sops ?? ''" rows="14"
             placeholder="e.g. Check-in procedure, cleaning checklist, emergency contacts..."
-            @update:model-value="(v) => updateResources({ sops: String(v) })" />
+            @update:model-value="(v) => updateResources({ sops: String(v) })"
+          />
         </div>
       </TabsContent>
 
@@ -521,11 +574,17 @@ const isFilled = (val?: string) => !!val?.trim()
       <TabsContent value="topics" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
         <div class="flex flex-col gap-2">
           <Label>Topics to Avoid</Label>
-          <p class="text-xs text-muted-foreground">Topics the AI should not discuss with guests.</p>
+          <p class="text-xs text-muted-foreground">
+            Topics the AI should not discuss with guests.
+          </p>
           <div class="flex gap-2">
-            <Input v-model="topicInput" placeholder="e.g. competitor pricing" class="flex-1"
-              @keydown.enter="addTopic" />
-            <Button size="sm" @click="addTopic">Add</Button>
+            <Input
+              v-model="topicInput" placeholder="e.g. competitor pricing" class="flex-1"
+              @keydown.enter="addTopic"
+            />
+            <Button size="sm" @click="addTopic">
+              Add
+            </Button>
           </div>
           <div class="flex flex-wrap gap-2 mt-2">
             <Badge v-for="t in listing.resources.topicsToAvoid" :key="t" variant="secondary" class="text-xs gap-1 cursor-pointer" @click="removeTopic(t)">
@@ -537,8 +596,12 @@ const isFilled = (val?: string) => !!val?.trim()
 
       <!-- Property Upsells -->
       <TabsContent value="upsells" class="flex-1 overflow-y-auto p-5 mt-0 flex flex-col gap-4">
-        <p class="text-sm text-muted-foreground">Link upsell services the AI can promote to guests.</p>
-        <p class="text-xs text-muted-foreground italic">Upsell catalog integration coming soon.</p>
+        <p class="text-sm text-muted-foreground">
+          Link upsell services the AI can promote to guests.
+        </p>
+        <p class="text-xs text-muted-foreground italic">
+          Upsell catalog integration coming soon.
+        </p>
       </TabsContent>
     </Tabs>
   </div>
@@ -567,8 +630,8 @@ import type { Listing } from '~/components/listings/data/listings'
 import ListingSetupFieldPanel from '~/components/listings/ListingSetupFieldPanel.vue'
 import ListingSetupResourcePanel from '~/components/listings/ListingSetupResourcePanel.vue'
 
-const props = defineProps<{ listing: Listing; open: boolean }>()
-const emit = defineEmits<{ 'update:open': [val: boolean]; update: [listing: Listing] }>()
+const props = defineProps<{ listing: Listing, open: boolean }>()
+const emit = defineEmits<{ 'update:open': [val: boolean], 'update': [listing: Listing] }>()
 </script>
 
 <template>
@@ -578,7 +641,9 @@ const emit = defineEmits<{ 'update:open': [val: boolean]; update: [listing: List
       <div class="flex items-center justify-between border-b px-5 py-3 flex-shrink-0">
         <div class="flex items-center gap-3">
           <Icon name="lucide:layout-panel-left" class="size-5 text-muted-foreground" />
-          <h2 class="text-base font-semibold">Listing Setup</h2>
+          <h2 class="text-base font-semibold">
+            Listing Setup
+          </h2>
           <span class="text-sm text-muted-foreground">{{ listing.name }}</span>
         </div>
         <Button variant="ghost" size="sm" class="gap-1.5" @click="emit('update:open', false)">
@@ -621,10 +686,10 @@ git commit -m "feat(listings): add listing setup overlay shell (two-panel full-s
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 
-const props = defineProps<{ listing: Listing; open: boolean }>()
+const props = defineProps<{ listing: Listing, open: boolean }>()
 const emit = defineEmits<{ 'update:open': [val: boolean] }>()
 
-interface Message { role: 'guest' | 'ai'; text: string }
+interface Message { role: 'guest' | 'ai', text: string }
 
 const messages = ref<Message[]>([
   { role: 'ai', text: `Hi! I'm the AI assistant for ${props.listing.name}. How can I help you today?` },
@@ -636,7 +701,7 @@ const scrollEl = ref<HTMLElement | null>(null)
 const starters = [
   'What time is check-in?',
   'Is there parking available?',
-  "What's the WiFi password?",
+  'What\'s the WiFi password?',
 ]
 
 function getMockResponse(question: string): string {
@@ -664,12 +729,13 @@ function getMockResponse(question: string): string {
       ? 'Yes! The property has a private pool available for guests. Pool hours are 7am–10pm.'
       : 'This property does not have a pool, but there are nearby facilities available.'
   }
-  return "That's a great question! I'll check with the host and get back to you shortly. Is there anything else I can help with?"
+  return 'That\'s a great question! I\'ll check with the host and get back to you shortly. Is there anything else I can help with?'
 }
 
 async function send(text?: string) {
   const msg = (text ?? input.value).trim()
-  if (!msg) return
+  if (!msg)
+    return
   input.value = ''
   messages.value.push({ role: 'guest', text: msg })
   isTyping.value = true
@@ -689,14 +755,17 @@ async function send(text?: string) {
       <DialogHeader class="px-5 py-4 border-b flex-shrink-0">
         <div class="flex items-center gap-2">
           <DialogTitle>Test AI</DialogTitle>
-          <Badge variant="secondary" class="text-xs">Simulating guest view</Badge>
+          <Badge variant="secondary" class="text-xs">
+            Simulating guest view
+          </Badge>
         </div>
         <DialogDescription>{{ listing.name }}</DialogDescription>
       </DialogHeader>
 
       <!-- Messages -->
       <div ref="scrollEl" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-        <div v-for="(msg, i) in messages" :key="i"
+        <div
+          v-for="(msg, i) in messages" :key="i"
           class="flex"
           :class="msg.role === 'guest' ? 'justify-end' : 'justify-start'"
         >
@@ -704,7 +773,9 @@ async function send(text?: string) {
             <div class="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#C8A84B]/20">
               <Icon name="lucide:bot" class="size-4 text-[#C8A84B]" />
             </div>
-            <div class="rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-sm">{{ msg.text }}</div>
+            <div class="rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-sm">
+              {{ msg.text }}
+            </div>
           </div>
           <div v-else class="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
             {{ msg.text }}
@@ -724,15 +795,21 @@ async function send(text?: string) {
 
       <!-- Starter chips -->
       <div v-if="messages.length <= 1" class="flex flex-wrap gap-2 px-4 pb-2">
-        <button v-for="s in starters" :key="s"
+        <button
+          v-for="s in starters" :key="s"
           class="rounded-full border px-3 py-1 text-xs hover:bg-accent transition-colors"
-          @click="send(s)">{{ s }}</button>
+          @click="send(s)"
+        >
+          {{ s }}
+        </button>
       </div>
 
       <!-- Input -->
       <div class="flex gap-2 border-t px-4 py-3 flex-shrink-0">
-        <Input v-model="input" placeholder="Ask as a guest..." class="flex-1"
-          @keydown.enter="send()" />
+        <Input
+          v-model="input" placeholder="Ask as a guest..." class="flex-1"
+          @keydown.enter="send()"
+        />
         <Button size="sm" :disabled="!input.trim() || isTyping" @click="send()">
           <Icon name="lucide:send" class="size-4" />
         </Button>
@@ -761,11 +838,12 @@ git commit -m "feat(listings): add Test AI guest chat simulation dialog"
 In the `<script setup>` section, add after the existing props/emits:
 
 ```ts
-const props = defineProps<{ listing: Listing; openSchedule?: boolean }>()
+const props = defineProps<{ listing: Listing, openSchedule?: boolean }>()
 // ... existing emits ...
 
 watch(() => props.openSchedule, (val) => {
-  if (val) showScheduleSheet.value = true
+  if (val)
+    showScheduleSheet.value = true
 })
 ```
 

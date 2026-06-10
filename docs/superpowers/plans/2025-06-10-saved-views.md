@@ -33,7 +33,7 @@
 Create `tests/composables/useSavedViews.spec.ts`:
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSavedViews } from '~/composables/useSavedViews'
 
 describe('useSavedViews', () => {
@@ -113,8 +113,8 @@ Expected: FAIL with "Cannot find module '~/composables/useSavedViews'"
 Create `app/composables/useSavedViews.ts`:
 
 ```typescript
-import { ref, computed } from 'vue'
 import type { SavedView, ViewState } from '~/types/saved-views'
+import { computed, ref } from 'vue'
 
 export function useSavedViews() {
   const savedViews = ref<SavedView[]>([])
@@ -123,16 +123,17 @@ export function useSavedViews() {
   const isLoading = ref(false)
 
   const isDirty = computed(() => {
-    if (!activeView.value || !currentState.value) return false
+    if (!activeView.value || !currentState.value)
+      return false
     const av = activeView.value
     const cs = currentState.value
 
     return (
-      av.searchValue !== cs.searchValue ||
-      JSON.stringify(av.activeTagFilter.sort()) !== JSON.stringify(cs.activeTagFilter.sort()) ||
-      av.activeAiFilter !== cs.activeAiFilter ||
-      JSON.stringify(av.columnVisibility) !== JSON.stringify(cs.columnVisibility) ||
-      av.pageSize !== cs.pageSize
+      av.searchValue !== cs.searchValue
+      || JSON.stringify(av.activeTagFilter.sort()) !== JSON.stringify(cs.activeTagFilter.sort())
+      || av.activeAiFilter !== cs.activeAiFilter
+      || JSON.stringify(av.columnVisibility) !== JSON.stringify(cs.columnVisibility)
+      || av.pageSize !== cs.pageSize
     )
   })
 
@@ -141,9 +142,11 @@ export function useSavedViews() {
     try {
       const res = await $fetch<{ views: SavedView[] }>('/api/tenant/listing-views')
       savedViews.value = res.views.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Could not load saved views.')
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -164,10 +167,12 @@ export function useSavedViews() {
       activeView.value = res.view
       currentState.value = state
       toast.success('View saved!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Failed to save view. Try again.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -190,7 +195,8 @@ export function useSavedViews() {
   }
 
   async function updateActiveView(state: ViewState) {
-    if (!activeView.value) return
+    if (!activeView.value)
+      return
 
     isLoading.value = true
     try {
@@ -205,10 +211,12 @@ export function useSavedViews() {
       activeView.value = res.view
       currentState.value = state
       toast.success('View updated!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Update failed. Try again.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -225,10 +233,12 @@ export function useSavedViews() {
         currentState.value = null
       }
       toast.success('View deleted!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Could not delete view.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -299,8 +309,8 @@ git commit -m "feat: add useSavedViews composable with CRUD operations"
 Create `tests/components/SaveViewDialog.spec.ts`:
 
 ```typescript
-import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import SaveViewDialog from '~/components/listings/SaveViewDialog.vue'
 
 describe('SaveViewDialog', () => {
@@ -356,9 +366,9 @@ Create `app/components/listings/SaveViewDialog.vue`:
 ```vue
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { Button } from '~/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
 
 const props = defineProps<{
   open: boolean
@@ -366,7 +376,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [name: string]
+  'save': [name: string]
 }>()
 
 const viewName = ref('')
@@ -379,7 +389,8 @@ watch(() => props.open, (open) => {
 
 function handleSave() {
   const trimmed = viewName.value.trim()
-  if (trimmed.length === 0 || trimmed.length > 50) return
+  if (trimmed.length === 0 || trimmed.length > 50)
+    return
 
   emit('save', trimmed)
   emit('update:open', false)
@@ -453,8 +464,8 @@ git commit -m "feat: add SaveViewDialog component"
 Create `tests/components/DeleteViewDialog.spec.ts`:
 
 ```typescript
-import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
 
 describe('DeleteViewDialog', () => {
@@ -495,8 +506,8 @@ Create `app/components/listings/DeleteViewDialog.vue`:
 
 ```vue
 <script setup lang="ts">
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 
 const props = defineProps<{
   open: boolean
@@ -505,7 +516,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  delete: []
+  'delete': []
 }>()
 
 function handleDelete() {
@@ -568,8 +579,8 @@ git commit -m "feat: add DeleteViewDialog component"
 Create `tests/components/SavedViewsDropdown.spec.ts`:
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import SavedViewsDropdown from '~/components/listings/SavedViewsDropdown.vue'
 
 describe('SavedViewsDropdown', () => {
@@ -638,14 +649,14 @@ Create `app/components/listings/SavedViewsDropdown.vue`:
 
 ```vue
 <script setup lang="ts">
+import type { SavedView } from '~/types/saved-views'
+import { Icon } from '#components'
+import { formatDistanceToNow } from 'date-fns'
 import { computed, ref } from 'vue'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Button } from '~/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
-import { Icon } from '#components'
-import type { SavedView } from '~/types/saved-views'
-import { formatDistanceToNow } from 'date-fns'
 
 const props = defineProps<{
   savedViews: SavedView[]
@@ -665,7 +676,8 @@ const viewSearch = ref('')
 const deleteTarget = ref<SavedView | null>(null)
 
 const filteredViews = computed(() => {
-  if (!viewSearch.value) return props.savedViews
+  if (!viewSearch.value)
+    return props.savedViews
   const q = viewSearch.value.toLowerCase()
   return props.savedViews.filter(v => v.name.toLowerCase().includes(q))
 })
@@ -695,7 +707,7 @@ function formatTimeAgo(date: string): string {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent class="w-72" align="start">
-        <DropdownMenuItem @click="emit('save-as')" data-testid="save-as-option">
+        <DropdownMenuItem data-testid="save-as-option" @click="emit('save-as')">
           <Icon name="lucide:plus" class="mr-2 size-3.5" />
           Save current as...
         </DropdownMenuItem>
@@ -719,10 +731,10 @@ function formatTimeAgo(date: string): string {
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
-              @click="emit('load-view', view.id)"
               class="group flex items-center justify-between py-2"
               :class="{ 'bg-muted': activeView?.id === view.id }"
               :data-testid="`view-item-${view.id}`"
+              @click="emit('load-view', view.id)"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <Icon
@@ -731,7 +743,9 @@ function formatTimeAgo(date: string): string {
                   class="size-4 shrink-0 text-primary"
                 />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-sm truncate">{{ view.name }}</div>
+                  <div class="font-medium text-sm truncate">
+                    {{ view.name }}
+                  </div>
                   <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div class="size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[9px] font-medium">
                       {{ getCreatorInitials(view.createdBy) }}
@@ -801,10 +815,10 @@ git commit -m "feat: add SavedViewsDropdown component"
 Add after existing imports:
 
 ```typescript
-import { useSavedViews } from '~/composables/useSavedViews'
 import type { ViewState } from '~/types/saved-views'
 import SavedViewsDropdown from '~/components/listings/SavedViewsDropdown.vue'
 import SaveViewDialog from '~/components/listings/SaveViewDialog.vue'
+import { useSavedViews } from '~/composables/useSavedViews'
 ```
 
 - [ ] **Step 2: Initialize saved views composable**
@@ -874,7 +888,8 @@ function handleSaveAs(name: string) {
 }
 
 function handleUpdateView() {
-  if (!activeView.value) return
+  if (!activeView.value)
+    return
   const state = getCurrentViewState()
   updateActiveView(state)
 }

@@ -20,13 +20,13 @@
 ```ts
 // app/components/inventory/data/catalog.ts
 
-export type InventoryCategory =
-  | 'Furniture'
-  | 'Electronics'
-  | 'Linen'
-  | 'Kitchen'
-  | 'Consumable'
-  | 'Other'
+export type InventoryCategory
+  = | 'Furniture'
+    | 'Electronics'
+    | 'Linen'
+    | 'Kitchen'
+    | 'Consumable'
+    | 'Other'
 
 export type InventoryItemType = 'permanent' | 'consumable'
 
@@ -352,15 +352,14 @@ git commit -m "feat(inventory): add ListingInventoryEntry types and mock data"
 - [ ] **Step 1: Create the composable**
 
 ```ts
+import type { InventoryCategory, InventoryItem, InventoryItemType } from '@/components/inventory/data/catalog'
 // app/composables/useInventoryCatalog.ts
 import { computed, ref } from 'vue'
-import type { InventoryCategory, InventoryItem, InventoryItemType } from '@/components/inventory/data/catalog'
 import { mockInventoryItems } from '@/components/inventory/data/catalog'
 
 export function useInventoryCatalog() {
   const items = useState<InventoryItem[]>('inventory-catalog', () =>
-    mockInventoryItems.map(i => ({ ...i })),
-  )
+    mockInventoryItems.map(i => ({ ...i })),)
 
   const searchValue = ref('')
   const activeCategoryFilter = ref<InventoryCategory | 'all'>('all')
@@ -368,9 +367,12 @@ export function useInventoryCatalog() {
 
   const filteredItems = computed(() => {
     return items.value.filter((item) => {
-      if (activeCategoryFilter.value !== 'all' && item.category !== activeCategoryFilter.value) return false
-      if (activeTypeFilter.value !== 'all' && item.type !== activeTypeFilter.value) return false
-      if (searchValue.value && !item.name.toLowerCase().includes(searchValue.value.toLowerCase())) return false
+      if (activeCategoryFilter.value !== 'all' && item.category !== activeCategoryFilter.value)
+        return false
+      if (activeTypeFilter.value !== 'all' && item.type !== activeTypeFilter.value)
+        return false
+      if (searchValue.value && !item.name.toLowerCase().includes(searchValue.value.toLowerCase()))
+        return false
       return true
     })
   })
@@ -430,15 +432,14 @@ git commit -m "feat(inventory): add useInventoryCatalog composable"
 - [ ] **Step 1: Create the composable**
 
 ```ts
+import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 // app/composables/useInventoryListings.ts
 import { computed, ref } from 'vue'
-import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import { mockListingEntries } from '@/components/inventory/data/listing-entries'
 
 export function useInventoryListings() {
   const entries = useState<ListingInventoryEntry[]>('inventory-listings', () =>
-    mockListingEntries.map(e => ({ ...e })),
-  )
+    mockListingEntries.map(e => ({ ...e })),)
 
   const filterListing = ref<string>('all')
   const filterCategory = ref<string>('all')
@@ -446,8 +447,10 @@ export function useInventoryListings() {
 
   const filteredEntries = computed(() => {
     return entries.value.filter((entry) => {
-      if (filterListing.value !== 'all' && entry.listingName !== filterListing.value) return false
-      if (filterCondition.value !== 'all' && entry.condition !== filterCondition.value) return false
+      if (filterListing.value !== 'all' && entry.listingName !== filterListing.value)
+        return false
+      if (filterCondition.value !== 'all' && entry.condition !== filterCondition.value)
+        return false
       return true
     })
   })
@@ -506,10 +509,10 @@ git commit -m "feat(inventory): add useInventoryListings composable"
 ```vue
 <!-- app/components/inventory/InventoryItemDrawer.vue -->
 <script setup lang="ts">
+import type { InventoryDocument, InventoryItem, InventoryItemType } from '@/components/inventory/data/catalog'
 import { ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
-import type { InventoryDocument, InventoryItem, InventoryItemType } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 
 const props = defineProps<{
@@ -525,7 +528,7 @@ const { addItem, updateItem } = useInventoryCatalog()
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: val => emit('update:open', val),
 })
 
 const isEditing = computed(() => !!props.item)
@@ -576,7 +579,8 @@ function populateForm(item: InventoryItem) {
 
 watch(() => props.open, (val) => {
   if (val) {
-    if (props.item) populateForm(props.item)
+    if (props.item)
+      populateForm(props.item)
     else resetForm()
   }
 })
@@ -584,7 +588,8 @@ watch(() => props.open, (val) => {
 // Photo upload
 function handlePhotoUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  if (!file)
+    return
   const reader = new FileReader()
   reader.onload = (evt) => {
     photo.value = evt.target?.result as string
@@ -595,7 +600,8 @@ function handlePhotoUpload(e: Event) {
 // Document upload
 function handleDocumentUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  if (!file)
+    return
   const reader = new FileReader()
   reader.onload = (evt) => {
     documents.value = [
@@ -619,7 +625,8 @@ function removeDocument(index: number) {
 }
 
 function handleSave() {
-  if (!name.value.trim()) return
+  if (!name.value.trim())
+    return
 
   const payload: Omit<InventoryItem, 'id'> = {
     name: name.value.trim(),
@@ -706,7 +713,7 @@ function handleSave() {
         <div class="flex flex-col gap-1.5">
           <Label>Foto</Label>
           <div v-if="photo" class="relative w-24 h-24 rounded-md overflow-hidden border">
-            <img :src="photo" alt="item photo" class="w-full h-full object-cover" />
+            <img :src="photo" alt="item photo" class="w-full h-full object-cover">
             <button
               class="absolute top-1 right-1 bg-background/80 rounded-full p-0.5"
               @click="photo = undefined"
@@ -719,7 +726,7 @@ function handleSave() {
               <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
               Upload Foto
             </Button>
-            <input type="file" accept="image/*" class="hidden" @change="handlePhotoUpload" />
+            <input type="file" accept="image/*" class="hidden" @change="handlePhotoUpload">
           </label>
         </div>
 
@@ -727,7 +734,9 @@ function handleSave() {
 
         <!-- Purchase Info -->
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Informasi Pembelian</p>
+          <p class="text-sm font-medium">
+            Informasi Pembelian
+          </p>
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1.5">
               <Label>Harga Beli (IDR)</Label>
@@ -752,7 +761,9 @@ function handleSave() {
 
         <!-- Supplier -->
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Supplier / Vendor</p>
+          <p class="text-sm font-medium">
+            Supplier / Vendor
+          </p>
           <div class="flex flex-col gap-1.5">
             <Label>Nama Supplier</Label>
             <Input v-model="supplierName" placeholder="Cth: Ace Hardware Bali" />
@@ -767,7 +778,9 @@ function handleSave() {
 
         <!-- Documents -->
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">Dokumen</p>
+          <p class="text-sm font-medium">
+            Dokumen
+          </p>
           <div v-if="documents.length > 0" class="flex flex-col gap-2">
             <div
               v-for="(doc, i) in documents"
@@ -781,10 +794,18 @@ function handleSave() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="warranty">Garansi</SelectItem>
-                  <SelectItem value="receipt">Struk</SelectItem>
-                  <SelectItem value="invoice">Invoice</SelectItem>
-                  <SelectItem value="other">Lainnya</SelectItem>
+                  <SelectItem value="warranty">
+                    Garansi
+                  </SelectItem>
+                  <SelectItem value="receipt">
+                    Struk
+                  </SelectItem>
+                  <SelectItem value="invoice">
+                    Invoice
+                  </SelectItem>
+                  <SelectItem value="other">
+                    Lainnya
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="ghost" size="icon" class="h-7 w-7" @click="removeDocument(i)">
@@ -797,9 +818,11 @@ function handleSave() {
               <Icon name="lucide:paperclip" class="mr-2 h-4 w-4" />
               Upload Dokumen
             </Button>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocumentUpload" />
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocumentUpload">
           </label>
-          <p class="text-xs text-muted-foreground">PDF, JPG, PNG. Bisa upload lebih dari satu.</p>
+          <p class="text-xs text-muted-foreground">
+            PDF, JPG, PNG. Bisa upload lebih dari satu.
+          </p>
         </div>
 
         <Separator />
@@ -843,12 +866,12 @@ git commit -m "feat(inventory): add InventoryItemDrawer component"
 ```vue
 <!-- app/components/inventory/ListingInventoryDrawer.vue -->
 <script setup lang="ts">
+import type { ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import type { ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryListings } from '@/composables/useInventoryListings'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 
 const props = defineProps<{
   open: boolean
@@ -864,7 +887,7 @@ const { addEntry, updateEntry } = useInventoryListings()
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: val => emit('update:open', val),
 })
 
 const isEditing = computed(() => !!props.entry)
@@ -878,7 +901,8 @@ const stockLevel = ref<number | undefined>(undefined)
 const notes = ref('')
 
 const selectedItem = computed(() => {
-  if (!selectedItemId.value) return null
+  if (!selectedItemId.value)
+    return null
   return getItemById(selectedItemId.value)
 })
 
@@ -887,7 +911,8 @@ const isConsumable = computed(() => selectedItem.value?.type === 'consumable')
 // Combobox search for items
 const itemSearch = ref('')
 const filteredItems = computed(() => {
-  if (!itemSearch.value) return items.value
+  if (!itemSearch.value)
+    return items.value
   return items.value.filter(i =>
     i.name.toLowerCase().includes(itemSearch.value.toLowerCase()),
   )
@@ -914,13 +939,15 @@ function populateForm(entry: ListingInventoryEntry) {
 
 watch(() => props.open, (val) => {
   if (val) {
-    if (props.entry) populateForm(props.entry)
+    if (props.entry)
+      populateForm(props.entry)
     else resetForm()
   }
 })
 
 function handleSave() {
-  if (!selectedItemId.value || !selectedListing.value) return
+  if (!selectedItemId.value || !selectedListing.value)
+    return
 
   const payload: Omit<ListingInventoryEntry, 'id' | 'lastUpdated'> = {
     itemId: selectedItemId.value,
@@ -1070,10 +1097,10 @@ git commit -m "feat(inventory): add ListingInventoryDrawer component"
 ```vue
 <!-- app/components/inventory/InventoryCatalogTab.vue -->
 <script setup lang="ts">
+import type { InventoryItem } from '@/components/inventory/data/catalog'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
-import type { InventoryItem } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 
 const { filteredItems, searchValue, activeCategoryFilter, activeTypeFilter, deleteItem } = useInventoryCatalog()
@@ -1097,22 +1124,27 @@ function handleDelete(item: InventoryItem) {
 }
 
 function warrantyStatus(expiry?: string): 'expired' | 'soon' | 'ok' | 'none' {
-  if (!expiry) return 'none'
+  if (!expiry)
+    return 'none'
   const exp = new Date(expiry)
   const now = new Date()
   const diff = (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  if (diff < 0) return 'expired'
-  if (diff <= 30) return 'soon'
+  if (diff < 0)
+    return 'expired'
+  if (diff <= 30)
+    return 'soon'
   return 'ok'
 }
 
 function formatIDR(val?: number) {
-  if (val === undefined || val === null) return '—'
+  if (val === undefined || val === null)
+    return '—'
   return `IDR ${val.toLocaleString('id-ID')}`
 }
 
 function formatDate(d?: string) {
-  if (!d) return '—'
+  if (!d)
+    return '—'
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
@@ -1146,9 +1178,15 @@ function formatDate(d?: string) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Semua Tipe</SelectItem>
-          <SelectItem value="permanent">Permanent</SelectItem>
-          <SelectItem value="consumable">Consumable</SelectItem>
+          <SelectItem value="all">
+            Semua Tipe
+          </SelectItem>
+          <SelectItem value="permanent">
+            Permanent
+          </SelectItem>
+          <SelectItem value="consumable">
+            Consumable
+          </SelectItem>
         </SelectContent>
       </Select>
 
@@ -1185,15 +1223,19 @@ function formatDate(d?: string) {
             <!-- Photo -->
             <TableCell>
               <div class="w-9 h-9 rounded-md border overflow-hidden bg-muted flex items-center justify-center">
-                <img v-if="item.photo" :src="item.photo" class="w-full h-full object-cover" :alt="item.name" />
+                <img v-if="item.photo" :src="item.photo" class="w-full h-full object-cover" :alt="item.name">
                 <Icon v-else name="lucide:package" class="h-4 w-4 text-muted-foreground" />
               </div>
             </TableCell>
             <!-- Name -->
-            <TableCell class="font-medium">{{ item.name }}</TableCell>
+            <TableCell class="font-medium">
+              {{ item.name }}
+            </TableCell>
             <!-- Category -->
             <TableCell>
-              <Badge variant="outline">{{ item.category }}</Badge>
+              <Badge variant="outline">
+                {{ item.category }}
+              </Badge>
             </TableCell>
             <!-- Type -->
             <TableCell>
@@ -1202,9 +1244,13 @@ function formatDate(d?: string) {
               </Badge>
             </TableCell>
             <!-- Unit -->
-            <TableCell class="text-muted-foreground">{{ item.unit }}</TableCell>
+            <TableCell class="text-muted-foreground">
+              {{ item.unit }}
+            </TableCell>
             <!-- Purchase Value -->
-            <TableCell class="text-muted-foreground">{{ formatIDR(item.purchaseValue) }}</TableCell>
+            <TableCell class="text-muted-foreground">
+              {{ formatIDR(item.purchaseValue) }}
+            </TableCell>
             <!-- Warranty -->
             <TableCell>
               <template v-if="warrantyStatus(item.warrantyExpiry) === 'none'">
@@ -1281,12 +1327,12 @@ git commit -m "feat(inventory): add InventoryCatalogTab with warranty alerts"
 ```vue
 <!-- app/components/inventory/InventoryListingsTab.vue -->
 <script setup lang="ts">
+import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryListings } from '@/composables/useInventoryListings'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 
 const { getItemById } = useInventoryCatalog()
 const { filteredEntries, filterListing, filterCondition, deleteEntry } = useInventoryListings()
@@ -1332,9 +1378,12 @@ function formatRelativeDate(iso: string) {
   const date = new Date(iso)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return 'Hari ini'
-  if (diff === 1) return 'Kemarin'
-  if (diff < 7) return `${diff} hari lalu`
+  if (diff === 0)
+    return 'Hari ini'
+  if (diff === 1)
+    return 'Kemarin'
+  if (diff < 7)
+    return `${diff} hari lalu`
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
@@ -1349,7 +1398,9 @@ function formatRelativeDate(iso: string) {
           <SelectValue placeholder="Semua Listing" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Semua Listing</SelectItem>
+          <SelectItem value="all">
+            Semua Listing
+          </SelectItem>
           <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
             {{ listing }}
           </SelectItem>

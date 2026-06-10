@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { useJurnal } from '@/composables/useJurnal'
 import { jurnalAccounts } from '@/components/finance/data/jurnal'
+import { useJurnal } from '@/composables/useJurnal'
 import { allListings, useListingMappings } from '@/composables/useListingMappings'
 
 const {
@@ -50,12 +50,14 @@ function isMappedToBexio(listingName: string): boolean {
 }
 
 function setJurnalMapping(listingName: string, accountId: string) {
-  if (accountId) setMapping(listingName, 'jurnal', accountId)
+  if (accountId)
+    setMapping(listingName, 'jurnal', accountId)
   else clearMapping(listingName)
 }
 
 function applyToAll(accountId: string) {
-  if (!accountId) return
+  if (!accountId)
+    return
   filteredListings.value
     .filter(l => !isMappedToBexio(l.name))
     .forEach(l => setMapping(l.name, 'jurnal', accountId))
@@ -73,7 +75,8 @@ function getMappingValue(listingName: string): string {
 
 async function handleTestConnection() {
   const ok = await testConnection()
-  if (ok) toast.success('Connection successful — Jurnal API responded.')
+  if (ok)
+    toast.success('Connection successful — Jurnal API responded.')
   else toast.error('Connection failed. Check your API key.')
 }
 
@@ -125,8 +128,12 @@ const typeBadge: Record<string, string> = {
             <Icon name="i-lucide-link" class="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <p class="text-sm font-medium">Mekari Jurnal</p>
-            <p class="text-xs text-muted-foreground">Accounting & ledger integration</p>
+            <p class="text-sm font-medium">
+              Mekari Jurnal
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Accounting & ledger integration
+            </p>
           </div>
         </div>
         <span
@@ -143,16 +150,28 @@ const typeBadge: Record<string, string> = {
         <template v-if="isConnected">
           <dl class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
             <div>
-              <dt class="text-xs text-muted-foreground">Company</dt>
-              <dd class="mt-0.5 font-medium">{{ companyName }}</dd>
+              <dt class="text-xs text-muted-foreground">
+                Company
+              </dt>
+              <dd class="mt-0.5 font-medium">
+                {{ companyName }}
+              </dd>
             </div>
             <div>
-              <dt class="text-xs text-muted-foreground">API Key</dt>
-              <dd class="mt-0.5 font-mono text-sm">{{ apiKey }}</dd>
+              <dt class="text-xs text-muted-foreground">
+                API Key
+              </dt>
+              <dd class="mt-0.5 font-mono text-sm">
+                {{ apiKey }}
+              </dd>
             </div>
             <div>
-              <dt class="text-xs text-muted-foreground">Connected since</dt>
-              <dd class="mt-0.5 font-medium">{{ lastConnected }}</dd>
+              <dt class="text-xs text-muted-foreground">
+                Connected since
+              </dt>
+              <dd class="mt-0.5 font-medium">
+                {{ lastConnected }}
+              </dd>
             </div>
           </dl>
           <div class="mt-4 flex flex-wrap gap-2">
@@ -238,7 +257,9 @@ const typeBadge: Record<string, string> = {
       <div class="rounded-lg border bg-card p-5">
         <div class="mb-3 flex items-start justify-between">
           <div>
-            <p class="text-sm font-medium">Push Cost Entries</p>
+            <p class="text-sm font-medium">
+              Push Cost Entries
+            </p>
             <p class="mt-0.5 text-xs text-muted-foreground">
               Send cost entries to Jurnal as expense transactions.
             </p>
@@ -269,7 +290,9 @@ const typeBadge: Record<string, string> = {
       <div class="rounded-lg border bg-card p-5">
         <div class="mb-3 flex items-start justify-between">
           <div>
-            <p class="text-sm font-medium">Push Revenue Entries</p>
+            <p class="text-sm font-medium">
+              Push Revenue Entries
+            </p>
             <p class="mt-0.5 text-xs text-muted-foreground">
               Send booking revenue to Jurnal as income transactions.
             </p>
@@ -301,8 +324,12 @@ const typeBadge: Record<string, string> = {
     <div v-if="isConnected" class="rounded-lg border bg-card">
       <div class="border-b px-5 py-3.5 flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium">Listing Mapping</p>
-          <p class="text-xs text-muted-foreground">Map listings to Jurnal revenue accounts for automatic posting</p>
+          <p class="text-sm font-medium">
+            Listing Mapping
+          </p>
+          <p class="text-xs text-muted-foreground">
+            Map listings to Jurnal revenue accounts for automatic posting
+          </p>
         </div>
         <Badge variant="secondary" class="tabular-nums shrink-0">
           {{ jurnalMappedCount }}/{{ allListings.length }} mapped
@@ -351,8 +378,12 @@ const typeBadge: Record<string, string> = {
               <TableHeader>
                 <TableRow>
                   <TableHead>Listing</TableHead>
-                  <TableHead class="w-24">Region</TableHead>
-                  <TableHead class="w-80">Jurnal Account</TableHead>
+                  <TableHead class="w-24">
+                    Region
+                  </TableHead>
+                  <TableHead class="w-80">
+                    Jurnal Account
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -365,7 +396,9 @@ const typeBadge: Record<string, string> = {
                     {{ listing.name }}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" class="text-xs font-normal">{{ listing.region }}</Badge>
+                    <Badge variant="outline" class="text-xs font-normal">
+                      {{ listing.region }}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div v-if="isMappedToBexio(listing.name)" class="flex items-center gap-1.5">
@@ -398,25 +431,43 @@ const typeBadge: Record<string, string> = {
     <!-- Sync history -->
     <div class="rounded-lg border bg-card">
       <div class="border-b px-5 py-3.5">
-        <p class="text-sm font-medium">Sync History</p>
-        <p class="text-xs text-muted-foreground">All push operations to Mekari Jurnal</p>
+        <p class="text-sm font-medium">
+          Sync History
+        </p>
+        <p class="text-xs text-muted-foreground">
+          All push operations to Mekari Jurnal
+        </p>
       </div>
       <div v-if="syncLogs.length > 0" class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b bg-muted/40">
-              <th class="px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">Date & Time</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Type</th>
-              <th class="px-3 py-2.5 text-center text-xs font-medium text-muted-foreground">Entries</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Status</th>
-              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Jurnal Ref</th>
-              <th class="px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">Pushed by</th>
+              <th class="px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                Date & Time
+              </th>
+              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                Type
+              </th>
+              <th class="px-3 py-2.5 text-center text-xs font-medium text-muted-foreground">
+                Entries
+              </th>
+              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                Status
+              </th>
+              <th class="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                Jurnal Ref
+              </th>
+              <th class="px-5 py-2.5 text-left text-xs font-medium text-muted-foreground">
+                Pushed by
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y">
             <template v-for="log in syncLogs" :key="log.id">
               <tr class="hover:bg-muted/30">
-                <td class="px-5 py-3 tabular-nums text-muted-foreground">{{ formatDate(log.date) }}</td>
+                <td class="px-5 py-3 tabular-nums text-muted-foreground">
+                  {{ formatDate(log.date) }}
+                </td>
                 <td class="px-3 py-3">
                   <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="typeBadge[log.type]">
                     {{ log.type }}
@@ -441,7 +492,9 @@ const typeBadge: Record<string, string> = {
                 <td class="px-3 py-3 font-mono text-xs">
                   {{ log.jurnalReference ?? '—' }}
                 </td>
-                <td class="px-5 py-3 text-muted-foreground">{{ log.pushedBy }}</td>
+                <td class="px-5 py-3 text-muted-foreground">
+                  {{ log.pushedBy }}
+                </td>
               </tr>
               <!-- Error row -->
               <tr v-if="log.errorMessage" class="bg-red-50/50">

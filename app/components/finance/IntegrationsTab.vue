@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { integrations, type Integration, type IntegrationStatus } from '@/components/finance/data/integrations'
+import type { Integration, IntegrationStatus } from '@/components/finance/data/integrations'
+import { computed, ref, watch } from 'vue'
+import { integrations } from '@/components/finance/data/integrations'
 import { useJurnal } from '@/composables/useJurnal'
 
 const { isConnected: jurnalConnected } = useJurnal()
@@ -10,7 +11,8 @@ const sheetOpen = ref(false)
 
 // Close sheet when an integration is disconnected
 watch(jurnalConnected, (val) => {
-  if (!val) sheetOpen.value = false
+  if (!val)
+    sheetOpen.value = false
 })
 
 function openIntegration(integration: Integration) {
@@ -28,7 +30,8 @@ function effectiveStatus(integration: Integration): IntegrationStatus {
 const byCategory = computed(() => {
   const map: Record<string, Integration[]> = {}
   for (const i of integrations) {
-    if (!map[i.category]) map[i.category] = [] as Integration[]
+    if (!map[i.category])
+      map[i.category] = [] as Integration[]
     map[i.category]!.push(i)
   }
   return map
@@ -87,7 +90,9 @@ const activeComponent = computed(() =>
               {{ statusLabel[effectiveStatus(integration)] }}
             </span>
           </div>
-          <p class="mb-1 text-sm font-medium">{{ integration.name }}</p>
+          <p class="mb-1 text-sm font-medium">
+            {{ integration.name }}
+          </p>
           <p class="mb-4 flex-1 text-xs text-muted-foreground leading-relaxed">
             {{ integration.description }}
           </p>
@@ -115,8 +120,12 @@ const activeComponent = computed(() =>
             <Icon v-if="selected" :name="selected.icon" class="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <SheetTitle class="text-base">{{ selected?.name }}</SheetTitle>
-            <SheetDescription class="text-xs">{{ selected?.category }}</SheetDescription>
+            <SheetTitle class="text-base">
+              {{ selected?.name }}
+            </SheetTitle>
+            <SheetDescription class="text-xs">
+              {{ selected?.category }}
+            </SheetDescription>
           </div>
         </div>
       </SheetHeader>

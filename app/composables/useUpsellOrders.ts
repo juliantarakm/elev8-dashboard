@@ -1,18 +1,14 @@
-import { computed } from 'vue'
 import type {
-  OrderApprovalStatus,
-  OrderFulfillmentStatus,
-  OrderPaymentStatus,
   OrderStatus,
   UpsellOrder,
 } from '@/components/upsells/data/upsell-orders'
+import { computed } from 'vue'
+import { calculateRefund, getPolicyForService } from '@/components/upsells/data/cancellation-policies'
 import { getOrderStatus, mockUpsellOrders } from '@/components/upsells/data/upsell-orders'
-import { getPolicyForService, calculateRefund } from '@/components/upsells/data/cancellation-policies'
 
 export function useUpsellOrders() {
   const orders = useState<UpsellOrder[]>('upsell-orders', () =>
-    mockUpsellOrders.map(o => ({ ...o })),
-  )
+    mockUpsellOrders.map(o => ({ ...o })))
 
   const filterStatus = ref<OrderStatus | 'all'>('all')
   const filterService = ref<string>('all')
@@ -33,11 +29,16 @@ export function useUpsellOrders() {
   const filteredOrders = computed(() => {
     return orders.value.filter((o) => {
       const status = getOrderStatus(o)
-      if (filterStatus.value !== 'all' && status !== filterStatus.value) return false
-      if (filterService.value !== 'all' && o.serviceId !== filterService.value) return false
-      if (filterDateFrom.value && o.orderDate < filterDateFrom.value) return false
-      if (filterDateTo.value && o.orderDate > filterDateTo.value) return false
-      if (searchValue.value && !matchesSearch(o, searchValue.value)) return false
+      if (filterStatus.value !== 'all' && status !== filterStatus.value)
+        return false
+      if (filterService.value !== 'all' && o.serviceId !== filterService.value)
+        return false
+      if (filterDateFrom.value && o.orderDate < filterDateFrom.value)
+        return false
+      if (filterDateTo.value && o.orderDate > filterDateTo.value)
+        return false
+      if (searchValue.value && !matchesSearch(o, searchValue.value))
+        return false
       return true
     })
   })
@@ -212,7 +213,8 @@ export function useUpsellOrders() {
 
   function cancelOrder(id: string, reason: string, cancelledBy: 'guest' | 'staff') {
     const order = orders.value.find(o => o.id === id)
-    if (!order) return null
+    if (!order)
+      return null
 
     const policy = getPolicyForService(order.serviceId)
     const refund = policy

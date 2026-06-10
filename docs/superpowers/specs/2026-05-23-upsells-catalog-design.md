@@ -11,19 +11,19 @@ CRUD catalog page for managing upsell services offered to guests at Bali vacatio
 ## Data Model
 
 ```ts
-type UpsellCategory =
-  | 'Vehicle Rental'
-  | 'Airport Transport'
-  | 'Private Chef'
-  | 'Spa'
-  | 'Activity'
-  | 'Late Check-out'
-  | 'Early Check-in'
-  | 'Mid-stay Cleaning'
-  | 'Office Equipment'
-  | 'Baby'
-  | 'Pet'
-  | 'Miscellaneous'
+type UpsellCategory
+  = | 'Vehicle Rental'
+    | 'Airport Transport'
+    | 'Private Chef'
+    | 'Spa'
+    | 'Activity'
+    | 'Late Check-out'
+    | 'Early Check-in'
+    | 'Mid-stay Cleaning'
+    | 'Office Equipment'
+    | 'Baby'
+    | 'Pet'
+    | 'Miscellaneous'
 
 interface UpsellService {
   id: string

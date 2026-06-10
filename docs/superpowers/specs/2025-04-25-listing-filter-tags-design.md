@@ -25,7 +25,7 @@ Add `tags: string[]` to the `Conversation` interface:
 ```ts
 export interface Conversation {
   // ...existing fields...
-  tags: string[]  // Listing tags (freeform, e.g. "Canggu", "Pool", "4BR")
+  tags: string[] // Listing tags (freeform, e.g. "Canggu", "Pool", "4BR")
 }
 ```
 

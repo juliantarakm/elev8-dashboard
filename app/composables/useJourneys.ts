@@ -1,5 +1,5 @@
-import type { Journey, JourneyStatus, JourneyGroup } from '~/components/journeys/data/journeys'
-import { mockJourneys, mockGroups } from '~/components/journeys/data/journeys'
+import type { Journey, JourneyGroup, JourneyStatus } from '~/components/journeys/data/journeys'
+import { mockGroups, mockJourneys } from '~/components/journeys/data/journeys'
 
 export function useJourneys() {
   const journeys = useState<Journey[]>('journeys', () => mockJourneys)
@@ -9,7 +9,7 @@ export function useJourneys() {
     journeys.value = journeys.value.map(j =>
       j.id === id
         ? { ...j, status: (j.status === 'active' ? 'inactive' : 'active') as JourneyStatus }
-        : j
+        : j,
     )
   }
 
@@ -19,9 +19,10 @@ export function useJourneys() {
       journeys.value = journeys.value.map(j =>
         j.id === journey.id
           ? { ...journey, lastModified: new Date().toISOString().split('T')[0] }
-          : j
+          : j,
       )
-    } else {
+    }
+    else {
       journeys.value = [
         ...journeys.value,
         { ...journey, lastModified: new Date().toISOString().split('T')[0] },
@@ -39,7 +40,8 @@ export function useJourneys() {
 
   function duplicateJourney(id: string) {
     const original = journeys.value.find(j => j.id === id)
-    if (!original) return
+    if (!original)
+      return
     const newId = `j-${Date.now()}`
     const copy: Journey = JSON.parse(JSON.stringify(original))
     copy.id = newId
@@ -82,7 +84,7 @@ export function useJourneys() {
     }))
     if (groupId) {
       groups.value = groups.value.map(g =>
-        g.id === groupId ? { ...g, journeyIds: [...g.journeyIds, journeyId] } : g
+        g.id === groupId ? { ...g, journeyIds: [...g.journeyIds, journeyId] } : g,
       )
     }
   }
@@ -93,13 +95,22 @@ export function useJourneys() {
       journeyIds: g.journeyIds.filter(jid => !journeyIds.includes(jid)),
     }))
     groups.value = groups.value.map(g =>
-      g.id === groupId ? { ...g, journeyIds: [...g.journeyIds, ...journeyIds] } : g
+      g.id === groupId ? { ...g, journeyIds: [...g.journeyIds, ...journeyIds] } : g,
     )
   }
 
   return {
-    journeys, toggleStatus, saveJourney, deleteJourney, duplicateJourney,
-    groups, createGroup, deleteGroup, renameGroup, toggleGroupCollapse,
-    moveJourneyToGroup, addJourneysToGroup,
+    journeys,
+    toggleStatus,
+    saveJourney,
+    deleteJourney,
+    duplicateJourney,
+    groups,
+    createGroup,
+    deleteGroup,
+    renameGroup,
+    toggleGroupCollapse,
+    moveJourneyToGroup,
+    addJourneysToGroup,
   }
 }

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import SavedViewsDropdown from '~/components/listings/SavedViewsDropdown.vue'
 
-describe('SavedViewsDropdown', () => {
+describe('savedViewsDropdown', () => {
   it('renders button with default text', () => {
     const wrapper = mount(SavedViewsDropdown, {
       props: {

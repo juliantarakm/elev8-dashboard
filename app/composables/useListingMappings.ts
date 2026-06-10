@@ -100,7 +100,7 @@ export function useListingMappings() {
     const updated = { ...mappings.value }
     allListings
       .filter(l => !region || l.region === region)
-      .forEach(l => { updated[l.name] = { integration, accountId } })
+      .forEach((l) => { updated[l.name] = { integration, accountId } })
     mappings.value = updated
   }
 

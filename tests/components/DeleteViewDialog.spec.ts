@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
 
-describe('DeleteViewDialog', () => {
+describe('deleteViewDialog', () => {
   it('renders dialog with view name', () => {
     const wrapper = mount(DeleteViewDialog, {
       props: {

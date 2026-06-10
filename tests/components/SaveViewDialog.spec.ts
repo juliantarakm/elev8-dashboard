@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import SaveViewDialog from '~/components/listings/SaveViewDialog.vue'
 
-describe('SaveViewDialog', () => {
+describe('saveViewDialog', () => {
   it('renders dialog with name input', () => {
     const wrapper = mount(SaveViewDialog, {
       props: {

@@ -1,16 +1,16 @@
-export type UpsellCategory =
-  | 'Vehicle Rental'
-  | 'Airport Transport'
-  | 'Private Chef'
-  | 'Spa'
-  | 'Activity'
-  | 'Late Check-out'
-  | 'Early Check-in'
-  | 'Mid-stay Cleaning'
-  | 'Office Equipment'
-  | 'Baby'
-  | 'Miscellaneous'
-  | 'Pet'
+export type UpsellCategory
+  = | 'Vehicle Rental'
+    | 'Airport Transport'
+    | 'Private Chef'
+    | 'Spa'
+    | 'Activity'
+    | 'Late Check-out'
+    | 'Early Check-in'
+    | 'Mid-stay Cleaning'
+    | 'Office Equipment'
+    | 'Baby'
+    | 'Miscellaneous'
+    | 'Pet'
 
 export interface UpsellItem {
   id: string
@@ -153,7 +153,7 @@ export const mockUpsellServices: UpsellService[] = [
     currency: 'IDR',
     youtubeLinks: [],
     internalNotes: 'Pickup at 8am. Bring sunscreen and comfortable shoes.',
-notificationUsers: ['Komang Juliantara'],
+    notificationUsers: ['Komang Juliantara'],
     pricingEnabled: true,
     taxPercent: 11,
     servicePercent: 5,

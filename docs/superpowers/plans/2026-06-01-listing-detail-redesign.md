@@ -134,7 +134,7 @@ const activePhotoIndex = ref(0)
         :src="listing.photos[activePhotoIndex]"
         :alt="listing.name"
         class="w-full h-full object-cover"
-      />
+      >
     </div>
 
     <div v-if="listing.photos.length > 1" class="flex gap-2 overflow-x-auto">
@@ -145,13 +145,15 @@ const activePhotoIndex = ref(0)
         :class="activePhotoIndex === index ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'"
         @click="activePhotoIndex = index"
       >
-        <img :src="photo" :alt="`Photo ${index + 1}`" class="w-full h-full object-cover" />
+        <img :src="photo" :alt="`Photo ${index + 1}`" class="w-full h-full object-cover">
       </button>
     </div>
 
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold tracking-tight">{{ listing.name }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight">
+          {{ listing.name }}
+        </h1>
         <Badge
           :variant="listing.aiStatus === 'active' ? 'default' : 'secondary'"
           class="text-xs"
@@ -210,10 +212,26 @@ function otaIcon(ota: string) {
 }
 
 const allAmenities = [
-  'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
-  'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
-  'Ocean View', 'Cliff Deck', 'Surfboard Storage', 'Mountain View', 'Hot Tub',
-  'Fireplace', 'River View', 'Bamboo Construction',
+  'Pool',
+  'WiFi',
+  'AC',
+  'Kitchen',
+  'Parking',
+  'Garden',
+  'Beach Access',
+  'Rooftop Deck',
+  'Plunge Pool',
+  'Yoga Deck',
+  'Hammock Deck',
+  'Nature Bath',
+  'Ocean View',
+  'Cliff Deck',
+  'Surfboard Storage',
+  'Mountain View',
+  'Hot Tub',
+  'Fireplace',
+  'River View',
+  'Bamboo Construction',
 ]
 
 const amenitySearch = ref('')
@@ -221,7 +239,8 @@ const amenityPopoverOpen = ref(false)
 
 const filteredAmenities = computed(() => {
   const available = allAmenities.filter(a => !props.listing.amenities.includes(a))
-  if (!amenitySearch.value) return available
+  if (!amenitySearch.value)
+    return available
   return available.filter(a => a.toLowerCase().includes(amenitySearch.value.toLowerCase()))
 })
 
@@ -253,7 +272,9 @@ function removeAmenity(amenity: string) {
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <div class="flex flex-col gap-4 rounded-lg border p-5">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold">Amenities</h3>
+          <h3 class="text-sm font-semibold">
+            Amenities
+          </h3>
           <Popover v-model:open="amenityPopoverOpen">
             <PopoverTrigger as-child>
               <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs">
@@ -298,7 +319,9 @@ function removeAmenity(amenity: string) {
       </div>
 
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">OTA Connections</h3>
+        <h3 class="text-sm font-semibold">
+          OTA Connections
+        </h3>
         <div class="flex flex-wrap gap-3">
           <div
             v-for="ota in listing.otaConnected"
@@ -312,7 +335,9 @@ function removeAmenity(amenity: string) {
       </div>
 
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Tags</h3>
+        <h3 class="text-sm font-semibold">
+          Tags
+        </h3>
         <div class="flex flex-wrap gap-2">
           <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-xs">
             {{ tag }}
@@ -380,13 +405,19 @@ const allOtas = ['Airbnb', 'Booking.com']
 <template>
   <Tabs v-model="activeSubTab">
     <TabsList>
-      <TabsTrigger value="details">Details</TabsTrigger>
-      <TabsTrigger value="channels">Distribution Channels</TabsTrigger>
+      <TabsTrigger value="details">
+        Details
+      </TabsTrigger>
+      <TabsTrigger value="channels">
+        Distribution Channels
+      </TabsTrigger>
     </TabsList>
 
     <TabsContent value="details" class="mt-4">
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Listing Details</h3>
+        <h3 class="text-sm font-semibold">
+          Listing Details
+        </h3>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="flex flex-col gap-1.5">
             <Label for="name">Listing Name</Label>
@@ -410,14 +441,18 @@ const allOtas = ['Airbnb', 'Booking.com']
           </div>
         </div>
         <div class="flex justify-end">
-          <Button size="sm" @click="saveDetails">Save Changes</Button>
+          <Button size="sm" @click="saveDetails">
+            Save Changes
+          </Button>
         </div>
       </div>
     </TabsContent>
 
     <TabsContent value="channels" class="mt-4">
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Distribution Channels</h3>
+        <h3 class="text-sm font-semibold">
+          Distribution Channels
+        </h3>
         <div class="flex flex-col gap-3">
           <div
             v-for="ota in allOtas"
@@ -491,8 +526,8 @@ function toggleDay(day: number) {
 const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
 
 const previewHours = computed(() => {
-  const start = parseInt(schedule.value.activeHours.start.split(':')[0])
-  const end = parseInt(schedule.value.activeHours.end.split(':')[0])
+  const start = Number.parseInt(schedule.value.activeHours.start.split(':')[0])
+  const end = Number.parseInt(schedule.value.activeHours.end.split(':')[0])
   return Array.from({ length: 24 }, (_, i) => ({
     hour: i,
     active: start <= end ? (i >= start && i < end) : (i >= start || i < end),
@@ -508,8 +543,12 @@ const previewHours = computed(() => {
           <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-5" :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'" />
         </div>
         <div>
-          <p class="text-sm font-semibold">ElevAI {{ listing.aiStatus === 'active' ? 'Active' : 'Paused' }}</p>
-          <p class="text-xs text-muted-foreground">Automated guest messaging</p>
+          <p class="text-sm font-semibold">
+            ElevAI {{ listing.aiStatus === 'active' ? 'Active' : 'Paused' }}
+          </p>
+          <p class="text-xs text-muted-foreground">
+            Automated guest messaging
+          </p>
         </div>
       </div>
       <Switch :checked="listing.aiStatus === 'active'" @update:checked="toggleAi" />
@@ -517,20 +556,28 @@ const previewHours = computed(() => {
 
     <div v-if="schedule.enabled" class="flex flex-col gap-6">
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Repeat</h3>
+        <h3 class="text-sm font-semibold">
+          Repeat
+        </h3>
         <Select :model-value="schedule.repeatType" @update:model-value="(val: string) => updateSchedule({ repeatType: val as 'weekly' | 'monthly' })">
           <SelectTrigger class="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="weekly">
+              Weekly
+            </SelectItem>
+            <SelectItem value="monthly">
+              Monthly
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Active Days</h3>
+        <h3 class="text-sm font-semibold">
+          Active Days
+        </h3>
         <div class="flex flex-wrap gap-2">
           <Button
             v-for="(day, index) in dayNames"
@@ -547,14 +594,18 @@ const previewHours = computed(() => {
       </div>
 
       <div class="flex flex-col gap-4 rounded-lg border p-5">
-        <h3 class="text-sm font-semibold">Active Hours</h3>
+        <h3 class="text-sm font-semibold">
+          Active Hours
+        </h3>
         <div class="flex items-center gap-3">
           <Select :model-value="schedule.activeHours.start" @update:model-value="(val: string) => updateSchedule({ activeHours: { ...schedule.activeHours, start: val } })">
             <SelectTrigger class="w-28">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+              <SelectItem v-for="h in hours" :key="h" :value="h">
+                {{ h }}
+              </SelectItem>
             </SelectContent>
           </Select>
           <span class="text-sm text-muted-foreground">to</span>
@@ -563,13 +614,17 @@ const previewHours = computed(() => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+              <SelectItem v-for="h in hours" :key="h" :value="h">
+                {{ h }}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div class="mt-2">
-          <p class="text-xs text-muted-foreground mb-2">24h Preview</p>
+          <p class="text-xs text-muted-foreground mb-2">
+            24h Preview
+          </p>
           <div class="flex gap-0.5">
             <div
               v-for="item in previewHours"
@@ -590,7 +645,9 @@ const previewHours = computed(() => {
 
     <div v-else class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
       <Icon name="lucide:clock" class="size-8 text-muted-foreground" />
-      <p class="text-sm text-muted-foreground">Activate AI to configure schedule</p>
+      <p class="text-sm text-muted-foreground">
+        Activate AI to configure schedule
+      </p>
     </div>
   </div>
 </template>
@@ -637,7 +694,9 @@ const activeTab = ref('overview')
 <template>
   <div v-if="!listing" class="flex flex-col items-center justify-center gap-4 py-24">
     <Icon name="lucide:alert-circle" class="size-12 text-muted-foreground" />
-    <h2 class="text-lg font-semibold">Listing not found</h2>
+    <h2 class="text-lg font-semibold">
+      Listing not found
+    </h2>
     <Button variant="outline" size="sm" @click="router.push('/listings')">
       <Icon name="lucide:arrow-left" class="size-4" />
       Back to Listings

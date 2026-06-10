@@ -30,7 +30,7 @@ export function calculateRefund(
   cancelledAt: string,
   policy: CancellationPolicy,
   cancelledBy: 'guest' | 'staff',
-): { refundAmount: number; refundPercent: number; lateFee: number; reason: string } {
+): { refundAmount: number, refundPercent: number, lateFee: number, reason: string } {
   if (cancelledBy === 'staff') {
     return { refundAmount: orderTotal, refundPercent: 100, lateFee: 0, reason: 'Staff cancellation — full refund' }
   }

@@ -1021,8 +1021,8 @@ Create `app/components/inbox/ThreadMessage.vue`:
 ```vue
 <script lang="ts" setup>
 import type { Message } from './data/conversations'
-import { cn } from '~/lib/utils'
 import { format } from 'date-fns'
+import { cn } from '~/lib/utils'
 
 interface ThreadMessageProps {
   message: Message
@@ -1146,7 +1146,7 @@ function onDismiss() {
   <div class="border-t p-3">
     <Textarea
       v-model="replyText"
-      :placeholder="'Type your reply...'"
+      placeholder="Type your reply..."
       class="mb-2 min-h-[80px] resize-none"
     />
     <div class="flex items-center justify-between">
@@ -1166,14 +1166,18 @@ function onDismiss() {
           )"
           @click="toggleElevai(conversationId)"
         >
-          <span :class="cn(
-            'relative inline-block h-4 w-7 rounded-full transition-colors',
-            elevaiOn ? 'bg-[#C8A84B]' : 'bg-muted-foreground/30',
-          )">
-            <span :class="cn(
-              'absolute top-0.5 left-0.5 h-3 w-3 rounded-full transition-transform',
-              elevaiOn ? 'translate-x-3 bg-[#0a0a0f]' : 'bg-white',
-            )" />
+          <span
+            :class="cn(
+              'relative inline-block h-4 w-7 rounded-full transition-colors',
+              elevaiOn ? 'bg-[#C8A84B]' : 'bg-muted-foreground/30',
+            )"
+          >
+            <span
+              :class="cn(
+                'absolute top-0.5 left-0.5 h-3 w-3 rounded-full transition-transform',
+                elevaiOn ? 'translate-x-3 bg-[#0a0a0f]' : 'bg-white',
+              )"
+            />
           </span>
           ElevAI
         </button>
@@ -1381,7 +1385,9 @@ const sentimentConfig = computed(() => {
         <div :class="cn('text-xs font-semibold', sentimentConfig.color)">
           {{ sentimentConfig.label }}
         </div>
-        <div class="text-[10px] text-muted-foreground">{{ note }}</div>
+        <div class="text-[10px] text-muted-foreground">
+          {{ note }}
+        </div>
       </div>
     </div>
     <span class="rounded bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">ElevAI</span>
@@ -1435,8 +1441,12 @@ const severityConfig = computed(() => {
         {{ icons[action.type] || '📌' }}
       </div>
       <div class="flex-1 min-w-0">
-        <div class="text-xs font-semibold">{{ action.title }}</div>
-        <div class="text-[10px] text-muted-foreground">{{ action.description }}</div>
+        <div class="text-xs font-semibold">
+          {{ action.title }}
+        </div>
+        <div class="text-[10px] text-muted-foreground">
+          {{ action.description }}
+        </div>
         <div class="mt-1.5 flex gap-1.5">
           <Button size="xs" class="bg-[#C8A84B] text-[#0a0a0f] hover:bg-[#C8A84B]/90 h-6 text-[10px]" @click="emit('act', action)">
             {{ action.primaryAction }}
@@ -1461,7 +1471,7 @@ Create `app/components/inbox/ReservationSummary.vue`:
 ```vue
 <script lang="ts" setup>
 import type { Reservation } from './data/conversations'
-import { format, differenceInDays } from 'date-fns'
+import { differenceInDays, format } from 'date-fns'
 
 interface ReservationSummaryProps {
   reservation: Reservation
@@ -1480,7 +1490,9 @@ const props = defineProps<ReservationSummaryProps>()
 
     <!-- Smart Actions -->
     <div v-if="smartActions.length > 0">
-      <div class="mb-2 text-xs font-medium text-foreground">Action Needed</div>
+      <div class="mb-2 text-xs font-medium text-foreground">
+        Action Needed
+      </div>
       <InboxActionCard
         v-for="action in smartActions"
         :key="action.id"
@@ -1492,31 +1504,55 @@ const props = defineProps<ReservationSummaryProps>()
 
     <!-- Reservation details -->
     <div>
-      <div class="text-[10px] text-muted-foreground">Property</div>
-      <div class="text-sm font-medium">{{ reservation.propertyName }}</div>
-      <div class="text-xs text-muted-foreground">{{ reservation.roomName }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Property
+      </div>
+      <div class="text-sm font-medium">
+        {{ reservation.propertyName }}
+      </div>
+      <div class="text-xs text-muted-foreground">
+        {{ reservation.roomName }}
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">OTA Source</div>
+      <div class="text-[10px] text-muted-foreground">
+        OTA Source
+      </div>
       <span class="inline-block rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] text-green-500">{{ reservation.otaSource }}</span>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Dates</div>
-      <div class="text-sm">{{ format(new Date(reservation.checkIn), 'MMM d') }} – {{ format(new Date(reservation.checkOut), 'MMM d, yyyy') }}</div>
-      <div class="text-xs text-muted-foreground">{{ reservation.nights }} nights</div>
+      <div class="text-[10px] text-muted-foreground">
+        Dates
+      </div>
+      <div class="text-sm">
+        {{ format(new Date(reservation.checkIn), 'MMM d') }} – {{ format(new Date(reservation.checkOut), 'MMM d, yyyy') }}
+      </div>
+      <div class="text-xs text-muted-foreground">
+        {{ reservation.nights }} nights
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Guests</div>
-      <div class="text-sm">{{ reservation.guestCount }} adults</div>
+      <div class="text-[10px] text-muted-foreground">
+        Guests
+      </div>
+      <div class="text-sm">
+        {{ reservation.guestCount }} adults
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Total</div>
-      <div class="text-lg font-bold text-[#C8A84B]">{{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Total
+      </div>
+      <div class="text-lg font-bold text-[#C8A84B]">
+        {{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}
+      </div>
     </div>
 
     <!-- Quick Actions -->
     <div class="border-t pt-3">
-      <div class="text-[10px] text-muted-foreground mb-2">Quick Actions</div>
+      <div class="text-[10px] text-muted-foreground mb-2">
+        Quick Actions
+      </div>
       <div class="flex flex-col gap-1.5">
         <button class="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground hover:bg-accent transition-colors text-left">
           View in Cockpit
@@ -1582,21 +1618,37 @@ defineProps<ReservationGuestProps>()
         <AvatarFallback>{{ guest.name.split(' ').map(n => n[0]).join('') }}</AvatarFallback>
       </Avatar>
       <div>
-        <div class="text-sm font-semibold">{{ guest.name }}</div>
-        <div class="text-xs text-muted-foreground">{{ guest.previousStays }} previous stay{{ guest.previousStays !== 1 ? 's' : '' }}</div>
+        <div class="text-sm font-semibold">
+          {{ guest.name }}
+        </div>
+        <div class="text-xs text-muted-foreground">
+          {{ guest.previousStays }} previous stay{{ guest.previousStays !== 1 ? 's' : '' }}
+        </div>
       </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Email</div>
-      <div class="text-sm">{{ guest.email }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Email
+      </div>
+      <div class="text-sm">
+        {{ guest.email }}
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Phone</div>
-      <div class="text-sm">{{ guest.phone }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Phone
+      </div>
+      <div class="text-sm">
+        {{ guest.phone }}
+      </div>
     </div>
     <div v-if="guest.notes">
-      <div class="text-[10px] text-muted-foreground">Notes</div>
-      <div class="text-sm text-muted-foreground">{{ guest.notes }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Notes
+      </div>
+      <div class="text-sm text-muted-foreground">
+        {{ guest.notes }}
+      </div>
     </div>
   </div>
 </template>
@@ -1620,19 +1672,33 @@ defineProps<ReservationListingProps>()
 <template>
   <div class="space-y-4">
     <div>
-      <div class="text-[10px] text-muted-foreground">Listing</div>
-      <div class="text-sm font-medium">{{ listing.name }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Listing
+      </div>
+      <div class="text-sm font-medium">
+        {{ listing.name }}
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Property</div>
-      <div class="text-sm">{{ listing.property }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Property
+      </div>
+      <div class="text-sm">
+        {{ listing.property }}
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground">Room</div>
-      <div class="text-sm">{{ listing.room }}</div>
+      <div class="text-[10px] text-muted-foreground">
+        Room
+      </div>
+      <div class="text-sm">
+        {{ listing.room }}
+      </div>
     </div>
     <div>
-      <div class="text-[10px] text-muted-foreground mb-1.5">Amenities</div>
+      <div class="text-[10px] text-muted-foreground mb-1.5">
+        Amenities
+      </div>
       <div class="flex flex-wrap gap-1.5">
         <span
           v-for="amenity in listing.amenities"
@@ -1677,7 +1743,9 @@ function getStatusConfig(status: Task['status']) {
 <template>
   <div v-if="tasks.length === 0" class="flex flex-col items-center justify-center py-6 text-center">
     <Icon name="lucide:check-circle" class="mb-2 size-6 text-muted-foreground" />
-    <p class="text-xs text-muted-foreground">No tasks for this reservation</p>
+    <p class="text-xs text-muted-foreground">
+      No tasks for this reservation
+    </p>
   </div>
   <div v-else class="space-y-2">
     <div
@@ -1686,8 +1754,12 @@ function getStatusConfig(status: Task['status']) {
       class="flex items-center justify-between rounded-md border px-3 py-2"
     >
       <div>
-        <div class="text-sm">{{ task.title }}</div>
-        <div v-if="task.assignee" class="text-[10px] text-muted-foreground">Assigned to {{ task.assignee }}</div>
+        <div class="text-sm">
+          {{ task.title }}
+        </div>
+        <div v-if="task.assignee" class="text-[10px] text-muted-foreground">
+          Assigned to {{ task.assignee }}
+        </div>
       </div>
       <span :class="cn('rounded px-1.5 py-0.5 text-[10px] font-medium', getStatusConfig(task.status).class)">
         {{ getStatusConfig(task.status).label }}
@@ -1739,7 +1811,9 @@ function formatDate(timestamp: string) {
 <template>
   <div v-if="activity.length === 0" class="flex flex-col items-center justify-center py-6 text-center">
     <Icon name="lucide:activity" class="mb-2 size-6 text-muted-foreground" />
-    <p class="text-xs text-muted-foreground">No activity yet</p>
+    <p class="text-xs text-muted-foreground">
+      No activity yet
+    </p>
   </div>
   <div v-else class="space-y-0">
     <div
@@ -1752,9 +1826,15 @@ function formatDate(timestamp: string) {
         <div v-if="index < activity.length - 1" class="w-px flex-1 bg-border" />
       </div>
       <div :class="cn('pb-4', index === activity.length - 1 && 'pb-0')">
-        <div class="text-xs font-medium">{{ event.title }}</div>
-        <div class="text-[10px] text-muted-foreground">{{ event.description }}</div>
-        <div class="text-[10px] text-muted-foreground/60">{{ formatDate(event.timestamp) }}<span v-if="event.channel"> · {{ event.channel }}</span></div>
+        <div class="text-xs font-medium">
+          {{ event.title }}
+        </div>
+        <div class="text-[10px] text-muted-foreground">
+          {{ event.description }}
+        </div>
+        <div class="text-[10px] text-muted-foreground/60">
+          {{ formatDate(event.timestamp) }}<span v-if="event.channel"> · {{ event.channel }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1785,11 +1865,21 @@ const activeTab = ref<string>('summary')
     </div>
     <Tabs v-model="activeTab" class="flex-1 flex flex-col">
       <TabsList class="w-full justify-start px-2 border-b rounded-none h-auto p-0">
-        <TabsTrigger value="summary" class="text-[10px] px-2 py-2">Summary</TabsTrigger>
-        <TabsTrigger value="guest" class="text-[10px] px-2 py-2">Guest</TabsTrigger>
-        <TabsTrigger value="listing" class="text-[10px] px-2 py-2">Listing</TabsTrigger>
-        <TabsTrigger value="tasks" class="text-[10px] px-2 py-2">Tasks</TabsTrigger>
-        <TabsTrigger value="activity" class="text-[10px] px-2 py-2">Activity</TabsTrigger>
+        <TabsTrigger value="summary" class="text-[10px] px-2 py-2">
+          Summary
+        </TabsTrigger>
+        <TabsTrigger value="guest" class="text-[10px] px-2 py-2">
+          Guest
+        </TabsTrigger>
+        <TabsTrigger value="listing" class="text-[10px] px-2 py-2">
+          Listing
+        </TabsTrigger>
+        <TabsTrigger value="tasks" class="text-[10px] px-2 py-2">
+          Tasks
+        </TabsTrigger>
+        <TabsTrigger value="activity" class="text-[10px] px-2 py-2">
+          Activity
+        </TabsTrigger>
       </TabsList>
       <ScrollArea class="flex-1">
         <div class="p-4">
@@ -1962,7 +2052,9 @@ function onExpand() {
         <div v-else class="flex h-full items-center justify-center text-muted-foreground">
           <div class="text-center">
             <Icon name="lucide:calendar" class="mb-2 size-8" />
-            <p class="text-xs">Select a conversation</p>
+            <p class="text-xs">
+              Select a conversation
+            </p>
           </div>
         </div>
       </ResizablePanel>

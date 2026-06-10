@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
-import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing }>()
 const router = useRouter()
@@ -17,7 +17,8 @@ function viewDetail() {
 
 function toggleListing() {
   const idx = listings.value.findIndex(l => l.id === props.listing.id)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const newStatus = isInactive.value ? 'active' : 'inactive'
   listings.value[idx] = { ...listings.value[idx], status: newStatus }
   toast.success(`Listing ${newStatus === 'inactive' ? 'deactivated' : 'activated'}`)
@@ -25,9 +26,10 @@ function toggleListing() {
 
 function toggleUnit(unitId: string) {
   const idx = listings.value.findIndex(l => l.id === props.listing.id)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const units = (listings.value[idx]!.units ?? []).map(u =>
-    u.id === unitId ? { ...u, status: (u.status === 'inactive' ? 'active' : 'inactive') as 'active' | 'inactive' } : u
+    u.id === unitId ? { ...u, status: (u.status === 'inactive' ? 'active' : 'inactive') as 'active' | 'inactive' } : u,
   )
   listings.value[idx] = { ...listings.value[idx]!, units }
   const unit = units.find(u => u.id === unitId)
@@ -36,7 +38,8 @@ function toggleUnit(unitId: string) {
 
 function toggleAi() {
   const idx = listings.value.findIndex(l => l.id === props.listing.id)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const aiStatus = listings.value[idx]!.aiStatus === 'active' ? 'paused' : 'active'
   listings.value[idx] = { ...listings.value[idx]!, aiStatus }
 }

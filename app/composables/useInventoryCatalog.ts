@@ -1,5 +1,5 @@
-import { computed, ref } from 'vue'
 import type { AssetStatus, InventoryCategory, InventoryItem, InventoryItemType, MaintenanceSchedule } from '@/components/inventory/data/catalog'
+import { computed, ref } from 'vue'
 import { mockInventoryItems } from '@/components/inventory/data/catalog'
 import { useInventoryTimeline } from './useInventoryTimeline'
 
@@ -12,8 +12,7 @@ export interface NextServiceInfo {
 
 export function useInventoryCatalog() {
   const items = useState<InventoryItem[]>('inventory-catalog', () =>
-    mockInventoryItems.map(i => ({ ...i })),
-  )
+    mockInventoryItems.map(i => ({ ...i })))
 
   const { addEvent } = useInventoryTimeline()
 
@@ -24,16 +23,21 @@ export function useInventoryCatalog() {
 
   const filteredItems = computed(() => {
     return items.value.filter((item) => {
-      if (activeCategoryFilter.value !== 'all' && item.category !== activeCategoryFilter.value) return false
-      if (activeTypeFilter.value !== 'all' && item.type !== activeTypeFilter.value) return false
-      if (activeStatusFilter.value !== 'all' && item.assetStatus !== activeStatusFilter.value) return false
-      if (searchValue.value && !item.name.toLowerCase().includes(searchValue.value.toLowerCase())) return false
+      if (activeCategoryFilter.value !== 'all' && item.category !== activeCategoryFilter.value)
+        return false
+      if (activeTypeFilter.value !== 'all' && item.type !== activeTypeFilter.value)
+        return false
+      if (activeStatusFilter.value !== 'all' && item.assetStatus !== activeStatusFilter.value)
+        return false
+      if (searchValue.value && !item.name.toLowerCase().includes(searchValue.value.toLowerCase()))
+        return false
       return true
     })
   })
 
   function getBookValue(item: InventoryItem): number | undefined {
-    if (!item.purchaseValue || !item.purchaseDate || !item.usefulLifeYears) return undefined
+    if (!item.purchaseValue || !item.purchaseDate || !item.usefulLifeYears)
+      return undefined
     const yearsOwned = (Date.now() - new Date(item.purchaseDate).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
     const salvage = item.salvageValue ?? 0
     const annual = (item.purchaseValue - salvage) / item.usefulLifeYears
@@ -42,19 +46,23 @@ export function useInventoryCatalog() {
   }
 
   function getDepreciationPct(item: InventoryItem): number | undefined {
-    if (!item.purchaseValue || !item.purchaseDate || !item.usefulLifeYears) return undefined
+    if (!item.purchaseValue || !item.purchaseDate || !item.usefulLifeYears)
+      return undefined
     const bookValue = getBookValue(item)
-    if (bookValue === undefined) return undefined
+    if (bookValue === undefined)
+      return undefined
     return Math.round(((item.purchaseValue - bookValue) / item.purchaseValue) * 100)
   }
 
   function getNextServiceInfo(item: InventoryItem): NextServiceInfo | null {
-    if (!item.maintenanceSchedules?.length) return null
+    if (!item.maintenanceSchedules?.length)
+      return null
     const now = Date.now()
     let earliest: NextServiceInfo | null = null
 
     for (const s of item.maintenanceSchedules) {
-      if (!s.lastServicedDate) continue
+      if (!s.lastServicedDate)
+        continue
       const nextDueDate = new Date(new Date(s.lastServicedDate).getTime() + s.intervalDays * 86400000)
       const diff = nextDueDate.getTime() - now
       const status: NextServiceInfo['status'] = diff < 0 ? 'overdue' : diff <= 14 * 86400000 ? 'due_soon' : 'ok'
@@ -67,7 +75,8 @@ export function useInventoryCatalog() {
 
   function getMaintenanceStatus(item: InventoryItem): 'overdue' | 'due_soon' | 'ok' | 'none' {
     const info = getNextServiceInfo(item)
-    if (!info) return 'none'
+    if (!info)
+      return 'none'
     return info.status
   }
 
@@ -103,7 +112,8 @@ export function useInventoryCatalog() {
 
   function updateItemStatus(id: string, status: AssetStatus, actor: 'staff' | 'hostbuddy' = 'staff', taskTitle?: string) {
     const old = items.value.find(i => i.id === id)
-    if (!old || old.assetStatus === status) return
+    if (!old || old.assetStatus === status)
+      return
     items.value = items.value.map(i => i.id === id ? { ...i, assetStatus: status } : i)
     addEvent({
       itemId: id,
@@ -115,9 +125,11 @@ export function useInventoryCatalog() {
 
   function markServiced(itemId: string, scheduleId: string) {
     const item = items.value.find(i => i.id === itemId)
-    if (!item?.maintenanceSchedules) return
+    if (!item?.maintenanceSchedules)
+      return
     const schedule = item.maintenanceSchedules.find(s => s.id === scheduleId)
-    if (!schedule) return
+    if (!schedule)
+      return
     const today = new Date().toISOString().split('T')[0]
     items.value = items.value.map(i =>
       i.id === itemId
@@ -139,7 +151,8 @@ export function useInventoryCatalog() {
 
   function addMaintenanceSchedule(itemId: string, schedule: Omit<MaintenanceSchedule, 'id'>) {
     const item = items.value.find(i => i.id === itemId)
-    if (!item) return
+    if (!item)
+      return
     const id = `ms-${itemId}-${Date.now()}`
     const existing = item.maintenanceSchedules ?? []
     items.value = items.value.map(i =>

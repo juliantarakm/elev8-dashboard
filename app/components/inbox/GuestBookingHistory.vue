@@ -31,7 +31,9 @@ function renderStars(rating: number) {
 <template>
   <div v-if="sortedBookings.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
     <Icon name="lucide:clock" class="size-8 text-muted-foreground mb-2" />
-    <p class="text-sm text-muted-foreground">No previous bookings</p>
+    <p class="text-sm text-muted-foreground">
+      No previous bookings
+    </p>
   </div>
 
   <div v-else class="space-y-3">
@@ -69,7 +71,9 @@ function renderStars(rating: number) {
             <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Host → Guest</span>
             <span class="text-[10px] text-amber-500 leading-none">{{ renderStars(booking.hostReviewOfGuest.rating) }}</span>
           </div>
-          <p class="text-[11px] text-muted-foreground leading-relaxed">{{ booking.hostReviewOfGuest.text }}</p>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            {{ booking.hostReviewOfGuest.text }}
+          </p>
         </div>
 
         <!-- Guest review of property -->
@@ -78,7 +82,9 @@ function renderStars(rating: number) {
             <span class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Guest → Property</span>
             <span class="text-[10px] text-amber-500 leading-none">{{ renderStars(booking.guestReviewOfProperty.rating) }}</span>
           </div>
-          <p class="text-[11px] text-muted-foreground leading-relaxed">{{ booking.guestReviewOfProperty.text }}</p>
+          <p class="text-[11px] text-muted-foreground leading-relaxed">
+            {{ booking.guestReviewOfProperty.text }}
+          </p>
         </div>
       </div>
 

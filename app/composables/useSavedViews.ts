@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue'
 import type { SavedView, ViewState } from '~/types/saved-views'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 
 export function useSavedViews() {
@@ -9,16 +9,17 @@ export function useSavedViews() {
   const isLoading = ref(false)
 
   const isDirty = computed(() => {
-    if (!activeView.value || !currentState.value) return false
+    if (!activeView.value || !currentState.value)
+      return false
     const av = activeView.value
     const cs = currentState.value
 
     return (
-      av.searchValue !== cs.searchValue ||
-      JSON.stringify(av.activeTagFilter.sort()) !== JSON.stringify(cs.activeTagFilter.sort()) ||
-      av.activeAiFilter !== cs.activeAiFilter ||
-      JSON.stringify(av.columnVisibility) !== JSON.stringify(cs.columnVisibility) ||
-      av.pageSize !== cs.pageSize
+      av.searchValue !== cs.searchValue
+      || JSON.stringify(av.activeTagFilter.sort()) !== JSON.stringify(cs.activeTagFilter.sort())
+      || av.activeAiFilter !== cs.activeAiFilter
+      || JSON.stringify(av.columnVisibility) !== JSON.stringify(cs.columnVisibility)
+      || av.pageSize !== cs.pageSize
     )
   })
 
@@ -27,9 +28,11 @@ export function useSavedViews() {
     try {
       const res = await $fetch<{ views: SavedView[] }>('/api/tenant/listing-views')
       savedViews.value = res.views.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Could not load saved views.')
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -50,10 +53,12 @@ export function useSavedViews() {
       activeView.value = res.view
       currentState.value = state
       toast.success('View saved!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Failed to save view. Try again.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -76,7 +81,8 @@ export function useSavedViews() {
   }
 
   async function updateActiveView(state: ViewState) {
-    if (!activeView.value) return
+    if (!activeView.value)
+      return
 
     isLoading.value = true
     try {
@@ -91,10 +97,12 @@ export function useSavedViews() {
       activeView.value = res.view
       currentState.value = state
       toast.success('View updated!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Update failed. Try again.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -111,10 +119,12 @@ export function useSavedViews() {
         currentState.value = null
       }
       toast.success('View deleted!')
-    } catch (error) {
+    }
+    catch (error) {
       toast.error('Could not delete view.')
       throw error
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }

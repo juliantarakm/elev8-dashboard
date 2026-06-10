@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { CleaningStatus, Conversation, GuestDetails, GuestSentiment, GuestVerification, Reservation, StayStatus } from '~/components/inbox/data/conversations'
-import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
 import { format } from 'date-fns'
-import { cn } from '~/lib/utils'
 import { toast } from 'vue-sonner'
+import { otaSources, staffMembers } from '~/components/inbox/data/conversations'
+import { cn } from '~/lib/utils'
 
 interface ReservationGuestProps {
   guest: GuestDetails
@@ -77,7 +77,8 @@ const assignSearch = ref('')
 
 const filteredStaff = computed(() => {
   const q = assignSearch.value.toLowerCase()
-  if (!q) return staffMembers
+  if (!q)
+    return staffMembers
   return staffMembers.filter(s =>
     s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q),
   )
@@ -92,7 +93,8 @@ function handleAssign(staffId: string | null) {
   if (staffId) {
     const staff = staffMembers.find(s => s.id === staffId)
     toast.success(`Assigned to ${staff?.name ?? 'staff'}`)
-  } else {
+  }
+  else {
     toast.info('Unassigned conversation')
   }
 }
@@ -135,7 +137,9 @@ function handleElevaiDisable() {
     <!-- Guest header -->
     <div class="flex items-start gap-3">
       <Avatar class="size-12 shrink-0">
-        <AvatarFallback class="text-sm font-semibold">{{ initials }}</AvatarFallback>
+        <AvatarFallback class="text-sm font-semibold">
+          {{ initials }}
+        </AvatarFallback>
       </Avatar>
       <div class="flex-1 min-w-0 pt-0.5">
         <div class="flex items-center gap-2">
@@ -150,7 +154,9 @@ function handleElevaiDisable() {
               </TooltipTrigger>
               <TooltipContent side="top" class="max-w-[200px] text-xs">
                 <span class="font-medium">ElevAI Sentiment</span>
-                <p class="text-muted-foreground mt-0.5">{{ sentimentNote }}</p>
+                <p class="text-muted-foreground mt-0.5">
+                  {{ sentimentNote }}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -175,9 +181,15 @@ function handleElevaiDisable() {
     <div v-if="hasDates" class="rounded-lg border bg-muted/40 p-3 space-y-2.5">
       <div class="flex items-center">
         <div class="flex-1 text-center">
-          <div class="text-[10px] text-muted-foreground mb-0.5">Check-in</div>
-          <div class="font-semibold text-sm">{{ format(checkInDate!, 'EEEE, d MMM yyyy') }}</div>
-          <div class="text-[10px] text-muted-foreground">{{ format(checkInDate!, 'h:mm a') }}</div>
+          <div class="text-[10px] text-muted-foreground mb-0.5">
+            Check-in
+          </div>
+          <div class="font-semibold text-sm">
+            {{ format(checkInDate!, 'EEEE, d MMM yyyy') }}
+          </div>
+          <div class="text-[10px] text-muted-foreground">
+            {{ format(checkInDate!, 'h:mm a') }}
+          </div>
         </div>
         <div class="flex flex-col items-center gap-0.5 px-3">
           <div class="flex items-center gap-1 text-muted-foreground">
@@ -185,12 +197,20 @@ function handleElevaiDisable() {
             <Icon name="lucide:moon" class="size-3 text-muted-foreground" />
             <div class="h-px w-5 bg-border" />
           </div>
-          <div class="text-[10px] font-medium text-muted-foreground">{{ reservation.nights }}n</div>
+          <div class="text-[10px] font-medium text-muted-foreground">
+            {{ reservation.nights }}n
+          </div>
         </div>
         <div class="flex-1 text-center">
-          <div class="text-[10px] text-muted-foreground mb-0.5">Check-out</div>
-          <div class="font-semibold text-sm">{{ format(checkOutDate!, 'EEEE, d MMM yyyy') }}</div>
-          <div class="text-[10px] text-muted-foreground">{{ format(checkOutDate!, 'h:mm a') }}</div>
+          <div class="text-[10px] text-muted-foreground mb-0.5">
+            Check-out
+          </div>
+          <div class="font-semibold text-sm">
+            {{ format(checkOutDate!, 'EEEE, d MMM yyyy') }}
+          </div>
+          <div class="text-[10px] text-muted-foreground">
+            {{ format(checkOutDate!, 'h:mm a') }}
+          </div>
         </div>
       </div>
       <Separator />
@@ -199,7 +219,9 @@ function handleElevaiDisable() {
           <Icon name="lucide:users" class="size-3.5" />
           <span class="text-xs">{{ reservation.guestCount }} guest{{ reservation.guestCount !== 1 ? 's' : '' }}</span>
         </div>
-        <div class="text-sm font-semibold">{{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}</div>
+        <div class="text-sm font-semibold">
+          {{ reservation.currency }} {{ reservation.totalPrice.toLocaleString() }}
+        </div>
       </div>
     </div>
 
@@ -208,7 +230,9 @@ function handleElevaiDisable() {
       <div class="p-3 flex items-start gap-2.5">
         <Icon name="lucide:home" class="size-3.5 shrink-0 text-muted-foreground mt-0.5" />
         <div class="min-w-0 flex-1">
-          <div class="text-sm font-medium truncate">{{ reservation.listingName }}</div>
+          <div class="text-sm font-medium truncate">
+            {{ reservation.listingName }}
+          </div>
           <div v-if="cleaningCfg && conversation.listingName !== 'Unknown'" class="mt-1.5">
             <span :class="cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium', cleaningCfg.class)">
               <Icon :name="cleaningCfg.icon" class="size-3" />
@@ -232,69 +256,85 @@ function handleElevaiDisable() {
     <!-- Assign To -->
     <Popover v-model:open="assignOpen">
       <PopoverTrigger as-child>
-          <Button variant="outline" role="combobox" :aria-expanded="assignOpen" class="w-full justify-start h-auto py-1.5 px-3">
-            <template v-if="assignedStaff">
-              <Avatar class="size-5 mr-2 shrink-0">
-                <AvatarFallback class="text-[9px]">{{ assignedStaff.initials }}</AvatarFallback>
-              </Avatar>
-              <div class="text-left">
-                <div class="text-xs font-medium">{{ assignedStaff.name }}</div>
-                <div class="text-[10px] text-muted-foreground">{{ assignedStaff.role }}</div>
+        <Button variant="outline" role="combobox" :aria-expanded="assignOpen" class="w-full justify-start h-auto py-1.5 px-3">
+          <template v-if="assignedStaff">
+            <Avatar class="size-5 mr-2 shrink-0">
+              <AvatarFallback class="text-[9px]">
+                {{ assignedStaff.initials }}
+              </AvatarFallback>
+            </Avatar>
+            <div class="text-left">
+              <div class="text-xs font-medium">
+                {{ assignedStaff.name }}
               </div>
-            </template>
-            <template v-else>
-              <Icon name="lucide:plus" class="size-4 mr-2 text-muted-foreground" />
-              <span class="text-xs text-muted-foreground">Assign staff...</span>
-            </template>
-            <Icon name="lucide:chevrons-up-down" class="ml-auto size-3.5 shrink-0 text-muted-foreground" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent class="w-[220px] p-0" align="start" :side-offset="4">
-          <Command>
-            <CommandInput v-model="assignSearch" placeholder="Search staff..." />
-            <CommandList>
-              <CommandEmpty>No staff found.</CommandEmpty>
-              <CommandGroup>
-                <CommandItem
-                  v-for="member of filteredStaff"
-                  :key="member.id"
-                  :value="member.name"
-                  @select="handleAssign(member.id)"
-                  class="cursor-pointer hover:bg-accent"
-                >
-                  <Avatar class="size-6 shrink-0">
-                    <AvatarFallback class="text-[10px]">{{ member.initials }}</AvatarFallback>
-                  </Avatar>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-xs font-medium truncate">{{ member.name }}</div>
-                    <div class="text-[10px] text-muted-foreground">{{ member.role }}</div>
+              <div class="text-[10px] text-muted-foreground">
+                {{ assignedStaff.role }}
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <Icon name="lucide:plus" class="size-4 mr-2 text-muted-foreground" />
+            <span class="text-xs text-muted-foreground">Assign staff...</span>
+          </template>
+          <Icon name="lucide:chevrons-up-down" class="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent class="w-[220px] p-0" align="start" :side-offset="4">
+        <Command>
+          <CommandInput v-model="assignSearch" placeholder="Search staff..." />
+          <CommandList>
+            <CommandEmpty>No staff found.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                v-for="member of filteredStaff"
+                :key="member.id"
+                :value="member.name"
+                class="cursor-pointer hover:bg-accent"
+                @select="handleAssign(member.id)"
+              >
+                <Avatar class="size-6 shrink-0">
+                  <AvatarFallback class="text-[10px]">
+                    {{ member.initials }}
+                  </AvatarFallback>
+                </Avatar>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-medium truncate">
+                    {{ member.name }}
                   </div>
-                  <Icon v-if="conversation.assignedTo === member.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
-                </CommandItem>
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem
-                  value="__unassign__"
-                  @select="handleAssign(null)"
-                  class="cursor-pointer hover:bg-accent"
-                >
-                  <Icon name="lucide:user-x" class="size-4 text-muted-foreground" />
-                  <span class="text-xs text-muted-foreground">Unassign</span>
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+                  <div class="text-[10px] text-muted-foreground">
+                    {{ member.role }}
+                  </div>
+                </div>
+                <Icon v-if="conversation.assignedTo === member.id" name="lucide:check" class="size-4 shrink-0 text-primary" />
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup>
+              <CommandItem
+                value="__unassign__"
+                class="cursor-pointer hover:bg-accent"
+                @select="handleAssign(null)"
+              >
+                <Icon name="lucide:user-x" class="size-4 text-muted-foreground" />
+                <span class="text-xs text-muted-foreground">Unassign</span>
+              </CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
 
     <!-- ElevAI Toggle -->
     <div class="flex items-center justify-between rounded-lg border bg-muted/50 px-3 py-2">
       <div class="flex items-center gap-2">
         <Icon name="lucide:sparkles" class="size-3.5 text-[#FBC800]" />
         <div>
-          <div class="text-xs font-medium">ElevAI</div>
-          <div v-if="elevaiPausedMins" class="text-[10px] text-amber-500 font-medium">Paused · {{ elevaiPausedMins }}m left</div>
+          <div class="text-xs font-medium">
+            ElevAI
+          </div>
+          <div v-if="elevaiPausedMins" class="text-[10px] text-amber-500 font-medium">
+            Paused · {{ elevaiPausedMins }}m left
+          </div>
         </div>
       </div>
       <DropdownMenu v-if="elevaiOn">

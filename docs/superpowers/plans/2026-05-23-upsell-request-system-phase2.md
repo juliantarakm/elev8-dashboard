@@ -57,12 +57,12 @@ For each conversation in `conversationsData`, add:
 
 For conversation with `id: 'conv-005'` (Cameron Skillcorn, who has ord-004 and ord-006):
 ```ts
-  linkedUpsellOrderIds: ['ord-004', 'ord-006']
+linkedUpsellOrderIds: ['ord-004', 'ord-006']
 ```
 
 For conversation with `id: 'conv-001'` (if it matches Thomas Wikes / ord-001):
 ```ts
-  linkedUpsellOrderIds: ['ord-001']
+linkedUpsellOrderIds: ['ord-001']
 ```
 
 Check the conversation IDs against reservation IDs in mock orders to find matches.
@@ -84,8 +84,8 @@ git commit -m "feat(inbox): add linkedUpsellOrderIds to Conversation model"
 **Step 1: Add imports**
 
 ```ts
-import { useUpsellOrders } from './useUpsellOrders'
 import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
+import { useUpsellOrders } from './useUpsellOrders'
 ```
 
 **Step 2: Add helper functions**
@@ -93,20 +93,21 @@ import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
 Inside `useInbox()` composable, add:
 
 ```ts
-  function getLinkedOrders(conversationId: string): UpsellOrder[] {
-    const { orders } = useUpsellOrders()
-    const conv = conversations.value.find(c => c.id === conversationId)
-    if (!conv?.linkedUpsellOrderIds?.length) return []
-    return orders.value.filter(o => conv.linkedUpsellOrderIds!.includes(o.id))
-  }
+function getLinkedOrders(conversationId: string): UpsellOrder[] {
+  const { orders } = useUpsellOrders()
+  const conv = conversations.value.find(c => c.id === conversationId)
+  if (!conv?.linkedUpsellOrderIds?.length)
+    return []
+  return orders.value.filter(o => conv.linkedUpsellOrderIds!.includes(o.id))
+}
 
-  function linkOrderToConversation(conversationId: string, orderId: string) {
-    conversations.value = conversations.value.map(c =>
-      c.id === conversationId
-        ? { ...c, linkedUpsellOrderIds: [...(c.linkedUpsellOrderIds || []), orderId] }
-        : c,
-    )
-  }
+function linkOrderToConversation(conversationId: string, orderId: string) {
+  conversations.value = conversations.value.map(c =>
+    c.id === conversationId
+      ? { ...c, linkedUpsellOrderIds: [...(c.linkedUpsellOrderIds || []), orderId] }
+      : c,
+  )
+}
 ```
 
 **Step 3: Add to return object**
@@ -134,14 +135,14 @@ git commit -m "feat(inbox): add getLinkedOrders and linkOrderToConversation help
 
 ```vue
 <script setup lang="ts">
+import type { Conversation } from '@/components/inbox/data/conversations'
+import type { UpsellService } from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInbox } from '@/composables/useInbox'
+import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import { useUpsellServices } from '@/composables/useUpsellServices'
-import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
-import type { UpsellService } from '@/components/upsells/data/upsell-services'
-import type { Conversation } from '@/components/inbox/data/conversations'
 
 const props = defineProps<{
   conversation: Conversation | null
@@ -168,7 +169,8 @@ const filteredServices = computed(() =>
 
 function onOpenChange(value: boolean) {
   emit('update:open', value)
-  if (!value) resetForm()
+  if (!value)
+    resetForm()
 }
 
 function resetForm() {
@@ -181,7 +183,8 @@ function resetForm() {
 function toggleItem(itemId: string) {
   if (selectedItems.value.includes(itemId)) {
     selectedItems.value = selectedItems.value.filter(id => id !== itemId)
-  } else {
+  }
+  else {
     selectedItems.value = [...selectedItems.value, itemId]
   }
 }
@@ -242,7 +245,8 @@ function handleCreate() {
   // Create staff notification
   if (!isAlways) {
     createNotification(newOrder, 'order_requested')
-  } else {
+  }
+  else {
     createNotification(newOrder, 'order_confirmed')
   }
 
@@ -270,8 +274,12 @@ function handleCreate() {
                 {{ conversation.guestInitials }}
               </div>
               <div>
-                <p class="text-sm font-medium">{{ conversation.guestName }}</p>
-                <p class="text-xs text-muted-foreground">Res: {{ conversation.reservationId }}</p>
+                <p class="text-sm font-medium">
+                  {{ conversation.guestName }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  Res: {{ conversation.reservationId }}
+                </p>
               </div>
             </div>
           </div>
@@ -464,7 +472,8 @@ Get linked orders:
 const { getLinkedOrders, selectedConversation } = useInbox()
 
 const linkedOrders = computed(() => {
-  if (!selectedConversation.value) return []
+  if (!selectedConversation.value)
+    return []
   return getLinkedOrders(selectedConversation.value.id)
 })
 ```

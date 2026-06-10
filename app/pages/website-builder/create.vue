@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Template } from '~/components/website-builder/steps/TemplateStep.vue'
-import type { WebsiteSettings } from '~/components/website-builder/steps/SettingsStep.vue'
 import type { PropertySelection } from '~/components/website-builder/steps/PropertyStep.vue'
+import type { WebsiteSettings } from '~/components/website-builder/steps/SettingsStep.vue'
+import type { Template } from '~/components/website-builder/steps/TemplateStep.vue'
 
 definePageMeta({
   layout: 'default',
@@ -70,8 +70,12 @@ function goBack() {
     </div>
 
     <div>
-      <h2 class="text-2xl font-bold tracking-tight">Create Website</h2>
-      <p class="text-muted-foreground mt-1">Set up your new property website in a few steps.</p>
+      <h2 class="text-2xl font-bold tracking-tight">
+        Create Website
+      </h2>
+      <p class="text-muted-foreground mt-1">
+        Set up your new property website in a few steps.
+      </p>
     </div>
 
     <!-- Step Indicator -->

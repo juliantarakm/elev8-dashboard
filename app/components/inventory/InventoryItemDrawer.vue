@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { toast } from 'vue-sonner'
-import { INVENTORY_CATEGORIES, DEFAULT_USEFUL_LIFE } from '@/components/inventory/data/catalog'
 import type { AssetStatus, InventoryDocument, InventoryItem, InventoryItemType } from '@/components/inventory/data/catalog'
 import type { InventoryTimelineEvent } from '@/components/inventory/data/timeline-events'
+import { computed, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import { DEFAULT_USEFUL_LIFE, INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryTimeline } from '@/composables/useInventoryTimeline'
 
@@ -21,7 +21,7 @@ const { events } = useInventoryTimeline()
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: val => emit('update:open', val),
 })
 
 const isEditing = computed(() => !!props.item)
@@ -52,7 +52,8 @@ const newScheduleInterval = ref<number>(90)
 const showAddSchedule = ref(false)
 
 const liveBookValue = computed(() => {
-  if (!purchaseValue.value || !purchaseDate.value || !usefulLifeYears.value) return undefined
+  if (!purchaseValue.value || !purchaseDate.value || !usefulLifeYears.value)
+    return undefined
   const yearsOwned = (Date.now() - new Date(purchaseDate.value).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
   const salvage = salvageValue.value ?? 0
   const annual = (purchaseValue.value - salvage) / usefulLifeYears.value
@@ -60,7 +61,8 @@ const liveBookValue = computed(() => {
 })
 
 const liveDepreciationPct = computed(() => {
-  if (!purchaseValue.value || liveBookValue.value === undefined) return undefined
+  if (!purchaseValue.value || liveBookValue.value === undefined)
+    return undefined
   return Math.round(((purchaseValue.value - liveBookValue.value) / purchaseValue.value) * 100)
 })
 
@@ -120,7 +122,8 @@ function populateForm(item: InventoryItem) {
 watch(() => props.open, (val) => {
   if (val) {
     activeTab.value = 'details'
-    if (props.item) populateForm(props.item)
+    if (props.item)
+      populateForm(props.item)
     else resetForm()
   }
 })
@@ -133,7 +136,8 @@ watch(category, (cat) => {
 
 function handlePhotoUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  if (!file)
+    return
   const reader = new FileReader()
   reader.onload = (evt) => { photo.value = evt.target?.result as string }
   reader.readAsDataURL(file)
@@ -141,7 +145,8 @@ function handlePhotoUpload(e: Event) {
 
 function handleDocumentUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  if (!file)
+    return
   const reader = new FileReader()
   reader.onload = (evt) => {
     documents.value = [
@@ -161,13 +166,15 @@ function removeDocument(index: number) {
 }
 
 function handleMarkServiced(scheduleId: string, scheduleName: string) {
-  if (!props.item) return
+  if (!props.item)
+    return
   markServiced(props.item.id, scheduleId)
   toast.success(`"${scheduleName}" marked as serviced`)
 }
 
 function handleAddSchedule() {
-  if (!props.item || !newScheduleName.value.trim()) return
+  if (!props.item || !newScheduleName.value.trim())
+    return
   addMaintenanceSchedule(props.item.id, {
     name: newScheduleName.value.trim(),
     intervalDays: newScheduleInterval.value,
@@ -179,32 +186,39 @@ function handleAddSchedule() {
 }
 
 function handleRemoveSchedule(scheduleId: string) {
-  if (!props.item) return
+  if (!props.item)
+    return
   removeMaintenanceSchedule(props.item.id, scheduleId)
 }
 
-function getNextDueDate(schedule: { intervalDays: number; lastServicedDate?: string }): Date | null {
-  if (!schedule.lastServicedDate) return null
+function getNextDueDate(schedule: { intervalDays: number, lastServicedDate?: string }): Date | null {
+  if (!schedule.lastServicedDate)
+    return null
   return new Date(new Date(schedule.lastServicedDate).getTime() + schedule.intervalDays * 86400000)
 }
 
-function getScheduleStatus(schedule: { intervalDays: number; lastServicedDate?: string }): 'overdue' | 'due_soon' | 'ok' | 'unset' {
-  if (!schedule.lastServicedDate) return 'unset'
+function getScheduleStatus(schedule: { intervalDays: number, lastServicedDate?: string }): 'overdue' | 'due_soon' | 'ok' | 'unset' {
+  if (!schedule.lastServicedDate)
+    return 'unset'
   const next = getNextDueDate(schedule)!
   const diff = next.getTime() - Date.now()
-  if (diff < 0) return 'overdue'
-  if (diff <= 14 * 86400000) return 'due_soon'
+  if (diff < 0)
+    return 'overdue'
+  if (diff <= 14 * 86400000)
+    return 'due_soon'
   return 'ok'
 }
 
 function formatDate(d?: string | Date) {
-  if (!d) return '—'
+  if (!d)
+    return '—'
   const date = typeof d === 'string' ? new Date(d) : d
   return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatIDR(val?: number) {
-  if (val === undefined || val === null) return '—'
+  if (val === undefined || val === null)
+    return '—'
   return `IDR ${val.toLocaleString('id-ID')}`
 }
 
@@ -212,9 +226,12 @@ function formatRelativeDate(iso: string) {
   const date = new Date(iso)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  if (diff < 7) return `${diff} days ago`
+  if (diff === 0)
+    return 'Today'
+  if (diff === 1)
+    return 'Yesterday'
+  if (diff < 7)
+    return `${diff} days ago`
   return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
@@ -245,7 +262,7 @@ function historyEventDescription(event: InventoryTimelineEvent) {
   }
 }
 
-const ASSET_STATUS_OPTIONS: { value: AssetStatus; label: string }[] = [
+const ASSET_STATUS_OPTIONS: { value: AssetStatus, label: string }[] = [
   { value: 'active', label: 'Active' },
   { value: 'under_maintenance', label: 'Under Maintenance' },
   { value: 'disposed', label: 'Disposed' },
@@ -253,7 +270,8 @@ const ASSET_STATUS_OPTIONS: { value: AssetStatus; label: string }[] = [
 ]
 
 function handleSave() {
-  if (!name.value.trim()) return
+  if (!name.value.trim())
+    return
 
   const payload: Omit<InventoryItem, 'id'> = {
     name: name.value.trim(),
@@ -299,7 +317,9 @@ function handleSave() {
 
       <Tabs v-model="activeTab" class="mt-2">
         <TabsList class="mx-4">
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="details">
+            Details
+          </TabsTrigger>
           <TabsTrigger v-if="isEditing" value="history">
             History
             <Badge
@@ -357,7 +377,7 @@ function handleSave() {
             <div class="flex flex-col gap-1.5">
               <Label>Photo</Label>
               <div v-if="photo" class="relative w-24 h-24 rounded-md overflow-hidden border">
-                <img :src="photo" alt="item photo" class="w-full h-full object-cover" />
+                <img :src="photo" alt="item photo" class="w-full h-full object-cover">
                 <button
                   class="absolute top-1 right-1 bg-background/80 rounded-full p-0.5"
                   @click="photo = undefined"
@@ -370,7 +390,7 @@ function handleSave() {
                   <Icon name="lucide:upload" class="mr-2 h-4 w-4" />
                   Upload Photo
                 </Button>
-                <input type="file" accept="image/*" class="hidden" @change="handlePhotoUpload" />
+                <input type="file" accept="image/*" class="hidden" @change="handlePhotoUpload">
               </label>
             </div>
 
@@ -378,7 +398,9 @@ function handleSave() {
 
             <!-- Purchase Information -->
             <div class="flex flex-col gap-3">
-              <p class="text-sm font-medium">Purchase Information</p>
+              <p class="text-sm font-medium">
+                Purchase Information
+              </p>
               <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-1.5">
                   <Label>Purchase Value (IDR)</Label>
@@ -400,7 +422,9 @@ function handleSave() {
               <Separator />
 
               <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium">Lifecycle</p>
+                <p class="text-sm font-medium">
+                  Lifecycle
+                </p>
                 <div class="flex flex-col gap-1.5">
                   <Label>Asset Status</Label>
                   <Select v-model="assetStatus">
@@ -419,7 +443,9 @@ function handleSave() {
               <Separator />
 
               <div class="flex flex-col gap-3">
-                <p class="text-sm font-medium">Depreciation</p>
+                <p class="text-sm font-medium">
+                  Depreciation
+                </p>
                 <div class="grid grid-cols-2 gap-3">
                   <div class="flex flex-col gap-1.5">
                     <Label>Useful Life (years)</Label>
@@ -432,12 +458,20 @@ function handleSave() {
                 </div>
                 <div v-if="liveBookValue !== undefined" class="rounded-md bg-muted/50 border p-3 flex items-center justify-between gap-2">
                   <div>
-                    <p class="text-xs text-muted-foreground">Current Book Value</p>
-                    <p class="text-sm font-semibold">{{ formatIDR(liveBookValue) }}</p>
+                    <p class="text-xs text-muted-foreground">
+                      Current Book Value
+                    </p>
+                    <p class="text-sm font-semibold">
+                      {{ formatIDR(liveBookValue) }}
+                    </p>
                   </div>
                   <div class="text-right">
-                    <p class="text-xs text-muted-foreground">Depreciated</p>
-                    <p class="text-sm font-semibold text-muted-foreground">{{ liveDepreciationPct }}%</p>
+                    <p class="text-xs text-muted-foreground">
+                      Depreciated
+                    </p>
+                    <p class="text-sm font-semibold text-muted-foreground">
+                      {{ liveDepreciationPct }}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -447,7 +481,9 @@ function handleSave() {
 
               <div class="flex flex-col gap-3">
                 <div class="flex items-center justify-between">
-                  <p class="text-sm font-medium">Maintenance Schedules</p>
+                  <p class="text-sm font-medium">
+                    Maintenance Schedules
+                  </p>
                   <Button
                     v-if="isEditing"
                     variant="outline"
@@ -487,8 +523,12 @@ function handleSave() {
                   >
                     <div class="flex items-start justify-between gap-2">
                       <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium">{{ schedule.name }}</p>
-                        <p class="text-xs text-muted-foreground">Every {{ schedule.intervalDays }} days</p>
+                        <p class="text-sm font-medium">
+                          {{ schedule.name }}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                          Every {{ schedule.intervalDays }} days
+                        </p>
                         <div class="mt-1.5 flex items-center gap-2 flex-wrap">
                           <span class="text-xs text-muted-foreground">
                             Last: {{ schedule.lastServicedDate ? formatDate(schedule.lastServicedDate) : 'Never' }}
@@ -549,7 +589,9 @@ function handleSave() {
 
             <!-- Supplier -->
             <div class="flex flex-col gap-3">
-              <p class="text-sm font-medium">Supplier / Vendor</p>
+              <p class="text-sm font-medium">
+                Supplier / Vendor
+              </p>
               <div class="flex flex-col gap-1.5">
                 <Label>Supplier Name</Label>
                 <Input v-model="supplierName" placeholder="e.g. Ace Hardware Bali" />
@@ -564,7 +606,9 @@ function handleSave() {
 
             <!-- Documents -->
             <div class="flex flex-col gap-3">
-              <p class="text-sm font-medium">Documents</p>
+              <p class="text-sm font-medium">
+                Documents
+              </p>
               <div v-if="documents.length > 0" class="flex flex-col gap-2">
                 <div
                   v-for="(doc, i) in documents"
@@ -578,10 +622,18 @@ function handleSave() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="warranty">Warranty</SelectItem>
-                      <SelectItem value="receipt">Receipt</SelectItem>
-                      <SelectItem value="invoice">Invoice</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="warranty">
+                        Warranty
+                      </SelectItem>
+                      <SelectItem value="receipt">
+                        Receipt
+                      </SelectItem>
+                      <SelectItem value="invoice">
+                        Invoice
+                      </SelectItem>
+                      <SelectItem value="other">
+                        Other
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="ghost" size="icon" class="h-7 w-7" @click="removeDocument(i)">
@@ -594,7 +646,7 @@ function handleSave() {
                   <Icon name="lucide:paperclip" class="mr-2 h-4 w-4" />
                   Upload Document
                 </Button>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocumentUpload" />
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocumentUpload">
               </label>
             </div>
 

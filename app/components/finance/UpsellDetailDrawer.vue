@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UpsellEntry } from '@/components/finance/data/upsells'
-import { useListingMappings } from '@/composables/useListingMappings'
 import { useActiveIntegration } from '@/composables/useActiveIntegration'
+import { useListingMappings } from '@/composables/useListingMappings'
 
 const props = defineProps<{
   upsell: UpsellEntry | null
@@ -46,8 +46,11 @@ function formatCHF(amount: number) {
 
 function formatSyncedAt(isoString: string) {
   return new Date(isoString).toLocaleString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 </script>
@@ -94,27 +97,45 @@ function formatSyncedAt(isoString: string) {
           <!-- Details -->
           <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div>
-              <dt class="text-muted-foreground">Date</dt>
-              <dd class="font-medium">{{ props.upsell.date }}</dd>
+              <dt class="text-muted-foreground">
+                Date
+              </dt>
+              <dd class="font-medium">
+                {{ props.upsell.date }}
+              </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Amount</dt>
-              <dd class="font-medium">{{ formatCHF(props.upsell.amount) }}</dd>
+              <dt class="text-muted-foreground">
+                Amount
+              </dt>
+              <dd class="font-medium">
+                {{ formatCHF(props.upsell.amount) }}
+              </dd>
             </div>
             <div v-if="props.upsell.synced && getAccountingAmount(props.upsell.listing, props.upsell.amount)">
-              <dt class="text-muted-foreground">Acctg. Amount</dt>
-              <dd class="font-medium">{{ getAccountingAmount(props.upsell.listing, props.upsell.amount) }}</dd>
+              <dt class="text-muted-foreground">
+                Acctg. Amount
+              </dt>
+              <dd class="font-medium">
+                {{ getAccountingAmount(props.upsell.listing, props.upsell.amount) }}
+              </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Channel</dt>
+              <dt class="text-muted-foreground">
+                Channel
+              </dt>
               <dd class="flex items-center gap-1.5 font-medium">
                 <Icon :name="channelIcon[props.upsell.channel] ?? 'i-lucide-link'" class="h-3.5 w-3.5 text-muted-foreground" />
                 {{ props.upsell.channel }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Reservation ID</dt>
-              <dd class="font-mono text-xs font-medium">{{ props.upsell.reservationId }}</dd>
+              <dt class="text-muted-foreground">
+                Reservation ID
+              </dt>
+              <dd class="font-mono text-xs font-medium">
+                {{ props.upsell.reservationId }}
+              </dd>
             </div>
           </dl>
 
@@ -149,7 +170,9 @@ function formatSyncedAt(isoString: string) {
 
           <!-- Note -->
           <div v-if="props.upsell.note">
-            <p class="mb-1 text-xs text-muted-foreground">Note</p>
+            <p class="mb-1 text-xs text-muted-foreground">
+              Note
+            </p>
             <p class="rounded-md bg-muted px-3 py-2 text-sm">
               {{ props.upsell.note }}
             </p>
@@ -157,7 +180,9 @@ function formatSyncedAt(isoString: string) {
 
           <!-- Invoice -->
           <div>
-            <p class="mb-2 text-xs text-muted-foreground">Invoice</p>
+            <p class="mb-2 text-xs text-muted-foreground">
+              Invoice
+            </p>
             <div class="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2.5">
               <Icon name="i-lucide-file-text" class="h-4 w-4 text-muted-foreground" />
               <span class="flex-1 truncate text-sm">{{ props.upsell.invoice }}</span>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryListings } from '@/composables/useInventoryListings'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 
 const LOW_STOCK_THRESHOLD = 5
 
@@ -79,9 +79,12 @@ function formatRelativeDate(iso: string) {
   const date = new Date(iso)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  if (diff < 7) return `${diff} days ago`
+  if (diff === 0)
+    return 'Today'
+  if (diff === 1)
+    return 'Yesterday'
+  if (diff < 7)
+    return `${diff} days ago`
   return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
@@ -94,7 +97,9 @@ function formatRelativeDate(iso: string) {
           <SelectValue placeholder="All Listings" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Listings</SelectItem>
+          <SelectItem value="all">
+            All Listings
+          </SelectItem>
           <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
             {{ listing }}
           </SelectItem>

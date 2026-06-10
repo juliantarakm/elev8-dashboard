@@ -50,7 +50,8 @@ function addConfig() {
 }
 
 function deleteConfig(id: string) {
-  if (id === 'default') return
+  if (id === 'default')
+    return
   configs.value = configs.value.filter(c => c.id !== id)
   selectedConfigId.value = 'default'
 }
@@ -64,7 +65,8 @@ function toggleListing(listing: string) {
 
 function updateField<K extends keyof AiConfig>(key: K, value: AiConfig[K]) {
   const idx = configs.value.findIndex(c => c.id === selectedConfigId.value)
-  if (idx !== -1) configs.value[idx] = { ...configs.value[idx], [key]: value }
+  if (idx !== -1)
+    configs.value[idx] = { ...configs.value[idx], [key]: value }
 }
 
 function handleSave() {
@@ -85,17 +87,21 @@ function handleSave() {
         <!-- Config sidebar -->
         <div class="w-48 shrink-0 border-r flex flex-col">
           <div class="p-3 border-b">
-            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Configs</p>
+            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Configs
+            </p>
           </div>
           <div class="flex-1 overflow-y-auto p-2 space-y-0.5">
             <button
               v-for="cfg in configs"
               :key="cfg.id"
               type="button"
-              :class="['w-full text-left px-3 py-2 rounded-md text-sm transition-colors', selectedConfigId === cfg.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted']"
+              class="w-full text-left px-3 py-2 rounded-md text-sm transition-colors" :class="[selectedConfigId === cfg.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted']"
               @click="selectedConfigId = cfg.id"
             >
-              <div class="font-medium truncate">{{ cfg.name }}</div>
+              <div class="font-medium truncate">
+                {{ cfg.name }}
+              </div>
               <div class="text-xs mt-0.5 truncate" :class="selectedConfigId === cfg.id ? 'text-primary-foreground/70' : 'text-muted-foreground'">
                 {{ cfg.listings.length === 0 ? 'All properties' : `${cfg.listings.length} listing${cfg.listings.length > 1 ? 's' : ''}` }}
               </div>
@@ -116,7 +122,9 @@ function handleSave() {
             <div class="flex items-center justify-between gap-4">
               <div class="flex items-center gap-2 flex-1">
                 <Input :value="selectedConfig.name" :disabled="selectedConfig.id === 'default'" class="max-w-xs font-medium" @input="updateField('name', ($event.target as HTMLInputElement).value)" />
-                <Badge v-if="selectedConfig.id === 'default'" variant="secondary">Default</Badge>
+                <Badge v-if="selectedConfig.id === 'default'" variant="secondary">
+                  Default
+                </Badge>
               </div>
               <Button v-if="selectedConfig.id !== 'default'" variant="ghost" size="icon" class="text-destructive hover:text-destructive shrink-0" @click="deleteConfig(selectedConfig.id)">
                 <Icon name="lucide:trash-2" class="size-4" />
@@ -131,10 +139,12 @@ function handleSave() {
             <template v-if="selectedConfig.id !== 'default'">
               <div class="space-y-2">
                 <Label class="text-sm font-medium">Apply to Listings</Label>
-                <p class="text-xs text-muted-foreground">Select which listings this config applies to.</p>
+                <p class="text-xs text-muted-foreground">
+                  Select which listings this config applies to.
+                </p>
                 <div class="rounded-md border p-3 space-y-1.5 max-h-40 overflow-y-auto">
                   <div v-for="listing in allProperties" :key="listing" class="flex items-center gap-2 cursor-pointer rounded px-1 py-0.5 hover:bg-muted" @click="toggleListing(listing)">
-                    <div :class="['flex size-4 shrink-0 items-center justify-center rounded-[4px] border', selectedConfig.listings.includes(listing) ? 'border-primary bg-primary text-primary-foreground' : 'border-input']">
+                    <div class="flex size-4 shrink-0 items-center justify-center rounded-[4px] border" :class="[selectedConfig.listings.includes(listing) ? 'border-primary bg-primary text-primary-foreground' : 'border-input']">
                       <Icon v-if="selectedConfig.listings.includes(listing)" name="lucide:check" class="size-3" />
                     </div>
                     <span class="text-sm truncate">{{ listing }}</span>
@@ -148,14 +158,18 @@ function handleSave() {
             <div class="space-y-3">
               <div>
                 <Label class="text-sm font-medium">Defer Behavior</Label>
-                <p class="text-xs text-muted-foreground mt-0.5">How should Elev8 AI respond when it's not able to resolve the guest's issue?</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  How should Elev8 AI respond when it's not able to resolve the guest's issue?
+                </p>
               </div>
               <RadioGroup :model-value="selectedConfig.deferBehavior" class="space-y-2" @update:model-value="updateField('deferBehavior', $event)">
                 <div v-for="opt of deferOptions" :key="opt.value" class="flex items-start gap-2">
                   <RadioGroupItem :id="`defer-${selectedConfig.id}-${opt.value}`" :value="opt.value" class="mt-0.5" />
                   <div>
                     <Label :for="`defer-${selectedConfig.id}-${opt.value}`" class="text-sm cursor-pointer">{{ opt.label }}</Label>
-                    <p v-if="opt.example" class="text-xs text-muted-foreground italic">Ex. "{{ opt.example }}"</p>
+                    <p v-if="opt.example" class="text-xs text-muted-foreground italic">
+                      Ex. "{{ opt.example }}"
+                    </p>
                   </div>
                 </div>
               </RadioGroup>
@@ -166,7 +180,9 @@ function handleSave() {
             <!-- Direct Contact -->
             <div class="space-y-2">
               <Label class="text-sm font-medium">Direct Contact</Label>
-              <p class="text-xs text-muted-foreground">If added, Elev8 AI will provide this to guests in an emergency.</p>
+              <p class="text-xs text-muted-foreground">
+                If added, Elev8 AI will provide this to guests in an emergency.
+              </p>
               <Input :value="selectedConfig.directContact" placeholder="e.g., John Doe, (888-999-9999)" class="max-w-sm" @input="updateField('directContact', ($event.target as HTMLInputElement).value)" />
             </div>
 
@@ -177,7 +193,9 @@ function handleSave() {
               <div class="flex items-center justify-between">
                 <div>
                   <Label class="text-sm font-medium">Use Signature</Label>
-                  <p class="text-xs text-muted-foreground mt-0.5">Appended to the end of each message.</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    Appended to the end of each message.
+                  </p>
                 </div>
                 <Switch :model-value="selectedConfig.useSignature" @update:model-value="updateField('useSignature', $event)" />
               </div>
@@ -190,7 +208,9 @@ function handleSave() {
             <div class="space-y-3">
               <div>
                 <Label class="text-sm font-medium">Conversation Closing</Label>
-                <p class="text-xs text-muted-foreground mt-0.5">Can Elev8 choose not to respond if a conversation is at its natural end?</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  Can Elev8 choose not to respond if a conversation is at its natural end?
+                </p>
               </div>
               <RadioGroup :model-value="selectedConfig.conversationClosing" class="space-y-2" @update:model-value="updateField('conversationClosing', $event)">
                 <div class="flex items-start gap-2">
@@ -210,7 +230,9 @@ function handleSave() {
             <div class="space-y-3">
               <div>
                 <Label class="text-sm font-medium">AI Transparency</Label>
-                <p class="text-xs text-muted-foreground mt-0.5">Can Elev8 communicate that it is an AI assistant?</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  Can Elev8 communicate that it is an AI assistant?
+                </p>
               </div>
               <RadioGroup :model-value="selectedConfig.aiTransparency" class="space-y-2" @update:model-value="updateField('aiTransparency', $event)">
                 <div class="flex items-center gap-2">
@@ -230,7 +252,9 @@ function handleSave() {
             <div class="space-y-3">
               <div>
                 <Label class="text-sm font-medium">Language</Label>
-                <p class="text-xs text-muted-foreground mt-0.5">What language should Elev8 AI use when responding to guests?</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  What language should Elev8 AI use when responding to guests?
+                </p>
               </div>
               <RadioGroup :model-value="selectedConfig.languageMode" class="space-y-2" @update:model-value="updateField('languageMode', $event)">
                 <div class="flex items-center gap-2">
@@ -253,9 +277,11 @@ function handleSave() {
             <div class="flex items-start justify-between gap-4">
               <div>
                 <Label class="text-sm font-medium">Stop Responding When Sentiment Turns Negative</Label>
-                <p class="text-xs text-muted-foreground mt-0.5 max-w-sm">If enabled, Elev8 AI will stop responding and let you take over if guest sentiment turns negative.</p>
+                <p class="text-xs text-muted-foreground mt-0.5 max-w-sm">
+                  If enabled, Elev8 AI will stop responding and let you take over if guest sentiment turns negative.
+                </p>
               </div>
-              <Switch :model-value="selectedConfig.stopOnNegative" @update:model-value="updateField('stopOnNegative', $event)" class="shrink-0 mt-0.5" />
+              <Switch :model-value="selectedConfig.stopOnNegative" class="shrink-0 mt-0.5" @update:model-value="updateField('stopOnNegative', $event)" />
             </div>
 
             <Separator />
@@ -264,7 +290,9 @@ function handleSave() {
             <div class="space-y-3">
               <div>
                 <Label class="text-sm font-medium">Message Delay</Label>
-                <p class="text-xs text-muted-foreground mt-0.5">Random delay range in minutes. Set both to 0 to respond immediately.</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  Random delay range in minutes. Set both to 0 to respond immediately.
+                </p>
               </div>
               <div class="flex items-center gap-6">
                 <div class="space-y-1.5">
@@ -284,13 +312,17 @@ function handleSave() {
             <div class="space-y-2">
               <div>
                 <Label class="text-sm font-medium">Customize Tone <span class="text-muted-foreground font-normal">(optional)</span></Label>
-                <p class="text-xs text-muted-foreground mt-0.5">Add instructions to direct Elev8's tone. This is completely optional.</p>
+                <p class="text-xs text-muted-foreground mt-0.5">
+                  Add instructions to direct Elev8's tone. This is completely optional.
+                </p>
               </div>
               <Textarea :value="selectedConfig.customTone" class="text-sm min-h-[100px]" @input="updateField('customTone', ($event.target as HTMLTextAreaElement).value)" />
             </div>
 
             <div class="flex justify-end pb-2">
-              <Button @click="handleSave">Save Changes</Button>
+              <Button @click="handleSave">
+                Save Changes
+              </Button>
             </div>
           </div>
         </div>

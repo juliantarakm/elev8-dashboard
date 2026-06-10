@@ -49,8 +49,10 @@ const steps = [
 Add these functions after the `steps` constant (before the `watch` block):
 ```ts
 function stepCircleClass(stepId: number) {
-  if (currentStep.value === stepId) return 'bg-primary text-primary-foreground'
-  if (visitedSteps.value.has(stepId)) return 'bg-primary/20 text-primary'
+  if (currentStep.value === stepId)
+    return 'bg-primary text-primary-foreground'
+  if (visitedSteps.value.has(stepId))
+    return 'bg-primary/20 text-primary'
   return 'bg-muted text-muted-foreground'
 }
 
@@ -99,9 +101,9 @@ watch(() => props.open, (open) => {
 
 In the `else` branch (create mode), add after `formStatus.value = 'active'`:
 ```ts
-      currentStep.value = 1
-      visitedSteps.value = new Set([1])
-      nameError.value = false
+currentStep.value = 1
+visitedSteps.value = new Set([1])
+nameError.value = false
 ```
 
 - [ ] **Step 4: Update `handleSave()` to validate name + items and redirect on failure**

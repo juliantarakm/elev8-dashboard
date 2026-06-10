@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Listing, ListingDocument } from '~/components/listings/data/listings'
-import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
@@ -12,10 +12,12 @@ const MAX_SIZE = 10 * 1024 * 1024
 const ALLOWED = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
 
 function uploadDocs(files: FileList | null) {
-  if (!files) return
+  if (!files)
+    return
   const remaining = MAX_DOCS - props.listing.resources.documents.length
   Array.from(files).slice(0, remaining).forEach((file) => {
-    if (!ALLOWED.includes(file.type) || file.size > MAX_SIZE) return
+    if (!ALLOWED.includes(file.type) || file.size > MAX_SIZE)
+      return
     const reader = new FileReader()
     reader.onload = (e) => {
       const doc: ListingDocument = {
@@ -36,7 +38,8 @@ function deleteDoc(id: string) {
 }
 
 function downloadDoc(doc: ListingDocument) {
-  if (!doc.url) return
+  if (!doc.url)
+    return
   const a = document.createElement('a')
   a.href = doc.url
   a.download = doc.name
@@ -44,8 +47,10 @@ function downloadDoc(doc: ListingDocument) {
 }
 
 function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024)
+    return `${bytes} B`
+  if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
@@ -69,13 +74,15 @@ const showCopyDialog = ref(false)
 const copySearch = ref('')
 const otherListings = computed(() => listings.value.filter(l => l.id !== props.listing.id))
 const filteredCopyListings = computed(() => {
-  if (!copySearch.value) return otherListings.value
+  if (!copySearch.value)
+    return otherListings.value
   return otherListings.value.filter(l => l.name.toLowerCase().includes(copySearch.value.toLowerCase()))
 })
 
 function copyFromProperty(sourceId: string) {
   const source = listings.value.find(l => l.id === sourceId)
-  if (!source) return
+  if (!source)
+    return
   emit('update', { ...props.listing, resources: JSON.parse(JSON.stringify(source.resources)) })
   toast.success('Resources copied from property')
   showCopyDialog.value = false
@@ -91,16 +98,23 @@ function copyFromProperty(sourceId: string) {
 
     <ScrollArea class="flex-1">
       <div class="flex flex-col gap-4 p-4">
-
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Property Documents</div>
-          <p class="text-xs text-muted-foreground">All documents are used automatically by Elev8 AI</p>
+          <div class="text-sm font-semibold">
+            Property Documents
+          </div>
+          <p class="text-xs text-muted-foreground">
+            All documents are used automatically by Elev8 AI
+          </p>
 
           <div v-for="doc in listing.resources.documents" :key="doc.id" class="flex items-center gap-2 rounded-lg border p-2.5">
             <Icon name="lucide:file-text" class="size-4 text-amber-500 shrink-0" />
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium truncate">{{ doc.name }}</p>
-              <p class="text-[10px] text-muted-foreground">{{ formatSize(doc.size) }}</p>
+              <p class="text-xs font-medium truncate">
+                {{ doc.name }}
+              </p>
+              <p class="text-[10px] text-muted-foreground">
+                {{ formatSize(doc.size) }}
+              </p>
             </div>
             <Button variant="ghost" size="icon" class="size-7 shrink-0" @click="downloadDoc(doc)">
               <Icon name="lucide:download" class="size-3.5" />
@@ -114,15 +128,21 @@ function copyFromProperty(sourceId: string) {
             <Icon name="lucide:plus" class="size-3.5" />
             Upload New Document
           </Button>
-          <input ref="fileInputEl" type="file" accept=".pdf,.docx,.txt" multiple class="hidden"
-            @change="uploadDocs(($event.target as HTMLInputElement).files)" />
+          <input
+            ref="fileInputEl" type="file" accept=".pdf,.docx,.txt" multiple class="hidden"
+            @change="uploadDocs(($event.target as HTMLInputElement).files)"
+          >
         </div>
 
         <Separator />
 
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Elev8 AI</div>
-          <div class="text-xs text-muted-foreground font-medium">Property Integration</div>
+          <div class="text-sm font-semibold">
+            Elev8 AI
+          </div>
+          <div class="text-xs text-muted-foreground font-medium">
+            Property Integration
+          </div>
           <div class="flex flex-col gap-1.5">
             <div v-for="item in ['Property details', 'Property availability and pricing', 'Guest and reservation data', 'Past conversations (last 6 months)']" :key="item" class="flex items-center gap-2 text-xs text-muted-foreground">
               <Icon name="lucide:check" class="size-3.5 text-green-500 shrink-0" />
@@ -134,7 +154,9 @@ function copyFromProperty(sourceId: string) {
         <Separator />
 
         <div class="flex flex-col gap-2">
-          <div class="text-sm font-semibold">Property Profile</div>
+          <div class="text-sm font-semibold">
+            Property Profile
+          </div>
           <Button class="w-full gap-1.5" :disabled="isAutoFilling" @click="autoFill">
             <Icon v-if="isAutoFilling" name="lucide:loader-2" class="size-3.5 animate-spin" />
             <Icon v-else name="lucide:sparkles" class="size-3.5" />
@@ -145,7 +167,6 @@ function copyFromProperty(sourceId: string) {
             Copy Data From Other Property
           </Button>
         </div>
-
       </div>
     </ScrollArea>
 
@@ -161,11 +182,13 @@ function copyFromProperty(sourceId: string) {
         </div>
         <ScrollArea class="max-h-60">
           <div class="flex flex-col gap-1">
-            <div v-for="l in filteredCopyListings" :key="l.id"
+            <div
+              v-for="l in filteredCopyListings" :key="l.id"
               class="flex items-center gap-3 rounded-md px-2 py-2 cursor-pointer hover:bg-accent"
-              @click="copyFromProperty(l.id)">
+              @click="copyFromProperty(l.id)"
+            >
               <div class="size-8 rounded overflow-hidden bg-muted shrink-0">
-                <img :src="l.photos[0]" class="size-full object-cover" />
+                <img :src="l.photos[0]" class="size-full object-cover">
               </div>
               <span class="text-sm truncate">{{ l.name }}</span>
             </div>

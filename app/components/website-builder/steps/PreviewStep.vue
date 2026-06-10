@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { Template } from '~/components/website-builder/steps/TemplateStep.vue'
-import type { WebsiteSettings } from '~/components/website-builder/steps/SettingsStep.vue'
 import type { PropertySelection } from '~/components/website-builder/steps/PropertyStep.vue'
+import type { WebsiteSettings } from '~/components/website-builder/steps/SettingsStep.vue'
+import type { Template } from '~/components/website-builder/steps/TemplateStep.vue'
 import { toast } from 'vue-sonner'
 
 // Re-export for convenience
-export type { Template, WebsiteSettings, PropertySelection }
+export type { PropertySelection, Template, WebsiteSettings }
 
 interface Room {
   id: string
@@ -40,8 +40,12 @@ const emit = defineEmits<{
 // ── Mock properties (mirrors PropertyStep data) ─────────────────
 const allProperties: Property[] = [
   {
-    id: 'prop-1', title: 'Villa Sunset Bay', location: 'Seminyak, Bali', maxCapacity: 8,
-    amenities: ['Pool', 'WiFi', 'A/C'], photos: [],
+    id: 'prop-1',
+    title: 'Villa Sunset Bay',
+    location: 'Seminyak, Bali',
+    maxCapacity: 8,
+    amenities: ['Pool', 'WiFi', 'A/C'],
+    photos: [],
     rooms: [
       { id: 'r1', name: 'Master Bedroom', type: 'bedroom', description: '', amenities: [], photos: ['p1', 'p2'] },
       { id: 'r2', name: 'Guest Bedroom', type: 'bedroom', description: '', amenities: [], photos: ['p3'] },
@@ -53,8 +57,12 @@ const allProperties: Property[] = [
     ],
   },
   {
-    id: 'prop-2', title: 'Ubud Jungle Retreat', location: 'Ubud, Bali', maxCapacity: 6,
-    amenities: ['Pool', 'WiFi'], photos: [],
+    id: 'prop-2',
+    title: 'Ubud Jungle Retreat',
+    location: 'Ubud, Bali',
+    maxCapacity: 6,
+    amenities: ['Pool', 'WiFi'],
+    photos: [],
     rooms: [
       { id: 'r8', name: 'Master Suite', type: 'bedroom', description: '', amenities: [], photos: ['p11'] },
       { id: 'r9', name: 'Guest Room', type: 'bedroom', description: '', amenities: [], photos: ['p12'] },
@@ -64,8 +72,12 @@ const allProperties: Property[] = [
     ],
   },
   {
-    id: 'prop-3', title: 'Beachfront Canggu Villa', location: 'Canggu, Bali', maxCapacity: 10,
-    amenities: ['Pool', 'WiFi', 'Beach Access'], photos: [],
+    id: 'prop-3',
+    title: 'Beachfront Canggu Villa',
+    location: 'Canggu, Bali',
+    maxCapacity: 10,
+    amenities: ['Pool', 'WiFi', 'Beach Access'],
+    photos: [],
     rooms: [
       { id: 'r13', name: 'Master Bedroom', type: 'bedroom', description: '', amenities: [], photos: ['p16', 'p17'] },
       { id: 'r14', name: 'Ocean View Suite', type: 'bedroom', description: '', amenities: [], photos: ['p18'] },
@@ -79,8 +91,12 @@ const allProperties: Property[] = [
     ],
   },
   {
-    id: 'prop-4', title: 'Cliffside Uluwatu', location: 'Uluwatu, Bali', maxCapacity: 4,
-    amenities: ['Pool', 'WiFi'], photos: [],
+    id: 'prop-4',
+    title: 'Cliffside Uluwatu',
+    location: 'Uluwatu, Bali',
+    maxCapacity: 4,
+    amenities: ['Pool', 'WiFi'],
+    photos: [],
     rooms: [
       { id: 'r22', name: 'Honeymoon Suite', type: 'bedroom', description: '', amenities: [], photos: ['p28', 'p29'] },
       { id: 'r23', name: 'Cozy Lounge', type: 'living', description: '', amenities: [], photos: ['p30'] },
@@ -96,7 +112,8 @@ const selectedProperty = computed(() =>
 )
 
 const selectedRooms = computed(() => {
-  if (!selectedProperty.value) return []
+  if (!selectedProperty.value)
+    return []
   return selectedProperty.value.rooms.filter(r => props.property.roomIds.includes(r.id))
 })
 
@@ -105,7 +122,7 @@ const totalPhotos = computed(() =>
 )
 
 // ── Room type helpers ────────────────────────────────────────────
-const roomTypeConfig: Record<Room['type'], { label: string; variant: 'default' | 'secondary' | 'outline'; icon: string }> = {
+const roomTypeConfig: Record<Room['type'], { label: string, variant: 'default' | 'secondary' | 'outline', icon: string }> = {
   bedroom: { label: 'Bedroom', variant: 'default', icon: 'i-lucide-bed' },
   bathroom: { label: 'Bathroom', variant: 'secondary', icon: 'i-lucide-bath' },
   living: { label: 'Living', variant: 'secondary', icon: 'i-lucide-sofa' },
@@ -143,15 +160,21 @@ function handleBack() {
   <div class="flex flex-col gap-6">
     <!-- Header -->
     <div>
-      <h3 class="text-lg font-semibold">Preview & Publish</h3>
-      <p class="text-sm text-muted-foreground">Review your website configuration before publishing.</p>
+      <h3 class="text-lg font-semibold">
+        Preview & Publish
+      </h3>
+      <p class="text-sm text-muted-foreground">
+        Review your website configuration before publishing.
+      </p>
     </div>
 
     <!-- Website Preview Card -->
     <Card>
       <CardHeader class="pb-3">
         <div class="flex items-center justify-between">
-          <CardTitle class="text-base">Website Preview</CardTitle>
+          <CardTitle class="text-base">
+            Website Preview
+          </CardTitle>
           <Button variant="ghost" size="sm" class="text-xs h-7" @click="emit('goToStep', 0)">
             <Icon name="i-lucide-pencil" class="size-3 mr-1" />
             Edit
@@ -165,8 +188,12 @@ function handleBack() {
             <Icon :name="template?.icon ?? 'i-lucide-layout-template'" class="size-6 text-muted-foreground" />
           </div>
           <div>
-            <p class="text-sm font-medium">{{ template?.name ?? 'No template selected' }}</p>
-            <p class="text-xs text-muted-foreground">Template</p>
+            <p class="text-sm font-medium">
+              {{ template?.name ?? 'No template selected' }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Template
+            </p>
           </div>
         </div>
 
@@ -175,16 +202,28 @@ function handleBack() {
         <!-- Site Info -->
         <div class="grid grid-cols-1 gap-3 @xl/main:grid-cols-2">
           <div class="space-y-1">
-            <p class="text-xs text-muted-foreground">Website Name</p>
-            <p class="text-sm font-medium">{{ settings.name || '—' }}</p>
+            <p class="text-xs text-muted-foreground">
+              Website Name
+            </p>
+            <p class="text-sm font-medium">
+              {{ settings.name || '—' }}
+            </p>
           </div>
           <div class="space-y-1">
-            <p class="text-xs text-muted-foreground">Domain</p>
-            <p class="text-sm font-medium">{{ settings.domain || '—' }}</p>
+            <p class="text-xs text-muted-foreground">
+              Domain
+            </p>
+            <p class="text-sm font-medium">
+              {{ settings.domain || '—' }}
+            </p>
           </div>
           <div class="space-y-1 @xl/main:col-span-2">
-            <p class="text-xs text-muted-foreground">Description</p>
-            <p class="text-sm text-muted-foreground line-clamp-2">{{ settings.description || '—' }}</p>
+            <p class="text-xs text-muted-foreground">
+              Description
+            </p>
+            <p class="text-sm text-muted-foreground line-clamp-2">
+              {{ settings.description || '—' }}
+            </p>
           </div>
         </div>
 
@@ -198,8 +237,12 @@ function handleBack() {
               :style="{ backgroundColor: settings.brandColor }"
             />
             <div>
-              <p class="text-sm font-medium font-mono">{{ settings.brandColor }}</p>
-              <p class="text-xs text-muted-foreground">Brand Color</p>
+              <p class="text-sm font-medium font-mono">
+                {{ settings.brandColor }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                Brand Color
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -207,8 +250,12 @@ function handleBack() {
               <Icon name="i-lucide-type" class="size-4 text-muted-foreground" />
             </div>
             <div>
-              <p class="text-sm font-medium">{{ settings.fontFamily }}</p>
-              <p class="text-xs text-muted-foreground">Font Family</p>
+              <p class="text-sm font-medium">
+                {{ settings.fontFamily }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                Font Family
+              </p>
             </div>
           </div>
         </div>
@@ -222,8 +269,12 @@ function handleBack() {
               <Icon name="i-lucide-image" class="size-4 text-muted-foreground" />
             </div>
             <div>
-              <p class="text-sm font-medium truncate">{{ settings.logoFile ?? 'Not uploaded' }}</p>
-              <p class="text-xs text-muted-foreground">Logo</p>
+              <p class="text-sm font-medium truncate">
+                {{ settings.logoFile ?? 'Not uploaded' }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                Logo
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -234,7 +285,9 @@ function handleBack() {
               <p class="text-sm font-medium truncate">
                 {{ settings.useDefaultFavicon ? 'Default' : (settings.faviconFile ?? 'Not uploaded') }}
               </p>
-              <p class="text-xs text-muted-foreground">Favicon</p>
+              <p class="text-xs text-muted-foreground">
+                Favicon
+              </p>
             </div>
           </div>
         </div>
@@ -245,7 +298,9 @@ function handleBack() {
     <Card>
       <CardHeader class="pb-3">
         <div class="flex items-center justify-between">
-          <CardTitle class="text-base">Selected Content</CardTitle>
+          <CardTitle class="text-base">
+            Selected Content
+          </CardTitle>
           <Button variant="ghost" size="sm" class="text-xs h-7" @click="emit('goToStep', 2)">
             <Icon name="i-lucide-pencil" class="size-3 mr-1" />
             Edit
@@ -258,8 +313,12 @@ function handleBack() {
           <div class="flex items-center gap-2 mb-3">
             <Icon name="i-lucide-home" class="size-4 text-muted-foreground" />
             <div>
-              <p class="text-sm font-medium">{{ selectedProperty.title }}</p>
-              <p class="text-xs text-muted-foreground">{{ selectedProperty.location }}</p>
+              <p class="text-sm font-medium">
+                {{ selectedProperty.title }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                {{ selectedProperty.location }}
+              </p>
             </div>
           </div>
 
@@ -294,7 +353,9 @@ function handleBack() {
 
         <div v-else class="flex flex-col items-center justify-center py-6 gap-2 text-muted-foreground">
           <Icon name="i-lucide-alert-circle" class="size-8" />
-          <p class="text-sm">No property selected</p>
+          <p class="text-sm">
+            No property selected
+          </p>
           <Button variant="outline" size="sm" @click="emit('goToStep', 2)">
             Select Property
           </Button>
@@ -304,7 +365,7 @@ function handleBack() {
 
     <!-- Navigation -->
     <div class="flex items-center justify-between pt-2">
-      <Button variant="ghost" @click="handleBack" :disabled="isPublishing">
+      <Button variant="ghost" :disabled="isPublishing" @click="handleBack">
         <Icon name="i-lucide-arrow-left" class="size-4 mr-2" />
         Back
       </Button>

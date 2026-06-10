@@ -19,7 +19,9 @@ const statusConfig: Record<string, { label: string, class: string }> = {
   <div class="space-y-3">
     <div v-if="tasks.length === 0" class="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
       <Icon name="lucide:check-circle" class="size-8" />
-      <p class="text-sm">No tasks</p>
+      <p class="text-sm">
+        No tasks
+      </p>
     </div>
 
     <div

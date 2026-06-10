@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { CostEntry } from '@/components/finance/data/costs'
-import { useListingMappings } from '@/composables/useListingMappings'
+import { computed } from 'vue'
 import { useActiveIntegration } from '@/composables/useActiveIntegration'
 import { useCosts } from '@/composables/useCosts'
+import { useListingMappings } from '@/composables/useListingMappings'
 
 const props = defineProps<{
   cost: CostEntry | null
@@ -24,14 +24,17 @@ const { costs } = useCosts()
 
 // For Task/Activity: find a Manual entry linked to this entry
 const linkedMaterialEntry = computed<CostEntry | null>(() => {
-  if (!props.cost) return null
-  if (props.cost.type !== 'Task' && props.cost.type !== 'Activity') return null
+  if (!props.cost)
+    return null
+  if (props.cost.type !== 'Task' && props.cost.type !== 'Activity')
+    return null
   return costs.value.find(c => c.linkedTaskId === props.cost!.id) ?? null
 })
 
 // For Manual: find the Task/Activity this entry is a material cost for
 const linkedTaskEntry = computed<CostEntry | null>(() => {
-  if (!props.cost?.linkedTaskId) return null
+  if (!props.cost?.linkedTaskId)
+    return null
   return costs.value.find(c => c.id === props.cost!.linkedTaskId) ?? null
 })
 
@@ -53,31 +56,39 @@ const integrationMeta: Record<string, { label: string, badgeClass: string, banne
 }
 
 function formatAmount(amount: number, currency: string) {
-  if (currency === 'IDR') return `IDR ${amount.toLocaleString('id-ID')}`
+  if (currency === 'IDR')
+    return `IDR ${amount.toLocaleString('id-ID')}`
   return `${currency} ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
+  if (h === 0)
+    return `${m}m`
+  if (m === 0)
+    return `${h}h`
   return `${h}h ${m}m`
 }
 
 function formatSyncedAt(isoString: string) {
   return new Date(isoString).toLocaleString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 
-const typeBadgeClass = (type: string) => ({
-  'text-slate-700 bg-slate-100 border-slate-200': type === 'Manual',
-  'text-teal-700 bg-teal-50 border-teal-200': type === 'Cleaning',
-  'text-purple-700 bg-purple-50 border-purple-200': type === 'Activity',
-  'text-orange-700 bg-orange-50 border-orange-200': type === 'Task',
-})
+function typeBadgeClass(type: string) {
+  return {
+    'text-slate-700 bg-slate-100 border-slate-200': type === 'Manual',
+    'text-teal-700 bg-teal-50 border-teal-200': type === 'Cleaning',
+    'text-purple-700 bg-purple-50 border-purple-200': type === 'Activity',
+    'text-orange-700 bg-orange-50 border-orange-200': type === 'Task',
+  }
+}
 </script>
 
 <template>

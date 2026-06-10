@@ -55,7 +55,8 @@ const rewrites = [
 ]
 
 function send() {
-  if (!replyText.value.trim()) return
+  if (!replyText.value.trim())
+    return
   sendMessage(props.conversationId, replyText.value, sendChannel.value === 'ota' ? props.channel : sendChannel.value)
   replyText.value = ''
   toast.success('Message sent')
@@ -115,7 +116,7 @@ function handleSendNow(template: ScheduledTemplate) {
   toast.info(`"${template.label}" loaded`)
 }
 
-const templateStatusBadge = (status: ScheduledTemplate['status']) => {
+function templateStatusBadge(status: ScheduledTemplate['status']) {
   const map = {
     pending: { label: 'Scheduled', class: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
     sent: { label: 'Sent', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
@@ -201,7 +202,9 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" class="w-64 p-0">
             <div class="p-2">
-              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">Quick Templates</div>
+              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">
+                Quick Templates
+              </div>
               <button
                 v-for="tpl of dynamicTemplates"
                 :key="tpl.id"
@@ -216,7 +219,9 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
             </div>
             <Separator v-if="scheduledTemplates.length > 0" />
             <div v-if="scheduledTemplates.length > 0" class="p-2">
-              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">Scheduled</div>
+              <div class="text-[10px] font-medium text-muted-foreground mb-1 px-1">
+                Scheduled
+              </div>
               <div
                 v-for="tpl of scheduledTemplates"
                 :key="tpl.id"
@@ -226,7 +231,7 @@ const templateStatusBadge = (status: ScheduledTemplate['status']) => {
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5">
                     <span class="text-xs truncate">{{ tpl.label }}</span>
-                    <span :class="['inline-flex items-center rounded-full px-1 py-0 text-[9px] font-medium', templateStatusBadge(tpl.status).class]">
+                    <span class="inline-flex items-center rounded-full px-1 py-0 text-[9px] font-medium" :class="[templateStatusBadge(tpl.status).class]">
                       {{ templateStatusBadge(tpl.status).label }}
                     </span>
                   </div>

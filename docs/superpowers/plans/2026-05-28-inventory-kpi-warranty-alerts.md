@@ -37,7 +37,8 @@ const totalAssetValue = computed(() =>
 const expiringSoonCount = computed(() => {
   const now = new Date()
   return items.value.filter((i) => {
-    if (!i.warrantyExpiry) return false
+    if (!i.warrantyExpiry)
+      return false
     const diff = (new Date(i.warrantyExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     return diff <= 30
   }).length
@@ -64,15 +65,25 @@ const damagedCount = computed(() =>
     <!-- KPI Cards -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Total Items</p>
-        <p class="text-2xl font-bold">{{ items.length }}</p>
+        <p class="text-sm text-muted-foreground">
+          Total Items
+        </p>
+        <p class="text-2xl font-bold">
+          {{ items.length }}
+        </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Total Asset Value</p>
-        <p class="text-2xl font-bold">IDR {{ totalAssetValue.toLocaleString('id-ID') }}</p>
+        <p class="text-sm text-muted-foreground">
+          Total Asset Value
+        </p>
+        <p class="text-2xl font-bold">
+          IDR {{ totalAssetValue.toLocaleString('id-ID') }}
+        </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Warranty Expiring / Expired</p>
+        <p class="text-sm text-muted-foreground">
+          Warranty Expiring / Expired
+        </p>
         <p
           class="text-2xl font-bold"
           :class="expiringSoonCount > 0 ? 'text-amber-600' : ''"
@@ -81,7 +92,9 @@ const damagedCount = computed(() =>
         </p>
       </div>
       <div class="rounded-lg border p-4">
-        <p class="text-sm text-muted-foreground">Damaged / Missing</p>
+        <p class="text-sm text-muted-foreground">
+          Damaged / Missing
+        </p>
         <p
           class="text-2xl font-bold"
           :class="damagedCount > 0 ? 'text-destructive' : ''"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useBexio } from '@/composables/useBexio'
 import { useListingMappings } from '@/composables/useListingMappings'
@@ -55,7 +55,8 @@ const filteredListings = computed(() =>
 )
 
 function handleApplyToAll() {
-  if (!applyToAllAccount.value) return
+  if (!applyToAllAccount.value)
+    return
   applyAccountToAll(applyToAllAccount.value, regionFilter.value === 'all' ? undefined : regionFilter.value)
 }
 
@@ -75,7 +76,6 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
 
 <template>
   <div class="flex flex-col gap-6">
-
     <!-- ── Step indicator ────────────────────────────────────────────────── -->
     <div class="flex items-center gap-2 text-sm">
       <span
@@ -108,7 +108,9 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
 
     <!-- ── Step 1: Connect ───────────────────────────────────────────────── -->
     <div v-if="step === 'connect'" class="rounded-lg border bg-card p-5">
-      <p class="mb-1 text-sm font-medium">Connect bexio</p>
+      <p class="mb-1 text-sm font-medium">
+        Connect bexio
+      </p>
       <p class="mb-4 text-sm text-muted-foreground">
         Enter your bexio API key to sync financial data. Found in bexio → Settings → API.
       </p>
@@ -132,7 +134,9 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
       <div class="rounded-lg border bg-card p-5">
         <div class="flex items-start justify-between gap-4 mb-4">
           <div>
-            <p class="text-sm font-medium">Map listings to bexio accounts</p>
+            <p class="text-sm font-medium">
+              Map listings to bexio accounts
+            </p>
             <p class="text-sm text-muted-foreground mt-0.5">
               Select which bexio revenue account each listing should post to when synced.
             </p>
@@ -193,8 +197,12 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
               <TableHeader>
                 <TableRow>
                   <TableHead>Listing</TableHead>
-                  <TableHead class="w-24">Region</TableHead>
-                  <TableHead class="w-72">bexio Account</TableHead>
+                  <TableHead class="w-24">
+                    Region
+                  </TableHead>
+                  <TableHead class="w-72">
+                    bexio Account
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -259,10 +267,16 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-2">
               <span class="h-2 w-2 rounded-full bg-green-500" />
-              <p class="text-sm font-medium">Connected to bexio</p>
+              <p class="text-sm font-medium">
+                Connected to bexio
+              </p>
             </div>
-            <p class="text-sm text-muted-foreground">{{ companyName }}</p>
-            <p class="text-xs text-muted-foreground font-mono">{{ apiKey }}</p>
+            <p class="text-sm text-muted-foreground">
+              {{ companyName }}
+            </p>
+            <p class="text-xs text-muted-foreground font-mono">
+              {{ apiKey }}
+            </p>
             <p v-if="lastConnected" class="text-xs text-muted-foreground">
               Connected since {{ lastConnected }}
             </p>
@@ -283,7 +297,9 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
       <div class="rounded-lg border bg-card p-5">
         <p class="text-sm font-medium mb-3">
           Listing mapping
-          <Badge variant="secondary" class="ml-2 tabular-nums">{{ localMappedCount }}/{{ availableListings.length }}</Badge>
+          <Badge variant="secondary" class="ml-2 tabular-nums">
+            {{ localMappedCount }}/{{ availableListings.length }}
+          </Badge>
         </p>
         <div class="rounded-md border overflow-hidden">
           <ScrollArea class="h-56">
@@ -291,7 +307,9 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
               <TableHeader>
                 <TableRow>
                   <TableHead>Listing</TableHead>
-                  <TableHead class="w-24">Region</TableHead>
+                  <TableHead class="w-24">
+                    Region
+                  </TableHead>
                   <TableHead>bexio Account</TableHead>
                 </TableRow>
               </TableHeader>
@@ -301,7 +319,9 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
                     {{ mapping.name }}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" class="text-xs font-normal">{{ mapping.region }}</Badge>
+                    <Badge variant="outline" class="text-xs font-normal">
+                      {{ mapping.region }}
+                    </Badge>
                   </TableCell>
                   <TableCell class="text-sm text-muted-foreground">
                     {{ accountLabel(mapping.accountId) }}
@@ -313,6 +333,5 @@ const progressPct = computed(() => Math.round((localMappedCount.value / availabl
         </div>
       </div>
     </div>
-
   </div>
 </template>

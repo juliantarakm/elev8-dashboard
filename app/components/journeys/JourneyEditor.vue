@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ConditionType, Journey, JourneyStep, StepType } from './data/journeys'
 import { toast } from 'vue-sonner'
-import type { Journey, JourneyStep, StepType, ConditionType } from './data/journeys'
 import draggable from 'vuedraggable'
 
 const props = defineProps<{
@@ -33,7 +33,7 @@ function makeDefaultJourney(): Journey {
 }
 
 const localJourney = ref<Journey>(
-  props.initialJourney ? JSON.parse(JSON.stringify(props.initialJourney)) : makeDefaultJourney()
+  props.initialJourney ? JSON.parse(JSON.stringify(props.initialJourney)) : makeDefaultJourney(),
 )
 
 const selectedStepId = ref<string | null>(localJourney.value.steps[0]?.id ?? null)
@@ -54,7 +54,7 @@ function setProperties(val: string[]) {
 }
 
 const selectedStep = computed(
-  () => localJourney.value.steps.find(s => s.id === selectedStepId.value) ?? null
+  () => localJourney.value.steps.find(s => s.id === selectedStepId.value) ?? null,
 )
 
 function startEditName() {
@@ -80,7 +80,8 @@ function handleStepUpdate(updated: JourneyStep) {
 
 function deleteStep(id: string) {
   const step = localJourney.value.steps.find(s => s.id === id)
-  if (!step || step.type === 'trigger') return
+  if (!step || step.type === 'trigger')
+    return
   const remaining = localJourney.value.steps.filter(s => s.id !== id)
   localJourney.value = { ...localJourney.value, steps: remaining }
   if (selectedStepId.value === id) {
@@ -89,15 +90,24 @@ function deleteStep(id: string) {
 }
 
 function makeStep(type: StepType, id: string): JourneyStep {
-  if (type === 'wait') return { id, type: 'wait', name: 'Wait', waitType: 'time', duration: 1, unit: 'days', relativeTo: null, waitTrigger: '' }
-  if (type === 'message') return { id, type: 'message', name: 'Send Message', messageMode: 'directive', channel: 'ota', templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip', fallbackText: '' }
-  if (type === 'context_check') return { id, type: 'context_check', name: 'Context Check', condition: '', onFail: 'skip' }
-  if (type === 'if_else') return { id, type: 'if_else', name: 'If/Else Branch', conditionType: 'guest_sentiment' as ConditionType, conditionDetails: '', trueBranchLabel: 'Condition met', falseBranchLabel: 'Condition not met' }
-  if (type === 'hard_requirement') return { id, type: 'hard_requirement', name: 'Hard Requirement', conditionType: 'reservation_status' as ConditionType, conditionDetails: '' }
-  if (type === 'create_note') return { id, type: 'create_note', name: 'Create Note', noteContent: '', visibleToAI: true }
-  if (type === 'toggle_ai') return { id, type: 'toggle_ai', name: 'Toggle AI', enable: true }
-  if (type === 'integration') return { id, type: 'integration', name: 'Integration Action', integrationName: '', payload: '' }
-  if (type === 'end_journey') return { id, type: 'end_journey', name: 'End Journey' }
+  if (type === 'wait')
+    return { id, type: 'wait', name: 'Wait', waitType: 'time', duration: 1, unit: 'days', relativeTo: null, waitTrigger: '' }
+  if (type === 'message')
+    return { id, type: 'message', name: 'Send Message', messageMode: 'directive', channel: 'ota', templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip', fallbackText: '' }
+  if (type === 'context_check')
+    return { id, type: 'context_check', name: 'Context Check', condition: '', onFail: 'skip' }
+  if (type === 'if_else')
+    return { id, type: 'if_else', name: 'If/Else Branch', conditionType: 'guest_sentiment' as ConditionType, conditionDetails: '', trueBranchLabel: 'Condition met', falseBranchLabel: 'Condition not met' }
+  if (type === 'hard_requirement')
+    return { id, type: 'hard_requirement', name: 'Hard Requirement', conditionType: 'reservation_status' as ConditionType, conditionDetails: '' }
+  if (type === 'create_note')
+    return { id, type: 'create_note', name: 'Create Note', noteContent: '', visibleToAI: true }
+  if (type === 'toggle_ai')
+    return { id, type: 'toggle_ai', name: 'Toggle AI', enable: true }
+  if (type === 'integration')
+    return { id, type: 'integration', name: 'Integration Action', integrationName: '', payload: '' }
+  if (type === 'end_journey')
+    return { id, type: 'end_journey', name: 'End Journey' }
   return { id, type: 'action', name: 'Action', actionType: 'raise_action_item', details: '' }
 }
 
@@ -107,7 +117,8 @@ function addStep(type: StepType, insertAfterIndex?: number) {
   const steps = [...localJourney.value.steps]
   if (insertAfterIndex !== undefined) {
     steps.splice(insertAfterIndex + 1, 0, newStep)
-  } else {
+  }
+  else {
     steps.push(newStep)
   }
   localJourney.value = { ...localJourney.value, steps }
@@ -116,9 +127,11 @@ function addStep(type: StepType, insertAfterIndex?: number) {
 
 function onDragMove(evt: any) {
   // Prevent the trigger step from being moved at all
-  if (evt.draggedContext.element.type === 'trigger') return false
+  if (evt.draggedContext.element.type === 'trigger')
+    return false
   // Prevent any step from being moved before the trigger (index 0)
-  if (evt.relatedContext.index === 0) return false
+  if (evt.relatedContext.index === 0)
+    return false
   return true
 }
 
@@ -138,7 +151,7 @@ function handleSave() {
 
 const addStepMenuOpen = ref(false)
 
-const addStepOptions: { type: StepType; icon: string; label: string; group: string }[] = [
+const addStepOptions: { type: StepType, icon: string, label: string, group: string }[] = [
   { type: 'wait', icon: 'i-lucide-clock', label: 'Wait for Time', group: 'Flow' },
   { type: 'message', icon: 'i-lucide-message-square', label: 'Send Message', group: 'Flow' },
   { type: 'if_else', icon: 'i-lucide-git-fork', label: 'If/Else Branch', group: 'Logic' },
@@ -154,7 +167,8 @@ const addStepOptions: { type: StepType; icon: string; label: string; group: stri
 const addStepGroups = computed(() => {
   const groups: Record<string, typeof addStepOptions> = {}
   for (const opt of addStepOptions) {
-    if (!groups[opt.group]) groups[opt.group] = []
+    if (!groups[opt.group])
+      groups[opt.group] = []
     groups[opt.group].push(opt)
   }
   return groups
@@ -176,7 +190,7 @@ const addStepGroups = computed(() => {
           class="text-lg font-semibold bg-transparent border-b border-primary outline-none flex-1 min-w-0"
           @blur="commitName"
           @keydown.enter="commitName"
-        />
+        >
         <template v-else>
           <h1
             class="cursor-pointer text-lg font-semibold truncate hover:text-primary transition-colors"
@@ -203,7 +217,9 @@ const addStepGroups = computed(() => {
           <Switch :model-value="isActive" @update:model-value="isActive = $event" />
           <span class="text-sm text-muted-foreground">{{ isActive ? 'Active' : 'Inactive' }}</span>
         </div>
-        <Button @click="handleSave">Save Journey</Button>
+        <Button @click="handleSave">
+          Save Journey
+        </Button>
       </div>
     </header>
 
@@ -243,7 +259,9 @@ const addStepGroups = computed(() => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" class="w-52">
                         <template v-for="(opts, group) in addStepGroups" :key="group">
-                          <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
+                          <DropdownMenuLabel class="text-xs text-muted-foreground">
+                            {{ group }}
+                          </DropdownMenuLabel>
                           <DropdownMenuItem v-for="opt in opts" :key="opt.type" @click="addStep(opt.type, index)">
                             <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                             {{ opt.label }}
@@ -272,7 +290,9 @@ const addStepGroups = computed(() => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" class="w-52">
               <template v-for="(opts, group) in addStepGroups" :key="group">
-                <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
+                <DropdownMenuLabel class="text-xs text-muted-foreground">
+                  {{ group }}
+                </DropdownMenuLabel>
                 <DropdownMenuItem v-for="opt in opts" :key="opt.type" @click="addStep(opt.type)">
                   <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                   {{ opt.label }}

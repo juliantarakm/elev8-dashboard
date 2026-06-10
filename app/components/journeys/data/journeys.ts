@@ -1,64 +1,64 @@
-export type StepType =
-  | 'trigger'
-  | 'wait'
-  | 'message'
-  | 'context_check'
-  | 'action'
-  | 'if_else'
-  | 'hard_requirement'
-  | 'create_note'
-  | 'toggle_ai'
-  | 'integration'
-  | 'end_journey'
+export type StepType
+  = | 'trigger'
+    | 'wait'
+    | 'message'
+    | 'context_check'
+    | 'action'
+    | 'if_else'
+    | 'hard_requirement'
+    | 'create_note'
+    | 'toggle_ai'
+    | 'integration'
+    | 'end_journey'
 
 export type JourneyStatus = 'active' | 'inactive'
 
 export type TriggerCategory = 'event' | 'calendar'
 
-export type TriggerType =
-  | 'booking_confirmed'
-  | 'checkin'
-  | 'checkout'
-  | 'during_reservation'
-  | 'before_reservation'
-  | 'after_reservation'
-  | 'before_stay_ends'
-  | 'guest_first_inquiry'
-  | 'host_message_sent'
-  | 'guest_canceled'
-  | 'guest_checked_out'
-  | 'conversation_content'
-  | 'sentiment_change'
-  | 'gap_night_opened'
-  | 'cleaning_complete'
-  | 'noise_disturbance'
-  | 'scheduled'
-  | 'send_once'
-  | 'before_checkin'
-  | 'after_checkin'
-  | 'before_checkout'
-  | 'after_checkout'
-  | 'gap_night'
+export type TriggerType
+  = | 'booking_confirmed'
+    | 'checkin'
+    | 'checkout'
+    | 'during_reservation'
+    | 'before_reservation'
+    | 'after_reservation'
+    | 'before_stay_ends'
+    | 'guest_first_inquiry'
+    | 'host_message_sent'
+    | 'guest_canceled'
+    | 'guest_checked_out'
+    | 'conversation_content'
+    | 'sentiment_change'
+    | 'gap_night_opened'
+    | 'cleaning_complete'
+    | 'noise_disturbance'
+    | 'scheduled'
+    | 'send_once'
+    | 'before_checkin'
+    | 'after_checkin'
+    | 'before_checkout'
+    | 'after_checkout'
+    | 'gap_night'
 
 export type ChannelType = 'ota' | 'whatsapp' | 'email'
 
-export type ActionType =
-  | 'create_task'
-  | 'flag_reservation'
-  | 'staff_alert'
-  | 'raise_action_item'
+export type ActionType
+  = | 'create_task'
+    | 'flag_reservation'
+    | 'staff_alert'
+    | 'raise_action_item'
 
 export type FailBehavior = 'skip' | 'stop'
 
-export type ConditionType =
-  | 'reservation_status'
-  | 'guest_sentiment'
-  | 'booking_channel'
-  | 'guest_counts'
-  | 'stay_details'
-  | 'time_day'
-  | 'external_state'
-  | 'ai_conversation_check'
+export type ConditionType
+  = | 'reservation_status'
+    | 'guest_sentiment'
+    | 'booking_channel'
+    | 'guest_counts'
+    | 'stay_details'
+    | 'time_day'
+    | 'external_state'
+    | 'ai_conversation_check'
 
 export interface BaseStep {
   id: string
@@ -183,18 +183,18 @@ export interface EndJourneyStep extends BaseStep {
   type: 'end_journey'
 }
 
-export type JourneyStep =
-  | TriggerStep
-  | WaitStep
-  | MessageStep
-  | ContextCheckStep
-  | ActionStep
-  | IfElseStep
-  | HardRequirementStep
-  | CreateNoteStep
-  | ToggleAIStep
-  | IntegrationStep
-  | EndJourneyStep
+export type JourneyStep
+  = | TriggerStep
+    | WaitStep
+    | MessageStep
+    | ContextCheckStep
+    | ActionStep
+    | IfElseStep
+    | HardRequirementStep
+    | CreateNoteStep
+    | ToggleAIStep
+    | IntegrationStep
+    | EndJourneyStep
 
 export interface Journey {
   id: string
@@ -215,7 +215,7 @@ export interface MarketplaceTemplate {
   steps: JourneyStep[]
 }
 
-export const triggerMeta: Record<string, { label: string; category: TriggerCategory }> = {
+export const triggerMeta: Record<string, { label: string, category: TriggerCategory }> = {
   booking_confirmed: { label: 'Booking Confirmed', category: 'event' },
   checkin: { label: 'Check-In', category: 'calendar' },
   checkout: { label: 'Check-Out', category: 'calendar' },
@@ -721,7 +721,7 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
 
 export const generatedJourneyExample: Journey & {
   aiReasoning: string
-  stats: { messages: number; contextChecks: number; estimatedTime: string }
+  stats: { messages: number, contextChecks: number, estimatedTime: string }
 } = {
   id: 'ai-generated-1',
   name: 'AI Generated Journey',

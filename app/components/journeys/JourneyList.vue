@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
 import type { Journey, JourneyGroup } from './data/journeys'
+import { toast } from 'vue-sonner'
 import { triggerMeta } from './data/journeys'
 
 const emit = defineEmits<{
@@ -11,13 +11,20 @@ const emit = defineEmits<{
 }>()
 
 const {
-  journeys, toggleStatus, deleteJourney, duplicateJourney,
-  groups, createGroup, deleteGroup, renameGroup, toggleGroupCollapse,
-  moveJourneyToGroup, addJourneysToGroup,
+  journeys,
+  toggleStatus,
+  deleteJourney,
+  duplicateJourney,
+  groups,
+  createGroup,
+  deleteGroup,
+  renameGroup,
+  toggleGroupCollapse,
+  moveJourneyToGroup,
+  addJourneysToGroup,
 } = useJourneys()
 
-
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' }> = {
+const statusConfig: Record<string, { label: string, variant: 'default' | 'secondary' }> = {
   active: { label: 'Active', variant: 'default' },
   inactive: { label: 'Inactive', variant: 'secondary' },
 }
@@ -31,7 +38,8 @@ function handleMoveToGroup(journey: Journey, groupId: string | null) {
   if (groupId) {
     const groupName = groups.value.find(g => g.id === groupId)?.name ?? ''
     toast.success(`"${journey.name}" moved to "${groupName}"`)
-  } else {
+  }
+  else {
     toast.success(`"${journey.name}" removed from group`)
   }
 }
@@ -71,13 +79,15 @@ function openCreateGroup() {
 
 function toggleNewGroupJourney(id: string) {
   const idx = newGroupJourneyIds.value.indexOf(id)
-  if (idx === -1) newGroupJourneyIds.value.push(id)
+  if (idx === -1)
+    newGroupJourneyIds.value.push(id)
   else newGroupJourneyIds.value.splice(idx, 1)
 }
 
 function submitCreateGroup() {
   const name = newGroupName.value.trim()
-  if (!name) return
+  if (!name)
+    return
   createGroup(name, [...newGroupJourneyIds.value])
   toast.success(`Group "${name}" created`)
   createGroupOpen.value = false
@@ -89,7 +99,7 @@ const addToGroupId = ref('')
 const addToGroupSelectedIds = ref<string[]>([])
 
 const addToGroupName = computed(
-  () => groups.value.find(g => g.id === addToGroupId.value)?.name ?? ''
+  () => groups.value.find(g => g.id === addToGroupId.value)?.name ?? '',
 )
 
 const addToGroupAvailable = computed(() => {
@@ -105,7 +115,8 @@ function openAddToGroup(groupId: string) {
 
 function toggleAddToGroupJourney(id: string) {
   const idx = addToGroupSelectedIds.value.indexOf(id)
-  if (idx === -1) addToGroupSelectedIds.value.push(id)
+  if (idx === -1)
+    addToGroupSelectedIds.value.push(id)
   else addToGroupSelectedIds.value.splice(idx, 1)
 }
 
@@ -183,8 +194,12 @@ function submitRename() {
     <!-- Header -->
     <div class="flex items-start justify-between gap-4 border-b bg-background px-6 py-5">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Journeys</h1>
-        <p class="text-sm text-muted-foreground mt-0.5">Automate guest communication end-to-end with AI-powered flows.</p>
+        <h1 class="text-2xl font-bold tracking-tight">
+          Journeys
+        </h1>
+        <p class="text-sm text-muted-foreground mt-0.5">
+          Automate guest communication end-to-end with AI-powered flows.
+        </p>
       </div>
       <div class="flex shrink-0 gap-2">
         <Button variant="outline" @click="openCreateGroup">
@@ -226,7 +241,9 @@ function submitRename() {
       <!-- Empty state -->
       <div v-if="journeys.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
         <Icon name="i-lucide-route" class="mb-4 h-12 w-12 text-muted-foreground opacity-40" />
-        <h3 class="text-lg font-semibold">No Journeys yet</h3>
+        <h3 class="text-lg font-semibold">
+          No Journeys yet
+        </h3>
         <p class="mt-1 mb-5 text-sm text-muted-foreground max-w-sm">
           Create your first Journey to automate guest communication end-to-end.
         </p>
@@ -247,13 +264,25 @@ function submitRename() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead class="w-[300px]">Name</TableHead>
-              <TableHead class="w-[160px]">Status</TableHead>
-              <TableHead class="w-[70px]">Steps</TableHead>
+              <TableHead class="w-[300px]">
+                Name
+              </TableHead>
+              <TableHead class="w-[160px]">
+                Status
+              </TableHead>
+              <TableHead class="w-[70px]">
+                Steps
+              </TableHead>
               <TableHead>Trigger</TableHead>
-              <TableHead class="w-[130px]">Properties</TableHead>
-              <TableHead class="w-[130px]">Last Modified</TableHead>
-              <TableHead class="w-[56px] text-right">Actions</TableHead>
+              <TableHead class="w-[130px]">
+                Properties
+              </TableHead>
+              <TableHead class="w-[130px]">
+                Last Modified
+              </TableHead>
+              <TableHead class="w-[56px] text-right">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -319,7 +348,9 @@ function submitRename() {
                   v-for="journey in getGroupJourneys(group)"
                   :key="journey.id"
                 >
-                  <TableCell class="font-medium pl-10">{{ journey.name }}</TableCell>
+                  <TableCell class="font-medium pl-10">
+                    {{ journey.name }}
+                  </TableCell>
                   <TableCell>
                     <div class="flex items-center gap-2">
                       <Switch
@@ -333,14 +364,18 @@ function submitRename() {
                     </div>
                   </TableCell>
                   <TableCell>{{ journey.steps.length }}</TableCell>
-                  <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                  <TableCell class="text-muted-foreground text-sm">
+                    {{ getTriggerLabel(journey.triggerType) }}
+                  </TableCell>
                   <TableCell class="text-sm">
                     <div class="flex items-center gap-1.5 text-muted-foreground">
                       <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0" />
                       <span>{{ journey.properties?.includes('All Properties') ? 'All' : `${journey.properties?.length ?? 0}` }}</span>
                     </div>
                   </TableCell>
-                  <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
+                  <TableCell class="text-muted-foreground text-sm">
+                    {{ journey.lastModified }}
+                  </TableCell>
                   <TableCell class="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger as-child>
@@ -403,7 +438,9 @@ function submitRename() {
                 v-for="journey in ungroupedJourneys"
                 :key="journey.id"
               >
-                <TableCell class="font-medium">{{ journey.name }}</TableCell>
+                <TableCell class="font-medium">
+                  {{ journey.name }}
+                </TableCell>
                 <TableCell>
                   <div class="flex items-center gap-2">
                     <Switch
@@ -417,14 +454,18 @@ function submitRename() {
                   </div>
                 </TableCell>
                 <TableCell>{{ journey.steps.length }}</TableCell>
-                <TableCell class="text-muted-foreground text-sm">{{ getTriggerLabel(journey.triggerType) }}</TableCell>
+                <TableCell class="text-muted-foreground text-sm">
+                  {{ getTriggerLabel(journey.triggerType) }}
+                </TableCell>
                 <TableCell class="text-sm">
                   <div class="flex items-center gap-1.5 text-muted-foreground">
                     <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0" />
                     <span>{{ journey.properties?.includes('All Properties') ? 'All' : `${journey.properties?.length ?? 0}` }}</span>
                   </div>
                 </TableCell>
-                <TableCell class="text-muted-foreground text-sm">{{ journey.lastModified }}</TableCell>
+                <TableCell class="text-muted-foreground text-sm">
+                  {{ journey.lastModified }}
+                </TableCell>
                 <TableCell class="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger as-child>
@@ -502,10 +543,11 @@ function submitRename() {
                   class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
                   @click="toggleNewGroupJourney(j.id)"
                 >
-                  <div :class="[
-                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-                    newGroupJourneyIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                  ]">
+                  <div
+                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border" :class="[
+                      newGroupJourneyIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                    ]"
+                  >
                     <Icon v-if="newGroupJourneyIds.includes(j.id)" name="i-lucide-check" class="h-3 w-3" />
                   </div>
                   <span class="flex-1 truncate text-left">{{ j.name }}</span>
@@ -518,7 +560,9 @@ function submitRename() {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="createGroupOpen = false">Cancel</Button>
+          <Button variant="outline" @click="createGroupOpen = false">
+            Cancel
+          </Button>
           <Button :disabled="!newGroupName.trim()" @click="submitCreateGroup">
             Create Group
           </Button>
@@ -540,8 +584,12 @@ function submitRename() {
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="renameDialogOpen = false">Cancel</Button>
-          <Button :disabled="!renameInput.trim()" @click="submitRename">Save</Button>
+          <Button variant="outline" @click="renameDialogOpen = false">
+            Cancel
+          </Button>
+          <Button :disabled="!renameInput.trim()" @click="submitRename">
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -557,7 +605,9 @@ function submitRename() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction @click="doDuplicateJourney">Duplicate</AlertDialogAction>
+          <AlertDialogAction @click="doDuplicateJourney">
+            Duplicate
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -616,10 +666,11 @@ function submitRename() {
               class="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
               @click="toggleAddToGroupJourney(j.id)"
             >
-              <div :class="[
-                'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-                addToGroupSelectedIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-              ]">
+              <div
+                class="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border" :class="[
+                  addToGroupSelectedIds.includes(j.id) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                ]"
+              >
                 <Icon v-if="addToGroupSelectedIds.includes(j.id)" name="i-lucide-check" class="h-3 w-3" />
               </div>
               <span class="flex-1 truncate text-left">{{ j.name }}</span>
@@ -627,7 +678,9 @@ function submitRename() {
           </div>
         </ScrollArea>
         <DialogFooter>
-          <Button variant="outline" @click="addToGroupOpen = false">Cancel</Button>
+          <Button variant="outline" @click="addToGroupOpen = false">
+            Cancel
+          </Button>
           <Button :disabled="addToGroupSelectedIds.length === 0" @click="submitAddToGroup">
             Add {{ addToGroupSelectedIds.length > 0 ? `${addToGroupSelectedIds.length} ` : '' }}{{ addToGroupSelectedIds.length === 1 ? 'Journey' : 'Journeys' }}
           </Button>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { toast } from 'vue-sonner'
 import type { ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import type { InventoryTimelineEvent } from '@/components/inventory/data/timeline-events'
+import { computed, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 import { useInventoryListings } from '@/composables/useInventoryListings'
 import { useInventoryTimeline } from '@/composables/useInventoryTimeline'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 
 const props = defineProps<{
   open: boolean
@@ -23,7 +23,7 @@ const { events } = useInventoryTimeline()
 
 const isOpen = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: val => emit('update:open', val),
 })
 
 const isEditing = computed(() => !!props.entry)
@@ -46,14 +46,16 @@ const itemSearch = ref('')
 const itemPickerOpen = ref(false)
 
 const selectedItem = computed(() => {
-  if (!selectedItemId.value) return null
+  if (!selectedItemId.value)
+    return null
   return getItemById(selectedItemId.value)
 })
 
 const isConsumable = computed(() => selectedItem.value?.type === 'consumable')
 
 const filteredItems = computed(() => {
-  if (!itemSearch.value) return items.value
+  if (!itemSearch.value)
+    return items.value
   return items.value.filter(i =>
     i.name.toLowerCase().includes(itemSearch.value.toLowerCase()),
   )
@@ -83,13 +85,15 @@ function populateForm(entry: ListingInventoryEntry) {
 watch(() => props.open, (val) => {
   if (val) {
     activeTab.value = 'details'
-    if (props.entry) populateForm(props.entry)
+    if (props.entry)
+      populateForm(props.entry)
     else resetForm()
   }
 })
 
 function handleSave() {
-  if (!selectedItemId.value || !selectedListing.value) return
+  if (!selectedItemId.value || !selectedListing.value)
+    return
 
   const payload: Omit<ListingInventoryEntry, 'id' | 'lastUpdated'> = {
     itemId: selectedItemId.value,
@@ -116,8 +120,10 @@ function eventIcon(event: InventoryTimelineEvent): string {
   switch (event.type) {
     case 'entry_created': return 'lucide:plus-circle'
     case 'condition_changed':
-      if (event.details.to === 'good') return 'lucide:check-circle-2'
-      if (event.details.to === 'damaged' || event.details.to === 'missing') return 'lucide:alert-circle'
+      if (event.details.to === 'good')
+        return 'lucide:check-circle-2'
+      if (event.details.to === 'damaged' || event.details.to === 'missing')
+        return 'lucide:alert-circle'
       return 'lucide:refresh-cw'
     case 'quantity_changed': return 'lucide:package'
     case 'stock_changed': return 'lucide:boxes'
@@ -133,8 +139,10 @@ function eventIconClass(event: InventoryTimelineEvent): string {
   switch (event.type) {
     case 'entry_created': return 'text-blue-500 border-blue-200'
     case 'condition_changed':
-      if (event.details.to === 'good') return 'text-green-600 border-green-200'
-      if (event.details.to === 'damaged' || event.details.to === 'missing') return 'text-destructive border-destructive/20'
+      if (event.details.to === 'good')
+        return 'text-green-600 border-green-200'
+      if (event.details.to === 'damaged' || event.details.to === 'missing')
+        return 'text-destructive border-destructive/20'
       return 'text-amber-600 border-amber-200'
     case 'quantity_changed': return 'text-blue-500 border-blue-200'
     case 'stock_changed':
@@ -167,9 +175,12 @@ function formatRelativeDate(iso: string) {
   const date = new Date(iso)
   const now = new Date()
   const diff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  if (diff < 7) return `${diff} days ago`
+  if (diff === 0)
+    return 'Today'
+  if (diff === 1)
+    return 'Yesterday'
+  if (diff < 7)
+    return `${diff} days ago`
   return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
@@ -186,7 +197,9 @@ function formatRelativeDate(iso: string) {
 
       <Tabs v-model="activeTab" class="mt-2">
         <TabsList class="mx-4">
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="details">
+            Details
+          </TabsTrigger>
           <TabsTrigger v-if="isEditing" value="timeline">
             Timeline
             <Badge

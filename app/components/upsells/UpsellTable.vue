@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import type { UpsellService } from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import { useUpsellServices } from '@/composables/useUpsellServices'
-import type { UpsellService } from '@/components/upsells/data/upsell-services'
-
-const { filteredServices, toggleStatus, deleteService } = useUpsellServices()
 
 const emit = defineEmits<{
   openDrawer: [service: UpsellService | null]
 }>()
+
+const { filteredServices, toggleStatus, deleteService } = useUpsellServices()
 
 function openEdit(service: UpsellService) {
   emit('openDrawer', service)
@@ -28,12 +28,14 @@ function formatPrice(price: number, currency: string) {
 }
 
 function priceRange(svc: UpsellService) {
-  if (svc.items.length === 0) return '—'
+  if (svc.items.length === 0)
+    return '—'
   const prices = svc.items.map(i => i.price)
   const min = Math.min(...prices)
   const max = Math.max(...prices)
-  if (min === max) return formatPrice(min, svc.currency)
-  return `${formatPrice(min, svc.currency)} – ${formatPrice(max, svc.currency).replace(svc.currency + ' ', '')}`
+  if (min === max)
+    return formatPrice(min, svc.currency)
+  return `${formatPrice(min, svc.currency)} – ${formatPrice(max, svc.currency).replace(`${svc.currency} `, '')}`
 }
 
 const categoryBadgeClass: Record<string, string> = {
@@ -60,11 +62,21 @@ const categoryBadgeClass: Record<string, string> = {
           <TableHead class="w-12" />
           <TableHead>Name</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead class="text-right">Price Range</TableHead>
-          <TableHead class="text-center">Items</TableHead>
-          <TableHead class="text-center">Listings</TableHead>
-          <TableHead class="text-center">Availability</TableHead>
-          <TableHead class="text-center">Status</TableHead>
+          <TableHead class="text-right">
+            Price Range
+          </TableHead>
+          <TableHead class="text-center">
+            Items
+          </TableHead>
+          <TableHead class="text-center">
+            Listings
+          </TableHead>
+          <TableHead class="text-center">
+            Availability
+          </TableHead>
+          <TableHead class="text-center">
+            Status
+          </TableHead>
           <TableHead class="w-10" />
         </TableRow>
       </TableHeader>
@@ -87,8 +99,12 @@ const categoryBadgeClass: Record<string, string> = {
             </div>
           </TableCell>
           <TableCell>
-            <p class="font-medium">{{ svc.name }}</p>
-            <p class="max-w-64 truncate text-xs text-muted-foreground">{{ svc.description }}</p>
+            <p class="font-medium">
+              {{ svc.name }}
+            </p>
+            <p class="max-w-64 truncate text-xs text-muted-foreground">
+              {{ svc.description }}
+            </p>
           </TableCell>
           <TableCell>
             <span

@@ -1,4 +1,4 @@
-import type { CleaningFilters, CleaningJob, CleaningJobInput, CleaningJobPriority, CleaningJobSource, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
+import type { CleaningFilters, CleaningJob, CleaningJobInput } from '~/components/cleaning/data/cleaning-jobs'
 import { cleanerOptions, cleaningJobs } from '~/components/cleaning/data/cleaning-jobs'
 import { listings } from '~/components/listings/data/listings'
 
@@ -21,10 +21,14 @@ export function useCleaningJobs() {
 
   function jobsForFilters(filters: CleaningFilters) {
     return syncedJobs.value.filter((job) => {
-      if (filters.listingIds.length && !filters.listingIds.includes(job.listingId)) return false
-      if (filters.cleanerIds.length && (!job.cleanerId || !filters.cleanerIds.includes(job.cleanerId))) return false
-      if (filters.statuses.length && !filters.statuses.includes(job.status)) return false
-      if (filters.priorities.length && !filters.priorities.includes(job.priority)) return false
+      if (filters.listingIds.length && !filters.listingIds.includes(job.listingId))
+        return false
+      if (filters.cleanerIds.length && (!job.cleanerId || !filters.cleanerIds.includes(job.cleanerId)))
+        return false
+      if (filters.statuses.length && !filters.statuses.includes(job.status))
+        return false
+      if (filters.priorities.length && !filters.priorities.includes(job.priority))
+        return false
       return true
     })
   }
@@ -42,7 +46,7 @@ export function useCleaningJobs() {
     jobs.value = jobs.value.map(job => (job.id === id ? { ...job, ...patch } : job))
   }
 
-  function createFromCheckout(reservation: { id: string; listingId: string; listingName: string; checkOut: string }) {
+  function createFromCheckout(reservation: { id: string, listingId: string, listingName: string, checkOut: string }) {
     const scheduledAt = `${reservation.checkOut}T11:00:00+08:00`
     return createJob({
       listingId: reservation.listingId,
@@ -62,7 +66,8 @@ export function useCleaningJobs() {
   }
 
   function resolveCleanerName(cleanerId: string | null) {
-    if (!cleanerId) return null
+    if (!cleanerId)
+      return null
     return cleanerOptions.find(option => option.id === cleanerId)?.name ?? null
   }
 

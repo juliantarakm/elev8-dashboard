@@ -112,8 +112,8 @@ Add `resources` field to `Listing`:
 export interface ListingDocument {
   id: string
   name: string
-  url: string       // base64 data URL or remote URL
-  size: number      // bytes
+  url: string // base64 data URL or remote URL
+  size: number // bytes
   uploadedAt: string // ISO date
 }
 
@@ -129,7 +129,7 @@ export interface ListingResources {
   listingDetails?: string
   sops?: string
   topicsToAvoid?: string[]
-  propertyUpsells?: string[]  // upsell service IDs
+  propertyUpsells?: string[] // upsell service IDs
 }
 ```
 

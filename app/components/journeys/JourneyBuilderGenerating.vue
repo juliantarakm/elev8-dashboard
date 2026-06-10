@@ -59,7 +59,9 @@ onUnmounted(() => {
           Generating your Journey{{ '.'.repeat(dotCount) }}
         </h2>
         <div class="mt-3 rounded-lg border bg-muted/40 px-4 py-3">
-          <p class="text-sm italic text-muted-foreground">{{ prompt }}</p>
+          <p class="text-sm italic text-muted-foreground">
+            {{ prompt }}
+          </p>
         </div>
       </div>
 
@@ -87,8 +89,7 @@ onUnmounted(() => {
             />
           </div>
           <span
-            :class="[
-              'text-sm transition-colors',
+            class="text-sm transition-colors" :class="[
               completedCount > index
                 ? 'text-foreground'
                 : activeIndex === index && completedCount <= index
@@ -103,7 +104,9 @@ onUnmounted(() => {
       </div>
 
       <Progress :model-value="progress" class="h-1.5" />
-      <p class="mt-2 text-center text-xs text-muted-foreground">{{ progress }}%</p>
+      <p class="mt-2 text-center text-xs text-muted-foreground">
+        {{ progress }}%
+      </p>
     </div>
   </div>
 </template>

@@ -1,10 +1,21 @@
 <script setup lang="ts">
 import type {
-  JourneyStep, TriggerStep, WaitStep, MessageStep, ContextCheckStep, ActionStep,
-  IfElseStep, HardRequirementStep, CreateNoteStep, ToggleAIStep, IntegrationStep,
-  TriggerType, TriggerEntry, TriggerSettings,
+  ActionStep,
+  ContextCheckStep,
+  CreateNoteStep,
+  HardRequirementStep,
+  IfElseStep,
+  IntegrationStep,
+  JourneyStep,
+  MessageStep,
+  ToggleAIStep,
+  TriggerEntry,
+  TriggerSettings,
+  TriggerStep,
+  TriggerType,
+  WaitStep,
 } from './data/journeys'
-import { conditionMeta, triggerMeta, defaultTriggerSettings } from './data/journeys'
+import { conditionMeta, defaultTriggerSettings, triggerMeta } from './data/journeys'
 
 const props = defineProps<{
   step: JourneyStep | null
@@ -16,10 +27,10 @@ const emit = defineEmits<{
 }>()
 
 function patch(fields: Partial<JourneyStep>) {
-  if (!props.step) return
+  if (!props.step)
+    return
   emit('update', { ...props.step, ...fields } as JourneyStep)
 }
-
 
 const triggerStep = computed(() => props.step?.type === 'trigger' ? props.step as TriggerStep : null)
 const waitStep = computed(() => props.step?.type === 'wait' ? props.step as WaitStep : null)
@@ -72,27 +83,38 @@ function removeTrigger(index: number) {
 function toggleSentiment(index: number, s: 'positive' | 'neutral' | 'negative') {
   const current = [...(triggerEntries.value[index]?.settings.targetSentiments ?? [])]
   const idx = current.indexOf(s)
-  if (idx === -1) current.push(s)
+  if (idx === -1)
+    current.push(s)
   else current.splice(idx, 1)
   patchTriggerSettings(index, { targetSentiments: current })
 }
 
 function triggerSettingsType(type: TriggerType) {
-  if (['before_checkin', 'after_checkin', 'before_checkout', 'after_checkout', 'before_reservation', 'after_reservation', 'before_stay_ends'].includes(type)) return 'offset_fixed'
-  if (type === 'checkin' || type === 'checkout') return 'offset_dir'
-  if (type === 'during_reservation') return 'day_of_stay'
-  if (type === 'scheduled') return 'schedule'
-  if (type === 'send_once') return 'send_once'
-  if (type === 'conversation_content') return 'keywords'
-  if (type === 'sentiment_change') return 'sentiment'
+  if (['before_checkin', 'after_checkin', 'before_checkout', 'after_checkout', 'before_reservation', 'after_reservation', 'before_stay_ends'].includes(type))
+    return 'offset_fixed'
+  if (type === 'checkin' || type === 'checkout')
+    return 'offset_dir'
+  if (type === 'during_reservation')
+    return 'day_of_stay'
+  if (type === 'scheduled')
+    return 'schedule'
+  if (type === 'send_once')
+    return 'send_once'
+  if (type === 'conversation_content')
+    return 'keywords'
+  if (type === 'sentiment_change')
+    return 'sentiment'
   return 'none'
 }
 
 function offsetContextLabel(type: TriggerType) {
   const map: Record<string, string> = {
-    before_checkin: 'before check-in', after_checkin: 'after check-in',
-    before_checkout: 'before check-out', after_checkout: 'after check-out',
-    before_reservation: 'before reservation starts', after_reservation: 'after reservation ends',
+    before_checkin: 'before check-in',
+    after_checkin: 'after check-in',
+    before_checkout: 'before check-out',
+    after_checkout: 'after check-out',
+    before_reservation: 'before reservation starts',
+    after_reservation: 'after reservation ends',
     before_stay_ends: 'before stay ends',
   }
   return map[type] ?? ''
@@ -106,20 +128,26 @@ const showAltTriggerPicker = ref(false)
     <div v-if="!step" class="flex flex-1 items-center justify-center">
       <div class="text-center text-muted-foreground">
         <Icon name="i-lucide-mouse-pointer-click" class="mx-auto mb-2 h-8 w-8 opacity-40" />
-        <p class="text-sm">Select a step to configure it</p>
+        <p class="text-sm">
+          Select a step to configure it
+        </p>
       </div>
     </div>
 
     <template v-else>
       <div class="mb-4 border-b pb-4">
-        <p class="text-sm font-semibold">{{ step.name }}</p>
+        <p class="text-sm font-semibold">
+          {{ step.name }}
+        </p>
       </div>
 
       <!-- Trigger -->
       <div v-if="triggerStep" class="flex flex-col gap-3">
         <div>
           <Label>Triggers</Label>
-          <p class="mt-0.5 text-xs text-muted-foreground">Journey fires when ANY of these events occur.</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">
+            Journey fires when ANY of these events occur.
+          </p>
         </div>
 
         <div class="flex flex-col gap-1.5">
@@ -143,15 +171,21 @@ const showAltTriggerPicker = ref(false)
                   <SelectContent>
                     <SelectGroup>
                       <SelectLabel>Event-based</SelectLabel>
-                      <SelectItem v-for="t in eventTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                      <SelectItem v-for="t in eventTriggers" :key="t.value" :value="t.value">
+                        {{ t.label }}
+                      </SelectItem>
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Calendar-based</SelectLabel>
-                      <SelectItem v-for="t in calendarTriggers" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+                      <SelectItem v-for="t in calendarTriggers" :key="t.value" :value="t.value">
+                        {{ t.label }}
+                      </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <Badge v-if="i === 0" variant="secondary" class="text-[10px] shrink-0">Primary</Badge>
+                <Badge v-if="i === 0" variant="secondary" class="text-[10px] shrink-0">
+                  Primary
+                </Badge>
                 <Button
                   v-else
                   variant="ghost"
@@ -179,13 +213,21 @@ const showAltTriggerPicker = ref(false)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="minutes">minutes</SelectItem>
-                      <SelectItem value="hours">hours</SelectItem>
-                      <SelectItem value="days">days</SelectItem>
+                      <SelectItem value="minutes">
+                        minutes
+                      </SelectItem>
+                      <SelectItem value="hours">
+                        hours
+                      </SelectItem>
+                      <SelectItem value="days">
+                        days
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <p class="text-xs text-muted-foreground">{{ offsetContextLabel(entry.type) }}</p>
+                <p class="text-xs text-muted-foreground">
+                  {{ offsetContextLabel(entry.type) }}
+                </p>
               </div>
 
               <!-- Settings: offset with selectable direction (checkin/checkout) -->
@@ -196,9 +238,15 @@ const showAltTriggerPicker = ref(false)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="before">Before</SelectItem>
-                      <SelectItem value="at">At</SelectItem>
-                      <SelectItem value="after">After</SelectItem>
+                      <SelectItem value="before">
+                        Before
+                      </SelectItem>
+                      <SelectItem value="at">
+                        At
+                      </SelectItem>
+                      <SelectItem value="after">
+                        After
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <template v-if="entry.settings.offsetDirection !== 'at'">
@@ -214,9 +262,15 @@ const showAltTriggerPicker = ref(false)
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="minutes">min</SelectItem>
-                        <SelectItem value="hours">hours</SelectItem>
-                        <SelectItem value="days">days</SelectItem>
+                        <SelectItem value="minutes">
+                          min
+                        </SelectItem>
+                        <SelectItem value="hours">
+                          hours
+                        </SelectItem>
+                        <SelectItem value="days">
+                          days
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </template>
@@ -246,9 +300,15 @@ const showAltTriggerPicker = ref(false)
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="daily">
+                      Daily
+                    </SelectItem>
+                    <SelectItem value="weekly">
+                      Weekly
+                    </SelectItem>
+                    <SelectItem value="monthly">
+                      Monthly
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <div class="flex items-center gap-2">
@@ -301,12 +361,11 @@ const showAltTriggerPicker = ref(false)
                     <button
                       v-for="s in (['positive', 'neutral', 'negative'] as const)"
                       :key="s"
-                      :class="[
-                        'rounded-lg border py-2.5 text-sm font-medium transition-colors',
+                      class="rounded-lg border py-2.5 text-sm font-medium transition-colors" :class="[
                         entry.settings.targetSentiments?.includes(s)
                           ? s === 'positive' ? 'bg-green-500 border-green-500 text-white'
                             : s === 'neutral' ? 'bg-amber-500 border-amber-500 text-white'
-                            : 'bg-red-500 border-red-500 text-white'
+                              : 'bg-red-500 border-red-500 text-white'
                           : 'border-input text-muted-foreground hover:bg-muted',
                       ]"
                       @click="toggleSentiment(i, s)"
@@ -323,15 +382,20 @@ const showAltTriggerPicker = ref(false)
                   class="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-muted/40"
                   @click="patchTriggerSettings(i, { triggerImmediately: !entry.settings.triggerImmediately })"
                 >
-                  <div :class="[
-                    'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                    entry.settings.triggerImmediately ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                  ]">
+                  <div
+                    class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border" :class="[
+                      entry.settings.triggerImmediately ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                    ]"
+                  >
                     <Icon v-if="entry.settings.triggerImmediately" name="i-lucide-check" class="h-3 w-3" />
                   </div>
                   <div>
-                    <p class="text-sm font-medium leading-none">Trigger immediately</p>
-                    <p class="mt-1 text-xs text-muted-foreground">Start journey as soon as sentiment is detected</p>
+                    <p class="text-sm font-medium leading-none">
+                      Trigger immediately
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Start journey as soon as sentiment is detected
+                    </p>
                   </div>
                 </div>
 
@@ -340,12 +404,16 @@ const showAltTriggerPicker = ref(false)
                   <div>
                     <Label class="text-xs text-muted-foreground">Delay after sentiment detected</Label>
                     <div class="mt-2 grid grid-cols-3 gap-2">
-                      <div v-for="unit in [
-                        { key: 'delayDays', label: 'Days' },
-                        { key: 'delayHours', label: 'Hours' },
-                        { key: 'delayMinutes', label: 'Minutes' },
-                      ]" :key="unit.key">
-                        <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                      <div
+                        v-for="unit in [
+                          { key: 'delayDays', label: 'Days' },
+                          { key: 'delayHours', label: 'Hours' },
+                          { key: 'delayMinutes', label: 'Minutes' },
+                        ]" :key="unit.key"
+                      >
+                        <p class="mb-1 text-center text-xs text-muted-foreground">
+                          {{ unit.label }}
+                        </p>
                         <Input
                           type="number"
                           :model-value="(entry.settings as any)[unit.key] ?? 0"
@@ -394,23 +462,30 @@ const showAltTriggerPicker = ref(false)
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56">
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Event-based</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Event-based
+              </DropdownMenuLabel>
               <DropdownMenuItem
                 v-for="t in availableTriggers.filter(x => x.category === 'event')"
                 :key="t.value"
                 @click="addTrigger(t.value)"
-              >{{ t.label }}</DropdownMenuItem>
+              >
+                {{ t.label }}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Calendar-based</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Calendar-based
+              </DropdownMenuLabel>
               <DropdownMenuItem
                 v-for="t in availableTriggers.filter(x => x.category === 'calendar')"
                 :key="t.value"
                 @click="addTrigger(t.value)"
-              >{{ t.label }}</DropdownMenuItem>
+              >
+                {{ t.label }}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
       </div>
 
       <!-- Wait -->
@@ -422,8 +497,12 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="time">Wait for Time</SelectItem>
-              <SelectItem value="trigger">Wait for Trigger</SelectItem>
+              <SelectItem value="time">
+                Wait for Time
+              </SelectItem>
+              <SelectItem value="trigger">
+                Wait for Trigger
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -446,9 +525,15 @@ const showAltTriggerPicker = ref(false)
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="minutes">Minutes</SelectItem>
-                  <SelectItem value="hours">Hours</SelectItem>
-                  <SelectItem value="days">Days</SelectItem>
+                  <SelectItem value="minutes">
+                    Minutes
+                  </SelectItem>
+                  <SelectItem value="hours">
+                    Hours
+                  </SelectItem>
+                  <SelectItem value="days">
+                    Days
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -460,10 +545,18 @@ const showAltTriggerPicker = ref(false)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Fixed (no reference)</SelectItem>
-                <SelectItem value="checkin">Check-in</SelectItem>
-                <SelectItem value="checkout">Check-out</SelectItem>
-                <SelectItem value="booking">Booking</SelectItem>
+                <SelectItem value="none">
+                  Fixed (no reference)
+                </SelectItem>
+                <SelectItem value="checkin">
+                  Check-in
+                </SelectItem>
+                <SelectItem value="checkout">
+                  Check-out
+                </SelectItem>
+                <SelectItem value="booking">
+                  Booking
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -487,13 +580,17 @@ const showAltTriggerPicker = ref(false)
           <Label>Message Mode</Label>
           <div class="mt-1 flex rounded-md border overflow-hidden">
             <button
-              :class="['flex-1 px-3 py-1.5 text-sm transition-colors', messageStep.messageMode === 'directive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
+              class="flex-1 px-3 py-1.5 text-sm transition-colors" :class="[messageStep.messageMode === 'directive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
               @click="patch({ messageMode: 'directive' } as any)"
-            >AI Directive</button>
+            >
+              AI Directive
+            </button>
             <button
-              :class="['flex-1 px-3 py-1.5 text-sm transition-colors border-l', messageStep.messageMode === 'template' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
+              class="flex-1 px-3 py-1.5 text-sm transition-colors border-l" :class="[messageStep.messageMode === 'template' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
               @click="patch({ messageMode: 'template' } as any)"
-            >Template</button>
+            >
+              Template
+            </button>
           </div>
         </div>
         <div>
@@ -503,9 +600,15 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ota">OTA Inbox</SelectItem>
-              <SelectItem value="whatsapp">WhatsApp</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="ota">
+                OTA Inbox
+              </SelectItem>
+              <SelectItem value="whatsapp">
+                WhatsApp
+              </SelectItem>
+              <SelectItem value="email">
+                Email
+              </SelectItem>
             </SelectContent>
           </Select>
           <p v-if="messageStep.channel === 'whatsapp'" class="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
@@ -538,13 +641,15 @@ const showAltTriggerPicker = ref(false)
           <div class="flex items-center justify-between">
             <Label class="cursor-pointer text-sm" for="ctx-check-toggle">AI Context Check</Label>
             <Switch
-              :key="`ctx-${step.id}-${messageStep.contextCheckEnabled}`"
               id="ctx-check-toggle"
+              :key="`ctx-${step.id}-${messageStep.contextCheckEnabled}`"
               :checked="messageStep.contextCheckEnabled"
               @update:checked="patch({ contextCheckEnabled: $event } as any)"
             />
           </div>
-          <p class="text-xs text-muted-foreground">AI reads conversation history before sending to decide if the message is still relevant.</p>
+          <p class="text-xs text-muted-foreground">
+            AI reads conversation history before sending to decide if the message is still relevant.
+          </p>
           <Textarea
             v-if="messageStep.contextCheckEnabled"
             :model-value="messageStep.contextCheckInstruction"
@@ -560,8 +665,12 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="skip">Skip this step</SelectItem>
-              <SelectItem value="static">Send static template</SelectItem>
+              <SelectItem value="skip">
+                Skip this step
+              </SelectItem>
+              <SelectItem value="static">
+                Send static template
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -597,8 +706,12 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="skip">Skip step</SelectItem>
-              <SelectItem value="stop">Stop Journey</SelectItem>
+              <SelectItem value="skip">
+                Skip step
+              </SelectItem>
+              <SelectItem value="stop">
+                Stop Journey
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -613,10 +726,18 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="raise_action_item">Raise Action Item</SelectItem>
-              <SelectItem value="create_task">Create Task</SelectItem>
-              <SelectItem value="flag_reservation">Flag Reservation</SelectItem>
-              <SelectItem value="staff_alert">Staff Alert</SelectItem>
+              <SelectItem value="raise_action_item">
+                Raise Action Item
+              </SelectItem>
+              <SelectItem value="create_task">
+                Create Task
+              </SelectItem>
+              <SelectItem value="flag_reservation">
+                Flag Reservation
+              </SelectItem>
+              <SelectItem value="staff_alert">
+                Staff Alert
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -640,7 +761,9 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="c in conditionTypes" :key="c.value" :value="c.value">{{ c.label }}</SelectItem>
+              <SelectItem v-for="c in conditionTypes" :key="c.value" :value="c.value">
+                {{ c.label }}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -687,7 +810,9 @@ const showAltTriggerPicker = ref(false)
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="c in conditionTypes" :key="c.value" :value="c.value">{{ c.label }}</SelectItem>
+              <SelectItem v-for="c in conditionTypes" :key="c.value" :value="c.value">
+                {{ c.label }}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -716,11 +841,13 @@ const showAltTriggerPicker = ref(false)
         <div class="flex items-center justify-between">
           <div>
             <Label class="cursor-pointer" for="ai-visible-toggle">Visible to AI</Label>
-            <p class="text-xs text-muted-foreground mt-0.5">Allow HostBuddy to read this note for future context.</p>
+            <p class="text-xs text-muted-foreground mt-0.5">
+              Allow HostBuddy to read this note for future context.
+            </p>
           </div>
           <Switch
-            :key="`note-${step.id}-${noteStep.visibleToAI}`"
             id="ai-visible-toggle"
+            :key="`note-${step.id}-${noteStep.visibleToAI}`"
             :checked="noteStep.visibleToAI"
             @update:checked="patch({ visibleToAI: $event } as any)"
           />
@@ -735,8 +862,8 @@ const showAltTriggerPicker = ref(false)
         <div class="flex items-center justify-between">
           <Label class="cursor-pointer" for="toggle-ai-enable">Enable AI Responses</Label>
           <Switch
-            :key="`toggleai-${step.id}-${toggleAIStep.enable}`"
             id="toggle-ai-enable"
+            :key="`toggleai-${step.id}-${toggleAIStep.enable}`"
             :checked="toggleAIStep.enable"
             @update:checked="patch({ enable: $event } as any)"
           />

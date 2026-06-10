@@ -1,11 +1,10 @@
-import { computed } from 'vue'
 import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
+import { computed } from 'vue'
 import { mockUpsellServices } from '@/components/upsells/data/upsell-services'
 
 export function useUpsellServices() {
   const services = useState<UpsellService[]>('upsell-services', () =>
-    mockUpsellServices.map(s => ({ ...s })),
-  )
+    mockUpsellServices.map(s => ({ ...s })))
 
   const filterCategory = ref<UpsellCategory | 'all'>('all')
   const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
@@ -13,9 +12,12 @@ export function useUpsellServices() {
 
   const filteredServices = computed(() => {
     return services.value.filter((s) => {
-      if (filterCategory.value !== 'all' && s.category !== filterCategory.value) return false
-      if (filterStatus.value !== 'all' && s.status !== filterStatus.value) return false
-      if (filterListing.value !== 'all' && !s.assignedListings.includes(filterListing.value)) return false
+      if (filterCategory.value !== 'all' && s.category !== filterCategory.value)
+        return false
+      if (filterStatus.value !== 'all' && s.status !== filterStatus.value)
+        return false
+      if (filterListing.value !== 'all' && !s.assignedListings.includes(filterListing.value))
+        return false
       return true
     })
   })

@@ -29,8 +29,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: PropertySelection]
-  next: []
-  back: []
+  'next': []
+  'back': []
 }>()
 
 const selectedPropertyId = ref<string | null>(props.modelValue.propertyId)
@@ -145,7 +145,8 @@ const allSelected = computed(() =>
 )
 
 const totalPhotos = computed(() => {
-  if (!selectedProperty.value) return 0
+  if (!selectedProperty.value)
+    return 0
   return selectedProperty.value.rooms
     .filter(r => selectedRoomIds.value.includes(r.id))
     .reduce((sum, r) => sum + r.photos.length, 0)
@@ -156,7 +157,7 @@ const isValid = computed(() =>
 )
 
 // ── Room type helpers ────────────────────────────────────────────
-const roomTypeConfig: Record<Room['type'], { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: string }> = {
+const roomTypeConfig: Record<Room['type'], { label: string, variant: 'default' | 'secondary' | 'destructive' | 'outline', icon: string }> = {
   bedroom: { label: 'Bedroom', variant: 'default', icon: 'i-lucide-bed' },
   bathroom: { label: 'Bathroom', variant: 'secondary', icon: 'i-lucide-bath' },
   living: { label: 'Living', variant: 'secondary', icon: 'i-lucide-sofa' },
@@ -175,7 +176,8 @@ function toggleRoom(roomId: string) {
   const idx = selectedRoomIds.value.indexOf(roomId)
   if (idx === -1) {
     selectedRoomIds.value.push(roomId)
-  } else {
+  }
+  else {
     selectedRoomIds.value.splice(idx, 1)
   }
   emitUpdate()
@@ -192,7 +194,8 @@ function deselectAllRooms() {
 }
 
 function handleNext() {
-  if (isValid.value) emit('next')
+  if (isValid.value)
+    emit('next')
 }
 
 function handleBack() {
@@ -204,8 +207,12 @@ function handleBack() {
   <div class="flex flex-col gap-6">
     <!-- Header -->
     <div>
-      <h3 class="text-lg font-semibold">Property & Rooms</h3>
-      <p class="text-sm text-muted-foreground">Select a property and choose which rooms to include on your website.</p>
+      <h3 class="text-lg font-semibold">
+        Property & Rooms
+      </h3>
+      <p class="text-sm text-muted-foreground">
+        Select a property and choose which rooms to include on your website.
+      </p>
     </div>
 
     <!-- Property Selector -->
@@ -231,8 +238,12 @@ function handleBack() {
             >
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <div class="absolute bottom-3 left-3 right-3">
-              <h4 class="font-semibold text-white">{{ property.title }}</h4>
-              <p class="text-xs text-white/80">{{ property.location }}</p>
+              <h4 class="font-semibold text-white">
+                {{ property.title }}
+              </h4>
+              <p class="text-xs text-white/80">
+                {{ property.location }}
+              </p>
             </div>
             <!-- Selected indicator -->
             <div
@@ -322,7 +333,9 @@ function handleBack() {
                 {{ roomTypeConfig[room.type].label }}
               </Badge>
             </div>
-            <p class="text-xs text-muted-foreground mt-0.5 line-clamp-1">{{ room.description }}</p>
+            <p class="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+              {{ room.description }}
+            </p>
             <div class="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
               <span class="flex items-center gap-1">
                 <Icon name="i-lucide-image" class="size-3" />

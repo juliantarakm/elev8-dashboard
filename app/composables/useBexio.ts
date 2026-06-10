@@ -70,7 +70,8 @@ export function useBexio() {
     const pre: Record<string, string> = {}
     bexioListings.forEach((l) => {
       const existing = getMappingFor(l.name)
-      if (existing?.integration === 'bexio') pre[l.name] = existing.accountId
+      if (existing?.integration === 'bexio')
+        pre[l.name] = existing.accountId
     })
     localSelections.value = pre
     step.value = 'mapping'
@@ -86,7 +87,7 @@ export function useBexio() {
     bexioListings
       .filter(l => !region || l.region === region)
       .filter(l => getMappingFor(l.name)?.integration !== 'jurnal')
-      .forEach(l => { updated[l.name] = accountId })
+      .forEach((l) => { updated[l.name] = accountId })
     localSelections.value = updated
   }
 
@@ -94,10 +95,12 @@ export function useBexio() {
     // Clear existing bexio mappings then write new ones
     bexioListings.forEach((l) => {
       const existing = getMappingFor(l.name)
-      if (existing?.integration === 'bexio') clearMapping(l.name)
+      if (existing?.integration === 'bexio')
+        clearMapping(l.name)
     })
     Object.entries(localSelections.value).forEach(([name, accountId]) => {
-      if (accountId) setMapping(name, 'bexio', accountId)
+      if (accountId)
+        setMapping(name, 'bexio', accountId)
     })
     isConnected.value = true
     step.value = 'connected'
@@ -111,7 +114,8 @@ export function useBexio() {
     // Remove bexio mappings from shared state
     bexioListings.forEach((l) => {
       const existing = getMappingFor(l.name)
-      if (existing?.integration === 'bexio') clearMapping(l.name)
+      if (existing?.integration === 'bexio')
+        clearMapping(l.name)
     })
     isConnected.value = false
     step.value = 'connect'

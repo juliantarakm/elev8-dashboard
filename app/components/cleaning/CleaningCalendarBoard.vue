@@ -62,7 +62,8 @@ function jobsForCell(listingId: string, dayKey: string) {
 }
 
 function dropJob(listingId: string, dayKey: string) {
-  if (!draggedJob.value) return
+  if (!draggedJob.value)
+    return
   const [hours, minutes] = draggedJob.value.scheduledAt.slice(11, 16).split(':')
   emit('move', {
     id: draggedJob.value.id,
@@ -80,24 +81,34 @@ function dropJob(listingId: string, dayKey: string) {
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {{ mode === 'agenda' ? 'Agenda view' : mode === 'day' ? 'Day view' : 'Weekly listing scheduler' }}
         </p>
-        <p class="mt-1 text-sm text-muted-foreground">{{ weekRangeLabel }}</p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          {{ weekRangeLabel }}
+        </p>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-primary"></span>Scheduled</span>
-        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-amber-500"></span>Checkout</span>
-        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-muted-foreground"></span>Manual</span>
+        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-primary" />Scheduled</span>
+        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-amber-500" />Checkout</span>
+        <span class="flex items-center gap-1.5 rounded-full border px-3 py-1.5"><span class="size-2 rounded-full bg-muted-foreground" />Manual</span>
       </div>
     </div>
 
     <div v-if="mode === 'agenda'" class="divide-y">
       <div v-for="job in agendaJobs" :key="job.id" class="flex items-start justify-between gap-3 px-4 py-3">
         <div class="min-w-0">
-          <p class="truncate text-sm font-semibold">{{ formatTime(job.scheduledAt) }} · {{ job.listingName }}</p>
-          <p class="text-xs text-muted-foreground">{{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Housekeeping' }}</p>
+          <p class="truncate text-sm font-semibold">
+            {{ formatTime(job.scheduledAt) }} · {{ job.listingName }}
+          </p>
+          <p class="text-xs text-muted-foreground">
+            {{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Housekeeping' }}
+          </p>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
-          <Badge :variant="getStatusTone(job.status)" class="text-[10px]">{{ cleaningJobStatusLabels[job.status] }}</Badge>
-          <Badge variant="outline" class="text-[10px]">{{ cleaningJobPriorityLabels[job.priority] }}</Badge>
+          <Badge :variant="getStatusTone(job.status)" class="text-[10px]">
+            {{ cleaningJobStatusLabels[job.status] }}
+          </Badge>
+          <Badge variant="outline" class="text-[10px]">
+            {{ cleaningJobPriorityLabels[job.priority] }}
+          </Badge>
           <Button variant="ghost" size="icon" class="size-7 shrink-0" @click="emit('edit', job.id)">
             <Icon name="lucide:pen-line" class="size-3.5" />
           </Button>
@@ -111,17 +122,25 @@ function dropJob(listingId: string, dayKey: string) {
           Listing
         </div>
         <div v-for="day in weekDays" :key="day.key" class="border-b border-l bg-background px-4 py-3">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{{ day.label.slice(0, 3) }}</p>
-          <p class="mt-1 text-sm font-semibold">{{ day.key.slice(8, 10) }}</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {{ day.label.slice(0, 3) }}
+          </p>
+          <p class="mt-1 text-sm font-semibold">
+            {{ day.key.slice(8, 10) }}
+          </p>
         </div>
 
         <template v-for="listing in listings" :key="listing.listingId">
           <div class="sticky left-0 z-10 border-t border-r bg-muted/30 px-4 py-4">
             <div class="flex items-start gap-3">
-              <span :class="['mt-1 size-2.5 rounded-full', ['bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-slate-500'][listing.colorIndex]]"></span>
+              <span class="mt-1 size-2.5 rounded-full" :class="[['bg-sky-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-slate-500'][listing.colorIndex]]" />
               <div class="min-w-0">
-                <p class="truncate text-sm font-semibold">{{ listing.listingName }}</p>
-                <p class="text-xs text-muted-foreground">{{ listing.jobs.length }} jobs</p>
+                <p class="truncate text-sm font-semibold">
+                  {{ listing.listingName }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ listing.jobs.length }} jobs
+                </p>
               </div>
             </div>
           </div>
@@ -143,22 +162,34 @@ function dropJob(listingId: string, dayKey: string) {
                 <div class="flex items-start justify-between gap-2">
                   <div class="min-w-0 space-y-1">
                     <div class="flex items-center gap-1.5">
-                      <span :class="['size-2 rounded-full', job.source === 'checkout' ? 'bg-amber-500' : 'bg-slate-500']"></span>
-                      <p class="truncate text-sm font-semibold leading-tight">{{ formatTime(job.scheduledAt) }}</p>
+                      <span class="size-2 rounded-full" :class="[job.source === 'checkout' ? 'bg-amber-500' : 'bg-slate-500']" />
+                      <p class="truncate text-sm font-semibold leading-tight">
+                        {{ formatTime(job.scheduledAt) }}
+                      </p>
                     </div>
-                    <p class="truncate text-xs text-muted-foreground">{{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Housekeeping' }}</p>
+                    <p class="truncate text-xs text-muted-foreground">
+                      {{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Housekeeping' }}
+                    </p>
                   </div>
                   <Button variant="ghost" size="icon" class="size-7 shrink-0" @click="emit('edit', job.id)">
                     <Icon name="lucide:pen-line" class="size-3.5" />
                   </Button>
                 </div>
 
-                <p class="mt-2 line-clamp-2 text-[11px] leading-4 text-muted-foreground">{{ job.notes }}</p>
+                <p class="mt-2 line-clamp-2 text-[11px] leading-4 text-muted-foreground">
+                  {{ job.notes }}
+                </p>
 
                 <div class="mt-2 flex flex-wrap gap-1.5">
-                  <Badge :variant="getStatusTone(job.status)" class="text-[10px]">{{ cleaningJobStatusLabels[job.status] }}</Badge>
-                  <Badge variant="outline" class="text-[10px]">{{ cleaningJobPriorityLabels[job.priority] }}</Badge>
-                  <Badge v-if="job.source === 'checkout'" variant="secondary" class="text-[10px]">{{ cleaningJobSourceLabels[job.source] }}</Badge>
+                  <Badge :variant="getStatusTone(job.status)" class="text-[10px]">
+                    {{ cleaningJobStatusLabels[job.status] }}
+                  </Badge>
+                  <Badge variant="outline" class="text-[10px]">
+                    {{ cleaningJobPriorityLabels[job.priority] }}
+                  </Badge>
+                  <Badge v-if="job.source === 'checkout'" variant="secondary" class="text-[10px]">
+                    {{ cleaningJobSourceLabels[job.source] }}
+                  </Badge>
                 </div>
               </div>
             </div>

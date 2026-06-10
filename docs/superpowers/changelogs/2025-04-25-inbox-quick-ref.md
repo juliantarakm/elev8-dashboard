@@ -62,19 +62,47 @@ type ConversationStatus = 'action_needed'
 type StayStatus = 'inquiry' | 'current' | 'future' | 'past'
 
 interface Conversation {
-  id, guestName, guestInitials, listingName, propertyName
-  otaSource, status, lastMessage, lastMessageAt, unreadCount
-  isAssignedToMe, assignedTo?: string | null
-  labels, sentiment, sentimentNote, stayStatus, checkIn, checkOut
+  id
+  guestName
+  guestInitials
+  listingName
+  propertyName
+  otaSource
+  status
+  lastMessage
+  lastMessageAt
+  unreadCount
+  isAssignedToMe
+  assignedTo?: string | null
+  labels
+  sentiment
+  sentimentNote
+  stayStatus
+  checkIn
+  checkOut
 }
 
 interface Message {
-  id, conversationId, sender, senderName, content, channel, timestamp
-  isAISuggestion?, intentDetected?, sendStatus?, aiWritten?, senderRole?
+  id
+  conversationId
+  sender
+  senderName
+  content
+  channel
+  timestamp
+  isAISuggestion?
+  intentDetected?
+  sendStatus?
+  aiWritten?
+  senderRole?
 }
 
 interface StaffMember {
-  id, name, initials, role, avatarUrl?
+  id
+  name
+  initials
+  role
+  avatarUrl?
 }
 ```
 
@@ -94,15 +122,15 @@ interface StaffMember {
 ## State (useInbox composable)
 
 ```typescript
-conversations           // useState<Conversation[]> — reactive
-showActionNeeded         // Action needed toggle (default: true)
-assignedToMeFilter       // Assigned to you toggle (default: false)
-activeStayFilter         // Stay filter
-activeListingFilter      // Listing filter
-searchValue              // Text search
-sortBy                   // 'newest' | 'oldest' | 'unread'
-pendingSuggestion        // For AI suggestion pill
-filteredConversations    // Computed, sorted conversations
+conversations // useState<Conversation[]> — reactive
+showActionNeeded // Action needed toggle (default: true)
+assignedToMeFilter // Assigned to you toggle (default: false)
+activeStayFilter // Stay filter
+activeListingFilter // Listing filter
+searchValue // Text search
+sortBy // 'newest' | 'oldest' | 'unread'
+pendingSuggestion // For AI suggestion pill
+filteredConversations // Computed, sorted conversations
 ```
 
 ---

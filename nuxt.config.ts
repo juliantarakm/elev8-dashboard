@@ -1,4 +1,4 @@
-import tailwindcss from '@tailwindcss/vite';
+import tailwindcss from '@tailwindcss/vite'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -7,14 +7,14 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css'],
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
   },
 
   components: [
     {
       path: '~/components',
-      extensions: ['.vue']
-    }
+      extensions: ['.vue'],
+    },
   ],
 
   modules: [
@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/color-mode',
     '@nuxt/fonts',
-    '@nuxthub/core'
+    '@nuxthub/core',
   ],
 
   shadcn: {
@@ -37,7 +37,7 @@ export default defineNuxtConfig({
      * Directory that the component lives in.
      * @default "~/components/ui"
      */
-    componentDir: '~/components/ui'
+    componentDir: '~/components/ui',
   },
 
   colorMode: {
@@ -54,24 +54,24 @@ export default defineNuxtConfig({
 
   eslint: {
     config: {
-      standalone: false
-    }
+      standalone: false,
+    },
   },
 
   fonts: {
     defaults: {
-      weights: [300, 400, 500, 600, 700, 800]
-    }
+      weights: [300, 400, 500, 600, 700, 800],
+    },
   },
 
   routeRules: {
     '/components': { redirect: '/components/accordion' },
     '/settings': { redirect: '/settings/profile' },
-    '/messages': { redirect: '/inbox' }
+    '/messages': { redirect: '/inbox' },
   },
 
   imports: {
-    dirs: ['./lib']
+    dirs: ['./lib'],
   },
 
   compatibilityDate: '2026-03-13',
@@ -83,11 +83,11 @@ export default defineNuxtConfig({
         '/terms',
         '/privacy',
         '/components/pagination',
-        '/docs'
-      ]
-    }
+        '/docs',
+      ],
+    },
   },
   app: {
-    baseURL: '/dashboard/'
-  }
-});
+    baseURL: '/dashboard/',
+  },
+})

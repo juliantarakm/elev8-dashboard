@@ -1,10 +1,9 @@
-import type { InventoryTimelineEvent, TimelineEventType, TimelineActor } from '@/components/inventory/data/timeline-events'
+import type { InventoryTimelineEvent, TimelineActor, TimelineEventType } from '@/components/inventory/data/timeline-events'
 import { mockTimelineEvents } from '@/components/inventory/data/timeline-events'
 
 export function useInventoryTimeline() {
   const events = useState<InventoryTimelineEvent[]>('inventory-timeline', () =>
-    mockTimelineEvents.map(e => ({ ...e })),
-  )
+    mockTimelineEvents.map(e => ({ ...e })))
 
   function addEvent(data: {
     entryId?: string

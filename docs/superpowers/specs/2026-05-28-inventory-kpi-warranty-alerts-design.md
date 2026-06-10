@@ -46,7 +46,8 @@ const totalAssetValue = computed(() =>
 const expiringSoonCount = computed(() => {
   const now = new Date()
   return items.value.filter((i) => {
-    if (!i.warrantyExpiry) return false
+    if (!i.warrantyExpiry)
+      return false
     const diff = (new Date(i.warrantyExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     return diff <= 30
   }).length

@@ -26,10 +26,10 @@ interface Alert {
   status: 'ACTIVE' | 'RESOLVED'
   listing_id: string | null
   property_id: string | null
-  triggered_at: string       // ISO 8601
+  triggered_at: string // ISO 8601
   resolved_at: string | null
   auto_resolve: boolean
-  resolve_condition: string  // human-readable
+  resolve_condition: string // human-readable
   context: Record<string, any>
 }
 ```

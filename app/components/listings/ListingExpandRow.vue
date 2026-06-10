@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { listings } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listingId: string }>()
 
@@ -12,7 +12,8 @@ function otaIcon(ota: string) {
 
 function toggleProperty() {
   const idx = listings.value.findIndex(l => l.id === props.listingId)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const allOff = (listings.value[idx]!.units ?? []).every(u => u.status === 'inactive')
   // if all off → turn all on; if any on → turn all off
   const newUnitStatus = allOff ? 'active' : 'inactive'
@@ -28,9 +29,11 @@ function toggleProperty() {
 
 function toggleUnit(unitId: string) {
   const idx = listings.value.findIndex(l => l.id === props.listingId)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const units = (listings.value[idx]!.units ?? []).map((u) => {
-    if (u.id !== unitId) return u
+    if (u.id !== unitId)
+      return u
     const deactivating = u.status !== 'inactive'
     return {
       ...u,
@@ -48,9 +51,11 @@ function toggleUnit(unitId: string) {
 
 function toggleUnitAi(unitId: string) {
   const idx = listings.value.findIndex(l => l.id === props.listingId)
-  if (idx === -1) return
+  if (idx === -1)
+    return
   const units = (listings.value[idx]!.units ?? []).map((u) => {
-    if (u.id !== unitId) return u
+    if (u.id !== unitId)
+      return u
     const current = u.aiStatus ?? listing.value.aiStatus
     return { ...u, aiStatus: (current === 'active' ? 'paused' : 'active') as 'active' | 'paused' }
   })

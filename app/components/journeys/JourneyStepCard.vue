@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { JourneyStep } from './data/journeys'
-import { triggerMeta, conditionMeta } from './data/journeys'
 import { cn } from '@/lib/utils'
+import { conditionMeta, triggerMeta } from './data/journeys'
 
 const props = defineProps<{
   step: JourneyStep
@@ -13,7 +13,7 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-const stepMeta: Record<string, { icon: string; colorClasses: string; label: string }> = {
+const stepMeta: Record<string, { icon: string, colorClasses: string, label: string }> = {
   trigger: { icon: 'i-lucide-zap', colorClasses: 'text-purple-500 bg-purple-50 dark:bg-purple-950', label: 'Trigger' },
   wait: { icon: 'i-lucide-clock', colorClasses: 'text-muted-foreground bg-muted', label: 'Wait' },
   message: { icon: 'i-lucide-message-square', colorClasses: 'text-green-600 bg-green-50 dark:bg-green-950', label: 'Message' },
@@ -32,7 +32,8 @@ const meta = computed(() => stepMeta[props.step.type])
 const summaryText = computed(() => {
   const s = props.step
   if (s.type === 'wait') {
-    if (s.waitType === 'trigger') return `Waiting for: ${s.waitTrigger || 'event'}`
+    if (s.waitType === 'trigger')
+      return `Waiting for: ${s.waitTrigger || 'event'}`
     const rel = s.relativeTo ? ` before ${s.relativeTo}` : ''
     return `${s.duration} ${s.unit}${rel}`
   }
@@ -41,21 +42,27 @@ const summaryText = computed(() => {
     const modeLabel = s.messageMode === 'template' ? 'Template' : 'AI Directive'
     return `${modeLabel} · ${channelLabel[s.channel] ?? s.channel}`
   }
-  if (s.type === 'context_check') return s.condition.length > 50 ? s.condition.slice(0, 50) + '…' : s.condition
+  if (s.type === 'context_check')
+    return s.condition.length > 50 ? `${s.condition.slice(0, 50)}…` : s.condition
   if (s.type === 'action') {
     const actionLabel: Record<string, string> = { create_task: 'Create Task', flag_reservation: 'Flag Reservation', staff_alert: 'Staff Alert', raise_action_item: 'Raise Action Item' }
     return actionLabel[(s as any).actionType] ?? ''
   }
   if (s.type === 'trigger') {
     const entries = (s as any).triggers ?? []
-    if (entries.length === 0) return ''
+    if (entries.length === 0)
+      return ''
     return entries.map((e: any) => triggerMeta[e.type]?.label ?? e.type).join(' · ')
   }
-  if (s.type === 'if_else' || s.type === 'hard_requirement') return conditionMeta[(s as any).conditionType] ?? ''
-  if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? t.slice(0, 50) + '…' : t }
-  if (s.type === 'toggle_ai') return (s as any).enable ? 'Enable AI responses' : 'Disable AI responses'
-  if (s.type === 'integration') return (s as any).integrationName || 'Integration action'
-  if (s.type === 'end_journey') return 'Terminates flow for this guest'
+  if (s.type === 'if_else' || s.type === 'hard_requirement')
+    return conditionMeta[(s as any).conditionType] ?? ''
+  if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? `${t.slice(0, 50)}…` : t }
+  if (s.type === 'toggle_ai')
+    return (s as any).enable ? 'Enable AI responses' : 'Disable AI responses'
+  if (s.type === 'integration')
+    return (s as any).integrationName || 'Integration action'
+  if (s.type === 'end_journey')
+    return 'Terminates flow for this guest'
   return ''
 })
 
@@ -67,7 +74,7 @@ const isMessage = computed(() => props.step.type === 'message')
   <div
     :class="cn(
       'group flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3 transition-all hover:border-primary/50',
-      active && 'ring-2 ring-primary bg-primary/5 border-primary/30'
+      active && 'ring-2 ring-primary bg-primary/5 border-primary/30',
     )"
     @click="emit('select')"
   >
@@ -85,7 +92,9 @@ const isMessage = computed(() => props.step.type === 'message')
           :style="{ backgroundColor: '#C8A84B22', color: '#C8A84B' }"
         >HostBuddy AI</span>
       </div>
-      <p class="truncate text-xs text-muted-foreground">{{ summaryText }}</p>
+      <p class="truncate text-xs text-muted-foreground">
+        {{ summaryText }}
+      </p>
     </div>
 
     <div class="ml-1 flex shrink-0 items-center gap-1">

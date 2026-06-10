@@ -454,7 +454,10 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
          :class="selected ? 'border-primary bg-primary text-primary-foreground' : 'border-input'">
       <Icon v-if="selected" name="lucide:check" class="size-3" />
     </div>
-    <span>{{ item }}</span>
+  
+    <span>
+  {{ item }}
+  </span>
   </div>
   ```
 - **Tag/multi-select filter pattern** (match Listings index): Popover + inner search `Input` + `ScrollArea` of custom-checkbox rows + "Clear all" footer. Selected items use AND logic (`every`), not OR.
@@ -521,19 +524,29 @@ Only when no existing component fits. Place in appropriate folder:
 ### Button Variants
 ```vue
 <!-- Primary action -->
-<Button>Save</Button>
+<Button>
+Save
+</Button>
 
 <!-- Destructive action -->
-<Button variant="destructive">Delete</Button>
+<Button variant="destructive">
+Delete
+</Button>
 
 <!-- Secondary / Cancel -->
-<Button variant="outline">Cancel</Button>
+<Button variant="outline">
+Cancel
+</Button>
 
 <!-- Ghost / Icon only -->
-<Button variant="ghost" size="icon"><Icon /></Button>
+<Button variant="ghost" size="icon">
+<Icon />
+</Button>
 
 <!-- Link style -->
-<Button variant="link">Learn more</Button>
+<Button variant="link">
+Learn more
+</Button>
 
 <!-- With loading state -->
 <Button :disabled="isLoading">
@@ -572,7 +585,7 @@ const formSchema = toTypedSchema(z.object({
   username: z.string().min(2).max(50),
 }))
 
-const onSubmit = (values) => {
+function onSubmit(values) {
   console.log('Form submitted!', values)
 }
 </script>
@@ -590,7 +603,9 @@ const onSubmit = (values) => {
           <FormMessage />
         </FormItem>
       </FormField>
-      <Button type="submit">Submit</Button>
+      <Button type="submit">
+        Submit
+      </Button>
     </form>
   </Form>
 </template>
@@ -620,7 +635,7 @@ const onSubmit = (values) => {
 ### DataTable (TanStack)
 ```vue
 <script setup>
-import { useVueTable, getCoreRowModel } from '@tanstack/vue-table'
+import { getCoreRowModel, useVueTable } from '@tanstack/vue-table'
 
 const table = useVueTable({
   data,

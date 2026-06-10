@@ -91,9 +91,9 @@ interface Conversation {
   lastMessageAt: Date
   unreadCount: number
   isAssignedToMe: boolean
-  labels: string[]              // 'check-in-today', 'unassigned', etc.
+  labels: string[] // 'check-in-today', 'unassigned', etc.
   sentiment: GuestSentiment
-  sentimentNote: string         // e.g. "Guest is friendly and polite"
+  sentimentNote: string // e.g. "Guest is friendly and polite"
 }
 
 interface Message {
@@ -111,12 +111,12 @@ interface Message {
 
 interface SmartAction {
   id: string
-  type: string                  // 'late-checkout', 'missing-guide', 'payment-due', etc.
+  type: string // 'late-checkout', 'missing-guide', 'payment-due', etc.
   title: string
   description: string
   severity: 'warning' | 'urgent' | 'info'
-  primaryAction: string         // Button label e.g. "Offer Late Check-out"
-  dismissLabel?: string         // Default "Dismiss"
+  primaryAction: string // Button label e.g. "Offer Late Check-out"
+  dismissLabel?: string // Default "Dismiss"
   detectedBy: 'elevai' | 'system'
 }
 

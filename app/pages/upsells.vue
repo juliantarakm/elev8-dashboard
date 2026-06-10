@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
-import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import type { UpsellCategory, UpsellService } from '@/components/upsells/data/upsell-services'
+import { UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
 import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const activeView = ref<'catalog' | 'orders'>('catalog')
@@ -32,7 +32,6 @@ function openOrderDrawer(order: UpsellOrder) {
   selectedOrder.value = order
   orderDrawerOpen.value = true
 }
-
 </script>
 
 <template>
@@ -103,20 +102,36 @@ function openOrderDrawer(order: UpsellOrder) {
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Total Revenue</p>
-          <p class="text-2xl font-bold">IDR {{ totalRevenue.toLocaleString('id-ID') }}</p>
+          <p class="text-sm text-muted-foreground">
+            Total Revenue
+          </p>
+          <p class="text-2xl font-bold">
+            IDR {{ totalRevenue.toLocaleString('id-ID') }}
+          </p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Requested</p>
-          <p class="text-2xl font-bold">{{ statusCounts.requested }}</p>
+          <p class="text-sm text-muted-foreground">
+            Requested
+          </p>
+          <p class="text-2xl font-bold">
+            {{ statusCounts.requested }}
+          </p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Awaiting Payment</p>
-          <p class="text-2xl font-bold">{{ statusCounts.awaiting_payment }}</p>
+          <p class="text-sm text-muted-foreground">
+            Awaiting Payment
+          </p>
+          <p class="text-2xl font-bold">
+            {{ statusCounts.awaiting_payment }}
+          </p>
         </div>
         <div class="rounded-lg border p-4">
-          <p class="text-sm text-muted-foreground">Paid - In Progress</p>
-          <p class="text-2xl font-bold">{{ statusCounts.paid_in_progress }}</p>
+          <p class="text-sm text-muted-foreground">
+            Paid - In Progress
+          </p>
+          <p class="text-2xl font-bold">
+            {{ statusCounts.paid_in_progress }}
+          </p>
         </div>
       </div>
       <UpsellsUpsellOrderTable @open-drawer="openOrderDrawer" />

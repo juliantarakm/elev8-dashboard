@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { Listing, MaintenanceTask } from '~/components/listings/data/listings'
+import type { Listing, MaintenanceTask, Unit } from '~/components/listings/data/listings'
 
-import type { Unit } from '~/components/listings/data/listings'
 import CleaningJobForm from '~/components/cleaning/CleaningJobForm.vue'
 import { useCleaningJobs } from '~/composables/useCleaningJobs'
 
-const props = defineProps<{ listing: Listing; activeUnit?: Unit | null }>()
+const props = defineProps<{ listing: Listing, activeUnit?: Unit | null }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 
 const showAddDialog = ref(false)
@@ -31,7 +30,8 @@ const completedTasks = computed(() => props.listing.maintenance.tasks.filter(t =
 const cleaningJobs = computed(() => jobsForListing(props.listing.id))
 
 function addTask() {
-  if (!newTask.value.title.trim()) return
+  if (!newTask.value.title.trim())
+    return
   const task: MaintenanceTask = {
     id: `mt-${Date.now()}`,
     title: newTask.value.title.trim(),
@@ -66,7 +66,9 @@ function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
 <template>
   <div class="flex flex-col gap-6">
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Cleaning Schedule</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Cleaning Schedule
+      </h3>
       <Table v-if="listing.maintenance.cleaningSchedule.length > 0">
         <TableHeader>
           <TableRow>
@@ -76,19 +78,31 @@ function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
         </TableHeader>
         <TableBody>
           <TableRow v-for="item in listing.maintenance.cleaningSchedule" :key="item.task">
-            <TableCell class="font-medium">{{ item.task }}</TableCell>
-            <TableCell><Badge variant="outline" class="text-xs">{{ frequencyLabels[item.frequency] }}</Badge></TableCell>
+            <TableCell class="font-medium">
+              {{ item.task }}
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline" class="text-xs">
+                {{ frequencyLabels[item.frequency] }}
+              </Badge>
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
-      <p v-else class="text-sm text-muted-foreground">No cleaning schedule configured.</p>
+      <p v-else class="text-sm text-muted-foreground">
+        No cleaning schedule configured.
+      </p>
     </Card>
 
     <Card class="p-5">
       <div class="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-semibold">Cleaning Jobs</h3>
-          <p class="text-xs text-muted-foreground">All cleaning work for this listing.</p>
+          <h3 class="text-sm font-semibold">
+            Cleaning Jobs
+          </h3>
+          <p class="text-xs text-muted-foreground">
+            All cleaning work for this listing.
+          </p>
         </div>
         <Dialog v-model:open="showCleaningDialog">
           <DialogTrigger as-child>
@@ -116,23 +130,37 @@ function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
         <div v-for="job in cleaningJobs" :key="job.id" class="rounded-lg border bg-card p-4">
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
-              <p class="text-sm font-medium">{{ job.scheduledAt.slice(0, 10) }}</p>
-              <p class="text-xs text-muted-foreground">{{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Unassigned' }}</p>
-              <p class="text-xs text-muted-foreground">{{ job.notes }}</p>
+              <p class="text-sm font-medium">
+                {{ job.scheduledAt.slice(0, 10) }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                {{ job.cleanerName || 'Unassigned' }} · {{ job.teamName || 'Unassigned' }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                {{ job.notes }}
+              </p>
             </div>
             <div class="flex flex-col items-end gap-2">
-              <Badge variant="secondary" class="text-xs">{{ job.status.replace('_', ' ') }}</Badge>
-              <Badge variant="outline" class="text-xs">{{ job.priority }}</Badge>
+              <Badge variant="secondary" class="text-xs">
+                {{ job.status.replace('_', ' ') }}
+              </Badge>
+              <Badge variant="outline" class="text-xs">
+                {{ job.priority }}
+              </Badge>
             </div>
           </div>
         </div>
       </div>
-      <p v-else class="py-4 text-center text-sm text-muted-foreground">No cleaning jobs yet.</p>
+      <p v-else class="py-4 text-center text-sm text-muted-foreground">
+        No cleaning jobs yet.
+      </p>
     </Card>
 
     <Card class="p-5">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold">Upcoming Tasks</h3>
+        <h3 class="text-sm font-semibold">
+          Upcoming Tasks
+        </h3>
         <Dialog v-model:open="showAddDialog">
           <DialogTrigger as-child>
             <Button size="sm" variant="outline" class="h-7 gap-1 text-xs">
@@ -158,15 +186,23 @@ function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
                 <Select v-model="newTask.type">
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cleaning">Cleaning</SelectItem>
-                    <SelectItem value="repair">Repair</SelectItem>
-                    <SelectItem value="inspection">Inspection</SelectItem>
+                    <SelectItem value="cleaning">
+                      Cleaning
+                    </SelectItem>
+                    <SelectItem value="repair">
+                      Repair
+                    </SelectItem>
+                    <SelectItem value="inspection">
+                      Inspection
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button @click="addTask">Add Task</Button>
+              <Button @click="addTask">
+                Add Task
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -178,25 +214,37 @@ function handleSaveCleaningJob(jobInput: Parameters<typeof createJob>[0]) {
             <span class="text-xs text-muted-foreground">{{ formatDate(task.date) }} · {{ task.assignedTo }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Badge variant="outline" class="text-xs capitalize">{{ task.type }}</Badge>
-            <Badge :variant="(statusColors[task.status] as any)" class="text-xs capitalize">{{ task.status.replace('_', ' ') }}</Badge>
+            <Badge variant="outline" class="text-xs capitalize">
+              {{ task.type }}
+            </Badge>
+            <Badge :variant="(statusColors[task.status] as any)" class="text-xs capitalize">
+              {{ task.status.replace('_', ' ') }}
+            </Badge>
           </div>
         </div>
-        <p v-if="pendingTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">No pending tasks.</p>
+        <p v-if="pendingTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">
+          No pending tasks.
+        </p>
       </div>
     </Card>
 
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Completed</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Completed
+      </h3>
       <div class="flex flex-col gap-3">
         <div v-for="task in completedTasks" :key="task.id" class="flex items-center justify-between rounded-lg border border-dashed p-3 opacity-60">
           <div class="flex flex-col gap-0.5">
             <span class="text-sm font-medium line-through">{{ task.title }}</span>
             <span class="text-xs text-muted-foreground">{{ formatDate(task.date) }} · {{ task.assignedTo }}</span>
           </div>
-          <Badge variant="outline" class="text-xs capitalize">{{ task.type }}</Badge>
+          <Badge variant="outline" class="text-xs capitalize">
+            {{ task.type }}
+          </Badge>
         </div>
-        <p v-if="completedTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">No completed tasks.</p>
+        <p v-if="completedTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">
+          No completed tasks.
+        </p>
       </div>
     </Card>
   </div>

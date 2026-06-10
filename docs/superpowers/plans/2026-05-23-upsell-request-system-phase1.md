@@ -120,7 +120,7 @@ export function calculateRefund(
   cancelledAt: string,
   policy: CancellationPolicy,
   cancelledBy: 'guest' | 'staff',
-): { refundAmount: number; refundPercent: number; lateFee: number; reason: string } {
+): { refundAmount: number, refundPercent: number, lateFee: number, reason: string } {
   if (cancelledBy === 'staff') {
     return { refundAmount: orderTotal, refundPercent: 100, lateFee: 0, reason: 'Staff cancellation — full refund' }
   }
@@ -156,14 +156,14 @@ git commit -m "feat(upsells): add cancellation policy data and refund calculator
 **Step 1: Write notification types and mock data**
 
 ```ts
-export type UpsellNotificationType =
-  | 'order_requested'
-  | 'order_confirmed'
-  | 'order_cancelled'
-  | 'order_completed'
-  | 'order_late_cancel'
-  | 'order_no_show'
-  | 'order_reminder'
+export type UpsellNotificationType
+  = | 'order_requested'
+    | 'order_confirmed'
+    | 'order_cancelled'
+    | 'order_completed'
+    | 'order_late_cancel'
+    | 'order_no_show'
+    | 'order_reminder'
 
 export interface UpsellStaffNotification {
   id: string
@@ -180,7 +180,7 @@ export interface UpsellStaffNotification {
   autoResolve: boolean
 }
 
-export const ORDER_NOTIFICATION_TEMPLATES: Record<UpsellNotificationType, { title: string; message: (orderId: string, guestName: string, serviceName: string, serviceDate: string) => string; severity: 'info' | 'warning' | 'urgent' }> = {
+export const ORDER_NOTIFICATION_TEMPLATES: Record<UpsellNotificationType, { title: string, message: (orderId: string, guestName: string, serviceName: string, serviceDate: string) => string, severity: 'info' | 'warning' | 'urgent' }> = {
   order_requested: {
     title: 'New Upsell Request',
     message: (orderId, guestName, serviceName, serviceDate) => `${guestName} requested ${serviceName} for ${serviceDate}. Order ${orderId} requires confirmation.`,
@@ -379,15 +379,14 @@ git commit -m "feat(upsells): add staff notification types, templates, and mock 
 **Step 1: Write the composable**
 
 ```ts
-import { computed } from 'vue'
-import type { UpsellStaffNotification, UpsellNotificationType } from '@/components/upsells/data/upsell-notifications'
-import { mockUpsellNotifications, ORDER_NOTIFICATION_TEMPLATES } from '@/components/upsells/data/upsell-notifications'
+import type { UpsellNotificationType, UpsellStaffNotification } from '@/components/upsells/data/upsell-notifications'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import { computed } from 'vue'
+import { mockUpsellNotifications, ORDER_NOTIFICATION_TEMPLATES } from '@/components/upsells/data/upsell-notifications'
 
 export function useUpsellNotifications() {
   const notifications = useState<UpsellStaffNotification[]>('upsell-notifications', () =>
-    mockUpsellNotifications.map(n => ({ ...n })),
-  )
+    mockUpsellNotifications.map(n => ({ ...n })),)
 
   const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
 
@@ -463,35 +462,36 @@ git commit -m "feat(upsells): add useUpsellNotifications composable"
 Add import and new function:
 
 ```ts
-import { getPolicyForService, calculateRefund } from '@/components/upsells/data/cancellation-policies'
+import { calculateRefund, getPolicyForService } from '@/components/upsells/data/cancellation-policies'
 ```
 
 Add to return object:
 
 ```ts
-  function cancelOrder(id: string, reason: string, cancelledBy: 'guest' | 'staff') {
-    const order = orders.value.find(o => o.id === id)
-    if (!order) return null
+function cancelOrder(id: string, reason: string, cancelledBy: 'guest' | 'staff') {
+  const order = orders.value.find(o => o.id === id)
+  if (!order)
+    return null
 
-    const policy = getPolicyForService(order.serviceId)
-    const refund = policy
-      ? calculateRefund(order.grandTotal, order.serviceDate, new Date().toISOString(), policy, cancelledBy)
-      : { refundAmount: order.grandTotal, refundPercent: 100, lateFee: 0, reason: 'No policy — full refund' }
+  const policy = getPolicyForService(order.serviceId)
+  const refund = policy
+    ? calculateRefund(order.grandTotal, order.serviceDate, new Date().toISOString(), policy, cancelledBy)
+    : { refundAmount: order.grandTotal, refundPercent: 100, lateFee: 0, reason: 'No policy — full refund' }
 
-    orders.value = orders.value.map(o =>
-      o.id === id
-        ? {
-            ...o,
-            status: 'cancelled',
-            cancellationReason: reason,
-            cancellationBy: cancelledBy,
-            updatedAt: new Date().toISOString(),
-          }
-        : o,
-    )
+  orders.value = orders.value.map(o =>
+    o.id === id
+      ? {
+          ...o,
+          status: 'cancelled',
+          cancellationReason: reason,
+          cancellationBy: cancelledBy,
+          updatedAt: new Date().toISOString(),
+        }
+      : o,
+  )
 
-    return refund
-  }
+  return refund
+}
 ```
 
 Update return object to include `cancelOrder`.
@@ -514,10 +514,10 @@ git commit -m "feat(upsells): add cancelOrder helper with refund calculation"
 
 ```vue
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
-import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import { toast } from 'vue-sonner'
+import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const props = defineProps<{
   order: UpsellOrder | null
@@ -686,10 +686,12 @@ After price breakdown section, add:
       <span>Guest notified</span>
       <span class="text-xs text-muted-foreground">{{ order.guestNotifiedAt }}</span>
     </div>
+
     <div v-else class="flex items-center gap-2 text-sm text-muted-foreground">
       <Icon name="lucide:minus" class="h-3.5 w-3.5" />
       <span>Guest not yet notified</span>
     </div>
+
     <div v-if="order.staffNotifiedAt" class="flex items-center gap-2 text-sm">
       <Icon name="lucide:check" class="h-3.5 w-3.5 text-emerald-500" />
       <span>Staff notified</span>
@@ -717,8 +719,8 @@ git commit -m "feat(upsells): add cancel button and notification log to order dr
 
 ```vue
 <script setup lang="ts">
-import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 import { ORDER_STATUS_COLORS } from '@/components/upsells/data/upsell-orders'
+import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
 
 const { unreadNotifications, allNotifications, unreadCount, markAsRead, markAllAsRead } = useUpsellNotifications()
 
@@ -801,7 +803,9 @@ function severityColor(severity: string) {
               New
             </Badge>
           </div>
-          <p class="text-sm text-muted-foreground">{{ notif.message }}</p>
+          <p class="text-sm text-muted-foreground">
+            {{ notif.message }}
+          </p>
           <div class="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
             <span>{{ new Date(notif.createdAt).toLocaleDateString() }}</span>
             <NuxtLink :to="notif.actionUrl" class="hover:text-primary hover:underline" @click.stop>
@@ -885,9 +889,9 @@ Add Notifications tab content:
 
 ```vue
     <!-- Notifications View -->
-    <template v-if="activeView === 'notifications'">
-      <UpsellsUpsellNotificationList />
-    </template>
+<template v-if="activeView === 'notifications'">
+  <UpsellsUpsellNotificationList />
+</template>
 ```
 
 **Step 2: Commit**
@@ -911,12 +915,12 @@ In `app/components/notifications/data/alerts.ts`, add to the existing alert type
 
 ```ts
 // Upsell alert types (extend existing AlertType or add new)
-export type UpsellAlertType =
-  | 'UPSELL_ORDER_REQUESTED'
-  | 'UPSELL_ORDER_CONFIRMED'
-  | 'UPSELL_ORDER_CANCELLED'
-  | 'UPSELL_ORDER_COMPLETED'
-  | 'UPSELL_ORDER_REMINDER'
+export type UpsellAlertType
+  = | 'UPSELL_ORDER_REQUESTED'
+    | 'UPSELL_ORDER_CONFIRMED'
+    | 'UPSELL_ORDER_CANCELLED'
+    | 'UPSELL_ORDER_COMPLETED'
+    | 'UPSELL_ORDER_REMINDER'
 ```
 
 **Step 2: Integrate in useNotifications**

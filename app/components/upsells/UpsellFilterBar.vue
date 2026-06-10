@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useUpsellServices } from '@/composables/useUpsellServices'
 import { BALI_LISTINGS, UPSPELL_CATEGORIES } from '@/components/upsells/data/upsell-services'
+import { useUpsellServices } from '@/composables/useUpsellServices'
 
 const { filterCategory, filterStatus, filterListing, clearFilters } = useUpsellServices()
 </script>

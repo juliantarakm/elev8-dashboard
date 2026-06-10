@@ -129,20 +129,7 @@ mockTranslate,
 At line 6-18, add `autoTranslate` to the destructured values:
 
 ```ts
-const { selectedConversation,
-  selectedMessages,
-  selectedReservation,
-  markAsHandled,
-  markAsUnread,
-  isElevaiEnabled,
-  useSuggestion,
-  getNotes,
-  addNote,
-  getPhoneCalls,
-  rightPanelCollapsed,
-  toggleRightPanel,
-  autoTranslate,
-} = useInbox()
+const { selectedConversation, selectedMessages, selectedReservation, markAsHandled, markAsUnread, isElevaiEnabled, useSuggestion, getNotes, addNote, getPhoneCalls, rightPanelCollapsed, toggleRightPanel, autoTranslate, } = useInbox()
 ```
 
 - [ ] **Step 2: Add toggle function**
@@ -222,12 +209,16 @@ In the template, inside the guest message bubble (line 114-116), replace the sim
     <Icon name="lucide:loader-2" class="size-3 animate-spin text-muted-foreground" />
     <span class="text-xs text-muted-foreground">Translating...</span>
   </div>
+
   <div v-else-if="translation" class="mt-2 pt-2 border-t border-border/50">
     <div class="flex items-center gap-1 mb-1">
       <Icon name="lucide:languages" class="size-3 text-muted-foreground" />
       <span class="text-[10px] text-muted-foreground">Translated to Bahasa Indonesia</span>
     </div>
-    <p class="text-xs text-muted-foreground leading-relaxed">{{ translation }}</p>
+
+    <p class="text-xs text-muted-foreground leading-relaxed">
+{{ translation }}
+</p>
   </div>
 </div>
 ```

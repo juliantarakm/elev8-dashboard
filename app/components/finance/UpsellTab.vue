@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { UpsellEntry, UpsellType } from '@/components/finance/data/upsells'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { useUpsells } from '@/composables/useUpsells'
 import { useJurnal } from '@/composables/useJurnal'
 import { useListingMappings } from '@/composables/useListingMappings'
-import type { UpsellEntry, UpsellType } from '@/components/finance/data/upsells'
+import { useUpsells } from '@/composables/useUpsells'
 
 const {
   upsells,
@@ -26,15 +26,22 @@ const filterIntegration = ref('all')
 
 const filteredUpsells = computed(() => {
   return upsells.value.filter((u) => {
-    if (filterType.value !== 'all' && u.type !== filterType.value) return false
-    if (filterChannel.value !== 'all' && u.channel !== filterChannel.value) return false
-    if (filterSynced.value === 'synced' && !u.synced) return false
-    if (filterSynced.value === 'unsynced' && u.synced) return false
+    if (filterType.value !== 'all' && u.type !== filterType.value)
+      return false
+    if (filterChannel.value !== 'all' && u.channel !== filterChannel.value)
+      return false
+    if (filterSynced.value === 'synced' && !u.synced)
+      return false
+    if (filterSynced.value === 'unsynced' && u.synced)
+      return false
     if (filterIntegration.value !== 'all') {
       const mapping = getMappingFor(u.listing)
-      if (filterIntegration.value === 'none' && mapping) return false
-      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
-      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+      if (filterIntegration.value === 'none' && mapping)
+        return false
+      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal')
+        return false
+      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio')
+        return false
     }
     return true
   })
@@ -83,7 +90,6 @@ function toggleRow(id: string) {
   }
 }
 
-
 const selectedCount = computed(() =>
   filteredUpsells.value.filter(u => selected.value.includes(u.id)).length,
 )
@@ -114,8 +120,17 @@ function downloadBulkInvoices() {
 function exportCSV() {
   const headers = ['ID', 'Date', 'Reservation', 'Guest', 'Listing', 'Channel', 'Type', 'Amount (CHF)', 'Status', 'Invoice', 'Synced']
   const rows = filteredUpsells.value.map(u => [
-    u.id, u.date, u.reservationId, u.guest, u.listing, u.channel,
-    u.type, u.amount, u.status, u.invoice ?? '', u.synced ? 'Yes' : 'No',
+    u.id,
+    u.date,
+    u.reservationId,
+    u.guest,
+    u.listing,
+    u.channel,
+    u.type,
+    u.amount,
+    u.status,
+    u.invoice ?? '',
+    u.synced ? 'Yes' : 'No',
   ])
   const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -159,8 +174,13 @@ const channelIcon: Record<string, string> = {
 }
 
 const upsellTypes: UpsellType[] = [
-  'Early Check-in', 'Late Check-out', 'Airport Transfer',
-  'Breakfast Package', 'Welcome Package', 'Extra Cleaning', 'BBQ Setup',
+  'Early Check-in',
+  'Late Check-out',
+  'Airport Transfer',
+  'Breakfast Package',
+  'Welcome Package',
+  'Extra Cleaning',
+  'BBQ Setup',
 ]
 </script>
 
@@ -223,7 +243,9 @@ const upsellTypes: UpsellType[] = [
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="all">
+              All types
+            </SelectItem>
             <SelectItem v-for="t in upsellTypes" :key="t" :value="t">
               {{ t }}
             </SelectItem>
@@ -238,10 +260,18 @@ const upsellTypes: UpsellType[] = [
             <SelectValue placeholder="All channels" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="Booking.com">Booking.com</SelectItem>
-            <SelectItem value="Airbnb">Airbnb</SelectItem>
-            <SelectItem value="Direct">Direct</SelectItem>
+            <SelectItem value="all">
+              All channels
+            </SelectItem>
+            <SelectItem value="Booking.com">
+              Booking.com
+            </SelectItem>
+            <SelectItem value="Airbnb">
+              Airbnb
+            </SelectItem>
+            <SelectItem value="Direct">
+              Direct
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -253,9 +283,15 @@ const upsellTypes: UpsellType[] = [
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="synced">Synced</SelectItem>
-            <SelectItem value="unsynced">Not synced</SelectItem>
+            <SelectItem value="all">
+              All
+            </SelectItem>
+            <SelectItem value="synced">
+              Synced
+            </SelectItem>
+            <SelectItem value="unsynced">
+              Not synced
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -267,10 +303,18 @@ const upsellTypes: UpsellType[] = [
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="jurnal">Jurnal</SelectItem>
-            <SelectItem value="bexio">Bexio</SelectItem>
-            <SelectItem value="none">Not mapped</SelectItem>
+            <SelectItem value="all">
+              All
+            </SelectItem>
+            <SelectItem value="jurnal">
+              Jurnal
+            </SelectItem>
+            <SelectItem value="bexio">
+              Bexio
+            </SelectItem>
+            <SelectItem value="none">
+              Not mapped
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -326,14 +370,22 @@ const upsellTypes: UpsellType[] = [
             <TableHead>Guest</TableHead>
             <TableHead>Listing</TableHead>
             <TableHead>Channel</TableHead>
-            <TableHead class="w-28">Date</TableHead>
+            <TableHead class="w-28">
+              Date
+            </TableHead>
             <TableHead>Type</TableHead>
-            <TableHead class="text-right">Amount</TableHead>
+            <TableHead class="text-right">
+              Amount
+            </TableHead>
             <TableHead v-if="showConvertedColumn" class="text-right text-muted-foreground">
               Acctg. Amount
             </TableHead>
-            <TableHead class="w-20 text-center">Invoice</TableHead>
-            <TableHead class="w-32 text-center">Synced</TableHead>
+            <TableHead class="w-20 text-center">
+              Invoice
+            </TableHead>
+            <TableHead class="w-32 text-center">
+              Synced
+            </TableHead>
             <TableHead class="w-10" />
           </TableRow>
         </TableHeader>
@@ -359,7 +411,9 @@ const upsellTypes: UpsellType[] = [
                 @click.stop="toggleRow(u.id)"
               />
             </TableCell>
-            <TableCell class="font-medium">{{ u.guest }}</TableCell>
+            <TableCell class="font-medium">
+              {{ u.guest }}
+            </TableCell>
             <TableCell class="max-w-44 truncate text-muted-foreground" :title="u.listing">
               {{ u.listing }}
             </TableCell>
@@ -369,13 +423,17 @@ const upsellTypes: UpsellType[] = [
                 {{ u.channel }}
               </span>
             </TableCell>
-            <TableCell class="tabular-nums text-sm text-muted-foreground">{{ u.date }}</TableCell>
+            <TableCell class="tabular-nums text-sm text-muted-foreground">
+              {{ u.date }}
+            </TableCell>
             <TableCell>
               <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="typeClass[u.type]">
                 {{ u.type }}
               </span>
             </TableCell>
-            <TableCell class="text-right font-semibold tabular-nums">{{ formatCHF(u.amount) }}</TableCell>
+            <TableCell class="text-right font-semibold tabular-nums">
+              {{ formatCHF(u.amount) }}
+            </TableCell>
             <TableCell v-if="showConvertedColumn" class="text-right tabular-nums text-muted-foreground text-xs">
               {{ u.synced ? (getAccountingAmount(u.listing, u.amount) ?? '—') : '—' }}
             </TableCell>

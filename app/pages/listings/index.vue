@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ColumnDef, ColumnFiltersState, SortingState, VisibilityState } from '@tanstack/vue-table'
 import type { Listing } from '~/components/listings/data/listings'
+import type { ViewState } from '~/types/saved-views'
+import { Icon } from '#components'
 import {
   FlexRender,
   getCoreRowModel,
@@ -11,15 +13,17 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { valueUpdater } from '~/lib/utils'
-import { listings, allTags, aiStatusOptions, aiStatusLabels } from '~/components/listings/data/listings'
-import { Badge } from '~/components/ui/badge'
-import { Icon } from '#components'
-import ListingRowActions from '~/components/listings/ListingRowActions.vue'
-import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
-import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
+import { aiStatusLabels, aiStatusOptions, allTags, listings } from '~/components/listings/data/listings'
 import ListingAiStatusCell from '~/components/listings/ListingAiStatusCell.vue'
+import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
 import ListingOtaCell from '~/components/listings/ListingOtaCell.vue'
+import ListingRowActions from '~/components/listings/ListingRowActions.vue'
+import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
+import SavedViewsDropdown from '~/components/listings/SavedViewsDropdown.vue'
+import SaveViewDialog from '~/components/listings/SaveViewDialog.vue'
+import { Badge } from '~/components/ui/badge'
+import { useSavedViews } from '~/composables/useSavedViews'
+import { valueUpdater } from '~/lib/utils'
 
 const router = useRouter()
 
@@ -30,7 +34,8 @@ function listingUrl(id: string) {
 const searchValue = ref('')
 
 const filteredData = computed(() => {
-  if (!searchValue.value) return listings.value
+  if (!searchValue.value)
+    return listings.value
   const q = searchValue.value.toLowerCase()
   return listings.value.filter(l =>
     l.name.toLowerCase().includes(q)
@@ -58,7 +63,7 @@ function otaIcon(ota: string) {
 const expandedRows = ref<Set<string>>(new Set())
 
 const listingsKey = computed(() =>
-  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${(l.units ?? []).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|')
+  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${(l.units ?? []).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|'),
 )
 
 function toggleExpand(id: string) {
@@ -107,8 +112,7 @@ const columns: ColumnDef<Listing, any>[] = [
             isInactive && h(Badge, { variant: 'outline', class: 'text-[10px] px-1.5 py-0 text-muted-foreground shrink-0' }, () => 'Inactive'),
           ]),
           h('div', { class: 'flex items-center gap-1 mt-0.5' }, [
-            h('span', { class: 'text-[11px] text-muted-foreground' },
-              isMulti ? `Multi-unit · ${listing.units?.length ?? 0} units` : 'Single unit'),
+            h('span', { class: 'text-[11px] text-muted-foreground' }, isMulti ? `Multi-unit · ${listing.units?.length ?? 0} units` : 'Single unit'),
           ]),
           isExpanded && isMulti && h(ListingExpandRow, { listingId: listing.id }),
         ]),
@@ -125,14 +129,13 @@ const columns: ColumnDef<Listing, any>[] = [
     header: 'Tags',
     filterFn: (row, _id, filterValue) => {
       const tags = row.getValue('tags') as string[]
-      if (!filterValue) return true
+      if (!filterValue)
+        return true
       return Array.isArray(filterValue) ? filterValue.every((f: string) => tags.includes(f)) : tags.includes(filterValue)
     },
     cell: ({ row }) => {
       const tags = row.getValue('tags') as string[]
-      return h('div', { class: 'flex flex-wrap gap-1' },
-        tags.map(tag => h(Badge, { variant: 'outline', class: 'text-[10px] px-1.5 py-0' }, () => tag)),
-      )
+      return h('div', { class: 'flex flex-wrap gap-1' }, tags.map(tag => h(Badge, { variant: 'outline', class: 'text-[10px] px-1.5 py-0' }, () => tag)))
     },
   },
   {
@@ -140,7 +143,8 @@ const columns: ColumnDef<Listing, any>[] = [
     header: 'AI Status',
     filterFn: (row, _id, filterValue) => {
       const status = row.getValue('aiStatus') as string
-      if (!filterValue) return true
+      if (!filterValue)
+        return true
       return status === filterValue
     },
     cell: ({ row }) => h(ListingAiStatusCell, { key: row.original.id, listingId: row.original.id }),
@@ -152,9 +156,7 @@ const columns: ColumnDef<Listing, any>[] = [
       const live = listings.value.find(l => l.id === row.original.id)
       const otas = live?.otaConnected ?? row.getValue('otaConnected') as string[]
       const inactive = live?.status === 'inactive'
-      return h('div', { class: `flex items-center gap-2 ${inactive ? 'opacity-40' : ''}` },
-        otas.map(ota => h(Icon, { name: otaIcon(ota), class: 'size-4', key: ota })),
-      )
+      return h('div', { class: `flex items-center gap-2 ${inactive ? 'opacity-40' : ''}` }, otas.map(ota => h(Icon, { name: otaIcon(ota), class: 'size-4', key: ota })))
     },
   },
   {
@@ -227,8 +229,28 @@ const activeAiFilter = ref<string | null>(null)
 const tagSearch = ref('')
 const tagPopoverOpen = ref(false)
 
+const {
+  savedViews,
+  activeView,
+  currentState,
+  isDirty,
+  isLoading: savedViewsLoading,
+  fetchViews,
+  saveCurrentAs,
+  loadView,
+  updateActiveView,
+  deleteView,
+} = useSavedViews()
+
+const saveDialogOpen = ref(false)
+
+onMounted(() => {
+  fetchViews()
+})
+
 const filteredTags = computed(() => {
-  if (!tagSearch.value) return allTags.value
+  if (!tagSearch.value)
+    return allTags.value
   const q = tagSearch.value.toLowerCase()
   return allTags.value.filter(t => t.toLowerCase().includes(q))
 })
@@ -237,13 +259,15 @@ function toggleTag(tag: string) {
   const idx = activeTagFilter.value.indexOf(tag)
   if (idx !== -1) {
     activeTagFilter.value = [...activeTagFilter.value.slice(0, idx), ...activeTagFilter.value.slice(idx + 1)]
-  } else {
+  }
+  else {
     activeTagFilter.value = [...activeTagFilter.value, tag]
   }
 }
 
 watch(tagPopoverOpen, (open) => {
-  if (!open) tagSearch.value = ''
+  if (!open)
+    tagSearch.value = ''
 })
 
 function clearFilters() {
@@ -258,6 +282,65 @@ watch(activeTagFilter, (tags) => {
 watch(activeAiFilter, (val) => {
   table.getColumn('aiStatus')?.setFilterValue(val)
 })
+
+watch([searchValue, activeTagFilter, activeAiFilter, columnVisibility], () => {
+  updateCurrentState()
+}, { deep: true })
+
+watch(() => table.getState().pagination.pageSize, () => {
+  updateCurrentState()
+})
+
+function getCurrentViewState(): ViewState {
+  return {
+    searchValue: searchValue.value,
+    activeTagFilter: activeTagFilter.value,
+    activeAiFilter: activeAiFilter.value,
+    columnVisibility: columnVisibility.value,
+    pageSize: table.getState().pagination.pageSize,
+  }
+}
+
+function applyViewState(state: ViewState) {
+  searchValue.value = state.searchValue
+  activeTagFilter.value = state.activeTagFilter
+  activeAiFilter.value = state.activeAiFilter
+  Object.assign(columnVisibility.value, state.columnVisibility)
+  table.setPageSize(state.pageSize)
+}
+
+function updateCurrentState() {
+  currentState.value = getCurrentViewState()
+}
+
+function handleLoadView(viewId: string) {
+  loadView(viewId).then((view) => {
+    if (view) {
+      applyViewState(view)
+      updateCurrentState()
+    }
+  })
+}
+
+function handleSaveAs(name: string) {
+  const state = getCurrentViewState()
+  saveCurrentAs(name, state)
+}
+
+function handleUpdateView() {
+  if (!activeView.value)
+    return
+  const state = getCurrentViewState()
+  updateActiveView(state)
+}
+
+function handleDeleteView(viewId: string) {
+  deleteView(viewId)
+}
+
+function openSaveDialog() {
+  saveDialogOpen.value = true
+}
 </script>
 
 <template>
@@ -290,7 +373,9 @@ watch(activeAiFilter, (val) => {
           <Button variant="outline" size="sm" class="h-9 gap-1.5 text-xs" :class="activeTagFilter.length > 0 ? 'border-primary text-primary' : ''">
             <Icon name="lucide:tag" class="size-3.5" />
             Tags
-            <Badge v-if="activeTagFilter.length > 0" variant="default" class="ml-0.5 h-4 min-w-4 rounded-full px-1 text-[9px]">{{ activeTagFilter.length }}</Badge>
+            <Badge v-if="activeTagFilter.length > 0" variant="default" class="ml-0.5 h-4 min-w-4 rounded-full px-1 text-[9px]">
+              {{ activeTagFilter.length }}
+            </Badge>
           </Button>
         </PopoverTrigger>
         <PopoverContent class="w-56 p-0" align="start" :side-offset="4">
@@ -326,17 +411,28 @@ watch(activeAiFilter, (val) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-40">
-          <DropdownMenuItem @click="activeAiFilter = null" :class="{ 'bg-accent': !activeAiFilter }">
+          <DropdownMenuItem :class="{ 'bg-accent': !activeAiFilter }" @click="activeAiFilter = null">
             All Status
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem v-for="opt in aiStatusOptions" :key="opt.value" @click="activeAiFilter = opt.value" :class="{ 'bg-accent': activeAiFilter === opt.value }">
+          <DropdownMenuItem v-for="opt in aiStatusOptions" :key="opt.value" :class="{ 'bg-accent': activeAiFilter === opt.value }" @click="activeAiFilter = opt.value">
             <Icon :name="aiStatusIcon[opt.value] || 'lucide:bot'" class="mr-2 size-3.5" />
             {{ opt.label }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+
+    <SavedViewsDropdown
+      :saved-views="savedViews"
+      :active-view="activeView"
+      :is-dirty="isDirty"
+      :is-loading="savedViewsLoading"
+      @load-view="handleLoadView"
+      @save-as="openSaveDialog"
+      @update="handleUpdateView"
+      @delete="handleDeleteView"
+    />
 
     <div v-if="activeTagFilter.length > 0 || activeAiFilter" class="flex flex-wrap items-center gap-1.5">
       <Badge
@@ -364,55 +460,55 @@ watch(activeAiFilter, (val) => {
     </div>
 
     <ClientOnly>
-      <div class="border rounded-md" :key="listingsKey">
+      <div :key="listingsKey" class="border rounded-md">
         <Table>
-        <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="header.column.id === 'status' ? 'w-12 pr-1' : ''">
-              <template v-if="header.column.id === 'actions'">
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
-                      <Icon name="lucide:sliders-horizontal" class="size-4 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" class="w-48">
-                    <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      v-for="column in toggleableColumns"
-                      :key="column.id"
-                      class="flex items-center gap-2"
-                      @click="column.toggleVisibility()"
-                    >
-                      <Icon v-if="column.getIsVisible()" name="lucide:check" class="size-4" />
-                      <span v-else class="size-4" />
-                      {{ columnLabels[column.id] || column.id }}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </template>
-              <FlexRender v-else-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <template v-if="table.getRowModel().rows?.length">
-            <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.id === 'status' ? 'w-12 pr-1' : ''">
-                <ListingAiStatusCell v-if="cell.column.id === 'aiStatus'" :key="`ai-${row.original.id}`" :listing-id="row.original.id" />
-                <ListingOtaCell v-else-if="cell.column.id === 'otaConnected'" :key="`ota-${row.original.id}`" :listing-id="row.original.id" />
-                <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+          <TableHeader>
+            <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+              <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="header.column.id === 'status' ? 'w-12 pr-1' : ''">
+                <template v-if="header.column.id === 'actions'">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
+                        <Icon name="lucide:sliders-horizontal" class="size-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-48">
+                      <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        v-for="column in toggleableColumns"
+                        :key="column.id"
+                        class="flex items-center gap-2"
+                        @click="column.toggleVisibility()"
+                      >
+                        <Icon v-if="column.getIsVisible()" name="lucide:check" class="size-4" />
+                        <span v-else class="size-4" />
+                        {{ columnLabels[column.id] || column.id }}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </template>
+                <FlexRender v-else-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <template v-if="table.getRowModel().rows?.length">
+              <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
+                <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.id === 'status' ? 'w-12 pr-1' : ''">
+                  <ListingAiStatusCell v-if="cell.column.id === 'aiStatus'" :key="`ai-${row.original.id}`" :listing-id="row.original.id" />
+                  <ListingOtaCell v-else-if="cell.column.id === 'otaConnected'" :key="`ota-${row.original.id}`" :listing-id="row.original.id" />
+                  <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                </TableCell>
+              </TableRow>
+            </template>
+            <TableRow v-else>
+              <TableCell :colspan="columns.length" class="h-24 text-center">
+                No listings found.
               </TableCell>
             </TableRow>
-          </template>
-          <TableRow v-else>
-            <TableCell :colspan="columns.length" class="h-24 text-center">
-              No listings found.
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
       </div>
       <template #fallback>
         <div class="border rounded-md h-96 flex items-center justify-center text-sm text-muted-foreground">
@@ -488,5 +584,10 @@ watch(activeAiFilter, (val) => {
         </div>
       </div>
     </div>
+
+    <SaveViewDialog
+      v-model:open="saveDialogOpen"
+      @save="handleSaveAs"
+    />
   </div>
 </template>

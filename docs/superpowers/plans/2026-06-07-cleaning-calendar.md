@@ -114,7 +114,7 @@ jobs.value = jobs.value.map(job => job.id === id ? { ...job, ...patch } : job)
 - [ ] **Step 3: Add filter helpers for listing, cleaner, status, and priority**
 
 ```ts
-type CleaningFilters = {
+interface CleaningFilters {
   listingIds: string[]
   cleanerIds: string[]
   statuses: CleaningJobStatus[]
@@ -238,7 +238,9 @@ function createFromCheckout(reservationId: string) {
 - [ ] **Step 2: Expose an action from any reservation context that can generate the cleaning job**
 
 ```vue
-<Button variant="outline" @click="createFromCheckout(reservation.id)">Create Cleaning</Button>
+<Button variant="outline" @click="createFromCheckout(reservation.id)">
+Create Cleaning
+</Button>
 ```
 
 - [ ] **Step 3: Ensure the created job is editable before confirmation**
@@ -265,4 +267,3 @@ Expected: fallback path remains manual creation.
 
 Run: `npm run typecheck`
 Expected: no remaining type issues.
-

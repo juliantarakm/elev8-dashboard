@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { Button } from '~/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
 
 const props = defineProps<{
   open: boolean
@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  save: [name: string]
+  'save': [name: string]
 }>()
 
 const viewName = ref('')
@@ -23,7 +23,8 @@ watch(() => props.open, (open) => {
 
 function handleSave() {
   const trimmed = viewName.value.trim()
-  if (trimmed.length === 0 || trimmed.length > 50) return
+  if (trimmed.length === 0 || trimmed.length > 50)
+    return
 
   emit('save', trimmed)
   emit('update:open', false)

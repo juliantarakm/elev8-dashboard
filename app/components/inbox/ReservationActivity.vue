@@ -142,7 +142,9 @@ const allActivities = computed(() => {
 
 <template>
   <div>
-    <h3 class="text-sm font-medium mb-3">Timeline</h3>
+    <h3 class="text-sm font-medium mb-3">
+      Timeline
+    </h3>
 
     <div class="space-y-0">
       <div
@@ -151,13 +153,17 @@ const allActivities = computed(() => {
         class="flex gap-3 pb-4"
       >
         <div class="flex flex-col items-center">
-          <div :class="['size-2.5 shrink-0 rounded-full mt-1.5', event.type === 'phone_call' ? 'bg-green-500' : dotColorMap[event.colorDot] ?? 'bg-muted-foreground']" />
+          <div class="size-2.5 shrink-0 rounded-full mt-1.5" :class="[event.type === 'phone_call' ? 'bg-green-500' : dotColorMap[event.colorDot] ?? 'bg-muted-foreground']" />
           <div v-if="i < allActivities.length - 1" class="w-px flex-1 bg-border" />
         </div>
 
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium">{{ event.title }}</div>
-          <div class="text-xs text-muted-foreground">{{ event.description }}</div>
+          <div class="text-sm font-medium">
+            {{ event.title }}
+          </div>
+          <div class="text-xs text-muted-foreground">
+            {{ event.description }}
+          </div>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[10px] text-muted-foreground">{{ formatTimestamp(event.timestamp) }}</span>
             <span v-if="event.channel" class="text-[10px] text-muted-foreground">via {{ event.channel }}</span>
@@ -180,7 +186,9 @@ const allActivities = computed(() => {
 
       <div v-if="allActivities.length === 0" class="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
         <Icon name="lucide:activity" class="size-8" />
-        <p class="text-sm">No activity yet</p>
+        <p class="text-sm">
+          No activity yet
+        </p>
       </div>
     </div>
   </div>

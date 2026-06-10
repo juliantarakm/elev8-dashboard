@@ -1,4 +1,10 @@
 <script setup lang="ts">
+const emit = defineEmits<{
+  select: [template: Template]
+  next: []
+  back: []
+}>()
+
 definePageMeta({
   layout: 'default',
 })
@@ -44,12 +50,6 @@ const templates: Template[] = [
 
 const selectedTemplate = ref<Template | null>(null)
 
-const emit = defineEmits<{
-  select: [template: Template]
-  next: []
-  back: []
-}>()
-
 function selectTemplate(template: Template) {
   selectedTemplate.value = template
   emit('select', template)
@@ -69,8 +69,12 @@ function handleBack() {
 <template>
   <div class="flex flex-col gap-6">
     <div>
-      <h3 class="text-lg font-semibold">Choose a Template</h3>
-      <p class="text-sm text-muted-foreground">Select a starting design for your website. You can customise it later.</p>
+      <h3 class="text-lg font-semibold">
+        Choose a Template
+      </h3>
+      <p class="text-sm text-muted-foreground">
+        Select a starting design for your website. You can customise it later.
+      </p>
     </div>
 
     <div class="grid grid-cols-1 gap-4 @xl/main:grid-cols-2">

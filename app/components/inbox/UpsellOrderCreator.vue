@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { toast } from 'vue-sonner'
-import { useInbox } from '@/composables/useInbox'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
-import { useUpsellServices } from '@/composables/useUpsellServices'
-import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
-import type { UpsellService } from '@/components/upsells/data/upsell-services'
 import type { Conversation } from '@/components/inbox/data/conversations'
 import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import type { UpsellService } from '@/components/upsells/data/upsell-services'
+import { toast } from 'vue-sonner'
+import { useInbox } from '@/composables/useInbox'
+import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
+import { useUpsellServices } from '@/composables/useUpsellServices'
 
 const props = defineProps<{
   conversation: Conversation | null
@@ -41,7 +41,8 @@ const selectedServiceId = computed({
 
 function onOpenChange(value: boolean) {
   emit('update:open', value)
-  if (!value) resetForm()
+  if (!value)
+    resetForm()
 }
 
 function resetForm() {
@@ -58,7 +59,8 @@ const isCreateDisabled = computed(() =>
 function toggleItem(itemId: string, checked: boolean | 'indeterminate') {
   if (checked === true) {
     selectedItems.value = [...selectedItems.value, itemId]
-  } else {
+  }
+  else {
     selectedItems.value = selectedItems.value.filter(id => id !== itemId)
   }
 }
@@ -122,7 +124,8 @@ function handleCreate() {
 
   if (!isAlways) {
     createNotification(newOrder, 'UPSELL_ORDER_REQUESTED')
-  } else {
+  }
+  else {
     createNotification(newOrder, 'UPSELL_ORDER_APPROVED')
   }
 
@@ -167,8 +170,12 @@ function handleCreate() {
                 {{ conversation.guestInitials }}
               </div>
               <div>
-                <p class="text-sm font-medium">{{ conversation.guestName }}</p>
-                <p class="text-xs text-muted-foreground">Res: {{ conversation.reservationId }}</p>
+                <p class="text-sm font-medium">
+                  {{ conversation.guestName }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  Res: {{ conversation.reservationId }}
+                </p>
               </div>
             </div>
           </div>

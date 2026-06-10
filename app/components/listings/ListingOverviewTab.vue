@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { Listing } from '~/components/listings/data/listings'
+import type { Listing, Unit } from '~/components/listings/data/listings'
 
-import type { Unit } from '~/components/listings/data/listings'
-const props = defineProps<{ listing: Listing; activeUnit?: Unit | null }>()
+const props = defineProps<{ listing: Listing, activeUnit?: Unit | null }>()
 const emit = defineEmits<{ switchTab: [tab: string] }>()
 
 const stats = computed(() => [
@@ -13,7 +12,7 @@ const stats = computed(() => [
 ])
 
 const upcomingBookings = computed(() =>
-  props.listing.bookings.filter(b => b.status !== 'cancelled').slice(0, 3)
+  props.listing.bookings.filter(b => b.status !== 'cancelled').slice(0, 3),
 )
 
 const recentReviews = computed(() => props.listing.reviews.slice(0, 2))
@@ -56,7 +55,9 @@ function renderStars(rating: number) {
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <Card class="p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold">Upcoming Bookings</h3>
+          <h3 class="text-sm font-semibold">
+            Upcoming Bookings
+          </h3>
           <Button variant="link" size="sm" class="h-auto p-0 text-xs" @click="emit('switchTab', 'calendar')">
             View Calendar →
           </Button>
@@ -67,15 +68,21 @@ function renderStars(rating: number) {
               <span class="text-sm font-medium">{{ formatDateRange(booking.checkIn, booking.checkOut) }}</span>
               <span class="text-xs text-muted-foreground">{{ booking.guestName }} · {{ booking.nights }} nights</span>
             </div>
-            <Badge :variant="booking.status === 'confirmed' ? 'default' : 'secondary'" class="text-xs capitalize">{{ booking.status }}</Badge>
+            <Badge :variant="booking.status === 'confirmed' ? 'default' : 'secondary'" class="text-xs capitalize">
+              {{ booking.status }}
+            </Badge>
           </div>
-          <p v-if="upcomingBookings.length === 0" class="text-sm text-muted-foreground text-center py-4">No upcoming bookings</p>
+          <p v-if="upcomingBookings.length === 0" class="text-sm text-muted-foreground text-center py-4">
+            No upcoming bookings
+          </p>
         </div>
       </Card>
 
       <Card class="p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold">Recent Reviews</h3>
+          <h3 class="text-sm font-semibold">
+            Recent Reviews
+          </h3>
           <Button variant="link" size="sm" class="h-auto p-0 text-xs" @click="emit('switchTab', 'reviews')">
             View All →
           </Button>
@@ -86,9 +93,13 @@ function renderStars(rating: number) {
               <span class="text-sm font-medium">{{ review.guestName }}</span>
               <span class="text-xs text-amber-500">{{ renderStars(review.rating) }}</span>
             </div>
-            <p class="text-xs text-muted-foreground line-clamp-2">{{ review.text }}</p>
+            <p class="text-xs text-muted-foreground line-clamp-2">
+              {{ review.text }}
+            </p>
           </div>
-          <p v-if="recentReviews.length === 0" class="text-sm text-muted-foreground text-center py-4">No reviews yet</p>
+          <p v-if="recentReviews.length === 0" class="text-sm text-muted-foreground text-center py-4">
+            No reviews yet
+          </p>
         </div>
       </Card>
     </div>

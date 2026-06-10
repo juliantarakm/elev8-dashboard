@@ -27,13 +27,13 @@ Inventory adalah modul baru di Elev8 Dashboard untuk melacak barang/perlengkapan
 ```ts
 interface InventoryDocument {
   name: string
-  url: string  // base64 atau object URL
+  url: string // base64 atau object URL
   type: 'warranty' | 'receipt' | 'invoice' | 'other'
 }
 
 interface InventorySupplier {
   name: string
-  contact: string  // nomor HP / email
+  contact: string // nomor HP / email
 }
 
 interface InventoryItem {
@@ -41,10 +41,10 @@ interface InventoryItem {
   name: string
   category: 'Furniture' | 'Electronics' | 'Linen' | 'Kitchen' | 'Consumable' | 'Other'
   type: 'permanent' | 'consumable'
-  unit: string          // pcs, set, botol, rol, dll.
-  photo?: string        // base64
-  purchaseValue?: number  // IDR
-  purchaseDate?: string   // YYYY-MM-DD
+  unit: string // pcs, set, botol, rol, dll.
+  photo?: string // base64
+  purchaseValue?: number // IDR
+  purchaseDate?: string // YYYY-MM-DD
   warrantyExpiry?: string // YYYY-MM-DD
   documents?: InventoryDocument[]
   supplier?: InventorySupplier
@@ -59,13 +59,13 @@ type ItemCondition = 'good' | 'fair' | 'damaged' | 'missing'
 
 interface ListingInventoryEntry {
   id: string
-  itemId: string         // ref ke InventoryItem.id
+  itemId: string // ref ke InventoryItem.id
   listingName: string
   quantity: number
-  condition: ItemCondition   // untuk permanent items
-  stockLevel?: number        // untuk consumable — jumlah stok saat ini
+  condition: ItemCondition // untuk permanent items
+  stockLevel?: number // untuk consumable — jumlah stok saat ini
   notes?: string
-  lastUpdated: string        // ISO date string
+  lastUpdated: string // ISO date string
 }
 ```
 

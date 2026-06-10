@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSavedViews } from '~/composables/useSavedViews'
 
 describe('useSavedViews', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('initializes with empty state', () => {
@@ -30,7 +34,7 @@ describe('useSavedViews', () => {
       },
     ]
 
-    global.$fetch = vi.fn().mockResolvedValue({ views: mockViews })
+    globalThis.$fetch = vi.fn().mockResolvedValue({ views: mockViews })
 
     const { fetchViews, savedViews } = useSavedViews()
     await fetchViews()
@@ -52,7 +56,7 @@ describe('useSavedViews', () => {
       updatedAt: '2025-06-10T11:00:00Z',
     }
 
-    global.$fetch = vi.fn().mockResolvedValue({ view: newView })
+    globalThis.$fetch = vi.fn().mockResolvedValue({ view: newView })
 
     const { saveCurrentAs, savedViews } = useSavedViews()
     await saveCurrentAs('New View', {

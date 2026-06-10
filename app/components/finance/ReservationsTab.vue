@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
-import { useReservations } from '@/composables/useReservations'
-import { useJurnal } from '@/composables/useJurnal'
 import { useBexio } from '@/composables/useBexio'
+import { useJurnal } from '@/composables/useJurnal'
 import { useListingMappings } from '@/composables/useListingMappings'
+import { useReservations } from '@/composables/useReservations'
 
 const {
   reservations,
@@ -28,9 +28,12 @@ const syncTarget = computed(() => {
   const { jurnal, bexio } = mappedByIntegration.value
   const hasJurnal = jurnal > 0 && jurnalConnected.value
   const hasBexio = bexio > 0 && bexioConnected.value
-  if (hasJurnal && hasBexio) return 'your accounting software'
-  if (hasJurnal) return 'Jurnal'
-  if (hasBexio) return 'Bexio'
+  if (hasJurnal && hasBexio)
+    return 'your accounting software'
+  if (hasJurnal)
+    return 'Jurnal'
+  if (hasBexio)
+    return 'Bexio'
   return 'your accounting software'
 })
 
@@ -38,9 +41,11 @@ const pushDestLabel = computed(() => {
   const integs = new Set<string>()
   selectedUnsynced.value.forEach((r) => {
     const mapping = getMappingFor(r.listing)
-    if (mapping) integs.add(mapping.integration)
+    if (mapping)
+      integs.add(mapping.integration)
   })
-  if (integs.size === 1) return [...integs][0] === 'jurnal' ? 'Jurnal' : 'Bexio'
+  if (integs.size === 1)
+    return [...integs][0] === 'jurnal' ? 'Jurnal' : 'Bexio'
   return 'accounting'
 })
 
@@ -74,19 +79,30 @@ const uniqueListings = computed(() =>
 
 const filteredReservations = computed(() => {
   return reservations.value.filter((r) => {
-    if (filterListing.value !== 'all' && r.listing !== filterListing.value) return false
-    if (filterTag.value !== 'all' && getTag(r.listing) !== filterTag.value) return false
-    if (filterChannel.value !== 'all' && r.channel !== filterChannel.value) return false
-    if (filterStatus.value !== 'all' && r.status !== filterStatus.value) return false
-    if (filterSynced.value === 'synced' && !r.synced) return false
-    if (filterSynced.value === 'unsynced' && r.synced) return false
-    if (filterDateFrom.value && r.checkIn < filterDateFrom.value) return false
-    if (filterDateTo.value && r.checkIn > filterDateTo.value) return false
+    if (filterListing.value !== 'all' && r.listing !== filterListing.value)
+      return false
+    if (filterTag.value !== 'all' && getTag(r.listing) !== filterTag.value)
+      return false
+    if (filterChannel.value !== 'all' && r.channel !== filterChannel.value)
+      return false
+    if (filterStatus.value !== 'all' && r.status !== filterStatus.value)
+      return false
+    if (filterSynced.value === 'synced' && !r.synced)
+      return false
+    if (filterSynced.value === 'unsynced' && r.synced)
+      return false
+    if (filterDateFrom.value && r.checkIn < filterDateFrom.value)
+      return false
+    if (filterDateTo.value && r.checkIn > filterDateTo.value)
+      return false
     if (filterIntegration.value !== 'all') {
       const mapping = getMappingFor(r.listing)
-      if (filterIntegration.value === 'none' && mapping) return false
-      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
-      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+      if (filterIntegration.value === 'none' && mapping)
+        return false
+      if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal')
+        return false
+      if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio')
+        return false
     }
     return true
   })
@@ -200,9 +216,18 @@ function downloadBulkInvoices() {
 function exportCSV() {
   const headers = ['ID', 'Guest', 'Listing', 'Channel', 'Check-in', 'Check-out', 'Nights', 'Guests', 'Amount (CHF)', 'Status', 'Invoice', 'Synced']
   const rows = filteredReservations.value.map(r => [
-    r.id, r.guest, r.listing, r.channel,
-    r.checkIn, r.checkOut, r.nights, r.guests,
-    r.amount, r.status, r.invoice ?? '', r.synced ? 'Yes' : 'No',
+    r.id,
+    r.guest,
+    r.listing,
+    r.channel,
+    r.checkIn,
+    r.checkOut,
+    r.nights,
+    r.guests,
+    r.amount,
+    r.status,
+    r.invoice ?? '',
+    r.synced ? 'Yes' : 'No',
   ])
   const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -299,7 +324,9 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All listings" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All listings</SelectItem>
+            <SelectItem value="all">
+              All listings
+            </SelectItem>
             <SelectItem v-for="l in uniqueListings" :key="l" :value="l">
               {{ l }}
             </SelectItem>
@@ -315,9 +342,15 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All tags" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All tags</SelectItem>
-            <SelectItem value="Switzerland">Switzerland</SelectItem>
-            <SelectItem value="Bali">Bali</SelectItem>
+            <SelectItem value="all">
+              All tags
+            </SelectItem>
+            <SelectItem value="Switzerland">
+              Switzerland
+            </SelectItem>
+            <SelectItem value="Bali">
+              Bali
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -330,10 +363,18 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All channels" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All channels</SelectItem>
-            <SelectItem value="Booking.com">Booking.com</SelectItem>
-            <SelectItem value="Airbnb">Airbnb</SelectItem>
-            <SelectItem value="Direct">Direct</SelectItem>
+            <SelectItem value="all">
+              All channels
+            </SelectItem>
+            <SelectItem value="Booking.com">
+              Booking.com
+            </SelectItem>
+            <SelectItem value="Airbnb">
+              Airbnb
+            </SelectItem>
+            <SelectItem value="Direct">
+              Direct
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -346,11 +387,21 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="Unverified">Unverified</SelectItem>
-            <SelectItem value="Verified">Verified</SelectItem>
-            <SelectItem value="Checked-in">Checked-in</SelectItem>
-            <SelectItem value="Checked-out">Checked-out</SelectItem>
+            <SelectItem value="all">
+              All statuses
+            </SelectItem>
+            <SelectItem value="Unverified">
+              Unverified
+            </SelectItem>
+            <SelectItem value="Verified">
+              Verified
+            </SelectItem>
+            <SelectItem value="Checked-in">
+              Checked-in
+            </SelectItem>
+            <SelectItem value="Checked-out">
+              Checked-out
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -363,9 +414,15 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="synced">Synced</SelectItem>
-            <SelectItem value="unsynced">Not synced</SelectItem>
+            <SelectItem value="all">
+              All
+            </SelectItem>
+            <SelectItem value="synced">
+              Synced
+            </SelectItem>
+            <SelectItem value="unsynced">
+              Not synced
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -378,10 +435,18 @@ const statusClass: Record<string, string> = {
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="jurnal">Jurnal</SelectItem>
-            <SelectItem value="bexio">Bexio</SelectItem>
-            <SelectItem value="none">Not mapped</SelectItem>
+            <SelectItem value="all">
+              All
+            </SelectItem>
+            <SelectItem value="jurnal">
+              Jurnal
+            </SelectItem>
+            <SelectItem value="bexio">
+              Bexio
+            </SelectItem>
+            <SelectItem value="none">
+              Not mapped
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -494,14 +559,22 @@ const statusClass: Record<string, string> = {
               <TableHead>Listing</TableHead>
               <TableHead>Channel</TableHead>
               <TableHead>Check-in</TableHead>
-              <TableHead class="w-16 text-center">Nights</TableHead>
-              <TableHead class="text-right">Amount</TableHead>
+              <TableHead class="w-16 text-center">
+                Nights
+              </TableHead>
+              <TableHead class="text-right">
+                Amount
+              </TableHead>
               <TableHead v-if="showConvertedColumn" class="text-right text-muted-foreground">
                 Acctg. Amount
               </TableHead>
               <TableHead>Status</TableHead>
-              <TableHead class="w-20 text-center">Invoice</TableHead>
-              <TableHead class="w-32 text-center">Synced</TableHead>
+              <TableHead class="w-20 text-center">
+                Invoice
+              </TableHead>
+              <TableHead class="w-32 text-center">
+                Synced
+              </TableHead>
               <TableHead class="w-10" />
             </TableRow>
           </TableHeader>
@@ -526,7 +599,9 @@ const statusClass: Record<string, string> = {
                   @click.stop="toggleRow(res.id, res.checkIn)"
                 />
               </TableCell>
-              <TableCell class="font-medium">{{ res.guest }}</TableCell>
+              <TableCell class="font-medium">
+                {{ res.guest }}
+              </TableCell>
               <TableCell class="max-w-44 truncate text-muted-foreground" :title="res.listing">
                 {{ res.listing }}
               </TableCell>
@@ -536,9 +611,15 @@ const statusClass: Record<string, string> = {
                   {{ res.channel }}
                 </span>
               </TableCell>
-              <TableCell class="tabular-nums text-muted-foreground">{{ res.checkIn }}</TableCell>
-              <TableCell class="text-center tabular-nums">{{ res.nights }}</TableCell>
-              <TableCell class="text-right font-semibold tabular-nums">{{ formatCHF(res.amount) }}</TableCell>
+              <TableCell class="tabular-nums text-muted-foreground">
+                {{ res.checkIn }}
+              </TableCell>
+              <TableCell class="text-center tabular-nums">
+                {{ res.nights }}
+              </TableCell>
+              <TableCell class="text-right font-semibold tabular-nums">
+                {{ formatCHF(res.amount) }}
+              </TableCell>
               <TableCell v-if="showConvertedColumn" class="text-right tabular-nums text-muted-foreground text-xs">
                 {{ res.synced ? (getAccountingAmount(res.listing, res.amount) ?? '—') : '—' }}
               </TableCell>

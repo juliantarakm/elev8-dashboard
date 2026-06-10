@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import draggable from 'vuedraggable'
 import {
@@ -9,9 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useUpsellServices } from '@/composables/useUpsellServices'
 import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
-import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
+import { useUpsellServices } from '@/composables/useUpsellServices'
 
 const props = defineProps<{
   service: UpsellService | null
@@ -39,8 +39,10 @@ const steps = [
 ]
 
 function stepCircleClass(stepId: number) {
-  if (currentStep.value === stepId) return 'bg-primary text-primary-foreground'
-  if (visitedSteps.value.has(stepId)) return 'bg-primary/20 text-primary'
+  if (currentStep.value === stepId)
+    return 'bg-primary text-primary-foreground'
+  if (visitedSteps.value.has(stepId))
+    return 'bg-primary/20 text-primary'
   return 'bg-muted text-muted-foreground'
 }
 
@@ -235,7 +237,8 @@ function onItemsReorder() {
 function handleServiceImageUpload(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file) return
+  if (!file)
+    return
 
   const reader = new FileReader()
   reader.onload = (e) => {
@@ -248,7 +251,8 @@ function handleServiceImageUpload(event: Event) {
 function handleItemImageUpload(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file) return
+  if (!file)
+    return
 
   const reader = new FileReader()
   reader.onload = (e) => {
@@ -461,7 +465,9 @@ function onOpenChange(val: boolean) {
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium">Upsell Items</p>
+                <p class="text-sm font-medium">
+                  Upsell Items
+                </p>
                 <p class="text-xs text-muted-foreground">
                   Drag to reorder. Click an item to edit.
                 </p>
@@ -494,7 +500,9 @@ function onOpenChange(val: boolean) {
                     <Icon name="lucide:image" class="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium">{{ item.name }}</p>
+                    <p class="truncate text-sm font-medium">
+                      {{ item.name }}
+                    </p>
                     <p v-if="item.description" class="truncate text-xs text-muted-foreground">
                       {{ item.description }}
                     </p>

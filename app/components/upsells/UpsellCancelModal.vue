@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { toast } from 'vue-sonner'
 import { useUpsellNotifications } from '@/composables/useUpsellNotifications'
-import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const props = defineProps<{
@@ -45,7 +45,7 @@ function handleCancel() {
   <Dialog :open="open" @update:open="onOpenChange">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-      <DialogTitle>Decline Request</DialogTitle>
+        <DialogTitle>Decline Request</DialogTitle>
         <DialogDescription>
           {{ order?.id }} — {{ order?.guestName }}
         </DialogDescription>

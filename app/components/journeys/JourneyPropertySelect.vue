@@ -19,12 +19,13 @@ const selectedTags = ref<string[]>([])
 const allTags = computed(() => {
   const regions = new Set<string>()
   const cities = new Set<string>()
-  allListings.forEach(l => { regions.add(l.region); cities.add(l.city) })
+  allListings.forEach((l) => { regions.add(l.region); cities.add(l.city) })
   return [...Array.from(regions).sort(), ...Array.from(cities).sort()]
 })
 
 const filteredTags = computed(() => {
-  if (!tagSearch.value.trim()) return allTags.value
+  if (!tagSearch.value.trim())
+    return allTags.value
   const q = tagSearch.value.toLowerCase()
   return allTags.value.filter(t => t.toLowerCase().includes(q))
 })
@@ -42,12 +43,13 @@ const filteredListings = computed(() => {
 })
 
 const isAllProperties = computed(() =>
-  props.modelValue.length === 0 || props.modelValue.includes('All Properties')
+  props.modelValue.length === 0 || props.modelValue.includes('All Properties'),
 )
 
 function toggleTag(tag: string) {
   const idx = selectedTags.value.indexOf(tag)
-  if (idx === -1) selectedTags.value.push(tag)
+  if (idx === -1)
+    selectedTags.value.push(tag)
   else selectedTags.value.splice(idx, 1)
 }
 
@@ -72,10 +74,11 @@ function toggleProperty(name: string) {
 }
 
 const displayLabel = computed(() => {
-  if (isAllProperties.value) return 'All Properties'
+  if (isAllProperties.value)
+    return 'All Properties'
   if (props.modelValue.length === 1) {
     const name = props.modelValue[0]
-    return name.length > 22 ? name.slice(0, 22) + '…' : name
+    return name.length > 22 ? `${name.slice(0, 22)}…` : name
   }
   return `${props.modelValue.length} properties`
 })
@@ -89,7 +92,9 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
       <Button variant="outline" class="h-8 w-44 justify-start gap-1.5 text-sm font-normal">
         <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span class="flex-1 truncate text-left">{{ displayLabel }}</span>
-        <Badge v-if="selectedCount > 0" variant="secondary" class="h-4 px-1 text-[10px]">{{ selectedCount }}</Badge>
+        <Badge v-if="selectedCount > 0" variant="secondary" class="h-4 px-1 text-[10px]">
+          {{ selectedCount }}
+        </Badge>
         <Icon name="i-lucide-chevrons-up-down" class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       </Button>
     </PopoverTrigger>
@@ -102,7 +107,7 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
           v-model="search"
           class="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Search properties…"
-        />
+        >
         <button v-if="search" class="shrink-0 text-muted-foreground hover:text-foreground" @click="search = ''">
           <Icon name="i-lucide-x" class="h-3.5 w-3.5" />
         </button>
@@ -128,7 +133,7 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
                 v-model="tagSearch"
                 class="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                 placeholder="Search tags…"
-              />
+              >
             </div>
             <!-- Tag list -->
             <ScrollArea class="h-52">
@@ -139,15 +144,18 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
                   class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
                   @click="toggleTag(tag)"
                 >
-                  <div :class="[
-                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-                    selectedTags.includes(tag) ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
-                  ]">
+                  <div
+                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border" :class="[
+                      selectedTags.includes(tag) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                    ]"
+                  >
                     <Icon v-if="selectedTags.includes(tag)" name="i-lucide-check" class="h-3 w-3" />
                   </div>
                   <span class="truncate text-sm">{{ tag }}</span>
                 </button>
-                <p v-if="filteredTags.length === 0" class="py-4 text-center text-xs text-muted-foreground">No tags found</p>
+                <p v-if="filteredTags.length === 0" class="py-4 text-center text-xs text-muted-foreground">
+                  No tags found
+                </p>
               </div>
             </ScrollArea>
             <!-- Tag footer -->
@@ -157,7 +165,9 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
                 v-if="selectedTags.length > 0"
                 class="text-xs text-muted-foreground hover:text-foreground"
                 @click="selectedTags = []"
-              >Clear</button>
+              >
+                Clear
+              </button>
             </div>
           </PopoverContent>
         </Popover>
@@ -184,10 +194,11 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
             class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
             @click="toggleAllProperties"
           >
-            <div :class="[
-              'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-              isAllProperties ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
-            ]">
+            <div
+              class="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border" :class="[
+                isAllProperties ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+              ]"
+            >
               <Icon v-if="isAllProperties" name="i-lucide-check" class="h-3 w-3" />
             </div>
             <span class="font-medium">All Properties</span>
@@ -203,25 +214,29 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
               class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
               @click="toggleProperty(listing.name)"
             >
-              <div :class="[
-                'flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border',
-                isSelected(listing.name) ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
-              ]">
+              <div
+                class="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border" :class="[
+                  isSelected(listing.name) ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                ]"
+              >
                 <Icon v-if="isSelected(listing.name)" name="i-lucide-check" class="h-3 w-3" />
               </div>
               <div class="flex min-w-0 flex-col">
                 <span class="truncate text-sm leading-tight">{{ listing.name }}</span>
                 <span class="text-xs text-muted-foreground">{{ listing.city }}</span>
               </div>
-              <span :class="[
-                'ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
-                listing.region === 'Bali'
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400'
-                  : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
-              ]">{{ listing.region }}</span>
+              <span
+                class="ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium" :class="[
+                  listing.region === 'Bali'
+                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+                ]"
+              >{{ listing.region }}</span>
             </button>
           </template>
-          <p v-else class="py-6 text-center text-sm text-muted-foreground">No properties found</p>
+          <p v-else class="py-6 text-center text-sm text-muted-foreground">
+            No properties found
+          </p>
         </div>
       </ScrollArea>
 

@@ -1,10 +1,10 @@
-export type InventoryCategory =
-  | 'Furniture'
-  | 'Electronics'
-  | 'Linen'
-  | 'Kitchen'
-  | 'Consumable'
-  | 'Other'
+export type InventoryCategory
+  = | 'Furniture'
+    | 'Electronics'
+    | 'Linen'
+    | 'Kitchen'
+    | 'Consumable'
+    | 'Other'
 
 export type InventoryItemType = 'permanent' | 'consumable'
 

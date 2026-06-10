@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { toast } from 'vue-sonner'
 import type { CostEntry } from '@/components/finance/data/costs'
+import { ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { useCosts } from '@/composables/useCosts'
 import { useJurnal } from '@/composables/useJurnal'
 
@@ -42,8 +42,15 @@ async function handlePushNow() {
 function exportCSV() {
   const headers = ['Date', 'Listing', 'Type', 'Category', 'Amount (IDR)', 'Staff', 'Invoice', 'Synced', 'Note']
   const rows = filteredCosts.value.map(c => [
-    c.date, c.listing, c.type, c.category,
-    c.amount, c.staff, c.invoice ?? '', c.synced ? 'Yes' : 'No', c.note ?? '',
+    c.date,
+    c.listing,
+    c.type,
+    c.category,
+    c.amount,
+    c.staff,
+    c.invoice ?? '',
+    c.synced ? 'Yes' : 'No',
+    c.note ?? '',
   ])
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })

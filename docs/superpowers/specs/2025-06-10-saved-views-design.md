@@ -57,9 +57,9 @@ interface SavedView {
   activeAiFilter: string | null
   columnVisibility: Record<string, boolean>
   pageSize: number
-  createdBy: string  // user ID
-  createdAt: string  // ISO timestamp
-  updatedAt: string  // ISO timestamp
+  createdBy: string // user ID
+  createdAt: string // ISO timestamp
+  updatedAt: string // ISO timestamp
 }
 ```
 
@@ -189,13 +189,15 @@ onMounted(() => {
 })
 
 // Collect current view state
-const getCurrentViewState = (): ViewState => ({
-  searchValue: searchValue.value,
-  activeTagFilter: activeTagFilter.value,
-  activeAiFilter: activeAiFilter.value,
-  columnVisibility: columnVisibility.value,
-  pageSize: table.getState().pagination.pageSize,
-})
+function getCurrentViewState(): ViewState {
+  return {
+    searchValue: searchValue.value,
+    activeTagFilter: activeTagFilter.value,
+    activeAiFilter: activeAiFilter.value,
+    columnVisibility: columnVisibility.value,
+    pageSize: table.getState().pagination.pageSize,
+  }
+}
 
 // Apply loaded view state
 function applyViewState(state: ViewState) {

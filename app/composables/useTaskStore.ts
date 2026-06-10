@@ -16,14 +16,16 @@ export function useTaskStore() {
 
   function updateStatus(id: string, status: string) {
     const task = tasks.value.find(t => t.id === id)
-    if (!task) return
+    if (!task)
+      return
     tasks.value = tasks.value.map(t => t.id === id ? { ...t, status } : t)
     syncOnStatusChange(task, status)
   }
 
   function deleteTask(id: string) {
     const task = tasks.value.find(t => t.id === id)
-    if (task) syncOnDelete(task)
+    if (task)
+      syncOnDelete(task)
     tasks.value = tasks.value.filter(t => t.id !== id)
   }
 

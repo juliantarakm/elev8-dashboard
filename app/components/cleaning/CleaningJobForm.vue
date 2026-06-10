@@ -39,7 +39,8 @@ const recurrenceFrequency = ref<CleaningJobRecurrence['frequency']>(props.modelV
 const recurrenceInterval = ref(props.modelValue?.recurrence?.interval ?? 1)
 
 watch(() => form.listingId, (listingId) => {
-  if (!listingId) return
+  if (!listingId)
+    return
   const listing = listings.value.find(item => item.id === listingId)
   if (listing) {
     form.listingName = listing.name
@@ -47,7 +48,8 @@ watch(() => form.listingId, (listingId) => {
 }, { immediate: true })
 
 watch(() => props.modelValue, (next) => {
-  if (!next) return
+  if (!next)
+    return
   form.listingId = next.listingId ?? props.defaultListingId ?? ''
   form.listingName = next.listingName ?? props.defaultListingName ?? ''
   form.scheduledAt = next.scheduledAt ?? ''
@@ -130,7 +132,9 @@ function submit() {
             <SelectValue placeholder="Assign cleaner" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__unassigned__">Unassigned</SelectItem>
+            <SelectItem value="__unassigned__">
+              Unassigned
+            </SelectItem>
             <SelectItem v-for="cleaner in cleanerOptions" :key="cleaner.id" :value="cleaner.id">
               {{ cleaner.name }} · {{ cleaner.role }}
             </SelectItem>
@@ -187,8 +191,12 @@ function submit() {
     <div class="rounded-lg border bg-muted/30 p-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <p class="text-sm font-medium">Recurrence</p>
-          <p class="text-xs text-muted-foreground">Repeat this cleaning on a weekly or monthly cadence.</p>
+          <p class="text-sm font-medium">
+            Recurrence
+          </p>
+          <p class="text-xs text-muted-foreground">
+            Repeat this cleaning on a weekly or monthly cadence.
+          </p>
         </div>
         <Switch v-model:checked="recurrenceEnabled" />
       </div>
@@ -198,8 +206,12 @@ function submit() {
           <Select :model-value="recurrenceFrequency" @update:model-value="value => { recurrenceFrequency = value as CleaningJobRecurrence['frequency'] }">
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="weekly">
+                Weekly
+              </SelectItem>
+              <SelectItem value="monthly">
+                Monthly
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -211,8 +223,12 @@ function submit() {
     </div>
 
     <div class="flex items-center justify-end gap-2 pt-2">
-      <Button variant="outline" @click="emit('cancel')">Cancel</Button>
-      <Button @click="submit">Save Cleaning Job</Button>
+      <Button variant="outline" @click="emit('cancel')">
+        Cancel
+      </Button>
+      <Button @click="submit">
+        Save Cleaning Job
+      </Button>
     </div>
   </div>
 </template>

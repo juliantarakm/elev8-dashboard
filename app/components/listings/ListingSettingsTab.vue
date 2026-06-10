@@ -21,16 +21,33 @@ function saveDetails() {
 }
 
 const allAmenities = [
-  'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
-  'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
-  'Ocean View', 'Cliff Deck', 'Surfboard Storage', 'Mountain View', 'Hot Tub',
-  'Fireplace', 'River View', 'Bamboo Construction',
+  'Pool',
+  'WiFi',
+  'AC',
+  'Kitchen',
+  'Parking',
+  'Garden',
+  'Beach Access',
+  'Rooftop Deck',
+  'Plunge Pool',
+  'Yoga Deck',
+  'Hammock Deck',
+  'Nature Bath',
+  'Ocean View',
+  'Cliff Deck',
+  'Surfboard Storage',
+  'Mountain View',
+  'Hot Tub',
+  'Fireplace',
+  'River View',
+  'Bamboo Construction',
 ]
 const amenitySearch = ref('')
 const amenityPopoverOpen = ref(false)
 const filteredAmenities = computed(() => {
   const available = allAmenities.filter(a => !props.listing.amenities.includes(a))
-  if (!amenitySearch.value) return available
+  if (!amenitySearch.value)
+    return available
   return available.filter(a => a.toLowerCase().includes(amenitySearch.value.toLowerCase()))
 })
 function addAmenity(amenity: string) { emit('update', { ...props.listing, amenities: [...props.listing.amenities, amenity] }) }
@@ -43,7 +60,9 @@ const allOtas = ['Airbnb', 'Booking.com']
 <template>
   <div class="flex flex-col gap-6">
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Distribution Channels</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Distribution Channels
+      </h3>
       <div class="flex flex-col gap-3">
         <div v-for="ota in allOtas" :key="ota" class="flex items-center justify-between rounded-lg border p-4">
           <div class="flex items-center gap-3">

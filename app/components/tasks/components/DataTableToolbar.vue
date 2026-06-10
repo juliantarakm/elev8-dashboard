@@ -2,9 +2,9 @@
 import type { Table } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
 import { computed } from 'vue'
+import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { priorities, statuses } from '../data/data'
 import { shortListingName } from './columns'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import DataTableFacetedFilter from './DataTableFacetedFilter.vue'
 import DataTableViewOptions from './DataTableViewOptions.vue'
 

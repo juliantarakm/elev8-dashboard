@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UpsellOffer } from '~/components/inbox/data/conversations'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import { toast } from 'vue-sonner'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 interface UpsellOfferCardProps {
   offer: UpsellOffer
@@ -45,11 +45,15 @@ const sb = computed(() => statusConfig[props.offer.status] ?? statusConfig.pendi
             <Icon name="lucide:shopping-bag" class="size-3.5 text-primary" />
           </div>
           <div>
-            <p class="text-xs font-semibold">{{ offer.serviceName }}</p>
-            <p class="text-[10px] text-muted-foreground">{{ offer.serviceCategory }} · {{ offer.serviceDate }}</p>
+            <p class="text-xs font-semibold">
+              {{ offer.serviceName }}
+            </p>
+            <p class="text-[10px] text-muted-foreground">
+              {{ offer.serviceCategory }} · {{ offer.serviceDate }}
+            </p>
           </div>
         </div>
-        <Badge variant="outline" :class="['text-[10px] font-medium gap-1', sb.class]">
+        <Badge variant="outline" class="text-[10px] font-medium gap-1" :class="[sb.class]">
           <Icon :name="sb.icon" class="size-3" />
           {{ sb.label }}
         </Badge>

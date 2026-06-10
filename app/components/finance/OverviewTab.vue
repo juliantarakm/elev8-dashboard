@@ -2,9 +2,9 @@
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useCosts } from '@/composables/useCosts'
+import { useJurnal } from '@/composables/useJurnal'
 import { useReservations } from '@/composables/useReservations'
 import { useUpsells } from '@/composables/useUpsells'
-import { useJurnal } from '@/composables/useJurnal'
 
 const { costs } = useCosts()
 const { reservations } = useReservations()
@@ -124,7 +124,8 @@ const costTypeDotClass: Record<string, string> = {
 const isPushingAll = ref(false)
 
 async function pushAll() {
-  if (isPushingAll.value || !isConnected.value) return
+  if (isPushingAll.value || !isConnected.value)
+    return
   isPushingAll.value = true
   await Promise.all([
     costs.value.some(c => !c.synced) ? pushCosts() : Promise.resolve(),
@@ -141,8 +142,8 @@ const isAnyPushing = computed(() =>
 
 const channelIcon: Record<string, string> = {
   'Booking.com': 'i-lucide-globe',
-  Airbnb: 'i-lucide-home',
-  Direct: 'i-lucide-link',
+  'Airbnb': 'i-lucide-home',
+  'Direct': 'i-lucide-link',
 }
 
 // ── Recent Activity ────────────────────────────────────────────────────────
@@ -247,12 +248,18 @@ const recentActivity = computed<ActivityRow[]>(() => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead class="w-24">Source</TableHead>
-            <TableHead class="w-28">Date</TableHead>
+            <TableHead class="w-24">
+              Source
+            </TableHead>
+            <TableHead class="w-28">
+              Date
+            </TableHead>
             <TableHead>Guest / Staff</TableHead>
             <TableHead>Listing</TableHead>
             <TableHead>Detail</TableHead>
-            <TableHead class="text-right">Amount</TableHead>
+            <TableHead class="text-right">
+              Amount
+            </TableHead>
             <TableHead>Type</TableHead>
           </TableRow>
         </TableHeader>
@@ -268,8 +275,12 @@ const recentActivity = computed<ActivityRow[]>(() => {
                 {{ sourceLabel[row._type] }}
               </span>
             </TableCell>
-            <TableCell class="tabular-nums text-sm text-muted-foreground">{{ row.date }}</TableCell>
-            <TableCell class="font-medium">{{ row.description }}</TableCell>
+            <TableCell class="tabular-nums text-sm text-muted-foreground">
+              {{ row.date }}
+            </TableCell>
+            <TableCell class="font-medium">
+              {{ row.description }}
+            </TableCell>
             <TableCell class="max-w-44 truncate text-muted-foreground" :title="row.listing">
               {{ row.listing }}
             </TableCell>
@@ -283,7 +294,9 @@ const recentActivity = computed<ActivityRow[]>(() => {
                 {{ row.detail }}
               </span>
             </TableCell>
-            <TableCell class="text-right font-semibold tabular-nums">{{ row.amount }}</TableCell>
+            <TableCell class="text-right font-semibold tabular-nums">
+              {{ row.amount }}
+            </TableCell>
             <TableCell>
               <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium" :class="row.badgeClass">
                 <span v-if="row._type === 'cost'" class="h-1.5 w-1.5 rounded-full" :class="costTypeDotClass[row.badge]" />
@@ -305,14 +318,22 @@ const recentActivity = computed<ActivityRow[]>(() => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead class="w-24">Source</TableHead>
-            <TableHead class="w-28">Date</TableHead>
+            <TableHead class="w-24">
+              Source
+            </TableHead>
+            <TableHead class="w-28">
+              Date
+            </TableHead>
             <TableHead>Guest / Staff</TableHead>
             <TableHead>Listing</TableHead>
             <TableHead>Detail</TableHead>
-            <TableHead class="text-right">Amount</TableHead>
+            <TableHead class="text-right">
+              Amount
+            </TableHead>
             <TableHead>Type</TableHead>
-            <TableHead class="w-20 text-center">Synced</TableHead>
+            <TableHead class="w-20 text-center">
+              Synced
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -322,8 +343,12 @@ const recentActivity = computed<ActivityRow[]>(() => {
                 {{ sourceLabel[row._type] }}
               </span>
             </TableCell>
-            <TableCell class="tabular-nums text-sm text-muted-foreground">{{ row.date }}</TableCell>
-            <TableCell class="font-medium">{{ row.description }}</TableCell>
+            <TableCell class="tabular-nums text-sm text-muted-foreground">
+              {{ row.date }}
+            </TableCell>
+            <TableCell class="font-medium">
+              {{ row.description }}
+            </TableCell>
             <TableCell class="max-w-44 truncate text-muted-foreground" :title="row.listing">
               {{ row.listing }}
             </TableCell>
@@ -337,7 +362,9 @@ const recentActivity = computed<ActivityRow[]>(() => {
                 {{ row.detail }}
               </span>
             </TableCell>
-            <TableCell class="text-right font-semibold tabular-nums">{{ row.amount }}</TableCell>
+            <TableCell class="text-right font-semibold tabular-nums">
+              {{ row.amount }}
+            </TableCell>
             <TableCell>
               <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium" :class="row.badgeClass">
                 <span v-if="row._type === 'cost'" class="h-1.5 w-1.5 rounded-full" :class="costTypeDotClass[row.badge]" />

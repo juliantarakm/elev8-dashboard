@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { CleaningJobPriority, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
 import { toast } from 'vue-sonner'
 import CleaningCalendarBoard from '~/components/cleaning/CleaningCalendarBoard.vue'
 import CleaningFilters from '~/components/cleaning/CleaningFilters.vue'
 import CleaningJobForm from '~/components/cleaning/CleaningJobForm.vue'
 import { useCleaningJobs } from '~/composables/useCleaningJobs'
-import type { CleaningJobPriority, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
 
 const { jobs, jobsForFilters, createJob, updateJob, resolveCleanerName, resolveListingName } = useCleaningJobs()
 
@@ -38,7 +38,8 @@ function handleCreate(input: Parameters<typeof createJob>[0]) {
 }
 
 function handleUpdate(input: Parameters<typeof createJob>[0]) {
-  if (!editingJob.value) return
+  if (!editingJob.value)
+    return
   updateJob(editingJob.value.id, {
     ...input,
     cleanerName: input.cleanerId ? resolveCleanerName(input.cleanerId) : null,
@@ -51,7 +52,8 @@ function handleUpdate(input: Parameters<typeof createJob>[0]) {
 
 function handleMove(payload: { id: string, listingId: string, scheduledAt: string }) {
   const job = jobs.value.find(item => item.id === payload.id)
-  if (!job) return
+  if (!job)
+    return
   updateJob(job.id, {
     listingId: payload.listingId,
     listingName: resolveListingName(payload.listingId),
@@ -72,14 +74,22 @@ function clearFilters() {
   <div class="w-full flex flex-col gap-4">
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
-        <h2 class="text-2xl font-bold tracking-tight">Cleaning Calendar</h2>
-        <p class="text-muted-foreground">Dedicated multi-listing scheduler for housekeeping operations.</p>
+        <h2 class="text-2xl font-bold tracking-tight">
+          Cleaning Calendar
+        </h2>
+        <p class="text-muted-foreground">
+          Dedicated multi-listing scheduler for housekeeping operations.
+        </p>
       </div>
       <div class="flex items-center gap-2">
         <Tabs v-model="view">
           <TabsList>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+            <TabsTrigger value="week">
+              Week
+            </TabsTrigger>
+            <TabsTrigger value="agenda">
+              Agenda
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Button @click="createOpen = true">

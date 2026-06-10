@@ -18,7 +18,7 @@ const categories: Category[] = ['All', 'Guided Stays', 'Revenue', 'Verification'
 const filtered = computed(() =>
   activeCategory.value === 'All'
     ? marketplaceTemplates
-    : marketplaceTemplates.filter(t => t.category === activeCategory.value)
+    : marketplaceTemplates.filter(t => t.category === activeCategory.value),
 )
 
 const categoryIcon: Record<string, string> = {
@@ -35,7 +35,7 @@ const categoryBadgeClass: Record<string, string> = {
   'Community': 'text-violet-700 bg-violet-50',
 }
 
-const stepMeta: Record<string, { icon: string; colorClasses: string }> = {
+const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
   trigger: { icon: 'i-lucide-zap', colorClasses: 'text-purple-500 bg-purple-50 dark:bg-purple-950' },
   wait: { icon: 'i-lucide-clock', colorClasses: 'text-muted-foreground bg-muted' },
   message: { icon: 'i-lucide-message-square', colorClasses: 'text-green-600 bg-green-50 dark:bg-green-950' },
@@ -61,8 +61,12 @@ function handleInstall(template: MarketplaceTemplate) {
         <Icon name="i-lucide-arrow-left" class="h-4 w-4" />
       </Button>
       <div>
-        <h2 class="text-lg font-semibold leading-none">Journey Marketplace</h2>
-        <p class="text-xs text-muted-foreground mt-0.5">Pre-built Journeys ready to install and customize.</p>
+        <h2 class="text-lg font-semibold leading-none">
+          Journey Marketplace
+        </h2>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Pre-built Journeys ready to install and customize.
+        </p>
       </div>
     </div>
 
@@ -71,8 +75,7 @@ function handleInstall(template: MarketplaceTemplate) {
         <button
           v-for="cat in categories"
           :key="cat"
-          :class="[
-            'rounded-full border px-3 py-1.5 text-sm transition-colors',
+          class="rounded-full border px-3 py-1.5 text-sm transition-colors" :class="[
             activeCategory === cat
               ? 'bg-primary text-primary-foreground border-primary'
               : 'text-muted-foreground hover:border-primary hover:text-primary',
@@ -96,14 +99,18 @@ function handleInstall(template: MarketplaceTemplate) {
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-sm">{{ template.name }}</span>
-                <span :class="['rounded-full px-2 py-0.5 text-xs font-medium', categoryBadgeClass[template.category]]">
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="[categoryBadgeClass[template.category]]">
                   {{ template.category }}
                 </span>
               </div>
-              <p class="text-xs text-muted-foreground mt-0.5">{{ template.stepCount }} steps</p>
+              <p class="text-xs text-muted-foreground mt-0.5">
+                {{ template.stepCount }} steps
+              </p>
             </div>
           </div>
-          <p class="text-sm text-muted-foreground flex-1 mb-4">{{ template.description }}</p>
+          <p class="text-sm text-muted-foreground flex-1 mb-4">
+            {{ template.description }}
+          </p>
           <div class="flex gap-2">
             <Button variant="outline" size="sm" class="flex-1" @click="openPreview(template)">
               Preview
@@ -132,8 +139,7 @@ function handleInstall(template: MarketplaceTemplate) {
             >
               <div class="flex flex-col items-center">
                 <div
-                  :class="[
-                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" :class="[
                     stepMeta[step.type]?.colorClasses,
                   ]"
                 >
@@ -157,7 +163,9 @@ function handleInstall(template: MarketplaceTemplate) {
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" @click="previewOpen = false">Close</Button>
+          <Button variant="outline" @click="previewOpen = false">
+            Close
+          </Button>
           <Button @click="previewTemplate && handleInstall(previewTemplate)">
             <Icon name="i-lucide-download" class="mr-2 h-4 w-4" />
             Install

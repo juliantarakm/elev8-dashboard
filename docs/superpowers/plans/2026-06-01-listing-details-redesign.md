@@ -51,7 +51,7 @@ export interface ListingPricing {
   serviceFee: number
   weeklyDiscount: number
   monthlyDiscount: number
-  seasonalRates: Array<{ startDate: string; endDate: string; rate: number; label: string }>
+  seasonalRates: Array<{ startDate: string, endDate: string, rate: number, label: string }>
 }
 
 export interface Booking {
@@ -90,7 +90,7 @@ export interface MaintenanceTask {
 }
 
 export interface ListingMaintenance {
-  cleaningSchedule: Array<{ task: string; frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' }>
+  cleaningSchedule: Array<{ task: string, frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' }>
   tasks: MaintenanceTask[]
 }
 ```
@@ -221,12 +221,14 @@ function otaIcon(ota: string) {
 
     <div class="flex items-center gap-4">
       <div class="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-        <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover" />
+        <img :src="listing.photos[0]" :alt="listing.name" class="size-full object-cover">
       </div>
 
       <div class="flex flex-col gap-1.5">
         <div class="flex items-center gap-2">
-          <h1 class="text-xl font-semibold tracking-tight">{{ listing.name }}</h1>
+          <h1 class="text-xl font-semibold tracking-tight">
+            {{ listing.name }}
+          </h1>
           <Badge :variant="listing.aiStatus === 'active' ? 'default' : 'secondary'" class="text-xs shrink-0">
             <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-3 mr-1" />
             {{ aiStatusLabel[listing.aiStatus] }}
@@ -332,7 +334,9 @@ function renderStars(rating: number) {
       <!-- Upcoming Bookings -->
       <Card class="p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold">Upcoming Bookings</h3>
+          <h3 class="text-sm font-semibold">
+            Upcoming Bookings
+          </h3>
           <Button variant="link" size="sm" class="h-auto p-0 text-xs" @click="emit('switchTab', 'calendar')">
             View Calendar →
           </Button>
@@ -360,7 +364,9 @@ function renderStars(rating: number) {
       <!-- Recent Reviews -->
       <Card class="p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold">Recent Reviews</h3>
+          <h3 class="text-sm font-semibold">
+            Recent Reviews
+          </h3>
           <Button variant="link" size="sm" class="h-auto p-0 text-xs" @click="emit('switchTab', 'reviews')">
             View All →
           </Button>
@@ -375,7 +381,9 @@ function renderStars(rating: number) {
               <span class="text-sm font-medium">{{ review.guestName }}</span>
               <span class="text-xs text-amber-500">{{ renderStars(review.rating) }}</span>
             </div>
-            <p class="text-xs text-muted-foreground line-clamp-2">{{ review.text }}</p>
+            <p class="text-xs text-muted-foreground line-clamp-2">
+              {{ review.text }}
+            </p>
           </div>
           <div v-if="recentReviews.length === 0" class="text-sm text-muted-foreground text-center py-4">
             No reviews yet
@@ -431,7 +439,9 @@ function savePricing() {
   <div class="flex flex-col gap-6">
     <!-- Base Pricing -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Base Pricing</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Base Pricing
+      </h3>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="flex flex-col gap-1.5">
           <Label>Nightly Rate ($)</Label>
@@ -450,7 +460,9 @@ function savePricing() {
 
     <!-- Discounts -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Discounts</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Discounts
+      </h3>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-1.5">
           <Label>Weekly Discount (%)</Label>
@@ -465,7 +477,9 @@ function savePricing() {
 
     <!-- Seasonal Rates -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Seasonal Rates</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Seasonal Rates
+      </h3>
       <Table v-if="listing.pricing.seasonalRates.length > 0">
         <TableHeader>
           <TableRow>
@@ -476,17 +490,25 @@ function savePricing() {
         </TableHeader>
         <TableBody>
           <TableRow v-for="season in listing.pricing.seasonalRates" :key="season.label">
-            <TableCell class="font-medium">{{ season.label }}</TableCell>
-            <TableCell class="text-muted-foreground">{{ season.startDate }} → {{ season.endDate }}</TableCell>
+            <TableCell class="font-medium">
+              {{ season.label }}
+            </TableCell>
+            <TableCell class="text-muted-foreground">
+              {{ season.startDate }} → {{ season.endDate }}
+            </TableCell>
             <TableCell>${{ season.rate }}/night</TableCell>
           </TableRow>
         </TableBody>
       </Table>
-      <p v-else class="text-sm text-muted-foreground">No seasonal rates configured.</p>
+      <p v-else class="text-sm text-muted-foreground">
+        No seasonal rates configured.
+      </p>
     </Card>
 
     <div class="flex justify-end">
-      <Button @click="savePricing">Save Pricing</Button>
+      <Button @click="savePricing">
+        Save Pricing
+      </Button>
     </div>
   </div>
 </template>
@@ -510,8 +532,9 @@ git commit -m "feat(listings): add pricing tab component"
 
 ```vue
 <script setup lang="ts">
+import type { DateValue } from '@internationalized/date'
 import type { Listing } from '~/components/listings/data/listings'
-import { type DateValue, today, getLocalTimeZone } from '@internationalized/date'
+import { getLocalTimeZone, today } from '@internationalized/date'
 
 const props = defineProps<{ listing: Listing }>()
 
@@ -536,7 +559,9 @@ const sortedBookings = computed(() =>
   <div class="flex flex-col gap-6">
     <!-- Calendar -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Availability</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Availability
+      </h3>
       <div class="flex justify-center">
         <Calendar v-model="selectedDate" class="rounded-md border" />
       </div>
@@ -544,7 +569,9 @@ const sortedBookings = computed(() =>
 
     <!-- Bookings List -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">All Bookings</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        All Bookings
+      </h3>
       <div class="flex flex-col gap-3">
         <div
           v-for="booking in sortedBookings"
@@ -573,13 +600,17 @@ const sortedBookings = computed(() =>
 
     <!-- Blocked Dates -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Blocked Dates</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Blocked Dates
+      </h3>
       <div v-if="listing.blockedDates.length > 0" class="flex flex-wrap gap-2">
         <Badge v-for="date in listing.blockedDates" :key="date" variant="outline" class="text-xs">
           {{ formatDate(date) }}
         </Badge>
       </div>
-      <p v-else class="text-sm text-muted-foreground">No blocked dates.</p>
+      <p v-else class="text-sm text-muted-foreground">
+        No blocked dates.
+      </p>
     </Card>
   </div>
 </template>
@@ -612,7 +643,8 @@ const filterRating = ref<number | null>(null)
 
 const avgCategories = computed(() => {
   const reviews = props.listing.reviews
-  if (reviews.length === 0) return { cleanliness: 0, communication: 0, location: 0, value: 0 }
+  if (reviews.length === 0)
+    return { cleanliness: 0, communication: 0, location: 0, value: 0 }
   const sum = reviews.reduce((acc, r) => ({
     cleanliness: acc.cleanliness + r.categories.cleanliness,
     communication: acc.communication + r.categories.communication,
@@ -624,7 +656,8 @@ const avgCategories = computed(() => {
 })
 
 const filteredReviews = computed(() => {
-  if (filterRating.value === null) return props.listing.reviews
+  if (filterRating.value === null)
+    return props.listing.reviews
   return props.listing.reviews.filter(r => r.rating === filterRating.value)
 })
 
@@ -632,7 +665,8 @@ const replyText = ref<Record<string, string>>({})
 
 function submitReply(reviewId: string) {
   const text = replyText.value[reviewId]
-  if (!text?.trim()) return
+  if (!text?.trim())
+    return
   const updatedReviews = props.listing.reviews.map(r =>
     r.id === reviewId ? { ...r, hostReply: text.trim() } : r
   )
@@ -655,8 +689,12 @@ function formatDate(dateStr: string) {
     <Card class="p-5">
       <div class="flex items-center gap-6 mb-4">
         <div class="text-center">
-          <div class="text-3xl font-bold">{{ listing.stats.avgRating }}</div>
-          <div class="text-xs text-muted-foreground">{{ listing.stats.totalReviews }} reviews</div>
+          <div class="text-3xl font-bold">
+            {{ listing.stats.avgRating }}
+          </div>
+          <div class="text-xs text-muted-foreground">
+            {{ listing.stats.totalReviews }} reviews
+          </div>
         </div>
         <div class="flex-1 grid grid-cols-2 gap-3">
           <div v-for="(value, key) in avgCategories" :key="key" class="flex flex-col gap-1">
@@ -677,7 +715,9 @@ function formatDate(dateStr: string) {
         size="sm"
         :class="filterRating === null ? 'border-primary' : ''"
         @click="filterRating = null"
-      >All</Button>
+      >
+        All
+      </Button>
       <Button
         v-for="r in [5, 4, 3, 2, 1]"
         :key="r"
@@ -685,7 +725,9 @@ function formatDate(dateStr: string) {
         size="sm"
         :class="filterRating === r ? 'border-primary' : ''"
         @click="filterRating = r"
-      >{{ r }}★</Button>
+      >
+        {{ r }}★
+      </Button>
     </div>
 
     <!-- Reviews List -->
@@ -698,12 +740,16 @@ function formatDate(dateStr: string) {
           </div>
           <span class="text-sm text-amber-500">{{ renderStars(review.rating) }}</span>
         </div>
-        <p class="text-sm text-muted-foreground mb-3">{{ review.text }}</p>
+        <p class="text-sm text-muted-foreground mb-3">
+          {{ review.text }}
+        </p>
 
         <!-- Host Reply -->
         <div v-if="review.hostReply" class="rounded-lg bg-muted p-3 mt-2">
           <span class="text-xs font-medium">Host Reply:</span>
-          <p class="text-xs text-muted-foreground mt-1">{{ review.hostReply }}</p>
+          <p class="text-xs text-muted-foreground mt-1">
+            {{ review.hostReply }}
+          </p>
         </div>
 
         <!-- Reply Form -->
@@ -713,7 +759,9 @@ function formatDate(dateStr: string) {
             placeholder="Write a reply..."
             class="min-h-[60px] text-xs"
           />
-          <Button size="sm" class="shrink-0 self-end" @click="submitReply(review.id)">Reply</Button>
+          <Button size="sm" class="shrink-0 self-end" @click="submitReply(review.id)">
+            Reply
+          </Button>
         </div>
       </Card>
 
@@ -768,7 +816,8 @@ const pendingTasks = computed(() => props.listing.maintenance.tasks.filter(t => 
 const completedTasks = computed(() => props.listing.maintenance.tasks.filter(t => t.status === 'completed'))
 
 function addTask() {
-  if (!newTask.value.title.trim()) return
+  if (!newTask.value.title.trim())
+    return
   const task: MaintenanceTask = {
     id: `mt-${Date.now()}`,
     title: newTask.value.title.trim(),
@@ -794,7 +843,9 @@ function formatDate(dateStr: string) {
   <div class="flex flex-col gap-6">
     <!-- Cleaning Schedule -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Cleaning Schedule</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Cleaning Schedule
+      </h3>
       <Table v-if="listing.maintenance.cleaningSchedule.length > 0">
         <TableHeader>
           <TableRow>
@@ -804,20 +855,28 @@ function formatDate(dateStr: string) {
         </TableHeader>
         <TableBody>
           <TableRow v-for="item in listing.maintenance.cleaningSchedule" :key="item.task">
-            <TableCell class="font-medium">{{ item.task }}</TableCell>
+            <TableCell class="font-medium">
+              {{ item.task }}
+            </TableCell>
             <TableCell>
-              <Badge variant="outline" class="text-xs">{{ frequencyLabels[item.frequency] }}</Badge>
+              <Badge variant="outline" class="text-xs">
+                {{ frequencyLabels[item.frequency] }}
+              </Badge>
             </TableCell>
           </TableRow>
         </TableBody>
       </Table>
-      <p v-else class="text-sm text-muted-foreground">No cleaning schedule configured.</p>
+      <p v-else class="text-sm text-muted-foreground">
+        No cleaning schedule configured.
+      </p>
     </Card>
 
     <!-- Upcoming Tasks -->
     <Card class="p-5">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold">Upcoming Tasks</h3>
+        <h3 class="text-sm font-semibold">
+          Upcoming Tasks
+        </h3>
         <Dialog v-model:open="showAddDialog">
           <DialogTrigger as-child>
             <Button size="sm" variant="outline" class="h-7 gap-1 text-xs">
@@ -843,15 +902,23 @@ function formatDate(dateStr: string) {
                 <Select v-model="newTask.type">
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cleaning">Cleaning</SelectItem>
-                    <SelectItem value="repair">Repair</SelectItem>
-                    <SelectItem value="inspection">Inspection</SelectItem>
+                    <SelectItem value="cleaning">
+                      Cleaning
+                    </SelectItem>
+                    <SelectItem value="repair">
+                      Repair
+                    </SelectItem>
+                    <SelectItem value="inspection">
+                      Inspection
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button @click="addTask">Add Task</Button>
+              <Button @click="addTask">
+                Add Task
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -868,19 +935,25 @@ function formatDate(dateStr: string) {
             <span class="text-xs text-muted-foreground">{{ formatDate(task.date) }} · {{ task.assignedTo }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Badge variant="outline" class="text-xs capitalize">{{ task.type }}</Badge>
+            <Badge variant="outline" class="text-xs capitalize">
+              {{ task.type }}
+            </Badge>
             <Badge :variant="statusColors[task.status] as any" class="text-xs capitalize">
               {{ task.status.replace('_', ' ') }}
             </Badge>
           </div>
         </div>
-        <p v-if="pendingTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">No pending tasks.</p>
+        <p v-if="pendingTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">
+          No pending tasks.
+        </p>
       </div>
     </Card>
 
     <!-- Completed Tasks -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Completed</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Completed
+      </h3>
       <div class="flex flex-col gap-3">
         <div
           v-for="task in completedTasks"
@@ -891,9 +964,13 @@ function formatDate(dateStr: string) {
             <span class="text-sm font-medium line-through">{{ task.title }}</span>
             <span class="text-xs text-muted-foreground">{{ formatDate(task.date) }} · {{ task.assignedTo }}</span>
           </div>
-          <Badge variant="outline" class="text-xs capitalize">{{ task.type }}</Badge>
+          <Badge variant="outline" class="text-xs capitalize">
+            {{ task.type }}
+          </Badge>
         </div>
-        <p v-if="completedTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">No completed tasks.</p>
+        <p v-if="completedTasks.length === 0" class="text-sm text-muted-foreground text-center py-4">
+          No completed tasks.
+        </p>
       </div>
     </Card>
   </div>
@@ -944,16 +1021,33 @@ function saveDetails() {
 
 // Amenities
 const allAmenities = [
-  'Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden', 'Beach Access',
-  'Rooftop Deck', 'Plunge Pool', 'Yoga Deck', 'Hammock Deck', 'Nature Bath',
-  'Ocean View', 'Cliff Deck', 'Surfboard Storage', 'Mountain View', 'Hot Tub',
-  'Fireplace', 'River View', 'Bamboo Construction',
+  'Pool',
+  'WiFi',
+  'AC',
+  'Kitchen',
+  'Parking',
+  'Garden',
+  'Beach Access',
+  'Rooftop Deck',
+  'Plunge Pool',
+  'Yoga Deck',
+  'Hammock Deck',
+  'Nature Bath',
+  'Ocean View',
+  'Cliff Deck',
+  'Surfboard Storage',
+  'Mountain View',
+  'Hot Tub',
+  'Fireplace',
+  'River View',
+  'Bamboo Construction',
 ]
 const amenitySearch = ref('')
 const amenityPopoverOpen = ref(false)
 const filteredAmenities = computed(() => {
   const available = allAmenities.filter(a => !props.listing.amenities.includes(a))
-  if (!amenitySearch.value) return available
+  if (!amenitySearch.value)
+    return available
   return available.filter(a => a.toLowerCase().includes(amenitySearch.value.toLowerCase()))
 })
 function addAmenity(amenity: string) { emit('update', { ...props.listing, amenities: [...props.listing.amenities, amenity] }) }
@@ -983,8 +1077,8 @@ function toggleDay(day: number) {
 }
 
 const previewHours = computed(() => {
-  const start = parseInt(schedule.value.activeHours.start.split(':')[0])
-  const end = parseInt(schedule.value.activeHours.end.split(':')[0])
+  const start = Number.parseInt(schedule.value.activeHours.start.split(':')[0])
+  const end = Number.parseInt(schedule.value.activeHours.end.split(':')[0])
   return Array.from({ length: 24 }, (_, i) => ({
     hour: i,
     active: start <= end ? (i >= start && i < end) : (i >= start || i < end),
@@ -996,7 +1090,9 @@ const previewHours = computed(() => {
   <div class="flex flex-col gap-6">
     <!-- Property Details -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Property Details</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Property Details
+      </h3>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-1.5">
           <Label>Listing Name</Label>
@@ -1020,7 +1116,9 @@ const previewHours = computed(() => {
         </div>
       </div>
       <div class="flex justify-end mt-4">
-        <Button size="sm" @click="saveDetails">Save Changes</Button>
+        <Button size="sm" @click="saveDetails">
+          Save Changes
+        </Button>
       </div>
     </Card>
 
@@ -1029,7 +1127,9 @@ const previewHours = computed(() => {
     <!-- Amenities -->
     <Card class="p-5">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold">Amenities</h3>
+        <h3 class="text-sm font-semibold">
+          Amenities
+        </h3>
         <Popover v-model:open="amenityPopoverOpen">
           <PopoverTrigger as-child>
             <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs">
@@ -1048,8 +1148,12 @@ const previewHours = computed(() => {
                   :key="amenity"
                   class="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                   @click="addAmenity(amenity)"
-                >{{ amenity }}</div>
-                <p v-if="filteredAmenities.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">No amenities found.</p>
+                >
+                  {{ amenity }}
+                </div>
+                <p v-if="filteredAmenities.length === 0" class="px-2 py-1.5 text-xs text-muted-foreground">
+                  No amenities found.
+                </p>
               </div>
             </ScrollArea>
           </PopoverContent>
@@ -1073,7 +1177,9 @@ const previewHours = computed(() => {
 
     <!-- Distribution Channels -->
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Distribution Channels</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Distribution Channels
+      </h3>
       <div class="flex flex-col gap-3">
         <div v-for="ota in allOtas" :key="ota" class="flex items-center justify-between rounded-lg border p-4">
           <div class="flex items-center gap-3">
@@ -1097,8 +1203,12 @@ const previewHours = computed(() => {
             <Icon :name="listing.aiStatus === 'active' ? 'lucide:bot' : 'lucide:bot-off'" class="size-5" :class="listing.aiStatus === 'active' ? 'text-[#C8A84B]' : 'text-muted-foreground'" />
           </div>
           <div>
-            <p class="text-sm font-semibold">ElevAI {{ listing.aiStatus === 'active' ? 'Active' : 'Paused' }}</p>
-            <p class="text-xs text-muted-foreground">Automated guest messaging</p>
+            <p class="text-sm font-semibold">
+              ElevAI {{ listing.aiStatus === 'active' ? 'Active' : 'Paused' }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Automated guest messaging
+            </p>
           </div>
         </div>
         <Switch :checked="listing.aiStatus === 'active'" @update:checked="toggleAi" />
@@ -1108,10 +1218,16 @@ const previewHours = computed(() => {
         <div class="flex flex-col gap-2">
           <Label>Repeat</Label>
           <Select :model-value="schedule.repeatType" @update:model-value="(val: string) => updateSchedule({ repeatType: val as 'weekly' | 'monthly' })">
-            <SelectTrigger class="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger class="w-40">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="weekly">
+                Weekly
+              </SelectItem>
+              <SelectItem value="monthly">
+                Monthly
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -1127,7 +1243,9 @@ const previewHours = computed(() => {
               class="h-9 w-12 text-xs"
               :class="schedule.activeDays.includes(index) ? 'border-primary text-primary bg-primary/5' : ''"
               @click="toggleDay(index)"
-            >{{ day }}</Button>
+            >
+              {{ day }}
+            </Button>
           </div>
         </div>
 
@@ -1135,21 +1253,31 @@ const previewHours = computed(() => {
           <Label>Active Hours</Label>
           <div class="flex items-center gap-3">
             <Select :model-value="schedule.activeHours.start" @update:model-value="(val: string) => updateSchedule({ activeHours: { ...schedule.activeHours, start: val } })">
-              <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
+              <SelectTrigger class="w-28">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                <SelectItem v-for="h in hours" :key="h" :value="h">
+                  {{ h }}
+                </SelectItem>
               </SelectContent>
             </Select>
             <span class="text-sm text-muted-foreground">to</span>
             <Select :model-value="schedule.activeHours.end" @update:model-value="(val: string) => updateSchedule({ activeHours: { ...schedule.activeHours, end: val } })">
-              <SelectTrigger class="w-28"><SelectValue /></SelectTrigger>
+              <SelectTrigger class="w-28">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="h in hours" :key="h" :value="h">{{ h }}</SelectItem>
+                <SelectItem v-for="h in hours" :key="h" :value="h">
+                  {{ h }}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div class="mt-2">
-            <p class="text-xs text-muted-foreground mb-2">24h Preview</p>
+            <p class="text-xs text-muted-foreground mb-2">
+              24h Preview
+            </p>
             <div class="flex gap-0.5">
               <div
                 v-for="item in previewHours"
@@ -1187,12 +1315,12 @@ git commit -m "feat(listings): add settings tab component (property + amenities 
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 import { listings } from '~/components/listings/data/listings'
+import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingHeroCompact from '~/components/listings/ListingHeroCompact.vue'
+import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingOverviewTab from '~/components/listings/ListingOverviewTab.vue'
 import ListingPricingTab from '~/components/listings/ListingPricingTab.vue'
-import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingReviewsTab from '~/components/listings/ListingReviewsTab.vue'
-import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
 import ListingSettingsTab from '~/components/listings/ListingSettingsTab.vue'
 
 definePageMeta({ layout: 'default' })
@@ -1215,7 +1343,9 @@ const activeTab = ref('overview')
 <template>
   <div v-if="!listing" class="flex flex-col items-center justify-center gap-4 py-24">
     <Icon name="lucide:alert-circle" class="size-12 text-muted-foreground" />
-    <h2 class="text-lg font-semibold">Listing not found</h2>
+    <h2 class="text-lg font-semibold">
+      Listing not found
+    </h2>
     <Button variant="outline" size="sm" @click="router.push('/listings')">
       <Icon name="lucide:arrow-left" class="size-4" />
       Back to Listings

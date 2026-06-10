@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { SmartAction, GuestSentiment } from '~/components/inbox/data/conversations'
+import type { GuestSentiment, SmartAction } from '~/components/inbox/data/conversations'
 
 interface ReservationSummaryProps {
   sentiment: GuestSentiment
@@ -25,12 +25,16 @@ const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimen
     <div class="rounded-lg border bg-muted/50 p-3 space-y-2">
       <div class="flex items-center justify-between">
         <span class="text-sm font-medium">Conversation Summary</span>
-        <Badge class="text-[10px] bg-[#FBC800]/10 text-[#FBC800] border-[#FBC800]/30">ElevAI</Badge>
+        <Badge class="text-[10px] bg-[#FBC800]/10 text-[#FBC800] border-[#FBC800]/30">
+          ElevAI
+        </Badge>
       </div>
-      <p class="text-xs text-muted-foreground leading-relaxed">{{ sentimentNote }}</p>
+      <p class="text-xs text-muted-foreground leading-relaxed">
+        {{ sentimentNote }}
+      </p>
       <div class="flex items-center gap-2">
         <span class="text-xs leading-none">{{ sentimentCfg.emoji }}</span>
-        <span :class="['inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', sentimentCfg.class]">
+        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium" :class="[sentimentCfg.class]">
           {{ sentimentCfg.label }}
         </span>
       </div>
@@ -39,7 +43,9 @@ const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimen
     <div v-if="smartActions.length > 0" class="space-y-2">
       <div class="flex items-center gap-2 text-sm font-medium">
         Action Needed
-        <Badge variant="destructive" class="text-[10px]">{{ smartActions.length }}</Badge>
+        <Badge variant="destructive" class="text-[10px]">
+          {{ smartActions.length }}
+        </Badge>
       </div>
       <InboxActionCard
         v-for="action of smartActions"

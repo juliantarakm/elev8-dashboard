@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { toast } from 'vue-sonner'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import {
+  getOrderStatusMeta,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
-  getOrderStatusMeta,
 } from '@/components/upsells/data/upsell-orders'
-import type { UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const props = defineProps<{
   order: UpsellOrder | null
@@ -22,7 +22,8 @@ const showCancelModal = ref(false)
 const { orders, approveOrder, markPaid, startFulfillment, completeFulfillment, reopenDeclinedOrder } = useUpsellOrders()
 
 const order = computed(() => {
-  if (!props.order) return null
+  if (!props.order)
+    return null
   return orders.value.find(o => o.id === props.order!.id) ?? null
 })
 
@@ -33,31 +34,36 @@ function onOpenChange(value: boolean) {
 }
 
 function handleApprove() {
-  if (!order.value) return
+  if (!order.value)
+    return
   approveOrder(order.value.id)
   toast.success('Order approved and payment link sent.')
 }
 
 function handlePaid() {
-  if (!order.value) return
+  if (!order.value)
+    return
   markPaid(order.value.id, 'manual')
   toast.success('Order marked as paid.')
 }
 
 function handleStart() {
-  if (!order.value) return
+  if (!order.value)
+    return
   startFulfillment(order.value.id)
   toast.success('Fulfillment started.')
 }
 
 function handleComplete() {
-  if (!order.value) return
+  if (!order.value)
+    return
   completeFulfillment(order.value.id)
   toast.success('Order marked as completed.')
 }
 
 function handleReopen() {
-  if (!order.value) return
+  if (!order.value)
+    return
   reopenDeclinedOrder(order.value.id)
   toast.success('Order reopened.')
 }
@@ -93,8 +99,12 @@ function formatCurrency(amount: number, currency: string) {
                 {{ order.guestName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }}
               </div>
               <div>
-                <p class="text-sm font-medium">{{ order.guestName }}</p>
-                <p class="text-xs text-muted-foreground">{{ order.guestEmail }}</p>
+                <p class="text-sm font-medium">
+                  {{ order.guestName }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ order.guestEmail }}
+                </p>
               </div>
             </div>
           </div>
@@ -130,23 +140,33 @@ function formatCurrency(amount: number, currency: string) {
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span class="text-muted-foreground">Reservation</span>
-                <p class="font-medium">{{ order.reservationId }}</p>
+                <p class="font-medium">
+                  {{ order.reservationId }}
+                </p>
               </div>
               <div>
                 <span class="text-muted-foreground">Channel</span>
-                <p class="font-medium">{{ order.channel }}</p>
+                <p class="font-medium">
+                  {{ order.channel }}
+                </p>
               </div>
               <div>
                 <span class="text-muted-foreground">Check-in</span>
-                <p class="font-medium">{{ order.checkInDate }}</p>
+                <p class="font-medium">
+                  {{ order.checkInDate }}
+                </p>
               </div>
               <div>
                 <span class="text-muted-foreground">Check-out</span>
-                <p class="font-medium">{{ order.checkOutDate }}</p>
+                <p class="font-medium">
+                  {{ order.checkOutDate }}
+                </p>
               </div>
               <div class="col-span-2">
                 <span class="text-muted-foreground">Listing</span>
-                <p class="font-medium">{{ order.listing }}</p>
+                <p class="font-medium">
+                  {{ order.listing }}
+                </p>
               </div>
             </div>
           </div>
@@ -178,7 +198,9 @@ function formatCurrency(amount: number, currency: string) {
                 class="flex items-center justify-between rounded-md border p-3"
               >
                 <div>
-                  <p class="text-sm font-medium">{{ item.name }}</p>
+                  <p class="text-sm font-medium">
+                    {{ item.name }}
+                  </p>
                   <p class="text-xs text-muted-foreground">
                     {{ formatCurrency(item.price, order.currency) }} × {{ item.quantity }}
                   </p>
@@ -217,12 +239,16 @@ function formatCurrency(amount: number, currency: string) {
 
           <div v-if="order.notes" class="flex flex-col gap-2">
             <Label class="text-xs text-muted-foreground">Notes</Label>
-            <p class="text-sm">{{ order.notes }}</p>
+            <p class="text-sm">
+              {{ order.notes }}
+            </p>
           </div>
 
           <div v-if="order.staffAssigned" class="flex flex-col gap-2">
             <Label class="text-xs text-muted-foreground">Assigned To</Label>
-            <p class="text-sm">{{ order.staffAssigned }}</p>
+            <p class="text-sm">
+              {{ order.staffAssigned }}
+            </p>
           </div>
         </div>
       </ScrollArea>

@@ -45,16 +45,24 @@ function togglePriority(priority: CleaningJobPriority) {
         <div class="border-b px-4 py-3">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-semibold">Cleaning filters</p>
-              <p class="text-xs text-muted-foreground">Filter by listing, cleaner, status, and priority.</p>
+              <p class="text-sm font-semibold">
+                Cleaning filters
+              </p>
+              <p class="text-xs text-muted-foreground">
+                Filter by listing, cleaner, status, and priority.
+              </p>
             </div>
-            <Button variant="ghost" size="sm" class="h-7 text-xs" @click="emit('clear')">Clear</Button>
+            <Button variant="ghost" size="sm" class="h-7 text-xs" @click="emit('clear')">
+              Clear
+            </Button>
           </div>
         </div>
 
         <div class="grid gap-4 p-4">
           <div class="grid gap-2">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Status
+            </p>
             <div class="flex flex-wrap gap-2">
               <Button
                 v-for="([value, label]) in Object.entries(cleaningJobStatusLabels)"
@@ -70,7 +78,9 @@ function togglePriority(priority: CleaningJobPriority) {
           </div>
 
           <div class="grid gap-2">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Priority</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Priority
+            </p>
             <div class="flex flex-wrap gap-2">
               <Button
                 v-for="([value, label]) in Object.entries(cleaningJobPriorityLabels)"
@@ -86,7 +96,9 @@ function togglePriority(priority: CleaningJobPriority) {
           </div>
 
           <div class="grid gap-2">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cleaner</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Cleaner
+            </p>
             <div class="space-y-1.5">
               <label v-for="cleaner in cleanerOptions" :key="cleaner.id" class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
                 <Checkbox
@@ -99,7 +111,9 @@ function togglePriority(priority: CleaningJobPriority) {
           </div>
 
           <div class="grid gap-2">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Listing IDs</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Listing IDs
+            </p>
             <Input
               :model-value="listingIds.join(', ')"
               placeholder="Comma-separated listing IDs"
@@ -111,4 +125,3 @@ function togglePriority(priority: CleaningJobPriority) {
     </Popover>
   </div>
 </template>
-

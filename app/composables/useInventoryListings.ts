@@ -1,12 +1,11 @@
-import { computed, ref } from 'vue'
 import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
+import { computed, ref } from 'vue'
 import { mockListingEntries } from '@/components/inventory/data/listing-entries'
 import { useInventoryTimeline } from './useInventoryTimeline'
 
 export function useInventoryListings() {
   const entries = useState<ListingInventoryEntry[]>('inventory-listings', () =>
-    mockListingEntries.map(e => ({ ...e })),
-  )
+    mockListingEntries.map(e => ({ ...e })))
 
   const { addEvent } = useInventoryTimeline()
 
@@ -22,8 +21,10 @@ export function useInventoryListings() {
 
   const filteredEntries = computed(() => {
     return entries.value.filter((entry) => {
-      if (filterListing.value !== 'all' && entry.listingName !== filterListing.value) return false
-      if (filterCondition.value !== 'all' && entry.condition !== filterCondition.value) return false
+      if (filterListing.value !== 'all' && entry.listingName !== filterListing.value)
+        return false
+      if (filterCondition.value !== 'all' && entry.condition !== filterCondition.value)
+        return false
       return true
     })
   })

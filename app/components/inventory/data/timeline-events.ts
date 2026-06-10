@@ -1,14 +1,14 @@
-export type TimelineEventType =
-  | 'entry_created'
-  | 'condition_changed'
-  | 'quantity_changed'
-  | 'stock_changed'
-  | 'note_updated'
-  | 'task_linked'
-  | 'task_completed'
-  | 'task_canceled'
-  | 'status_changed'
-  | 'maintenance_completed'
+export type TimelineEventType
+  = | 'entry_created'
+    | 'condition_changed'
+    | 'quantity_changed'
+    | 'stock_changed'
+    | 'note_updated'
+    | 'task_linked'
+    | 'task_completed'
+    | 'task_canceled'
+    | 'status_changed'
+    | 'maintenance_completed'
 
 export type TimelineActor = 'hostbuddy' | 'staff'
 

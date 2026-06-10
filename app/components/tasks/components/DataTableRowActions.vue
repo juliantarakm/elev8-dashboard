@@ -2,9 +2,9 @@
 import type { Row } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
 import { computed } from 'vue'
-import { statuses } from '../data/data'
-import { useTaskStore } from '@/composables/useTaskStore'
 import { toast } from 'vue-sonner'
+import { useTaskStore } from '@/composables/useTaskStore'
+import { statuses } from '../data/data'
 
 interface DataTableRowActionsProps {
   row: Row<Task>

@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue'
-import { mockSyncLogs, type SyncLog } from '@/components/finance/data/jurnal'
+import type { SyncLog } from '@/components/finance/data/jurnal'
+import { computed, ref } from 'vue'
+import { mockSyncLogs } from '@/components/finance/data/jurnal'
 import { useCosts } from '@/composables/useCosts'
 import { useReservations } from '@/composables/useReservations'
 
@@ -55,7 +56,8 @@ export function useJurnal() {
   }
 
   async function saveApiKey() {
-    if (!apiKeyInput.value.trim()) return
+    if (!apiKeyInput.value.trim())
+      return
     isSaving.value = true
     await new Promise(r => setTimeout(r, 1200))
     apiKey.value = apiKeyInput.value.replace(/.(?=.{4})/g, '•')
@@ -75,7 +77,8 @@ export function useJurnal() {
   }
 
   async function pushCosts() {
-    if (unsyncedCosts.value.length === 0) return
+    if (unsyncedCosts.value.length === 0)
+      return
     isPushingCosts.value = true
     const count = unsyncedCosts.value.length
     const ids = unsyncedCosts.value.map(c => c.id)
@@ -96,7 +99,8 @@ export function useJurnal() {
   }
 
   async function pushRevenue() {
-    if (unsyncedReservations.value.length === 0) return
+    if (unsyncedReservations.value.length === 0)
+      return
     isPushingRevenue.value = true
     const count = unsyncedReservations.value.length
     const toSync = unsyncedReservations.value.map(r => ({ id: r.id, checkIn: r.checkIn }))
@@ -118,8 +122,11 @@ export function useJurnal() {
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleString('id-ID', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 

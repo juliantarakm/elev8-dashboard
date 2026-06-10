@@ -1,5 +1,6 @@
+import type { CostEntry, CostType } from '@/components/finance/data/costs'
 import { computed, ref } from 'vue'
-import { mockCosts, type CostEntry, type CostType } from '@/components/finance/data/costs'
+import { mockCosts } from '@/components/finance/data/costs'
 import { useListingMappings } from '@/composables/useListingMappings'
 
 export function useCosts() {
@@ -16,18 +17,28 @@ export function useCosts() {
 
   const filteredCosts = computed(() => {
     return costs.value.filter((c) => {
-      if (filterListing.value !== 'all' && c.listing !== filterListing.value) return false
-      if (filterType.value !== 'all' && c.type !== filterType.value) return false
-      if (filterSynced.value === 'synced' && !c.synced) return false
-      if (filterSynced.value === 'unsynced' && c.synced) return false
-      if (filterStaff.value !== 'all' && c.staffId !== filterStaff.value) return false
-      if (filterDateFrom.value && c.date < filterDateFrom.value) return false
-      if (filterDateTo.value && c.date > filterDateTo.value) return false
+      if (filterListing.value !== 'all' && c.listing !== filterListing.value)
+        return false
+      if (filterType.value !== 'all' && c.type !== filterType.value)
+        return false
+      if (filterSynced.value === 'synced' && !c.synced)
+        return false
+      if (filterSynced.value === 'unsynced' && c.synced)
+        return false
+      if (filterStaff.value !== 'all' && c.staffId !== filterStaff.value)
+        return false
+      if (filterDateFrom.value && c.date < filterDateFrom.value)
+        return false
+      if (filterDateTo.value && c.date > filterDateTo.value)
+        return false
       if (filterIntegration.value !== 'all') {
         const mapping = getMappingFor(c.listing)
-        if (filterIntegration.value === 'none' && mapping) return false
-        if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal') return false
-        if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio') return false
+        if (filterIntegration.value === 'none' && mapping)
+          return false
+        if (filterIntegration.value === 'jurnal' && mapping?.integration !== 'jurnal')
+          return false
+        if (filterIntegration.value === 'bexio' && mapping?.integration !== 'bexio')
+          return false
       }
       return true
     })

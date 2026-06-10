@@ -3,9 +3,9 @@ import type { MarketplaceTemplate } from './data/journeys'
 import { marketplaceTemplates } from './data/journeys'
 
 const emit = defineEmits<{
-  generate: [prompt: string]
+  'generate': [prompt: string]
   'use-template': [template: MarketplaceTemplate]
-  back: []
+  'back': []
 }>()
 
 const prompt = ref('')
@@ -46,7 +46,9 @@ const categoryBadgeClass: Record<string, string> = {
           >
             <Icon name="i-lucide-sparkles" class="h-7 w-7" :style="{ color: '#C8A84B' }" />
           </div>
-          <h2 class="text-2xl font-bold tracking-tight">AI Journey Builder</h2>
+          <h2 class="text-2xl font-bold tracking-tight">
+            AI Journey Builder
+          </h2>
           <p class="mt-1.5 text-muted-foreground">
             Describe your guest communication goal and AI will generate a complete Journey for you.
           </p>
@@ -93,12 +95,16 @@ const categoryBadgeClass: Record<string, string> = {
           >
             <div class="flex items-start justify-between gap-2 mb-2">
               <span class="font-medium text-sm leading-tight">{{ template.name }}</span>
-              <span :class="['shrink-0 rounded-full px-2 py-0.5 text-xs font-medium', categoryBadgeClass[template.category]]">
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="[categoryBadgeClass[template.category]]">
                 {{ template.category }}
               </span>
             </div>
-            <p class="text-xs text-muted-foreground line-clamp-2">{{ template.description }}</p>
-            <p class="mt-2 text-xs text-muted-foreground">{{ template.stepCount }} steps</p>
+            <p class="text-xs text-muted-foreground line-clamp-2">
+              {{ template.description }}
+            </p>
+            <p class="mt-2 text-xs text-muted-foreground">
+              {{ template.stepCount }} steps
+            </p>
           </div>
         </div>
       </div>

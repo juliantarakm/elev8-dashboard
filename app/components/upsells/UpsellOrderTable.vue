@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { OrderStatus, UpsellOrder } from '@/components/upsells/data/upsell-orders'
 import { toast } from 'vue-sonner'
-import { useUpsellOrders } from '@/composables/useUpsellOrders'
 import {
+  getOrderStatus,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
-  getOrderStatus,
 } from '@/components/upsells/data/upsell-orders'
-import type { OrderStatus, UpsellOrder } from '@/components/upsells/data/upsell-orders'
+import { useUpsellOrders } from '@/composables/useUpsellOrders'
 
 const emit = defineEmits<{
   openDrawer: [order: UpsellOrder]
@@ -64,18 +64,18 @@ const statusOptions = computed(() => [
 <template>
   <div class="flex flex-col gap-4">
     <!-- Status filter pills -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          v-for="opt in statusOptions"
-          :key="opt.value"
-          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
-          :class="
-            filterStatus === opt.value
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-          "
-          @click="filterStatus = opt.value"
-        >
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        v-for="opt in statusOptions"
+        :key="opt.value"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors"
+        :class="
+          filterStatus === opt.value
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+        "
+        @click="filterStatus = opt.value"
+      >
         {{ opt.label }}
         <span
           class="inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
@@ -101,9 +101,15 @@ const statusOptions = computed(() => [
             <TableHead>Order</TableHead>
             <TableHead>Guest</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead class="text-right">Total</TableHead>
-            <TableHead class="text-center">Status</TableHead>
-            <TableHead class="text-center">Service Date</TableHead>
+            <TableHead class="text-right">
+              Total
+            </TableHead>
+            <TableHead class="text-center">
+              Status
+            </TableHead>
+            <TableHead class="text-center">
+              Service Date
+            </TableHead>
             <TableHead class="w-10" />
           </TableRow>
         </TableHeader>

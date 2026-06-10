@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { Listing } from '~/components/listings/data/listings'
+import type { Listing, Unit } from '~/components/listings/data/listings'
 
-import type { Unit } from '~/components/listings/data/listings'
-const props = defineProps<{ listing: Listing; activeUnit?: Unit | null }>()
+const props = defineProps<{ listing: Listing, activeUnit?: Unit | null }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 
 const editForm = ref({
@@ -25,7 +24,9 @@ function savePricing() {
 <template>
   <div class="flex flex-col gap-6">
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Base Pricing</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Base Pricing
+      </h3>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="flex flex-col gap-1.5">
           <Label>Nightly Rate ($)</Label>
@@ -43,7 +44,9 @@ function savePricing() {
     </Card>
 
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Discounts</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Discounts
+      </h3>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="flex flex-col gap-1.5">
           <Label>Weekly Discount (%)</Label>
@@ -57,7 +60,9 @@ function savePricing() {
     </Card>
 
     <Card class="p-5">
-      <h3 class="text-sm font-semibold mb-4">Seasonal Rates</h3>
+      <h3 class="text-sm font-semibold mb-4">
+        Seasonal Rates
+      </h3>
       <Table v-if="listing.pricing.seasonalRates.length > 0">
         <TableHeader>
           <TableRow>
@@ -68,17 +73,25 @@ function savePricing() {
         </TableHeader>
         <TableBody>
           <TableRow v-for="season in listing.pricing.seasonalRates" :key="season.label">
-            <TableCell class="font-medium">{{ season.label }}</TableCell>
-            <TableCell class="text-muted-foreground">{{ season.startDate }} → {{ season.endDate }}</TableCell>
+            <TableCell class="font-medium">
+              {{ season.label }}
+            </TableCell>
+            <TableCell class="text-muted-foreground">
+              {{ season.startDate }} → {{ season.endDate }}
+            </TableCell>
             <TableCell>${{ season.rate }}/night</TableCell>
           </TableRow>
         </TableBody>
       </Table>
-      <p v-else class="text-sm text-muted-foreground">No seasonal rates configured.</p>
+      <p v-else class="text-sm text-muted-foreground">
+        No seasonal rates configured.
+      </p>
     </Card>
 
     <div class="flex justify-end">
-      <Button @click="savePricing">Save Pricing</Button>
+      <Button @click="savePricing">
+        Save Pricing
+      </Button>
     </div>
   </div>
 </template>

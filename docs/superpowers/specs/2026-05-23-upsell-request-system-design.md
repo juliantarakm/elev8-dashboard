@@ -50,7 +50,7 @@ interface UpsellOrder {
   reservationId: string
   guestName: string
   guestEmail?: string
-  guestPhone?: string        // NEW: for WhatsApp notifications
+  guestPhone?: string // NEW: for WhatsApp notifications
 
   serviceId: string
   serviceName: string
@@ -64,12 +64,12 @@ interface UpsellOrder {
   currency: string
 
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
-  cancellationReason?: string  // NEW: required when cancelling
-  cancellationBy?: 'guest' | 'staff'  // NEW
+  cancellationReason?: string // NEW: required when cancelling
+  cancellationBy?: 'guest' | 'staff' // NEW
 
   orderDate: string
   serviceDate: string
-  serviceEndDate?: string     // For multi-day services (vehicle rental)
+  serviceEndDate?: string // For multi-day services (vehicle rental)
   checkInDate: string
   checkOutDate: string
 
@@ -77,15 +77,15 @@ interface UpsellOrder {
   channel: string
   notes: string
   invoice?: string
-  staffAssigned?: string      // Primary staff responsible
+  staffAssigned?: string // Primary staff responsible
 
-  source: 'inbox' | 'manual' | 'web'  // NEW
-  conversationId?: string      // NEW: link to inbox thread
-  createdByStaffId: string    // NEW: who created the order
+  source: 'inbox' | 'manual' | 'web' // NEW
+  conversationId?: string // NEW: link to inbox thread
+  createdByStaffId: string // NEW: who created the order
 
   // Notification tracking
-  guestNotifiedAt?: string   // NEW: last guest notification timestamp
-  staffNotifiedAt?: string   // NEW: last staff notification timestamp
+  guestNotifiedAt?: string // NEW: last guest notification timestamp
+  staffNotifiedAt?: string // NEW: last staff notification timestamp
 
   createdAt: string
   updatedAt: string
@@ -106,9 +106,9 @@ Reuses existing Notification Center infrastructure:
 ```ts
 interface StaffNotification {
   id: string
-  type: 'order_requested' | 'order_confirmed' | 'order_cancelled' |
-        'order_completed' | 'order_late_cancel' | 'order_no_show' |
-        'order_reminder'
+  type: 'order_requested' | 'order_confirmed' | 'order_cancelled'
+    | 'order_completed' | 'order_late_cancel' | 'order_no_show'
+    | 'order_reminder'
   severity: 'info' | 'warning' | 'urgent'
 
   title: string
@@ -119,11 +119,11 @@ interface StaffNotification {
 
   read: boolean
   createdAt: string
-  actionUrl: string  // e.g. '/upsells?tab=orders&order=ord-001'
+  actionUrl: string // e.g. '/upsells?tab=orders&order=ord-001'
 
   // For notification center grouping
   category: 'upsell'
-  autoResolve: boolean  // auto-dismiss after action taken
+  autoResolve: boolean // auto-dismiss after action taken
 }
 ```
 
@@ -137,11 +137,11 @@ interface GuestNotificationLog {
   type: 'status_change' | 'reminder' | 'confirmation'
   channel: 'whatsapp' | 'email' | 'sms'
 
-  content: string          // Message body sent
-  templateId?: string      // Reference to message template
+  content: string // Message body sent
+  templateId?: string // Reference to message template
 
   sentAt: string
-  delivered: boolean      // Delivery confirmation
+  delivered: boolean // Delivery confirmation
   failed: boolean
   failureReason?: string
 }
@@ -152,11 +152,11 @@ interface GuestNotificationLog {
 ```ts
 interface CancellationPolicy {
   serviceId: string
-  fullRefundHours: number      // e.g. 48
-  partialRefundHours: number   // e.g. 24
+  fullRefundHours: number // e.g. 48
+  partialRefundHours: number // e.g. 24
   partialRefundPercent: number // e.g. 50
-  noRefundHours: number        // e.g. 0 (same day)
-  lateCancellationFee: number  // Flat fee for < 24h
+  noRefundHours: number // e.g. 0 (same day)
+  lateCancellationFee: number // Flat fee for < 24h
 }
 ```
 

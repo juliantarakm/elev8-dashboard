@@ -16,8 +16,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: WebsiteSettings]
-  next: []
-  back: []
+  'next': []
+  'back': []
 }>()
 
 const form = ref<WebsiteSettings>({ ...props.modelValue })
@@ -90,8 +90,12 @@ function handleBack() {
 <template>
   <div class="flex flex-col gap-6">
     <div>
-      <h3 class="text-lg font-semibold">Website Settings</h3>
-      <p class="text-sm text-muted-foreground">Configure your website's basic information and branding.</p>
+      <h3 class="text-lg font-semibold">
+        Website Settings
+      </h3>
+      <p class="text-sm text-muted-foreground">
+        Configure your website's basic information and branding.
+      </p>
     </div>
 
     <!-- Name + Domain -->
@@ -114,7 +118,9 @@ function handleBack() {
           placeholder="villa-sunset-bali.com"
           @update:model-value="updateField('domain', $event)"
         />
-        <p class="text-xs text-muted-foreground">This will be your website URL</p>
+        <p class="text-xs text-muted-foreground">
+          This will be your website URL
+        </p>
       </div>
     </div>
 
@@ -142,7 +148,7 @@ function handleBack() {
               :value="form.brandColor"
               class="absolute inset-0 size-full cursor-pointer border-0 p-0"
               @input="updateField('brandColor', ($event.target as HTMLInputElement).value)"
-            />
+            >
           </div>
           <span class="text-sm font-mono text-muted-foreground">{{ form.brandColor }}</span>
         </div>
@@ -176,23 +182,31 @@ function handleBack() {
           @click="($refs.logoInput as HTMLInputElement).click()"
         >
           <Icon name="i-lucide-image-plus" class="size-8 text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-          <p class="text-xs text-muted-foreground">PNG, JPG or SVG (max. 5MB)</p>
+          <p class="text-sm text-muted-foreground">
+            Click to upload or drag and drop
+          </p>
+          <p class="text-xs text-muted-foreground">
+            PNG, JPG or SVG (max. 5MB)
+          </p>
           <input
             ref="logoInput"
             type="file"
             accept="image/*"
             class="hidden"
             @change="handleLogoUpload"
-          />
+          >
         </div>
         <div v-else class="flex items-center gap-3 rounded-lg border p-3">
           <div class="flex size-10 items-center justify-center rounded bg-muted">
             <Icon name="i-lucide-image" class="size-5 text-muted-foreground" />
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ form.logoFile }}</p>
-            <p class="text-xs text-muted-foreground">Logo uploaded</p>
+            <p class="text-sm font-medium truncate">
+              {{ form.logoFile }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Logo uploaded
+            </p>
           </div>
           <Button variant="ghost" size="icon-sm" @click="removeLogo">
             <Icon name="i-lucide-x" class="size-4" />
@@ -209,23 +223,31 @@ function handleBack() {
           @click="($refs.faviconInput as HTMLInputElement).click()"
         >
           <Icon name="i-lucide-upload" class="size-8 text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-          <p class="text-xs text-muted-foreground">ICO, PNG (32×32 px)</p>
+          <p class="text-sm text-muted-foreground">
+            Click to upload or drag and drop
+          </p>
+          <p class="text-xs text-muted-foreground">
+            ICO, PNG (32×32 px)
+          </p>
           <input
             ref="faviconInput"
             type="file"
             accept="image/*,.ico"
             class="hidden"
             @change="handleFaviconUpload"
-          />
+          >
         </div>
         <div v-else-if="form.faviconFile" class="flex items-center gap-3 rounded-lg border p-3">
           <div class="flex size-10 items-center justify-center rounded bg-muted">
             <Icon name="i-lucide-globe" class="size-5 text-muted-foreground" />
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ form.faviconFile }}</p>
-            <p class="text-xs text-muted-foreground">Favicon uploaded</p>
+            <p class="text-sm font-medium truncate">
+              {{ form.faviconFile }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Favicon uploaded
+            </p>
           </div>
           <Button variant="ghost" size="icon-sm" @click="removeFavicon">
             <Icon name="i-lucide-x" class="size-4" />
@@ -236,8 +258,12 @@ function handleBack() {
             <Icon name="i-lucide-globe" class="size-5 text-muted-foreground" />
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium">Default</p>
-            <p class="text-xs text-muted-foreground">Using dashboard default favicon</p>
+            <p class="text-sm font-medium">
+              Default
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Using dashboard default favicon
+            </p>
           </div>
           <Button variant="ghost" size="icon-sm" @click="handleDefaultFaviconToggle(false)">
             <Icon name="i-lucide-x" class="size-4" />

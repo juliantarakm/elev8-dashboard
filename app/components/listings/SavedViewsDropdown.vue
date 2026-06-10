@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { SavedView } from '~/types/saved-views'
+import { Icon } from '#components'
+import { formatDistanceToNow } from 'date-fns'
 import { computed, ref } from 'vue'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Button } from '~/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
-import { Icon } from '#components'
-import type { SavedView } from '~/types/saved-views'
-import { formatDistanceToNow } from 'date-fns'
 
 const props = defineProps<{
   savedViews: SavedView[]
@@ -26,7 +26,8 @@ const viewSearch = ref('')
 const deleteTarget = ref<SavedView | null>(null)
 
 const filteredViews = computed(() => {
-  if (!viewSearch.value) return props.savedViews
+  if (!viewSearch.value)
+    return props.savedViews
   const q = viewSearch.value.toLowerCase()
   return props.savedViews.filter(v => v.name.toLowerCase().includes(q))
 })
@@ -56,7 +57,7 @@ function formatTimeAgo(date: string): string {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent class="w-72" align="start">
-        <DropdownMenuItem @click="emit('save-as')" data-testid="save-as-option">
+        <DropdownMenuItem data-testid="save-as-option" @click="emit('save-as')">
           <Icon name="lucide:plus" class="mr-2 size-3.5" />
           Save current as...
         </DropdownMenuItem>
@@ -80,10 +81,10 @@ function formatTimeAgo(date: string): string {
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
-              @click="emit('load-view', view.id)"
               class="group flex items-center justify-between py-2"
               :class="{ 'bg-muted': activeView?.id === view.id }"
               :data-testid="`view-item-${view.id}`"
+              @click="emit('load-view', view.id)"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <Icon
@@ -92,7 +93,9 @@ function formatTimeAgo(date: string): string {
                   class="size-4 shrink-0 text-primary"
                 />
                 <div class="min-w-0 flex-1">
-                  <div class="font-medium text-sm truncate">{{ view.name }}</div>
+                  <div class="font-medium text-sm truncate">
+                    {{ view.name }}
+                  </div>
                   <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div class="size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[9px] font-medium">
                       {{ getCreatorInitials(view.createdBy) }}

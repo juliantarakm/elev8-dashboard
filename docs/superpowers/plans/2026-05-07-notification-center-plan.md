@@ -20,25 +20,25 @@
 Create the file with Alert type and related types:
 
 ```ts
-export type AlertType =
-  | 'SMART_LOCK_DEAD'
-  | 'SMART_LOCK_OFFLINE'
-  | 'SMART_LOCK_CODE_FAILED'
-  | 'CHANNEL_DISCONNECTED'
-  | 'DOUBLE_BOOKING'
-  | 'CLEANING_NOT_STARTED_IMMINENT'
-  | 'CLEANING_NOT_DONE_CHECKIN_PASSED'
-  | 'STRIPE_DISCONNECTED'
-  | 'DEPOSIT_FAILED_AT_CHECKIN'
-  | 'BOOKING_QUOTA_EMPTY'
-  | 'BRIDGE_OFFLINE'
-  | 'SMART_LOCK_BATTERY_CRITICAL'
-  | 'SMART_LOCK_BATTERY_LOW'
-  | 'NO_HOUSEKEEPING_ASSIGNED'
-  | 'TASK_OVERDUE'
-  | 'RATE_PLAN_UNMAPPED'
-  | 'BOOKING_QUOTA_LOW'
-  | 'DYNAMIC_TEMPLATE_FAILED'
+export type AlertType
+  = | 'SMART_LOCK_DEAD'
+    | 'SMART_LOCK_OFFLINE'
+    | 'SMART_LOCK_CODE_FAILED'
+    | 'CHANNEL_DISCONNECTED'
+    | 'DOUBLE_BOOKING'
+    | 'CLEANING_NOT_STARTED_IMMINENT'
+    | 'CLEANING_NOT_DONE_CHECKIN_PASSED'
+    | 'STRIPE_DISCONNECTED'
+    | 'DEPOSIT_FAILED_AT_CHECKIN'
+    | 'BOOKING_QUOTA_EMPTY'
+    | 'BRIDGE_OFFLINE'
+    | 'SMART_LOCK_BATTERY_CRITICAL'
+    | 'SMART_LOCK_BATTERY_LOW'
+    | 'NO_HOUSEKEEPING_ASSIGNED'
+    | 'TASK_OVERDUE'
+    | 'RATE_PLAN_UNMAPPED'
+    | 'BOOKING_QUOTA_LOW'
+    | 'DYNAMIC_TEMPLATE_FAILED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING'
 
@@ -259,15 +259,14 @@ git commit -m "feat(notifications): add Alert types and mock data"
 
 ```ts
 import type { Alert, AlertSeverity } from '~/components/notifications/data/alerts'
-import { mockAlerts, alertRouteMap, getDescription } from '~/components/notifications/data/alerts'
 import { formatDistanceToNow } from 'date-fns'
+import { alertRouteMap, getDescription, mockAlerts } from '~/components/notifications/data/alerts'
 
 export type SeverityFilter = 'all' | 'critical' | 'warning'
 
 export function useNotifications() {
   const alerts = useState<Alert[]>('notifications-alerts', () =>
-    JSON.parse(JSON.stringify(mockAlerts))
-  )
+    JSON.parse(JSON.stringify(mockAlerts)))
 
   const selectedSeverity = ref<SeverityFilter>('all')
 
@@ -279,7 +278,8 @@ export function useNotifications() {
 
   const filteredAlerts = computed(() => {
     const active = activeAlerts.value
-    if (selectedSeverity.value === 'all') return active
+    if (selectedSeverity.value === 'all')
+      return active
     return active.filter(a =>
       a.severity === selectedSeverity.value.toUpperCase()
     )
@@ -409,7 +409,7 @@ function handleDismiss(e: MouseEvent) {
   >
     <Icon
       name="lucide:circle"
-      :class="['mt-0.5 size-2.5 shrink-0 fill-current', severityClasses.dot]"
+      class="mt-0.5 size-2.5 shrink-0 fill-current" :class="[severityClasses.dot]"
     />
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium truncate">
@@ -485,7 +485,7 @@ const description = computed(() => getDescription(props.alert.type, props.alert.
   >
     <Icon
       name="lucide:circle"
-      :class="['mt-0.5 size-2.5 shrink-0 fill-current', severityClasses.dot]"
+      class="mt-0.5 size-2.5 shrink-0 fill-current" :class="[severityClasses.dot]"
     />
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium truncate">
@@ -532,6 +532,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { ScrollArea } from '~/components/ui/scroll-area'
 import { Separator } from '~/components/ui/separator'
 
+// Import NotificationItem directly (it's in the same module)
+import NotificationItem from './NotificationItem.vue'
+
 const {
   unreadCount,
   selectedSeverity,
@@ -542,14 +545,11 @@ const {
   startAutoResolveSimulation,
 } = useNotifications()
 
-// Import NotificationItem directly (it's in the same module)
-import NotificationItem from './NotificationItem.vue'
-
 onMounted(() => {
   startAutoResolveSimulation()
 })
 
-const tabs: { label: string; value: SeverityFilter }[] = [
+const tabs: { label: string, value: SeverityFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'Critical', value: 'critical' },
   { label: 'Warning', value: 'warning' },
@@ -572,7 +572,9 @@ const tabs: { label: string; value: SeverityFilter }[] = [
     <PopoverContent class="w-[380px] p-0" align="end" side-offset="8">
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3">
-        <h3 class="text-sm font-semibold">Notifications</h3>
+        <h3 class="text-sm font-semibold">
+          Notifications
+        </h3>
         <button
           v-if="unreadCount > 0"
           class="text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -605,7 +607,9 @@ const tabs: { label: string; value: SeverityFilter }[] = [
       <ScrollArea class="max-h-[400px]">
         <div v-if="filteredAlerts.length === 0" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
           <Icon name="lucide:bell-off" class="size-8 mb-2" />
-          <p class="text-sm">No notifications</p>
+          <p class="text-sm">
+            No notifications
+          </p>
         </div>
         <NotificationItem
           v-for="alert in filteredAlerts"

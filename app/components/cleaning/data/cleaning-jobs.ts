@@ -165,10 +165,12 @@ export function formatDateKey(value: string) {
 }
 
 export function formatWeekRange(days: Array<{ date: Date }>) {
-  if (!days.length) return ''
+  if (!days.length)
+    return ''
   const startDay = days[0]
   const endDay = days[days.length - 1]
-  if (!startDay || !endDay) return ''
+  if (!startDay || !endDay)
+    return ''
   const start = startDay.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const end = endDay.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   return `${start} - ${end}`

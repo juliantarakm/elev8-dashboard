@@ -42,7 +42,7 @@ export interface ListingPricing {
   serviceFee: number
   weeklyDiscount: number
   monthlyDiscount: number
-  seasonalRates: Array<{ startDate: string; endDate: string; rate: number; label: string }>
+  seasonalRates: Array<{ startDate: string, endDate: string, rate: number, label: string }>
 }
 
 export interface Booking {
@@ -81,7 +81,7 @@ export interface MaintenanceTask {
 }
 
 export interface ListingMaintenance {
-  cleaningSchedule: Array<{ task: string; frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' }>
+  cleaningSchedule: Array<{ task: string, frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' }>
   tasks: MaintenanceTask[]
 }
 

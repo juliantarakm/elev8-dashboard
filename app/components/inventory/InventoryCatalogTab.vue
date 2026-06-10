@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import type { AssetStatus, InventoryItem } from '@/components/inventory/data/catalog'
+import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { INVENTORY_CATEGORIES } from '@/components/inventory/data/catalog'
-import type { AssetStatus, InventoryItem } from '@/components/inventory/data/catalog'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
 
 const {
@@ -45,22 +45,27 @@ function openDocView(item: InventoryItem) {
 }
 
 function warrantyStatus(expiry?: string): 'expired' | 'soon' | 'ok' | 'none' {
-  if (!expiry) return 'none'
+  if (!expiry)
+    return 'none'
   const exp = new Date(expiry)
   const now = new Date()
   const diff = (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  if (diff < 0) return 'expired'
-  if (diff <= 30) return 'soon'
+  if (diff < 0)
+    return 'expired'
+  if (diff <= 30)
+    return 'soon'
   return 'ok'
 }
 
 function formatIDR(val?: number) {
-  if (val === undefined || val === null) return '—'
+  if (val === undefined || val === null)
+    return '—'
   return `IDR ${val.toLocaleString('id-ID')}`
 }
 
 function formatDate(d?: string) {
-  if (!d) return '—'
+  if (!d)
+    return '—'
   return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
@@ -141,9 +146,15 @@ function downloadCSV() {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Types</SelectItem>
-          <SelectItem value="permanent">Permanent</SelectItem>
-          <SelectItem value="consumable">Consumable</SelectItem>
+          <SelectItem value="all">
+            All Types
+          </SelectItem>
+          <SelectItem value="permanent">
+            Permanent
+          </SelectItem>
+          <SelectItem value="consumable">
+            Consumable
+          </SelectItem>
         </SelectContent>
       </Select>
 
@@ -152,11 +163,21 @@ function downloadCSV() {
           <SelectValue placeholder="All Statuses" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
-          <SelectItem value="disposed">Disposed</SelectItem>
-          <SelectItem value="replaced">Replaced</SelectItem>
+          <SelectItem value="all">
+            All Statuses
+          </SelectItem>
+          <SelectItem value="active">
+            Active
+          </SelectItem>
+          <SelectItem value="under_maintenance">
+            Under Maintenance
+          </SelectItem>
+          <SelectItem value="disposed">
+            Disposed
+          </SelectItem>
+          <SelectItem value="replaced">
+            Replaced
+          </SelectItem>
         </SelectContent>
       </Select>
 
@@ -195,18 +216,24 @@ function downloadCSV() {
           >
             <TableCell>
               <div class="w-9 h-9 rounded-md border overflow-hidden bg-muted flex items-center justify-center">
-                <img v-if="item.photo" :src="item.photo" class="w-full h-full object-cover" :alt="item.name" />
+                <img v-if="item.photo" :src="item.photo" class="w-full h-full object-cover" :alt="item.name">
                 <Icon v-else name="lucide:package" class="h-4 w-4 text-muted-foreground" />
               </div>
             </TableCell>
             <TableCell>
               <div>
-                <p class="font-medium">{{ item.name }}</p>
-                <p class="text-xs text-muted-foreground">{{ item.unit }} · {{ item.type }}</p>
+                <p class="font-medium">
+                  {{ item.name }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ item.unit }} · {{ item.type }}
+                </p>
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant="outline">{{ item.category }}</Badge>
+              <Badge variant="outline">
+                {{ item.category }}
+              </Badge>
             </TableCell>
             <TableCell>
               <template v-if="item.assetStatus">
@@ -225,8 +252,12 @@ function downloadCSV() {
             </TableCell>
             <TableCell>
               <template v-if="getBookValue(item) !== undefined">
-                <p class="text-sm">{{ formatIDR(getBookValue(item)) }}</p>
-                <p class="text-xs text-muted-foreground">{{ getDepreciationPct(item) }}% depreciated</p>
+                <p class="text-sm">
+                  {{ formatIDR(getBookValue(item)) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {{ getDepreciationPct(item) }}% depreciated
+                </p>
               </template>
               <span v-else class="text-muted-foreground">—</span>
             </TableCell>
@@ -331,7 +362,9 @@ function downloadCSV() {
           >
             <Icon name="lucide:file-text" class="h-5 w-5 shrink-0 text-muted-foreground" />
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">{{ doc.name }}</p>
+              <p class="text-sm font-medium truncate">
+                {{ doc.name }}
+              </p>
               <Badge variant="outline" class="mt-0.5 text-xs capitalize">
                 {{ DOC_TYPE_LABELS[doc.type] ?? doc.type }}
               </Badge>
