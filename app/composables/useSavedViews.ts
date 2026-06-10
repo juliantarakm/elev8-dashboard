@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { toast } from 'vue-sonner'
 import type { SavedView, ViewState } from '~/types/saved-views'
+import { toast } from 'vue-sonner'
 
 export function useSavedViews() {
   const savedViews = ref<SavedView[]>([])
