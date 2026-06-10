@@ -234,13 +234,17 @@ const {
   activeView,
   currentState,
   isDirty,
+  canUpdateActiveView,
+  pendingViewId,
   isLoading: savedViewsLoading,
   fetchViews,
   saveCurrentAs,
   loadView,
+  confirmLoadView,
   updateActiveView,
   deleteView,
   renameView,
+  resetToDefault,
 } = useSavedViews()
 
 const saveDialogOpen = ref(false)
@@ -314,13 +318,17 @@ function updateCurrentState() {
   currentState.value = getCurrentViewState()
 }
 
-function handleLoadView(viewId: string) {
-  loadView(viewId).then((view) => {
-    if (view) {
-      applyViewState(view)
-      updateCurrentState()
-    }
-  })
+async function handleLoadView(viewId: string) {
+  const pendingView = await loadView(viewId)
+  if (pendingView && pendingViewId.value) {
+    // Shows unsaved changes dialog, pendingViewId is set
+  }
+}
+
+function handleConfirmLoadView() {
+  if (pendingViewId.value) {
+    confirmLoadView(pendingViewId.value)
+  }
 }
 
 function handleSaveAs(name: string) {
@@ -333,6 +341,10 @@ function handleUpdateView() {
     return
   const state = getCurrentViewState()
   updateActiveView(state)
+}
+
+function handleResetView() {
+  resetToDefault()
 }
 
 function handleDeleteView(viewId: string) {
@@ -433,11 +445,15 @@ function openSaveDialog() {
   :active-view="activeView"
   :is-dirty="isDirty"
   :is-loading="savedViewsLoading"
+  :can-update-active-view="canUpdateActiveView"
+  :pending-view-id="pendingViewId"
   @load-view="handleLoadView"
   @save-as="openSaveDialog"
   @update="handleUpdateView"
   @delete="handleDeleteView"
   @rename="handleRenameView"
+  @reset="handleResetView"
+  @confirm-load="handleConfirmLoadView"
 />
 
     <div v-if="activeTagFilter.length > 0 || activeAiFilter" class="flex flex-wrap items-center gap-1.5">

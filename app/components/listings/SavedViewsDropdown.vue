@@ -2,19 +2,22 @@
 import type { SavedView } from '~/types/saved-views'
 import { Icon } from '#components'
 import { formatDistanceToNow } from 'date-fns'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
 import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
 import RenameViewDialog from '~/components/listings/RenameViewDialog.vue'
+import UnsavedChangesDialog from '~/components/listings/UnsavedChangesDialog.vue'
 
 const props = defineProps<{
   savedViews: SavedView[]
   activeView: SavedView | null
   isDirty: boolean
   isLoading: boolean
+  canUpdateActiveView: boolean
+  pendingViewId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -23,11 +26,17 @@ const emit = defineEmits<{
   'update': []
   'delete': [viewId: string]
   'rename': [viewId: string, newName: string]
+  'reset': []
+  'confirm-load': []
 }>()
 
 const viewSearch = ref('')
 const deleteTarget = ref<SavedView | null>(null)
 const renameTarget = ref<SavedView | null>(null)
+
+const pendingTarget = computed(() => {
+  return props.pendingViewId ? props.savedViews.find(v => v.id === props.pendingViewId) || null : null
+})
 
 const filteredViews = computed(() => {
   if (!viewSearch.value)
@@ -48,6 +57,10 @@ function getCreatorInitials(name: string): string {
 function formatTimeAgo(date: string): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true })
 }
+
+function handleLoadView(viewId: string) {
+  emit('load-view', viewId)
+}
 </script>
 
 <template>
@@ -61,9 +74,25 @@ function formatTimeAgo(date: string): string {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent class="w-72" align="start">
-        <DropdownMenuItem data-testid="save-as-option" @click="emit('save-as')">
+        <DropdownMenuItem @click="emit('save-as')" data-testid="save-as-option">
           <Icon name="lucide:plus" class="mr-2 size-3.5" />
-          Save current as...
+          Save view as...
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          v-if="canUpdateActiveView"
+          @click="emit('update')"
+        >
+          <Icon name="lucide:refresh-cw" class="mr-2 size-3.5" />
+          Update current view
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          v-if="isDirty && activeView"
+          @click="emit('reset')"
+        >
+          <Icon name="lucide:rotate-ccw" class="mr-2 size-3.5" />
+          Reset View
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -85,14 +114,20 @@ function formatTimeAgo(date: string): string {
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
+              @click="handleLoadView(view.id)"
               class="group flex items-center justify-between py-2"
               :class="{ 'bg-muted': activeView?.id === view.id }"
               :data-testid="`view-item-${view.id}`"
-              @click="emit('load-view', view.id)"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <Icon
-                  v-if="activeView?.id === view.id"
+                  v-if="view.isDefault"
+                  name="lucide:lock"
+                  class="size-3.5 shrink-0 text-muted-foreground"
+                  title="Default view (immutable)"
+                />
+                <Icon
+                  v-else-if="activeView?.id === view.id"
                   name="lucide:check"
                   class="size-4 shrink-0 text-primary"
                 />
@@ -108,22 +143,24 @@ function formatTimeAgo(date: string): string {
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                @click.stop="renameTarget = view"
-              >
-                <Icon name="lucide:edit-2" class="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="size-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                @click.stop="deleteTarget = view"
-              >
-                <Icon name="lucide:trash-2" class="size-3.5" />
-              </Button>
+              <div v-if="!view.isDefault" class="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click.stop="renameTarget = view"
+                >
+                  <Icon name="lucide:edit-2" class="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                  @click.stop="deleteTarget = view"
+                >
+                  <Icon name="lucide:trash-2" class="size-3.5" />
+                </Button>
+              </div>
             </DropdownMenuItem>
           </div>
         </ScrollArea>
@@ -131,7 +168,7 @@ function formatTimeAgo(date: string): string {
     </DropdownMenu>
 
     <Button
-      v-if="activeView && isDirty"
+      v-if="canUpdateActiveView"
       variant="outline"
       size="sm"
       class="h-9 gap-1.5 text-xs"
@@ -139,7 +176,19 @@ function formatTimeAgo(date: string): string {
       @click="emit('update')"
     >
       <Icon name="lucide:refresh-cw" class="size-3.5" />
-      Update {{ activeView.name }}
+      Update current view
+    </Button>
+
+    <Button
+      v-if="isDirty && activeView && !activeView.isDefault"
+      variant="outline"
+      size="sm"
+      class="h-9 gap-1.5 text-xs"
+      :disabled="isLoading"
+      @click="emit('reset')"
+    >
+      <Icon name="lucide:rotate-ccw" class="size-3.5" />
+      Reset View
     </Button>
 
     <DeleteViewDialog
@@ -156,6 +205,15 @@ function formatTimeAgo(date: string): string {
       :view-name="renameTarget.name"
       @update:open="renameTarget = null"
       @rename="emit('rename', renameTarget.id, $event)"
+    />
+
+    <UnsavedChangesDialog
+      v-if="pendingTarget"
+      :open="!!pendingTarget"
+      :target-view-name="pendingTarget.name"
+      @update:open="pendingTarget = null"
+      @confirm="emit('confirm-load')"
+      @cancel="pendingTarget = null"
     />
   </div>
 </template>
