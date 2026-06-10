@@ -7,6 +7,7 @@ import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
+import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
 
 const props = defineProps<{
   savedViews: SavedView[]
