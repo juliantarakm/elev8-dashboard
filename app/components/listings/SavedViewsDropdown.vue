@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
 import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
+import RenameViewDialog from '~/components/listings/RenameViewDialog.vue'
 
 const props = defineProps<{
   savedViews: SavedView[]
@@ -21,10 +22,12 @@ const emit = defineEmits<{
   'save-as': []
   'update': []
   'delete': [viewId: string]
+  'rename': [viewId: string, newName: string]
 }>()
 
 const viewSearch = ref('')
 const deleteTarget = ref<SavedView | null>(null)
+const renameTarget = ref<SavedView | null>(null)
 
 const filteredViews = computed(() => {
   if (!viewSearch.value)
@@ -109,6 +112,14 @@ function formatTimeAgo(date: string): string {
                 variant="ghost"
                 size="icon"
                 class="size-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                @click.stop="renameTarget = view"
+              >
+                <Icon name="lucide:edit-2" class="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="size-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
                 @click.stop="deleteTarget = view"
               >
                 <Icon name="lucide:trash-2" class="size-3.5" />
@@ -137,6 +148,14 @@ function formatTimeAgo(date: string): string {
       :view-name="deleteTarget.name"
       @update:open="deleteTarget = null"
       @delete="emit('delete', deleteTarget.id)"
+    />
+
+    <RenameViewDialog
+      v-if="renameTarget"
+      :open="!!renameTarget"
+      :view-name="renameTarget.name"
+      @update:open="renameTarget = null"
+      @rename="emit('rename', renameTarget.id, $event)"
     />
   </div>
 </template>

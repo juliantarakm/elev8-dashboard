@@ -168,6 +168,44 @@ export function useSavedViews() {
     }
   }
 
+  async function renameView(viewId: string, newName: string) {
+    isLoading.value = true
+    try {
+      const view = savedViews.value.find(v => v.id === viewId)
+      if (!view) {
+        toast.error('View not found.')
+        return
+      }
+
+      const updatedView: SavedView = {
+        ...view,
+        name: newName,
+        updatedAt: new Date().toISOString(),
+      }
+
+      const updatedViews = savedViews.value.map(v =>
+        v.id === viewId ? updatedView : v,
+      ).sort((a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      )
+      savedViews.value = updatedViews
+      saveViewsToStorage(updatedViews)
+
+      if (activeView.value?.id === viewId) {
+        activeView.value = updatedView
+      }
+
+      toast.success('View renamed!')
+    }
+    catch (error) {
+      toast.error('Rename failed. Try again.')
+      throw error
+    }
+    finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     savedViews,
     activeView,
@@ -179,5 +217,6 @@ export function useSavedViews() {
     loadView,
     updateActiveView,
     deleteView,
+    renameView,
   }
 }

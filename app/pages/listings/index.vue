@@ -240,6 +240,7 @@ const {
   loadView,
   updateActiveView,
   deleteView,
+  renameView,
 } = useSavedViews()
 
 const saveDialogOpen = ref(false)
@@ -338,6 +339,10 @@ function handleDeleteView(viewId: string) {
   deleteView(viewId)
 }
 
+function handleRenameView(viewId: string, newName: string) {
+  renameView(viewId, newName)
+}
+
 function openSaveDialog() {
   saveDialogOpen.value = true
 }
@@ -423,16 +428,17 @@ function openSaveDialog() {
       </DropdownMenu>
     </div>
 
-    <SavedViewsDropdown
-      :saved-views="savedViews"
-      :active-view="activeView"
-      :is-dirty="isDirty"
-      :is-loading="savedViewsLoading"
-      @load-view="handleLoadView"
-      @save-as="openSaveDialog"
-      @update="handleUpdateView"
-      @delete="handleDeleteView"
-    />
+<SavedViewsDropdown
+  :saved-views="savedViews"
+  :active-view="activeView"
+  :is-dirty="isDirty"
+  :is-loading="savedViewsLoading"
+  @load-view="handleLoadView"
+  @save-as="openSaveDialog"
+  @update="handleUpdateView"
+  @delete="handleDeleteView"
+  @rename="handleRenameView"
+/>
 
     <div v-if="activeTagFilter.length > 0 || activeAiFilter" class="flex flex-wrap items-center gap-1.5">
       <Badge
