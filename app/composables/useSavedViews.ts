@@ -2,6 +2,8 @@ import type { SavedView, ViewState } from '~/types/saved-views'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 
+const STORAGE_KEY = 'elev8-saved-views'
+
 export function useSavedViews() {
   const savedViews = ref<SavedView[]>([])
   const activeView = ref<SavedView | null>(null)
@@ -23,11 +25,38 @@ export function useSavedViews() {
     )
   })
 
+  function getViewsFromStorage(): SavedView[] {
+    if (typeof window === 'undefined')
+      return []
+    try {
+      const data = localStorage.getItem(STORAGE_KEY)
+      return data ? JSON.parse(data) : []
+    }
+    catch {
+      return []
+    }
+  }
+
+  function saveViewsToStorage(views: SavedView[]): void {
+    if (typeof window === 'undefined')
+      return
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(views))
+    }
+    catch {
+      toast.error('Could not save views to storage.')
+    }
+  }
+
+  function generateId(): string {
+    return `view_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  }
+
   async function fetchViews() {
     isLoading.value = true
     try {
-      const res = await $fetch<{ views: SavedView[] }>('/api/tenant/listing-views')
-      savedViews.value = res.views.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      const views = getViewsFromStorage()
+      savedViews.value = views.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     }
     catch (error) {
       toast.error('Could not load saved views.')
@@ -40,17 +69,22 @@ export function useSavedViews() {
   async function saveCurrentAs(name: string, state: ViewState) {
     isLoading.value = true
     try {
-      const res = await $fetch<{ view: SavedView }>('/api/tenant/listing-views', {
-        method: 'POST',
-        body: {
-          name,
-          ...state,
-        },
-      })
-      savedViews.value = [...savedViews.value, res.view].sort((a, b) =>
+      const now = new Date().toISOString()
+      const newView: SavedView = {
+        id: generateId(),
+        name,
+        ...state,
+        createdBy: 'current-user',
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      const updatedViews = [...savedViews.value, newView].sort((a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       )
-      activeView.value = res.view
+      savedViews.value = updatedViews
+      saveViewsToStorage(updatedViews)
+      activeView.value = newView
       currentState.value = state
       toast.success('View saved!')
     }
@@ -86,15 +120,21 @@ export function useSavedViews() {
 
     isLoading.value = true
     try {
-      const res = await $fetch<{ view: SavedView }>(`/api/tenant/listing-views/${activeView.value.id}`, {
-        method: 'PUT',
-        body: state,
-      })
-      const index = savedViews.value.findIndex(v => v.id === activeView.value.id)
-      if (index !== -1) {
-        savedViews.value[index] = res.view
+      const now = new Date().toISOString()
+      const updatedView: SavedView = {
+        ...activeView.value,
+        ...state,
+        updatedAt: now,
       }
-      activeView.value = res.view
+
+      const updatedViews = savedViews.value.map(v =>
+        v.id === updatedView.id ? updatedView : v,
+      ).sort((a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      )
+      savedViews.value = updatedViews
+      saveViewsToStorage(updatedViews)
+      activeView.value = updatedView
       currentState.value = state
       toast.success('View updated!')
     }
@@ -110,10 +150,9 @@ export function useSavedViews() {
   async function deleteView(viewId: string) {
     isLoading.value = true
     try {
-      await $fetch(`/api/tenant/listing-views/${viewId}`, {
-        method: 'DELETE',
-      })
-      savedViews.value = savedViews.value.filter(v => v.id !== viewId)
+      const updatedViews = savedViews.value.filter(v => v.id !== viewId)
+      savedViews.value = updatedViews
+      saveViewsToStorage(updatedViews)
       if (activeView.value?.id === viewId) {
         activeView.value = null
         currentState.value = null
