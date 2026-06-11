@@ -137,46 +137,6 @@ function handleLoadView(viewId: string) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent class="w-72" align="start">
-        <!-- Save mode: inline input -->
-        <div v-if="saveMode" class="p-2 space-y-2">
-          <Input
-            ref="saveInputRef"
-            v-model="newViewName"
-            placeholder="View name"
-            class="h-8 text-sm"
-            maxlength="50"
-            @keydown="handleSaveKeydown"
-          />
-          <div class="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-7 flex-1"
-              @click="cancelSave"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              class="h-7 flex-1"
-              :disabled="newViewName.trim().length === 0"
-              @click="confirmSave"
-            >
-              Save
-            </Button>
-          </div>
-        </div>
-
-        <!-- Normal mode: save as option -->
-        <DropdownMenuItem
-          v-else
-          @click="startSaveMode"
-          data-testid="save-as-option"
-        >
-          <Icon name="lucide:plus" class="mr-2 size-3.5" />
-          Save view as...
-        </DropdownMenuItem>
-
         <DropdownMenuItem
           v-if="canUpdateActiveView"
           @click="emit('update')"
@@ -195,20 +155,59 @@ function handleLoadView(viewId: string) {
 
         <DropdownMenuSeparator />
 
-        <div v-if="savedViews.length > 0" class="p-2">
-          <Input
-            v-model="viewSearch"
-            placeholder="Search views..."
-            class="h-7 text-xs"
-          />
-        </div>
-
         <ScrollArea class="h-72">
           <div v-if="filteredViews.length === 0" class="px-2 py-4 text-sm text-muted-foreground text-center">
             {{ savedViews.length === 0 ? 'No saved views yet.' : 'No views found.' }}
           </div>
 
           <div v-else class="p-1 space-y-0.5">
+            <!-- Save mode: inline input -->
+            <div v-if="saveMode" class="px-2 py-1.5 space-y-1">
+              <Input
+                ref="saveInputRef"
+                v-model="newViewName"
+                placeholder="View name"
+                class="h-7 text-sm"
+                maxlength="50"
+                @keydown="handleSaveKeydown"
+              />
+              <div class="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 flex-1"
+                  @click="cancelSave"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  class="h-7 flex-1"
+                  :disabled="newViewName.trim().length === 0"
+                  @click="confirmSave"
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            <!-- Normal mode: save as option -->
+            <DropdownMenuItem
+              v-else
+              @click="startSaveMode"
+              data-testid="save-as-option"
+            >
+              <Icon name="lucide:plus" class="mr-2 size-3.5" />
+              Save view as...
+            </DropdownMenuItem>
+
+            <Input
+              v-if="savedViews.length > 0"
+              v-model="viewSearch"
+              placeholder="Search views..."
+              class="h-7 text-xs mx-2"
+            />
+
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
