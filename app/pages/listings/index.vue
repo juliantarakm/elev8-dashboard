@@ -293,6 +293,19 @@ watch(() => table.getState().pagination.pageSize, () => {
   updateCurrentState()
 })
 
+watch(() => activeView.value, (view) => {
+  if (view) {
+    applyViewState({
+      searchValue: view.searchValue,
+      activeTagFilter: view.activeTagFilter,
+      activeAiFilter: view.activeAiFilter,
+      columnVisibility: view.columnVisibility,
+      pageSize: view.pageSize,
+    })
+    updateCurrentState()
+  }
+})
+
 function getCurrentViewState(): ViewState {
   return {
     searchValue: searchValue.value,
