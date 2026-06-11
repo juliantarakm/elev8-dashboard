@@ -295,7 +295,7 @@ function handleLoadView(viewId: string) {
 
                 <!-- Normal mode: edit and delete buttons -->
                 <Button
-                  v-else
+                  v-show="!renameTarget || renameTarget?.id !== view.id"
                   variant="ghost"
                   size="icon"
                   class="size-7 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -304,7 +304,7 @@ function handleLoadView(viewId: string) {
                   <Icon name="lucide:edit-2" class="size-3.5" />
                 </Button>
                 <Button
-                  v-else
+                  v-show="!renameTarget || renameTarget?.id !== view.id"
                   variant="ghost"
                   size="icon"
                   class="size-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
