@@ -161,8 +161,15 @@ function handleLoadView(viewId: string) {
           </div>
 
           <div v-else class="p-1 space-y-0.5">
+            <!-- Search -->
+            <Input
+              v-model="viewSearch"
+              placeholder="Search views..."
+              class="h-7 text-xs mb-1"
+            />
+
             <!-- Save mode: inline input -->
-            <div v-if="saveMode" class="px-2 py-1.5 space-y-1">
+            <div v-if="saveMode" class="px-2 py-1.5 space-y-1 border-b">
               <Input
                 ref="saveInputRef"
                 v-model="newViewName"
@@ -200,13 +207,6 @@ function handleLoadView(viewId: string) {
               <Icon name="lucide:plus" class="mr-2 size-3.5" />
               Save view as...
             </DropdownMenuItem>
-
-            <Input
-              v-if="savedViews.length > 0"
-              v-model="viewSearch"
-              placeholder="Search views..."
-              class="h-7 text-xs mx-2"
-            />
 
             <DropdownMenuItem
               v-for="view in filteredViews"
