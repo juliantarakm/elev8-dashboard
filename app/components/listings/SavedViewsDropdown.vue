@@ -201,7 +201,7 @@ function handleLoadView(viewId: string) {
             <!-- Normal mode: save as option -->
             <DropdownMenuItem
               v-else
-              @click="startSaveMode"
+              @click.prevent="startSaveMode"
               data-testid="save-as-option"
             >
               <Icon name="lucide:plus" class="mr-2 size-3.5" />
