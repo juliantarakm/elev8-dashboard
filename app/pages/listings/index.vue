@@ -331,18 +331,6 @@ async function handleLoadView(viewId: string) {
   }
 }
 
-function handleConfirmLoadView() {
-  if (pendingViewId.value) {
-    confirmLoadView(pendingViewId.value)
-  }
-}
-
-function handleConfirmLoadView() {
-  if (pendingViewId.value) {
-    confirmLoadView(pendingViewId.value)
-  }
-}
-
 function handleSaveAs(name: string) {
   const state = getCurrentViewState()
   saveCurrentAs(name, state)
