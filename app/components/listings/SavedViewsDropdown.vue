@@ -212,6 +212,7 @@ function handleLoadView(viewId: string) {
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
+              @click="handleLoadView(view.id)"
               class="group flex items-center justify-between py-2"
               :class="{ 'bg-muted': activeView?.id === view.id }"
               :data-testid="`view-item-${view.id}`"
