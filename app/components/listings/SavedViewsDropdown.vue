@@ -131,6 +131,11 @@ function handleLoadView(viewId: string) {
                   name="lucide:check"
                   class="size-4 shrink-0 text-primary"
                 />
+                <Icon
+                  v-else
+                  name="lucide:bookmark"
+                  class="size-3.5 shrink-0 text-muted-foreground"
+                />
                 <div class="min-w-0 flex-1">
                   <div class="font-medium text-sm truncate">
                     {{ view.name }}
