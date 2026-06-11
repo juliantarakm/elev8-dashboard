@@ -317,9 +317,8 @@ function updateCurrentState() {
 
 async function handleLoadView(viewId: string) {
   const view = await loadView(viewId)
-  if (view && pendingViewId.value) {
-    // Shows unsaved changes dialog, pendingViewId is set
-  } else if (view) {
+  if (view && !pendingViewId.value) {
+    // No unsaved changes, apply immediately
     applyViewState({
       searchValue: view.searchValue,
       activeTagFilter: view.activeTagFilter,
@@ -329,6 +328,7 @@ async function handleLoadView(viewId: string) {
     })
     updateCurrentState()
   }
+  // If pendingViewId.value is set, unsaved changes dialog will show
 }
 
 function handleSaveAs(name: string) {
