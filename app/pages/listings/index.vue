@@ -331,6 +331,12 @@ async function handleLoadView(viewId: string) {
   // If pendingViewId.value is set, unsaved changes dialog will show
 }
 
+function handleConfirmLoadView() {
+  if (pendingViewId.value) {
+    confirmLoadView(pendingViewId.value)
+  }
+}
+
 function handleSaveAs(name: string) {
   const state = getCurrentViewState()
   saveCurrentAs(name, state)
