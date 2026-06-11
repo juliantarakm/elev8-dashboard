@@ -199,14 +199,15 @@ function handleLoadView(viewId: string) {
             </div>
 
             <!-- Normal mode: save as option -->
-            <DropdownMenuItem
+            <div
               v-else
-              @click.prevent="startSaveMode"
+              class="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+              @click="startSaveMode"
               data-testid="save-as-option"
             >
-              <Icon name="lucide:plus" class="mr-2 size-3.5" />
+              <Icon name="lucide:plus" class="size-3.5" />
               Save view as...
-            </DropdownMenuItem>
+            </div>
 
             <DropdownMenuItem
               v-for="view in filteredViews"
