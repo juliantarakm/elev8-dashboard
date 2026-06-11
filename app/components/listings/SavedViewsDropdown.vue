@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SavedView } from '~/types/saved-views'
 import { Icon } from '#components'
-import { formatDistanceToNow } from 'date-fns'
 import { computed, nextTick, ref } from 'vue'
 import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
@@ -121,19 +120,6 @@ const filteredViews = computed(() => {
   const q = viewSearch.value.toLowerCase()
   return props.savedViews.filter(v => v.name.toLowerCase().includes(q))
 })
-
-function getCreatorInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
-function formatTimeAgo(date: string): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true })
-}
 
 function handleLoadView(viewId: string) {
   emit('load-view', viewId)
@@ -259,18 +245,12 @@ function handleLoadView(viewId: string) {
                   @click.stop
                 />
 
-                <!-- Normal mode: view name -->
-                <div v-else class="min-w-0 flex-1">
-                  <div class="font-medium text-sm truncate">
-                    {{ view.name }}
-                  </div>
-                  <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <div class="size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[9px] font-medium">
-                      {{ getCreatorInitials(view.createdBy) }}
-                    </div>
-                    <span>{{ formatTimeAgo(view.updatedAt) }}</span>
-                  </div>
-                </div>
+                 <!-- Normal mode: view name -->
+                 <div v-else class="min-w-0 flex-1">
+                   <div class="font-medium text-sm truncate">
+                     {{ view.name }}
+                   </div>
+                 </div>
               </div>
               <div v-if="!view.isDefault" class="flex items-center gap-0.5">
                 <!-- Renaming mode: check/cancel buttons -->
