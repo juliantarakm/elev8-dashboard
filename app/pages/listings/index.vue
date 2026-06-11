@@ -293,19 +293,6 @@ watch(() => table.getState().pagination.pageSize, () => {
   updateCurrentState()
 })
 
-watch(() => activeView.value, (view) => {
-  if (view) {
-    applyViewState({
-      searchValue: view.searchValue,
-      activeTagFilter: view.activeTagFilter,
-      activeAiFilter: view.activeAiFilter,
-      columnVisibility: view.columnVisibility,
-      pageSize: view.pageSize,
-    })
-    updateCurrentState()
-  }
-})
-
 function getCurrentViewState(): ViewState {
   return {
     searchValue: searchValue.value,
@@ -329,9 +316,24 @@ function updateCurrentState() {
 }
 
 async function handleLoadView(viewId: string) {
-  const pendingView = await loadView(viewId)
-  if (pendingView && pendingViewId.value) {
+  const view = await loadView(viewId)
+  if (view && pendingViewId.value) {
     // Shows unsaved changes dialog, pendingViewId is set
+  } else if (view) {
+    applyViewState({
+      searchValue: view.searchValue,
+      activeTagFilter: view.activeTagFilter,
+      activeAiFilter: view.activeAiFilter,
+      columnVisibility: view.columnVisibility,
+      pageSize: view.pageSize,
+    })
+    updateCurrentState()
+  }
+}
+
+function handleConfirmLoadView() {
+  if (pendingViewId.value) {
+    confirmLoadView(pendingViewId.value)
   }
 }
 
