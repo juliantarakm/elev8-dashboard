@@ -2,13 +2,12 @@
 import type { SavedView } from '~/types/saved-views'
 import { Icon } from '#components'
 import { formatDistanceToNow } from 'date-fns'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { Button } from '~/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '~/components/ui/dropdown-menu'
 import { Input } from '~/components/ui/input'
 import { ScrollArea } from '~/components/ui/scroll-area'
 import DeleteViewDialog from '~/components/listings/DeleteViewDialog.vue'
-import RenameViewDialog from '~/components/listings/RenameViewDialog.vue'
 import UnsavedChangesDialog from '~/components/listings/UnsavedChangesDialog.vue'
 
 const props = defineProps<{
@@ -22,7 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'load-view': [viewId: string]
-  'save-as': []
+  'save-as': [name: string]
   'update': []
   'delete': [viewId: string]
   'rename': [viewId: string, newName: string]
@@ -33,10 +32,88 @@ const emit = defineEmits<{
 const viewSearch = ref('')
 const deleteTarget = ref<SavedView | null>(null)
 const renameTarget = ref<SavedView | null>(null)
+const saveMode = ref(false)
+const newViewName = ref('')
+const saveInputRef = ref<HTMLInputElement | null>(null)
+const renameInputRef = ref<HTMLInputElement | null>(null)
 
 const pendingTarget = computed(() => {
   return props.pendingViewId ? props.savedViews.find(v => v.id === props.pendingViewId) || null : null
 })
+
+function getNextViewNumber(): number {
+  const existingNumbers = props.savedViews
+    .filter(v => !v.isDefault && v.name.match(/^New View (\d+)$/))
+    .map(v => Number.parseInt(v.name.replace(/^New View (\d+)$/, '$1'), 10))
+
+  if (existingNumbers.length === 0)
+    return 1
+
+  return Math.max(...existingNumbers) + 1
+}
+
+function startSaveMode() {
+  saveMode.value = true
+  newViewName.value = `New View ${getNextViewNumber()}`
+
+  nextTick(() => {
+    saveInputRef.value?.focus()
+    saveInputRef.value?.select()
+  })
+}
+
+function confirmSave() {
+  if (newViewName.value.trim().length === 0 || newViewName.value.trim().length > 50) {
+    saveMode.value = false
+    return
+  }
+
+  emit('save-as', newViewName.value.trim())
+  saveMode.value = false
+  newViewName.value = ''
+}
+
+function cancelSave() {
+  saveMode.value = false
+  newViewName.value = ''
+}
+
+function startRename(view: SavedView) {
+  renameTarget.value = { ...view, name: view.name }
+
+  nextTick(() => {
+    renameInputRef.value?.focus()
+    renameInputRef.value?.select()
+  })
+}
+
+function confirmRename() {
+  if (!renameTarget.value || renameTarget.value.name.trim().length === 0 || renameTarget.value.name.trim().length > 50) {
+    cancelRename()
+    return
+  }
+
+  emit('rename', renameTarget.value.id, renameTarget.value.name.trim())
+  renameTarget.value = null
+}
+
+function cancelRename() {
+  renameTarget.value = null
+}
+
+function handleSaveKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter')
+    confirmSave()
+  else if (e.key === 'Escape')
+    cancelSave()
+}
+
+function handleRenameKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter')
+    confirmRename()
+  else if (e.key === 'Escape')
+    cancelRename()
+}
 
 const filteredViews = computed(() => {
   if (!viewSearch.value)
@@ -74,7 +151,42 @@ function handleLoadView(viewId: string) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent class="w-72" align="start">
-        <DropdownMenuItem @click="emit('save-as')" data-testid="save-as-option">
+        <!-- Save mode: inline input -->
+        <div v-if="saveMode" class="p-2 space-y-2">
+          <Input
+            ref="saveInputRef"
+            v-model="newViewName"
+            placeholder="View name"
+            class="h-8 text-sm"
+            maxlength="50"
+            @keydown="handleSaveKeydown"
+          />
+          <div class="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 flex-1"
+              @click="cancelSave"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              class="h-7 flex-1"
+              :disabled="newViewName.trim().length === 0"
+              @click="confirmSave"
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+
+        <!-- Normal mode: save as option -->
+        <DropdownMenuItem
+          v-else
+          @click="startSaveMode"
+          data-testid="save-as-option"
+        >
           <Icon name="lucide:plus" class="mr-2 size-3.5" />
           Save view as...
         </DropdownMenuItem>
@@ -114,7 +226,6 @@ function handleLoadView(viewId: string) {
             <DropdownMenuItem
               v-for="view in filteredViews"
               :key="view.id"
-              @click="handleLoadView(view.id)"
               class="group flex items-center justify-between py-2"
               :class="{ 'bg-muted': activeView?.id === view.id }"
               :data-testid="`view-item-${view.id}`"
@@ -136,7 +247,20 @@ function handleLoadView(viewId: string) {
                   name="lucide:bookmark"
                   class="size-3.5 shrink-0 text-muted-foreground"
                 />
-                <div class="min-w-0 flex-1">
+
+                <!-- Renaming mode: inline input -->
+                <Input
+                  v-if="renameTarget?.id === view.id"
+                  :ref="el => { if (el && renameTarget?.id === view.id) renameInputRef = el as any }"
+                  v-model="renameTarget.name"
+                  class="h-6 text-sm max-w-32"
+                  maxlength="50"
+                  @keydown.stop="handleRenameKeydown"
+                  @click.stop
+                />
+
+                <!-- Normal mode: view name -->
+                <div v-else class="min-w-0 flex-1">
                   <div class="font-medium text-sm truncate">
                     {{ view.name }}
                   </div>
@@ -149,15 +273,38 @@ function handleLoadView(viewId: string) {
                 </div>
               </div>
               <div v-if="!view.isDefault" class="flex items-center gap-0.5">
+                <!-- Renaming mode: check/cancel buttons -->
                 <Button
+                  v-if="renameTarget?.id === view.id"
+                  variant="ghost"
+                  size="icon"
+                  class="size-7"
+                  @click.stop="confirmRename"
+                >
+                  <Icon name="lucide:check" class="size-3.5" />
+                </Button>
+                <Button
+                  v-if="renameTarget?.id === view.id"
+                  variant="ghost"
+                  size="icon"
+                  class="size-7"
+                  @click.stop="cancelRename"
+                >
+                  <Icon name="lucide:x" class="size-3.5" />
+                </Button>
+
+                <!-- Normal mode: edit and delete buttons -->
+                <Button
+                  v-else
                   variant="ghost"
                   size="icon"
                   class="size-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                  @click.stop="renameTarget = view"
+                  @click.stop="startRename(view)"
                 >
                   <Icon name="lucide:edit-2" class="size-3.5" />
                 </Button>
                 <Button
+                  v-else
                   variant="ghost"
                   size="icon"
                   class="size-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
@@ -202,14 +349,6 @@ function handleLoadView(viewId: string) {
       :view-name="deleteTarget.name"
       @update:open="deleteTarget = null"
       @delete="emit('delete', deleteTarget.id)"
-    />
-
-    <RenameViewDialog
-      v-if="renameTarget"
-      :open="!!renameTarget"
-      :view-name="renameTarget.name"
-      @update:open="renameTarget = null"
-      @rename="emit('rename', renameTarget.id, $event)"
     />
 
     <UnsavedChangesDialog

@@ -20,7 +20,6 @@ import ListingOtaCell from '~/components/listings/ListingOtaCell.vue'
 import ListingRowActions from '~/components/listings/ListingRowActions.vue'
 import ListingSingleToggle from '~/components/listings/ListingSingleToggle.vue'
 import SavedViewsDropdown from '~/components/listings/SavedViewsDropdown.vue'
-import SaveViewDialog from '~/components/listings/SaveViewDialog.vue'
 import { Badge } from '~/components/ui/badge'
 import { useSavedViews } from '~/composables/useSavedViews'
 import { valueUpdater } from '~/lib/utils'
@@ -247,8 +246,6 @@ const {
   resetToDefault,
 } = useSavedViews()
 
-const saveDialogOpen = ref(false)
-
 onMounted(() => {
   fetchViews()
 })
@@ -354,10 +351,6 @@ function handleDeleteView(viewId: string) {
 function handleRenameView(viewId: string, newName: string) {
   renameView(viewId, newName)
 }
-
-function openSaveDialog() {
-  saveDialogOpen.value = true
-}
 </script>
 
 <template>
@@ -448,7 +441,7 @@ function openSaveDialog() {
   :can-update-active-view="canUpdateActiveView"
   :pending-view-id="pendingViewId"
   @load-view="handleLoadView"
-  @save-as="openSaveDialog"
+  @save-as="handleSaveAs"
   @update="handleUpdateView"
   @delete="handleDeleteView"
   @rename="handleRenameView"
@@ -606,10 +599,5 @@ function openSaveDialog() {
         </div>
       </div>
     </div>
-
-    <SaveViewDialog
-      v-model:open="saveDialogOpen"
-      @save="handleSaveAs"
-    />
   </div>
 </template>
