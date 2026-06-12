@@ -79,7 +79,9 @@ export function useSavedViews() {
   })
 
   function getViewsFromStorage(): SavedView[] {
-    return savedViews.value
+    // Always include DEFAULT_VIEW with custom views from localStorage
+    const customViews = loadFromLocalStorage<SavedView[]>(STORAGE_KEY, [])
+    return [DEFAULT_VIEW, ...customViews]
   }
 
   function saveViewsToStorage(views: SavedView[]): void {
@@ -113,7 +115,9 @@ export function useSavedViews() {
   async function fetchViews() {
     isLoading.value = true
     try {
-      const views = getViewsFromStorage()
+      // Load custom views from localStorage and merge with DEFAULT_VIEW
+      const customViews = loadFromLocalStorage<SavedView[]>(STORAGE_KEY, [])
+      const views = [DEFAULT_VIEW, ...customViews]
       savedViews.value = views.sort((a, b) => {
         // Default view always first
         if (a.isDefault) return -1
