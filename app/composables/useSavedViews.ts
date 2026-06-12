@@ -1,6 +1,6 @@
 import type { SavedView, ViewState } from '~/types/saved-views'
 import { DEFAULT_VIEW } from '~/types/saved-views'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 
 const STORAGE_KEY = 'elev8-saved-views'
@@ -8,14 +8,56 @@ const ACTIVE_VIEW_KEY = 'elev8-active-view'
 const CURRENT_STATE_KEY = 'elev8-current-state'
 const PENDING_VIEW_ID_KEY = 'elev8-pending-view-id'
 
+// Load from localStorage helper
+function loadFromLocalStorage<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined')
+    return defaultValue
+  try {
+    const data = localStorage.getItem(key)
+    return data ? JSON.parse(data) : defaultValue
+  }
+  catch {
+    return defaultValue
+  }
+}
+
+// Save to localStorage helper
+function saveToLocalStorage<T>(key: string, value: T): void {
+  if (typeof window === 'undefined')
+    return
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  }
+  catch (error) {
+    toast.error(`Could not save ${key} to storage.`)
+  }
+}
+
 export function useSavedViews() {
-  const savedViews = usePersistedState<SavedView[]>(STORAGE_KEY, () => [DEFAULT_VIEW], {
-    serialize: state => JSON.stringify(state.filter(v => !v.isDefault)),
-    deserialize: str => JSON.parse(str).concat(DEFAULT_VIEW),
+  // Initialize from localStorage
+  const savedViews = ref<SavedView[]>(loadFromLocalStorage(STORAGE_KEY, [DEFAULT_VIEW]))
+  const activeView = ref<SavedView | null>(loadFromLocalStorage(ACTIVE_VIEW_KEY, DEFAULT_VIEW))
+  const currentState = ref<ViewState | null>(loadFromLocalStorage(CURRENT_STATE_KEY, null))
+  const pendingViewId = ref<string | null>(loadFromLocalStorage(PENDING_VIEW_ID_KEY, null))
+  const isLoading = ref(false)
+
+  // Watch for changes and persist to localStorage
+  watch(savedViews, (newVal) => {
+    const customViews = newVal.filter(v => !v.isDefault)
+    saveToLocalStorage(STORAGE_KEY, customViews)
+  }, { deep: true })
+
+  watch(activeView, (newVal) => {
+    saveToLocalStorage(ACTIVE_VIEW_KEY, newVal)
+  }, { deep: true })
+
+  watch(currentState, (newVal) => {
+    saveToLocalStorage(CURRENT_STATE_KEY, newVal)
+  }, { deep: true })
+
+  watch(pendingViewId, (newVal) => {
+    saveToLocalStorage(PENDING_VIEW_ID_KEY, newVal)
   })
-  const activeView = usePersistedState<SavedView | null>(ACTIVE_VIEW_KEY, () => DEFAULT_VIEW)
-  const currentState = usePersistedState<ViewState | null>(CURRENT_STATE_KEY, () => null)
-  const pendingViewId = usePersistedState<string | null>(PENDING_VIEW_ID_KEY, () => null)
 
   const isDirty = computed(() => {
     if (!activeView.value || !currentState.value || activeView.value.isDefault)
@@ -37,16 +79,7 @@ export function useSavedViews() {
   })
 
   function getViewsFromStorage(): SavedView[] {
-    if (typeof window === 'undefined')
-      return []
-    try {
-      const data = localStorage.getItem(STORAGE_KEY)
-      const customViews: SavedView[] = data ? JSON.parse(data) : []
-      return [DEFAULT_VIEW, ...customViews]
-    }
-    catch {
-      return [DEFAULT_VIEW]
-    }
+    return savedViews.value
   }
 
   function saveViewsToStorage(views: SavedView[]): void {
