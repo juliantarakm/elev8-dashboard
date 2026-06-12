@@ -4,13 +4,18 @@ import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 
 const STORAGE_KEY = 'elev8-saved-views'
+const ACTIVE_VIEW_KEY = 'elev8-active-view'
+const CURRENT_STATE_KEY = 'elev8-current-state'
+const PENDING_VIEW_ID_KEY = 'elev8-pending-view-id'
 
 export function useSavedViews() {
-  const savedViews = ref<SavedView[]>([])
-  const activeView = ref<SavedView | null>(null)
-  const currentState = ref<ViewState | null>(null)
-  const isLoading = ref(false)
-  const pendingViewId = ref<string | null>(null) // For unsaved changes warning
+  const savedViews = usePersistedState<SavedView[]>(STORAGE_KEY, () => [DEFAULT_VIEW], {
+    serialize: state => JSON.stringify(state.filter(v => !v.isDefault)),
+    deserialize: str => JSON.parse(str).concat(DEFAULT_VIEW),
+  })
+  const activeView = usePersistedState<SavedView | null>(ACTIVE_VIEW_KEY, () => DEFAULT_VIEW)
+  const currentState = usePersistedState<ViewState | null>(CURRENT_STATE_KEY, () => null)
+  const pendingViewId = usePersistedState<string | null>(PENDING_VIEW_ID_KEY, () => null)
 
   const isDirty = computed(() => {
     if (!activeView.value || !currentState.value || activeView.value.isDefault)
