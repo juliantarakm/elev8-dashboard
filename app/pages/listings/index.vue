@@ -246,8 +246,19 @@ const {
   resetToDefault,
 } = useSavedViews()
 
-onMounted(() => {
-  fetchViews()
+onMounted(async () => {
+  await fetchViews()
+  // Restore view state after fetch
+  if (activeView.value) {
+    applyViewState({
+      searchValue: activeView.value.searchValue,
+      activeTagFilter: activeView.value.activeTagFilter,
+      activeAiFilter: activeView.value.activeAiFilter,
+      columnVisibility: activeView.value.columnVisibility,
+      pageSize: activeView.value.pageSize,
+    })
+    updateCurrentState()
+  }
 })
 
 const filteredTags = computed(() => {
@@ -333,7 +344,19 @@ async function handleLoadView(viewId: string) {
 
 function handleConfirmLoadView() {
   if (pendingViewId.value) {
-    confirmLoadView(pendingViewId.value)
+    const viewId = pendingViewId.value
+    const view = savedViews.value.find(v => v.id === viewId)
+    if (view) {
+      confirmLoadView(viewId)
+      applyViewState({
+        searchValue: view.searchValue,
+        activeTagFilter: view.activeTagFilter,
+        activeAiFilter: view.activeAiFilter,
+        columnVisibility: view.columnVisibility,
+        pageSize: view.pageSize,
+      })
+      updateCurrentState()
+    }
   }
 }
 
