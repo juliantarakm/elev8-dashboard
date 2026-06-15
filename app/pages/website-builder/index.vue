@@ -92,9 +92,8 @@ function formatDate(dateString: string) {
 }
 
 function formatVisits(num: number) {
-  if (num >= 1000) {
+  if (num >= 1000)
     return `${(num / 1000).toFixed(1)}k`
-  }
   return num.toString()
 }
 </script>
@@ -102,9 +101,7 @@ function formatVisits(num: number) {
 <template>
   <div class="w-full flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-2xl font-bold tracking-tight">
-        Website Builder
-      </h2>
+      <h2 class="text-2xl font-bold tracking-tight">Website Builder</h2>
       <Button as-child>
         <NuxtLink to="/website-builder/create">
           <Icon name="i-lucide-plus" class="size-4 mr-2" />
@@ -113,33 +110,23 @@ function formatVisits(num: number) {
       </Button>
     </div>
 
-    <!-- Website Grid -->
     <main v-if="websites.length > 0" class="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @3xl/main:grid-cols-3">
       <Card v-for="website in websites" :key="website.id" class="@container/card">
         <CardHeader class="pb-3">
           <div class="flex items-start justify-between">
-            <CardTitle class="text-lg font-semibold">
-              {{ website.name }}
-            </CardTitle>
-            <Badge :class="statusBadgeClass(website.status)">
-              {{ statusLabel(website.status) }}
-            </Badge>
+            <CardTitle class="text-lg font-semibold">{{ website.name }}</CardTitle>
+            <Badge :class="statusBadgeClass(website.status)">{{ statusLabel(website.status) }}</Badge>
           </div>
         </CardHeader>
         <CardContent class="flex flex-col gap-3">
-          <!-- URL -->
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
             <Icon name="i-lucide-globe" class="size-4" />
             <span>{{ website.url }}</span>
           </div>
-
-          <!-- Template -->
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
             <Icon name="i-lucide-layout-template" class="size-4" />
             <span>{{ website.template }}</span>
           </div>
-
-          <!-- Stats row -->
           <div class="flex items-center justify-between pt-2 border-t border-border">
             <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Icon name="i-lucide-bar-chart-3" class="size-4" />
@@ -164,7 +151,6 @@ function formatVisits(num: number) {
       </Card>
     </main>
 
-    <!-- Empty State -->
     <main v-else class="flex flex-1 items-center justify-center">
       <Empty>
         <EmptyHeader>
