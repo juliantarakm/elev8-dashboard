@@ -38,7 +38,7 @@ function handleInstallTemplate(template: MarketplaceTemplate) {
     id: `j-${Date.now()}`,
     name: template.name,
     status: 'draft',
-    triggerType: trigStep?.triggers?.[0]?.type ?? 'booking_confirmed',
+    triggerType: trigStep?.triggers?.[0]?.type ?? 'new_booking',
     lastModified: new Date().toISOString().split('T')[0],
     properties: ['All Properties'],
     steps: template.steps.map(s => ({ ...s, id: `s-${Date.now()}-${Math.random().toString(36).slice(2)}` })),
@@ -61,6 +61,15 @@ function handleSaveJourney(journey: Journey) {
   toast.success('Journey saved')
   editingJourney.value = null
   goTo('list')
+}
+
+function handleEditorBuildAI(prompt: string) {
+  builderPrompt.value = prompt
+  goTo('builder-generating')
+}
+
+function handleSaveTemplate(journey: Journey) {
+  toast.success(`"${journey.name}" saved as template`)
 }
 
 function handleEditorBack() {
@@ -115,6 +124,8 @@ function handleRegenerate() {
         :initial-journey="editingJourney"
         @save="handleSaveJourney"
         @back="handleEditorBack"
+        @build-with-ai="handleEditorBuildAI"
+        @save-template="handleSaveTemplate"
       />
     </Transition>
   </div>

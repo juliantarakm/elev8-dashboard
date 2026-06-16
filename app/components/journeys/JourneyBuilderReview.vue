@@ -66,13 +66,17 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
                       v-if="step.type === 'message'"
                       class="rounded px-1.5 py-0.5 text-xs font-medium"
                       :style="{ backgroundColor: '#C8A84B22', color: '#C8A84B' }"
-                    >HostBuddy AI</span>
+                    >ElevAI</span>
                   </div>
                   <p v-if="step.type === 'message'" class="truncate text-xs text-muted-foreground">
                     {{ (step as any).directive }}
                   </p>
                   <p v-else-if="step.type === 'wait'" class="truncate text-xs text-muted-foreground">
-                    {{ (step as any).duration }} {{ (step as any).unit }}{{ (step as any).relativeTo ? ` before ${(step as any).relativeTo}` : '' }}
+                    {{ (step as any).waitMode === 'until_condition' ? 'Wait until conditions met' : [
+                      (step as any).durationDays ? `${(step as any).durationDays}d` : '',
+                      (step as any).durationHours ? `${(step as any).durationHours}h` : '',
+                      (step as any).durationMinutes ? `${(step as any).durationMinutes}m` : ''
+                    ].filter(Boolean).join(' ') || 'No wait time configured' }}
                   </p>
                   <p v-else-if="step.type === 'context_check'" class="truncate text-xs text-muted-foreground">
                     {{ (step as any).condition }}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JourneyStep } from './data/journeys'
+import type { ConditionType, JourneyStep } from './data/journeys'
 import { cn } from '@/lib/utils'
 import { conditionMeta, triggerMeta } from './data/journeys'
 
@@ -22,7 +22,7 @@ const stepMeta: Record<string, { icon: string, colorClasses: string, label: stri
   if_else: { icon: 'i-lucide-git-fork', colorClasses: 'text-blue-500 bg-blue-50 dark:bg-blue-950', label: 'If/Else' },
   hard_requirement: { icon: 'i-lucide-shield', colorClasses: 'text-orange-500 bg-orange-50 dark:bg-orange-950', label: 'Requirement' },
   create_note: { icon: 'i-lucide-file-pen-line', colorClasses: 'text-teal-500 bg-teal-50 dark:bg-teal-950', label: 'Note' },
-  toggle_ai: { icon: 'i-lucide-bot', colorClasses: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950', label: 'Toggle AI' },
+  toggle_ai: { icon: 'i-lucide-bot', colorClasses: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950', label: 'AI Responses' },
   integration: { icon: 'i-lucide-plug', colorClasses: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-950', label: 'Integration' },
   end_journey: { icon: 'i-lucide-flag', colorClasses: 'text-muted-foreground bg-muted', label: 'End Journey' },
 }
@@ -32,10 +32,21 @@ const meta = computed(() => stepMeta[props.step.type])
 const summaryText = computed(() => {
   const s = props.step
   if (s.type === 'wait') {
-    if (s.waitType === 'trigger')
-      return `Waiting for: ${s.waitTrigger || 'event'}`
-    const rel = s.relativeTo ? ` before ${s.relativeTo}` : ''
-    return `${s.duration} ${s.unit}${rel}`
+    if (s.waitMode === 'until_condition')
+      return 'Wait until conditions met'
+    const parts = []
+    if ((s as any).durationDays) parts.push(`${(s as any).durationDays}d`)
+    if ((s as any).durationHours) parts.push(`${(s as any).durationHours}h`)
+    if ((s as any).durationMinutes) parts.push(`${(s as any).durationMinutes}m`)
+    const duration = parts.length > 0 ? parts.join(' ') : null
+    const hasTime = (s as any).waitUntilSpecificTime && (s as any).waitUntilTime
+    if (duration && hasTime)
+      return `${duration} at ${(s as any).waitUntilTime}`
+    if (hasTime)
+      return `At ${(s as any).waitUntilTime}`
+    if (duration)
+      return duration
+    return 'No wait time configured'
   }
   if (s.type === 'message') {
     const channelLabel: Record<string, string> = { ota: 'OTA Inbox', whatsapp: 'WhatsApp', email: 'Email' }
@@ -54,11 +65,25 @@ const summaryText = computed(() => {
       return ''
     return entries.map((e: any) => triggerMeta[e.type]?.label ?? e.type).join(' · ')
   }
-  if (s.type === 'if_else' || s.type === 'hard_requirement')
-    return conditionMeta[(s as any).conditionType] ?? ''
+  if (s.type === 'if_else') {
+    const actionLabel: Record<string, string> = {
+      wait: 'Wait', message: 'Send a Message', if_else: 'If/Else', hard_requirement: 'Hard Requirement',
+      action: 'Create Action Item', create_note: 'Create Reservation Note',
+      toggle_ai_pause: 'Pause Auto-responses', toggle_ai_start: 'Start Auto-responses', integration: 'Integrations',
+    }
+    const cond = conditionMeta[(s as any).conditionType as ConditionType] ?? ''
+    const tStep = (s as any).trueBranchStep
+    const fStep = (s as any).falseBranchStep
+    const tType = tStep ? (tStep.type === 'toggle_ai' ? (tStep.enable === false ? 'toggle_ai_pause' : 'toggle_ai_start') : tStep.type) : null
+    const fType = fStep ? (fStep.type === 'toggle_ai' ? (fStep.enable === false ? 'toggle_ai_pause' : 'toggle_ai_start') : fStep.type) : null
+    const parts = [tType ? actionLabel[tType] : null, fType ? actionLabel[fType] : null].filter(Boolean)
+    return parts.length > 0 ? `${cond} · ${parts.join(' / ')}` : cond
+  }
+  if (s.type === 'hard_requirement')
+    return conditionMeta[(s as any).conditionType as ConditionType] ?? ''
   if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? `${t.slice(0, 50)}…` : t }
   if (s.type === 'toggle_ai')
-    return (s as any).enable ? 'Enable AI responses' : 'Disable AI responses'
+    return (s as any).enable ? 'Start AI responses' : 'Pause AI responses'
   if (s.type === 'integration')
     return (s as any).integrationName || 'Integration action'
   if (s.type === 'end_journey')
@@ -78,19 +103,19 @@ const isMessage = computed(() => props.step.type === 'message')
     )"
     @click="emit('select')"
   >
-    <div :class="cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', meta.colorClasses)">
-      <Icon :name="meta.icon" class="h-4 w-4" />
+    <div :class="cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', meta?.colorClasses)">
+      <Icon :name="meta?.icon ?? 'i-lucide-circle'" class="h-4 w-4" />
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col gap-1">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-sm font-medium leading-none">{{ step.name }}</span>
-        <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ meta.label }}</span>
+        <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ meta?.label }}</span>
         <span
           v-if="isMessage"
           class="rounded px-1.5 py-0.5 text-xs font-medium"
           :style="{ backgroundColor: '#C8A84B22', color: '#C8A84B' }"
-        >HostBuddy AI</span>
+        >ElevAI</span>
       </div>
       <p class="truncate text-xs text-muted-foreground">
         {{ summaryText }}

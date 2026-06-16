@@ -53,6 +53,32 @@ This file provides context for AI agents working on this project.
   - Auto-read: Selecting a conversation sets `unreadCount = 0`
   - Key type: `ConversationStatus = 'action_needed'` (nullable — `null` = no action needed)
 
+### Journeys Module (`app/components/journeys/`)
+
+- **Data + types**: `app/components/journeys/data/journeys.ts`
+  - `TriggerType`: 15 types across 3 categories (no integration triggers):
+    - **Conversation-Based**: `conversation_content` (keywords textarea), `sentiment_change` (Positive/Neutral/Negative toggle + immediate + delay + time)
+    - **Reservation Events**: `inquiry_received`, `new_message_received`, `new_booking`, `guest_checkout`, `booking_cancelled` (immediate checkbox + delay + time), `checkin`, `checkout` (Before/On/After 3-way toggle + offsetAmount/offsetUnit + time)
+    - **Calendar-Based**: `send_once` (date + time), `gap_nights` (min/max + before/after + delay + time), `daily`, `weekly`, `monthly`, `yearly`
+  - `TriggerCategory = 'conversation' | 'reservation' | 'calendar'`
+  - `WaitStep`: `waitMode: 'time_delay' | 'until_condition'` — Time Delay has `durationDays/Hours/Minutes` + optional `waitUntilSpecificTime` + `waitUntilTime`; Until Condition uses `rules` + `combinator` (same condition system as Hard Requirement/If-Else)
+  - `IfElseStep`: `trueBranchStep` / `falseBranchStep` store full step configs (`Record<string, any>`) — user picks a step type from the same menu as "Add Step", and the full config UI opens in a Dialog popup. Each branch can have one action. Delete via Dialog.
+  - Condition system: `ConditionRule` with 14 types, `ConditionCombinator = 'and' | 'or'` — configured via `JourneyConditionsModal.vue` (reusable for Hard Requirement, If-Else, Wait Until Condition)
+  - `JourneyStatus = 'active' | 'inactive'` (no 'draft' — known pre-existing type error in `pages/journeys/index.vue`)
+  - `addStepOptions`: Removed `context_check` and `end_journey`. Remaining: Wait, Send Message, If/Else, Hard Requirement, Create Action Item, Create Reservation Note, Pause/Start Auto-responses, Integrations
+  - `handleStepUpdate` uses `splice` (not object spread) to avoid Select dropdown portal issues
+
+- **Components**:
+  - `JourneyEditor.vue` — Editor top bar (Add Requirements, Build with AI, Save as Template), step canvas, add step dropdown, sidebar
+  - `JourneyStepSidebar.vue` — Step config UI for all step types + trigger config + branch dialog
+  - `JourneyStepCard.vue` — Step cards with badges + summary text
+  - `JourneyBuilderReview.vue` — AI-generated journey review screen
+  - `JourneyConditionsModal.vue` — Reusable Configure Conditions modal (14 types, AND/OR)
+  - `JourneySaveTemplateModal.vue` — Save as Template modal
+  - `JourneyBuildAIModal.vue` — Build with AI modal
+
+- **Page**: `app/pages/journeys/index.vue` — Marketplace view, builder flow, editor routing
+
 ### Layout
 
 - **Topbar**: `app/components/layout/Header.vue` — SidebarTrigger + user menu (no breadcrumb)

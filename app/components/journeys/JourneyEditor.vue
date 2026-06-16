@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ConditionType, Journey, JourneyStep, StepType } from './data/journeys'
+import type { ConditionCombinator, ConditionRule, ConditionType, Journey, JourneyStep, StepType } from './data/journeys'
 import { toast } from 'vue-sonner'
 import draggable from 'vuedraggable'
 
@@ -8,8 +8,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [journey: Journey]
-  back: []
+  'save': [journey: Journey]
+  'back': []
+  'build-with-ai': [prompt: string]
+  'save-template': [journey: Journey]
 }>()
 
 function makeDefaultJourney(): Journey {
@@ -17,15 +19,17 @@ function makeDefaultJourney(): Journey {
     id: `j-${Date.now()}`,
     name: 'New Journey',
     status: 'inactive',
-    triggerType: 'booking_confirmed',
+    triggerType: 'new_booking',
     lastModified: new Date().toISOString().split('T')[0],
     properties: ['All Properties'],
+    requirements: [],
+    requirementCombinator: 'and',
     steps: [
       {
         id: `s-${Date.now()}`,
         type: 'trigger',
-        name: 'Booking Confirmed',
-        triggers: [{ type: 'booking_confirmed', settings: {} }],
+        name: 'New Booking',
+        triggers: [{ type: 'new_booking', settings: {} }],
         properties: ['All Properties'],
       },
     ],
@@ -35,6 +39,28 @@ function makeDefaultJourney(): Journey {
 const localJourney = ref<Journey>(
   props.initialJourney ? JSON.parse(JSON.stringify(props.initialJourney)) : makeDefaultJourney(),
 )
+
+// Journey-wide requirements
+const requirements = computed<ConditionRule[]>(() => localJourney.value.requirements ?? [])
+const requirementCombinator = computed<ConditionCombinator>(() => localJourney.value.requirementCombinator ?? 'and')
+
+function handleSaveRequirements(rules: ConditionRule[], combinator: ConditionCombinator) {
+  localJourney.value = { ...localJourney.value, requirements: rules, requirementCombinator: combinator }
+  toast.success('Journey-wide requirements updated')
+}
+
+// Modal open states
+const requirementsModalOpen = ref(false)
+const saveTemplateOpen = ref(false)
+const buildAIOpen = ref(false)
+
+function handleBuildAI(prompt: string) {
+  emit('build-with-ai', prompt)
+}
+
+function handleSaveTemplate() {
+  emit('save-template', localJourney.value)
+}
 
 const selectedStepId = ref<string | null>(localJourney.value.steps[0]?.id ?? null)
 const isEditingName = ref(false)
@@ -72,10 +98,9 @@ function commitName(e: Event) {
 }
 
 function handleStepUpdate(updated: JourneyStep) {
-  localJourney.value = {
-    ...localJourney.value,
-    steps: localJourney.value.steps.map(s => (s.id === updated.id ? updated : s)),
-  }
+  const index = localJourney.value.steps.findIndex(s => s.id === updated.id)
+  if (index !== -1)
+    localJourney.value.steps.splice(index, 1, updated)
 }
 
 function deleteStep(id: string) {
@@ -89,21 +114,21 @@ function deleteStep(id: string) {
   }
 }
 
-function makeStep(type: StepType, id: string): JourneyStep {
+function makeStep(type: StepType, id: string, enable?: boolean): JourneyStep {
   if (type === 'wait')
-    return { id, type: 'wait', name: 'Wait', waitType: 'time', duration: 1, unit: 'days', relativeTo: null, waitTrigger: '' }
+    return { id, type: 'wait', name: 'Wait', waitMode: 'time_delay', durationDays: 0, durationHours: 0, durationMinutes: 0 }
   if (type === 'message')
     return { id, type: 'message', name: 'Send Message', messageMode: 'directive', channel: 'ota', templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip', fallbackText: '' }
   if (type === 'context_check')
     return { id, type: 'context_check', name: 'Context Check', condition: '', onFail: 'skip' }
   if (type === 'if_else')
-    return { id, type: 'if_else', name: 'If/Else Branch', conditionType: 'guest_sentiment' as ConditionType, conditionDetails: '', trueBranchLabel: 'Condition met', falseBranchLabel: 'Condition not met' }
+    return { id, type: 'if_else', name: 'If/Else Branch', conditionType: 'guest_sentiment' as ConditionType, conditionDetails: '', rules: [], combinator: 'and' as ConditionCombinator, trueBranchLabel: 'Condition met', falseBranchLabel: 'Condition not met' }
   if (type === 'hard_requirement')
-    return { id, type: 'hard_requirement', name: 'Hard Requirement', conditionType: 'reservation_status' as ConditionType, conditionDetails: '' }
+    return { id, type: 'hard_requirement', name: 'Hard Requirement', conditionType: 'reservation_status' as ConditionType, conditionDetails: '', rules: [], combinator: 'and' as ConditionCombinator }
   if (type === 'create_note')
     return { id, type: 'create_note', name: 'Create Note', noteContent: '', visibleToAI: true }
   if (type === 'toggle_ai')
-    return { id, type: 'toggle_ai', name: 'Toggle AI', enable: true }
+    return { id, type: 'toggle_ai', name: enable === false ? 'Pause Auto-responses' : 'Start Auto-responses', enable: enable !== false, duration: 'indefinite', days: 0, hours: 0, minutes: 0 }
   if (type === 'integration')
     return { id, type: 'integration', name: 'Integration Action', integrationName: '', payload: '' }
   if (type === 'end_journey')
@@ -111,9 +136,9 @@ function makeStep(type: StepType, id: string): JourneyStep {
   return { id, type: 'action', name: 'Action', actionType: 'raise_action_item', details: '' }
 }
 
-function addStep(type: StepType, insertAfterIndex?: number) {
+function addStep(type: StepType, insertAfterIndex?: number, enable?: boolean) {
   const id = `s-${Date.now()}`
-  const newStep = makeStep(type, id)
+  const newStep = makeStep(type, id, enable)
   const steps = [...localJourney.value.steps]
   if (insertAfterIndex !== undefined) {
     steps.splice(insertAfterIndex + 1, 0, newStep)
@@ -151,17 +176,16 @@ function handleSave() {
 
 const addStepMenuOpen = ref(false)
 
-const addStepOptions: { type: StepType, icon: string, label: string, group: string }[] = [
-  { type: 'wait', icon: 'i-lucide-clock', label: 'Wait for Time', group: 'Flow' },
-  { type: 'message', icon: 'i-lucide-message-square', label: 'Send Message', group: 'Flow' },
-  { type: 'if_else', icon: 'i-lucide-git-fork', label: 'If/Else Branch', group: 'Logic' },
+const addStepOptions: { type: StepType, icon: string, label: string, group: string, enable?: boolean }[] = [
+  { type: 'wait', icon: 'i-lucide-clock', label: 'Wait', group: 'Flow' },
+  { type: 'message', icon: 'i-lucide-message-square', label: 'Send a Message', group: 'Flow' },
+  { type: 'if_else', icon: 'i-lucide-git-fork', label: 'If/Else', group: 'Logic' },
   { type: 'hard_requirement', icon: 'i-lucide-shield', label: 'Hard Requirement', group: 'Logic' },
-  { type: 'context_check', icon: 'i-lucide-git-branch', label: 'Context Check', group: 'Logic' },
-  { type: 'action', icon: 'i-lucide-bolt', label: 'Raise Action Item', group: 'Actions' },
-  { type: 'create_note', icon: 'i-lucide-file-pen-line', label: 'Create Note', group: 'Actions' },
-  { type: 'toggle_ai', icon: 'i-lucide-bot', label: 'Toggle AI', group: 'Actions' },
-  { type: 'integration', icon: 'i-lucide-plug', label: 'Integration Action', group: 'Actions' },
-  { type: 'end_journey', icon: 'i-lucide-flag', label: 'End Journey', group: 'Actions' },
+  { type: 'action', icon: 'i-lucide-bolt', label: 'Create Action Item', group: 'Actions' },
+  { type: 'create_note', icon: 'i-lucide-file-pen-line', label: 'Create Reservation Note', group: 'Actions' },
+  { type: 'toggle_ai', icon: 'i-lucide-pause', label: 'Pause Auto-responses', group: 'Actions', enable: false },
+  { type: 'toggle_ai', icon: 'i-lucide-play', label: 'Start Auto-responses', group: 'Actions', enable: true },
+  { type: 'integration', icon: 'i-lucide-plug', label: 'Integrations', group: 'Actions' },
 ]
 
 const addStepGroups = computed(() => {
@@ -208,16 +232,42 @@ const addStepGroups = computed(() => {
         </template>
       </div>
 
-      <div class="flex shrink-0 items-center gap-3">
+      <div class="flex shrink-0 items-center gap-2">
         <JourneysJourneyPropertySelect
           :model-value="localJourney.properties"
           @update:model-value="setProperties"
         />
-        <div class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8"
+          @click="requirementsModalOpen = true"
+        >
+          <Icon name="i-lucide-list-filter" class="mr-1.5 h-3.5 w-3.5" />
+          Requirements
+          <Badge v-if="requirements.length > 0" variant="secondary" class="ml-1.5 h-4 px-1 text-[10px]">
+            {{ requirements.length }}
+          </Badge>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8 border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 dark:border-purple-700 dark:text-purple-300"
+          :disabled="!localJourney.name.trim()"
+          @click="buildAIOpen = true"
+        >
+          <Icon name="i-lucide-sparkles" class="mr-1.5 h-3.5 w-3.5" />
+          Build with AI
+        </Button>
+        <Button variant="outline" size="sm" class="h-8" @click="saveTemplateOpen = true">
+          <Icon name="i-lucide-layout-template" class="mr-1.5 h-3.5 w-3.5" />
+          Save as Template
+        </Button>
+        <div class="mx-1 flex items-center gap-2">
           <Switch :model-value="isActive" @update:model-value="isActive = $event" />
-          <span class="text-sm text-muted-foreground">{{ isActive ? 'Active' : 'Inactive' }}</span>
+          <span class="hidden text-sm text-muted-foreground sm:inline">{{ isActive ? 'Active' : 'Inactive' }}</span>
         </div>
-        <Button @click="handleSave">
+        <Button size="sm" class="h-8" @click="handleSave">
           Save Journey
         </Button>
       </div>
@@ -262,7 +312,7 @@ const addStepGroups = computed(() => {
                           <DropdownMenuLabel class="text-xs text-muted-foreground">
                             {{ group }}
                           </DropdownMenuLabel>
-                          <DropdownMenuItem v-for="opt in opts" :key="opt.type" @click="addStep(opt.type, index)">
+                          <DropdownMenuItem v-for="opt in opts" :key="opt.label" @click="addStep(opt.type, index, opt.enable)">
                             <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                             {{ opt.label }}
                           </DropdownMenuItem>
@@ -293,7 +343,7 @@ const addStepGroups = computed(() => {
                 <DropdownMenuLabel class="text-xs text-muted-foreground">
                   {{ group }}
                 </DropdownMenuLabel>
-                <DropdownMenuItem v-for="opt in opts" :key="opt.type" @click="addStep(opt.type)">
+                <DropdownMenuItem v-for="opt in opts" :key="opt.label" @click="addStep(opt.type, undefined, opt.enable)">
                   <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                   {{ opt.label }}
                 </DropdownMenuItem>
@@ -312,5 +362,26 @@ const addStepGroups = computed(() => {
         />
       </div>
     </div>
+
+    <JourneysJourneyConditionsModal
+      v-model:open="requirementsModalOpen"
+      :model-value="requirements"
+      :combinator="requirementCombinator"
+      title="Journey-Wide Requirements"
+      description="Guests must meet ALL of these conditions for the journey to run at all."
+      save-label="Save Requirements"
+      @save="handleSaveRequirements"
+    />
+
+    <JourneysJourneyBuildAIModal
+      v-model:open="buildAIOpen"
+      @build="handleBuildAI"
+    />
+
+    <JourneysJourneySaveTemplateModal
+      v-model:open="saveTemplateOpen"
+      :default-name="localJourney.name"
+      @save="handleSaveTemplate"
+    />
   </div>
 </template>

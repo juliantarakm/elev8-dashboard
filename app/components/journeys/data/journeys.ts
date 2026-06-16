@@ -13,32 +13,25 @@ export type StepType
 
 export type JourneyStatus = 'active' | 'inactive'
 
-export type TriggerCategory = 'event' | 'calendar'
+export type TriggerCategory = 'conversation' | 'reservation' | 'calendar'
 
 export type TriggerType
-  = | 'booking_confirmed'
-    | 'checkin'
-    | 'checkout'
-    | 'during_reservation'
-    | 'before_reservation'
-    | 'after_reservation'
-    | 'before_stay_ends'
-    | 'guest_first_inquiry'
-    | 'host_message_sent'
-    | 'guest_canceled'
-    | 'guest_checked_out'
+  = // PRD 15 trigger types (excluding integration minut/turno/tidy)
     | 'conversation_content'
     | 'sentiment_change'
-    | 'gap_night_opened'
-    | 'cleaning_complete'
-    | 'noise_disturbance'
-    | 'scheduled'
+    | 'inquiry_received'
+    | 'new_message_received'
+    | 'new_booking'
+    | 'checkin'
+    | 'checkout'
+    | 'guest_checkout'
+    | 'booking_cancelled'
     | 'send_once'
-    | 'before_checkin'
-    | 'after_checkin'
-    | 'before_checkout'
-    | 'after_checkout'
-    | 'gap_night'
+    | 'gap_nights'
+    | 'daily'
+    | 'weekly'
+    | 'monthly'
+    | 'yearly'
 
 export type ChannelType = 'ota' | 'whatsapp' | 'email'
 
@@ -50,15 +43,63 @@ export type ActionType
 
 export type FailBehavior = 'skip' | 'stop'
 
+export type ComparisonOperator = 'gt' | 'eq' | 'lt'
+
+export type BookingChannel = 'airbnb' | 'vrbo' | 'booking' | 'expedia' | 'tripadvisor' | 'agoda' | 'tripcom' | 'hometogo' | 'flipkey' | 'hotels' | 'despegar' | 'google' | 'marriott' | 'whimstay' | 'direct' | 'email'
+
 export type ConditionType
-  = | 'reservation_status'
-    | 'guest_sentiment'
+  = | 'custom_criteria'
+    | 'guest_no_response'
+    | 'reservation_status'
     | 'booking_channel'
+    | 'weekday'
+    | 'time_of_day'
+    | 'days_until_checkin'
+    | 'reservation_duration'
+    | 'guest_count'
+    | 'pet_count'
+    | 'child_count'
+    | 'infant_count'
+    | 'sentiment'
+    | 'gap_night_exists'
+  // Legacy (kept for backward compatibility)
+    | 'length_of_stay'
+    | 'number_of_guests'
+    | 'booking_lead_time'
+    | 'reservation_platform'
+    | 'guest_language'
+    | 'guest_country'
+    | 'time_before_checkin'
+    | 'time_after_checkin'
+    | 'time_before_checkout'
+    | 'time_after_checkout'
+    | 'guest_sentiment'
     | 'guest_counts'
     | 'stay_details'
     | 'time_day'
     | 'external_state'
     | 'ai_conversation_check'
+
+export interface ConditionRule {
+  id: string
+  type: ConditionType
+  // Number range (min/max)
+  minValue?: number
+  maxValue?: number
+  // Platform/channel selection
+  channels?: BookingChannel[]
+  // Text / status
+  textValue?: string
+  // Sentiment
+  targetSentiments?: ('positive' | 'neutral' | 'negative')[]
+  // Time range
+  timeFrom?: string
+  timeTo?: string
+  // Gap night
+  gapLocation?: 'before_checkin' | 'after_checkout'
+}
+
+export type ConditionCombinator = 'and' | 'or'
 
 export interface BaseStep {
   id: string
@@ -71,7 +112,7 @@ export interface TriggerSettings {
   offsetUnit?: 'minutes' | 'hours' | 'days'
   offsetDirection?: 'before' | 'at' | 'after'
   dayOfStay?: number
-  frequency?: 'daily' | 'weekly' | 'monthly'
+  frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly'
   scheduleTime?: string
   scheduleDate?: string
   keywords?: string
@@ -82,6 +123,18 @@ export interface TriggerSettings {
   delayHours?: number
   delayMinutes?: number
   specificTime?: string
+  // send_once specific
+  sendImmediately?: boolean
+  // weekly / monthly / yearly schedule
+  weekDay?: number
+  monthDay?: number
+  month?: number
+  // gap nights
+  gapMinNights?: number
+  gapMaxNights?: number
+  gapLocation?: 'before_reservation' | 'after_reservation'
+  // integration trigger (minut etc.)
+  triggerOnEvent?: boolean
 }
 
 export interface TriggerEntry {
@@ -90,22 +143,30 @@ export interface TriggerEntry {
 }
 
 export function defaultTriggerSettings(type: TriggerType): TriggerSettings {
-  if (['before_checkin', 'before_checkout', 'before_reservation', 'before_stay_ends'].includes(type))
-    return { offsetAmount: 2, offsetUnit: 'days' }
-  if (['after_checkin', 'after_checkout', 'after_reservation'].includes(type))
-    return { offsetAmount: 1, offsetUnit: 'hours' }
-  if (type === 'checkin' || type === 'checkout')
-    return { offsetDirection: 'at', offsetAmount: 0, offsetUnit: 'hours' }
-  if (type === 'during_reservation')
-    return { dayOfStay: 2 }
-  if (type === 'scheduled')
-    return { frequency: 'daily', scheduleTime: '09:00' }
-  if (type === 'send_once')
-    return { scheduleDate: '', scheduleTime: '09:00' }
+  // Conversation-Based
   if (type === 'conversation_content')
     return { keywords: '' }
   if (type === 'sentiment_change')
     return { targetSentiments: ['negative'], triggerImmediately: true, delayDays: 0, delayHours: 0, delayMinutes: 0, specificTime: '' }
+  // Conversation-Based & Reservation Events with immediate checkbox + delay
+  if (['inquiry_received', 'new_message_received', 'new_booking', 'guest_checkout', 'booking_cancelled'].includes(type))
+    return { triggerImmediately: true, delayDays: 0, delayHours: 0, delayMinutes: 0, specificTime: '' }
+  // Check-in / Check-out: before/on/after toggle + delay + optional time
+  if (type === 'checkin' || type === 'checkout')
+    return { offsetDirection: 'before', offsetAmount: 0, offsetUnit: 'days', specificTime: '' }
+  // Calendar-Based
+  if (type === 'send_once')
+    return { sendImmediately: false, scheduleDate: '', scheduleTime: '09:00' }
+  if (type === 'gap_nights')
+    return { gapMinNights: 1, gapMaxNights: undefined, gapLocation: 'before_reservation', delayDays: 0, delayHours: 0, delayMinutes: 0, specificTime: '' }
+  if (type === 'daily')
+    return { scheduleTime: '09:00' }
+  if (type === 'weekly')
+    return { weekDay: 1, scheduleTime: '09:00' }
+  if (type === 'monthly')
+    return { monthDay: 1, scheduleTime: '09:00' }
+  if (type === 'yearly')
+    return { month: 0, monthDay: 1, scheduleTime: '09:00' }
   return {}
 }
 
@@ -117,11 +178,19 @@ export interface TriggerStep extends BaseStep {
 
 export interface WaitStep extends BaseStep {
   type: 'wait'
-  waitType: 'time' | 'trigger'
-  duration: number
-  unit: 'minutes' | 'hours' | 'days'
-  relativeTo: 'checkin' | 'checkout' | 'booking' | null
-  waitTrigger: string
+  waitMode: 'time_delay' | 'until_condition'
+  // Time Delay mode
+  durationDays?: number
+  durationHours?: number
+  durationMinutes?: number
+  waitUntilSpecificTime?: boolean
+  waitUntilTime?: string
+  // Legacy fields (kept for backward compatibility)
+  duration?: number
+  unit?: 'minutes' | 'hours' | 'days'
+  // Until Condition Met mode
+  rules?: ConditionRule[]
+  combinator?: ConditionCombinator
 }
 
 export interface MessageStep extends BaseStep {
@@ -134,6 +203,10 @@ export interface MessageStep extends BaseStep {
   contextCheckInstruction: string
   fallback: 'skip' | 'static'
   fallbackText: string
+  // Smart Template extras
+  aiPersonalization?: boolean
+  discountPercent?: number
+  discountAbsolute?: number
 }
 
 export interface ContextCheckStep extends BaseStep {
@@ -152,14 +225,20 @@ export interface IfElseStep extends BaseStep {
   type: 'if_else'
   conditionType: ConditionType
   conditionDetails: string
+  rules?: ConditionRule[]
+  combinator?: ConditionCombinator
   trueBranchLabel: string
   falseBranchLabel: string
+  trueBranchStep?: Record<string, any>
+  falseBranchStep?: Record<string, any>
 }
 
 export interface HardRequirementStep extends BaseStep {
   type: 'hard_requirement'
   conditionType: ConditionType
   conditionDetails: string
+  rules?: ConditionRule[]
+  combinator?: ConditionCombinator
 }
 
 export interface CreateNoteStep extends BaseStep {
@@ -171,6 +250,10 @@ export interface CreateNoteStep extends BaseStep {
 export interface ToggleAIStep extends BaseStep {
   type: 'toggle_ai'
   enable: boolean
+  duration: 'indefinite' | 'specific'
+  days?: number
+  hours?: number
+  minutes?: number
 }
 
 export interface IntegrationStep extends BaseStep {
@@ -204,6 +287,21 @@ export interface Journey {
   lastModified: string
   properties: string[]
   steps: JourneyStep[]
+  requirements?: ConditionRule[]
+  requirementCombinator?: ConditionCombinator
+}
+
+export type TemplateCategory = 'Upsells' | 'Guided Stays' | 'Objective-Based'
+export type TemplateDifficulty = 'Beginner' | 'Intermediate' | 'Advanced'
+
+export interface JourneyTemplateMeta {
+  templateName: string
+  description: string
+  category: TemplateCategory
+  difficulty: TemplateDifficulty
+  estimatedImpact?: string
+  tags: string[]
+  makePublic: boolean
 }
 
 export interface MarketplaceTemplate {
@@ -216,40 +314,136 @@ export interface MarketplaceTemplate {
 }
 
 export const triggerMeta: Record<string, { label: string, category: TriggerCategory }> = {
-  booking_confirmed: { label: 'Booking Confirmed', category: 'event' },
-  checkin: { label: 'Check-In', category: 'calendar' },
-  checkout: { label: 'Check-Out', category: 'calendar' },
-  during_reservation: { label: 'During Reservation', category: 'calendar' },
-  before_reservation: { label: 'Before Reservation', category: 'calendar' },
-  after_reservation: { label: 'After Reservation', category: 'calendar' },
-  before_stay_ends: { label: 'Before Stay Ends', category: 'calendar' },
-  guest_first_inquiry: { label: 'Guest First Inquiry', category: 'event' },
-  host_message_sent: { label: 'Host Message Sent', category: 'event' },
-  guest_canceled: { label: 'Guest Canceled', category: 'event' },
-  guest_checked_out: { label: 'Guest Checked Out', category: 'event' },
-  conversation_content: { label: 'Conversation Content', category: 'event' },
-  sentiment_change: { label: 'Sentiment Change', category: 'event' },
-  gap_night_opened: { label: 'Gap Night Opened', category: 'calendar' },
-  cleaning_complete: { label: 'Cleaning Complete', category: 'event' },
-  noise_disturbance: { label: 'Noise / Disturbance', category: 'event' },
-  scheduled: { label: 'Daily / Weekly / Monthly', category: 'calendar' },
+  conversation_content: { label: 'Conversational Trigger', category: 'conversation' },
+  sentiment_change: { label: 'Sentiment Trigger', category: 'conversation' },
+  inquiry_received: { label: 'Inquiry Received', category: 'reservation' },
+  new_message_received: { label: 'Host Message Received', category: 'reservation' },
+  new_booking: { label: 'New Booking', category: 'reservation' },
+  checkin: { label: 'Check-in Day', category: 'reservation' },
+  checkout: { label: 'Check-out Day', category: 'reservation' },
+  guest_checkout: { label: 'Guest Check-out', category: 'reservation' },
+  booking_cancelled: { label: 'Cancellation', category: 'reservation' },
   send_once: { label: 'Send Once', category: 'calendar' },
-  before_checkin: { label: 'Before Check-in', category: 'calendar' },
-  after_checkin: { label: 'After Check-in', category: 'calendar' },
-  before_checkout: { label: 'Before Check-out', category: 'calendar' },
-  after_checkout: { label: 'After Check-out', category: 'calendar' },
-  gap_night: { label: 'Gap Night', category: 'calendar' },
+  gap_nights: { label: 'Gap Nights', category: 'calendar' },
+  daily: { label: 'Daily', category: 'calendar' },
+  weekly: { label: 'Weekly', category: 'calendar' },
+  monthly: { label: 'Monthly', category: 'calendar' },
+  yearly: { label: 'Yearly', category: 'calendar' },
+}
+
+export const bookingChannelMeta: Record<BookingChannel, string> = {
+  airbnb: 'Airbnb',
+  vrbo: 'Vrbo',
+  booking: 'Booking.com',
+  expedia: 'Expedia',
+  tripadvisor: 'TripAdvisor',
+  agoda: 'Agoda',
+  tripcom: 'Trip.com',
+  hometogo: 'HomeToGo',
+  flipkey: 'FlipKey',
+  hotels: 'Hotels.com',
+  despegar: 'Despegar',
+  google: 'Google',
+  marriott: 'Marriott Homes and Villas',
+  whimstay: 'Whimstay',
+  direct: 'Direct',
+  email: 'Email',
 }
 
 export const conditionMeta: Record<ConditionType, string> = {
-  reservation_status: 'Reservation Status',
+  custom_criteria: 'Custom Criteria',
+  guest_no_response: 'Guest has not responded to last message',
+  reservation_status: 'Reservation status is...',
+  booking_channel: 'Booking channel is...',
+  weekday: 'Weekday is...',
+  time_of_day: 'Time of day is...',
+  days_until_checkin: 'Days until check-in is...',
+  reservation_duration: 'Reservation duration is...',
+  guest_count: 'Guest count is...',
+  pet_count: 'Pet count is...',
+  child_count: 'Child count is...',
+  infant_count: 'Infant count is...',
+  sentiment: 'Sentiment is...',
+  gap_night_exists: 'Gap night exists...',
+  // legacy
+  length_of_stay: 'Length of Stay',
+  number_of_guests: 'Number of Guests',
+  booking_lead_time: 'Booking Lead Time',
+  reservation_platform: 'Reservation Platform',
+  guest_language: 'Guest Language',
+  guest_country: 'Guest Country',
+  time_before_checkin: 'Time Before Check-in',
+  time_after_checkin: 'Time After Check-in',
+  time_before_checkout: 'Time Before Check-out',
+  time_after_checkout: 'Time After Check-out',
   guest_sentiment: 'Guest Sentiment',
-  booking_channel: 'Booking Channel',
   guest_counts: 'Guest Counts',
   stay_details: 'Stay Details',
   time_day: 'Time & Day',
   external_state: 'External State',
   ai_conversation_check: 'AI Conversation Check',
+}
+
+export const primaryConditionTypes: ConditionType[] = [
+  'custom_criteria',
+  'guest_no_response',
+  'reservation_status',
+  'booking_channel',
+  'weekday',
+  'time_of_day',
+  'days_until_checkin',
+  'reservation_duration',
+  'guest_count',
+  'pet_count',
+  'child_count',
+  'infant_count',
+  'sentiment',
+  'gap_night_exists',
+]
+
+export const legacyConditionTypes: ConditionType[] = [
+  'length_of_stay',
+  'number_of_guests',
+  'booking_lead_time',
+  'reservation_platform',
+  'guest_language',
+  'guest_country',
+  'time_before_checkin',
+  'time_after_checkin',
+  'time_before_checkout',
+  'time_after_checkout',
+  'guest_sentiment',
+  'guest_counts',
+  'stay_details',
+  'time_day',
+  'external_state',
+  'ai_conversation_check',
+]
+
+export function makeConditionRule(type: ConditionType): ConditionRule {
+  const base: ConditionRule = { id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, type }
+  // Number range types (7-12)
+  if (['days_until_checkin', 'reservation_duration', 'guest_count', 'pet_count', 'child_count', 'infant_count'].includes(type))
+    return { ...base, minValue: 0, maxValue: undefined }
+  // Booking channel
+  if (type === 'booking_channel')
+    return { ...base, channels: ['airbnb'] }
+  // Sentiment
+  if (type === 'sentiment')
+    return { ...base, targetSentiments: ['positive'] }
+  // Weekday
+  if (type === 'weekday')
+    return { ...base, textValue: '' }
+  // Time of day
+  if (type === 'time_of_day')
+    return { ...base, timeFrom: '09:00', timeTo: '17:00' }
+  // Reservation status
+  if (type === 'reservation_status')
+    return { ...base, textValue: '' }
+  // Gap night
+  if (type === 'gap_night_exists')
+    return { ...base, gapLocation: 'before_checkin', minValue: 1, maxValue: undefined }
+  return { ...base, textValue: '' }
 }
 
 export interface JourneyGroup {
@@ -269,15 +463,15 @@ export const mockJourneys: Journey[] = [
     id: 'j-1',
     name: 'Guest Welcome & Stay Flow',
     status: 'active',
-    triggerType: 'booking_confirmed',
+    triggerType: 'new_booking',
     lastModified: '2026-05-10',
     properties: ['All Properties'],
     steps: [
       {
         id: 's-1-1',
         type: 'trigger',
-        name: 'Booking Confirmed',
-        triggers: [{ type: 'booking_confirmed', settings: {} }],
+        name: 'New Booking',
+        triggers: [{ type: 'new_booking', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -297,11 +491,10 @@ export const mockJourneys: Journey[] = [
         id: 's-1-3',
         type: 'wait',
         name: 'Wait Until 2 Days Before',
-        waitType: 'time',
-        duration: 2,
-        unit: 'days',
-        relativeTo: 'checkin',
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 2,
+        durationHours: 0,
+        durationMinutes: 0,
       },
       {
         id: 's-1-4',
@@ -335,15 +528,15 @@ export const mockJourneys: Journey[] = [
     id: 'j-2',
     name: 'Pre-Arrival Check-In Guide',
     status: 'active',
-    triggerType: 'before_reservation',
+    triggerType: 'checkin',
     lastModified: '2026-05-14',
     properties: ['Swiss Properties'],
     steps: [
       {
         id: 's-2-1',
         type: 'trigger',
-        name: 'Before Reservation',
-        triggers: [{ type: 'before_reservation', settings: { offsetAmount: 3, offsetUnit: 'days' } }],
+        name: 'Check-in',
+        triggers: [{ type: 'checkin', settings: { offsetDirection: 'before', offsetAmount: 3, offsetUnit: 'days' } }],
         properties: ['Swiss Properties'],
       },
       {
@@ -372,15 +565,15 @@ export const mockJourneys: Journey[] = [
     id: 'j-3',
     name: 'Gap Night Opportunity',
     status: 'inactive',
-    triggerType: 'gap_night_opened',
+    triggerType: 'gap_nights',
     lastModified: '2026-04-28',
     properties: ['All Properties'],
     steps: [
       {
         id: 's-3-1',
         type: 'trigger',
-        name: 'Gap Night Opened',
-        triggers: [{ type: 'gap_night_opened', settings: {} }],
+        name: 'Gap Nights',
+        triggers: [{ type: 'gap_nights', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -422,26 +615,25 @@ export const mockJourneys: Journey[] = [
     id: 'j-4',
     name: 'Post-Stay Review Request',
     status: 'inactive',
-    triggerType: 'guest_checked_out',
+    triggerType: 'checkout',
     lastModified: '2026-05-18',
     properties: ['All Properties'],
     steps: [
       {
         id: 's-4-1',
         type: 'trigger',
-        name: 'Guest Checked Out',
-        triggers: [{ type: 'guest_checked_out', settings: {} }],
+        name: 'Check-out',
+        triggers: [{ type: 'checkout', settings: {} }],
         properties: ['All Properties'],
       },
       {
         id: 's-4-2',
         type: 'wait',
         name: 'Wait 1 Day',
-        waitType: 'time',
-        duration: 1,
-        unit: 'days',
-        relativeTo: 'checkout',
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 1,
+        durationHours: 0,
+        durationMinutes: 0,
       },
       {
         id: 's-4-3',
@@ -478,8 +670,8 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
       {
         id: 'mt1-s1',
         type: 'trigger',
-        name: 'Booking Confirmed',
-        triggers: [{ type: 'booking_confirmed', settings: {} }],
+        name: 'New Booking',
+        triggers: [{ type: 'new_booking', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -499,11 +691,10 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt1-s3',
         type: 'wait',
         name: 'Wait Until 3 Days Before',
-        waitType: 'time',
-        duration: 3,
-        unit: 'days',
-        relativeTo: 'checkin',
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 3,
+        durationHours: 0,
+        durationMinutes: 0,
       },
       {
         id: 'mt1-s4',
@@ -535,11 +726,10 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt1-s6',
         type: 'wait',
         name: 'Wait Until After Checkout',
-        waitType: 'time',
-        duration: 1,
-        unit: 'days',
-        relativeTo: 'checkout',
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 1,
+        durationHours: 0,
+        durationMinutes: 0,
       },
       {
         id: 'mt1-s7',
@@ -566,8 +756,8 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
       {
         id: 'mt2-s1',
         type: 'trigger',
-        name: 'Gap Night Opened',
-        triggers: [{ type: 'gap_night_opened', settings: {} }],
+        name: 'Gap Nights',
+        triggers: [{ type: 'gap_nights', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -615,8 +805,8 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
       {
         id: 'mt3-s1',
         type: 'trigger',
-        name: 'Booking Confirmed',
-        triggers: [{ type: 'booking_confirmed', settings: {} }],
+        name: 'New Booking',
+        triggers: [{ type: 'new_booking', settings: {} }],
         properties: ['All Properties'],
       },
       {
@@ -643,11 +833,10 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt3-s4',
         type: 'wait',
         name: 'Wait 48h Before Check-in',
-        waitType: 'time',
-        duration: 48,
-        unit: 'hours',
-        relativeTo: 'checkin',
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 0,
+        durationHours: 48,
+        durationMinutes: 0,
       },
       {
         id: 'mt3-s5',
@@ -689,11 +878,10 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         id: 'mt4-s2',
         type: 'wait',
         name: 'Wait 2 Hours',
-        waitType: 'time',
-        duration: 2,
-        unit: 'hours',
-        relativeTo: null,
-        waitTrigger: '',
+        waitMode: 'time_delay',
+        durationDays: 0,
+        durationHours: 2,
+        durationMinutes: 0,
       },
       {
         id: 'mt4-s3',
@@ -726,7 +914,7 @@ export const generatedJourneyExample: Journey & {
   id: 'ai-generated-1',
   name: 'AI Generated Journey',
   status: 'draft',
-  triggerType: 'booking_confirmed',
+  triggerType: 'new_booking',
   lastModified: new Date().toISOString().split('T')[0],
   properties: ['All Properties'],
   aiReasoning:
@@ -740,8 +928,8 @@ export const generatedJourneyExample: Journey & {
     {
       id: 'ai-s1',
       type: 'trigger',
-      name: 'Booking Confirmed',
-      triggers: [{ type: 'booking_confirmed', settings: {} }],
+      name: 'New Booking',
+      triggers: [{ type: 'new_booking', settings: {} }],
       properties: ['All Properties'],
     },
     {
@@ -761,11 +949,10 @@ export const generatedJourneyExample: Journey & {
       id: 'ai-s3',
       type: 'wait',
       name: 'Wait Until 2 Days Before Check-in',
-      waitType: 'time',
-      duration: 2,
-      unit: 'days',
-      relativeTo: 'checkin',
-      waitTrigger: '',
+      waitMode: 'time_delay',
+      durationDays: 2,
+      durationHours: 0,
+      durationMinutes: 0,
     },
     {
       id: 'ai-s4',

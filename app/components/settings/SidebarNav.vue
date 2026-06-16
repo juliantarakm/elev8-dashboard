@@ -22,6 +22,10 @@ const sidebarNavItems: Item[] = [
     href: '/settings/integrations',
   },
   {
+    title: 'Payouts',
+    href: '/settings/payouts',
+  },
+  {
     title: 'Appearance',
     href: '/settings/appearance',
   },
