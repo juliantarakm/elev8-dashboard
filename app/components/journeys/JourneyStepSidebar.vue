@@ -1350,24 +1350,100 @@ const showAltTriggerPicker = ref(false)
 
         <div class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
           <!-- Wait -->
-          <div v-if="branchDialogType === 'wait'" class="flex flex-col gap-3">
+          <!-- Wait -->
+          <div v-if="branchDialogType === 'wait'" class="flex flex-col gap-4">
             <div>
-              <Label>Wait Duration</Label>
-              <div class="mt-2 grid grid-cols-3 gap-2">
-                <div>
-                  <p class="mb-1 text-center text-xs text-muted-foreground">Days</p>
-                  <Input type="number" :model-value="(activeBranchStep as any)?.durationDays ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationDays: Number($event) })" />
-                </div>
-                <div>
-                  <p class="mb-1 text-center text-xs text-muted-foreground">Hours</p>
-                  <Input type="number" :model-value="(activeBranchStep as any)?.durationHours ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationHours: Number($event) })" />
-                </div>
-                <div>
-                  <p class="mb-1 text-center text-xs text-muted-foreground">Minutes</p>
-                  <Input type="number" :model-value="(activeBranchStep as any)?.durationMinutes ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationMinutes: Number($event) })" />
-                </div>
+              <Label>Wait Mode</Label>
+              <div class="mt-1 flex rounded-md border overflow-hidden">
+                <button
+                  class="flex-1 px-3 py-1.5 text-sm transition-colors"
+                  :class="[(activeBranchStep as any)?.waitMode !== 'until_condition' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
+                  @click="patchActiveBranch({ waitMode: 'time_delay' })"
+                >
+                  Time Delay
+                </button>
+                <button
+                  class="flex-1 px-3 py-1.5 text-sm transition-colors border-l"
+                  :class="[(activeBranchStep as any)?.waitMode === 'until_condition' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted']"
+                  @click="patchActiveBranch({ waitMode: 'until_condition' })"
+                >
+                  Until Condition Met
+                </button>
               </div>
             </div>
+
+            <template v-if="(activeBranchStep as any)?.waitMode !== 'until_condition'">
+              <div class="flex flex-col gap-2">
+                <Label>Wait Duration</Label>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">Days</p>
+                    <Input type="number" :model-value="(activeBranchStep as any)?.durationDays ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationDays: Number($event) })" />
+                  </div>
+                  <div>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">Hours</p>
+                    <Input type="number" :model-value="(activeBranchStep as any)?.durationHours ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationHours: Number($event) })" />
+                  </div>
+                  <div>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">Minutes</p>
+                    <Input type="number" :model-value="(activeBranchStep as any)?.durationMinutes ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationMinutes: Number($event) })" />
+                  </div>
+                </div>
+                <p v-if="!(activeBranchStep as any)?.durationDays && !(activeBranchStep as any)?.durationHours && !(activeBranchStep as any)?.durationMinutes" class="text-xs text-muted-foreground">
+                  No wait time configured
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <label
+                  class="flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 transition-colors hover:bg-muted/40"
+                  @click="patchActiveBranch({ waitUntilSpecificTime: !(activeBranchStep as any)?.waitUntilSpecificTime })"
+                >
+                  <div
+                    class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border"
+                    :class="[(activeBranchStep as any)?.waitUntilSpecificTime ? 'border-primary bg-primary text-primary-foreground' : 'border-input']"
+                  >
+                    <Icon v-if="(activeBranchStep as any)?.waitUntilSpecificTime" name="i-lucide-check" class="h-3 w-3" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium leading-none">Wait until specific time</p>
+                    <p class="mt-1 text-xs text-muted-foreground">Journey will continue at the specified time</p>
+                  </div>
+                </label>
+                <template v-if="(activeBranchStep as any)?.waitUntilSpecificTime">
+                  <div>
+                    <Label class="text-xs text-muted-foreground">Continue at</Label>
+                    <Input type="time" :model-value="(activeBranchStep as any)?.waitUntilTime ?? ''" class="h-9 text-sm" @update:model-value="patchActiveBranch({ waitUntilTime: $event as string })" />
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <Label>Wait Until Condition</Label>
+                  <Badge v-if="(activeBranchStep as any)?.rules?.length" variant="secondary" class="ml-auto h-4 px-1 text-[10px]">
+                    {{ (activeBranchStep as any).rules.length }} rule{{ (activeBranchStep as any).rules.length > 1 ? 's' : '' }}
+                  </Badge>
+                </div>
+                <div v-if="(activeBranchStep as any)?.rules?.length" class="rounded-md border bg-muted/20 p-2 text-xs text-muted-foreground">
+                  <div v-for="(rule, i) in (activeBranchStep as any).rules" :key="rule.id" class="flex items-center gap-2 py-0.5">
+                    <span class="font-medium">{{ conditionMeta[rule.type as ConditionType] ?? rule.type }}</span>
+                    <span v-if="i < ((activeBranchStep as any).rules.length - 1)" class="text-[10px]">{{ (activeBranchStep as any).combinator ?? 'and' }}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="text-xs"
+                  @click="branchDialogTarget === 'true' ? openBranchConditionModal('true') : openBranchConditionModal('false')"
+                >
+                  <Icon name="i-lucide-sliders-horizontal" class="h-3.5 w-3.5 mr-1.5" />
+                  {{ (activeBranchStep as any)?.rules?.length ? 'Edit Conditions' : 'Configure Conditions' }}
+                </Button>
+              </div>
+            </template>
           </div>
 
           <!-- Message -->
