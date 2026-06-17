@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type {
   ActionStep,
-  ActionType,
   ConditionCombinator,
   ConditionRule,
+  ConditionType,
   ContextCheckStep,
   CreateNoteStep,
   HardRequirementStep,
@@ -40,7 +40,7 @@ const conditionModalOpen = ref(false)
 const conditionModalTitle = ref('Configure Condition')
 const conditionModalRules = ref<ConditionRule[]>([])
 const conditionModalCombinator = ref<ConditionCombinator>('and')
-const conditionModalTarget = ref<'hardReq' | 'ifElse' | 'wait' | null>(null)
+const conditionModalTarget = ref<'hardReq' | 'ifElse' | 'wait' | 'branchTrue' | 'branchFalse' | null>(null)
 
 function openConditionModal(target: 'hardReq' | 'ifElse') {
   conditionModalTarget.value = target
@@ -65,6 +65,16 @@ function openWaitConditionModal() {
   conditionModalOpen.value = true
 }
 
+function openBranchConditionModal(branch: 'true' | 'false') {
+  conditionModalTarget.value = branch === 'true' ? 'branchTrue' : 'branchFalse'
+  conditionModalTitle.value = 'Branch Requirement'
+  const configKey = branch === 'true' ? 'trueBranchStep' : 'falseBranchStep'
+  const step = (ifElseStep.value as any)?.[configKey]
+  conditionModalRules.value = step?.rules?.length ? JSON.parse(JSON.stringify(step.rules)) : []
+  conditionModalCombinator.value = step?.combinator ?? 'and'
+  conditionModalOpen.value = true
+}
+
 function handleConditionSave(rules: ConditionRule[], combinator: ConditionCombinator) {
   if (conditionModalTarget.value === 'hardReq' && hardReqStep.value) {
     patch({ rules, combinator } as Partial<HardRequirementStep>)
@@ -74,6 +84,10 @@ function handleConditionSave(rules: ConditionRule[], combinator: ConditionCombin
   }
   else if (conditionModalTarget.value === 'wait' && waitStep.value) {
     patch({ rules, combinator } as Partial<WaitStep>)
+  }
+  else if (conditionModalTarget.value === 'branchTrue' || conditionModalTarget.value === 'branchFalse') {
+    const branch = conditionModalTarget.value === 'branchTrue' ? 'true' : 'false'
+    patchBranchConfig(branch, { rules, combinator })
   }
   conditionModalOpen.value = false
 }
@@ -102,7 +116,6 @@ const triggerEntries = computed(() => (triggerStep.value?.triggers ?? []) as Tri
 const branchActionOptions: { value: string, icon: string, label: string, group: string }[] = [
   { value: 'wait', icon: 'i-lucide-clock', label: 'Wait', group: 'Flow' },
   { value: 'message', icon: 'i-lucide-message-square', label: 'Send a Message', group: 'Flow' },
-  { value: 'if_else', icon: 'i-lucide-git-fork', label: 'If/Else', group: 'Logic' },
   { value: 'hard_requirement', icon: 'i-lucide-shield', label: 'Hard Requirement', group: 'Logic' },
   { value: 'action', icon: 'i-lucide-bolt', label: 'Create Action Item', group: 'Actions' },
   { value: 'create_note', icon: 'i-lucide-file-pen-line', label: 'Create Reservation Note', group: 'Actions' },
@@ -139,6 +152,8 @@ function defaultBranchConfig(action: string): Record<string, any> {
     return { type: 'toggle_ai', enable: true, duration: 'indefinite' as const, days: 0, hours: 0, minutes: 0 }
   if (action === 'integration')
     return { type: 'integration', integrationName: '', payload: '' }
+  if (action === 'hard_requirement')
+    return { type: 'hard_requirement', rules: [], combinator: 'and' as const }
   return {}
 }
 
@@ -150,6 +165,8 @@ function selectBranchAction(branch: 'true' | 'false', action: string | undefined
   }
   const config = defaultBranchConfig(action)
   patch({ [configKey]: config } as any)
+  branchDialogTarget.value = branch
+  branchDialogOpen.value = true
 }
 
 function patchBranchConfig(branch: 'true' | 'false', fields: Record<string, any>) {
@@ -177,6 +194,46 @@ const falseBranchActionLabel = computed(() => {
   const t = falseBranchType.value
   return t ? (branchActionLabels[t] ?? 'None') : 'None'
 })
+
+function branchStepSummary(step: Record<string, any> | undefined): string | null {
+  if (!step || !step.type)
+    return null
+  const t = step.type === 'toggle_ai' ? (step.enable === false ? 'toggle_ai_pause' : 'toggle_ai_start') : step.type
+  const label = branchActionLabels[t] ?? t
+  if (step.type === 'wait') {
+    const parts = []
+    if (step.durationDays) parts.push(`${step.durationDays}d`)
+    if (step.durationHours) parts.push(`${step.durationHours}h`)
+    if (step.durationMinutes) parts.push(`${step.durationMinutes}m`)
+    return `${label}: ${parts.length ? parts.join(' ') : 'no duration'}`
+  }
+  if (step.type === 'message') {
+    const ch: Record<string, string> = { ota: 'OTA', whatsapp: 'WhatsApp', email: 'Email' }
+    return `${label}: ${step.messageMode === 'template' ? 'Template' : 'AI Directive'} · ${ch[step.channel] ?? step.channel}`
+  }
+  if (step.type === 'action') {
+    const at: Record<string, string> = { raise_action_item: 'Raise Action Item', create_task: 'Create Task', flag_reservation: 'Flag Reservation', staff_alert: 'Staff Alert' }
+    return `${label}: ${at[step.actionType] ?? step.actionType}`
+  }
+  if (step.type === 'create_note') {
+    const txt = step.noteContent ?? ''
+    return `${label}: ${txt.length > 40 ? txt.slice(0, 40) + '…' : txt || 'empty'}`
+  }
+  if (step.type === 'toggle_ai') {
+    return `${label}: ${step.duration === 'indefinite' ? 'Indefinite' : `${step.days ?? 0}d ${step.hours ?? 0}h ${step.minutes ?? 0}m`}`
+  }
+  if (step.type === 'integration') {
+    return `${label}: ${step.integrationName || 'not set'}`
+  }
+  if (step.type === 'hard_requirement') {
+    const count = step.rules?.length ?? 0
+    return `${label}: ${count} rule${count !== 1 ? 's' : ''}`
+  }
+  return label
+}
+
+const trueBranchSummary = computed(() => branchStepSummary((ifElseStep.value as any)?.trueBranchStep))
+const falseBranchSummary = computed(() => branchStepSummary((ifElseStep.value as any)?.falseBranchStep))
 
 const branchDialogOpen = ref(false)
 const branchDialogTarget = ref<'true' | 'false' | null>(null)
@@ -1070,28 +1127,27 @@ const showAltTriggerPicker = ref(false)
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-3">
+          <!-- True Branch -->
           <div class="flex flex-col gap-2 rounded-md border p-3">
             <Label class="text-xs text-green-600">True Branch</Label>
-            <Input
-              :model-value="ifElseStep.trueBranchLabel"
-              class="text-sm"
-              placeholder="Condition met"
-              @update:model-value="patch({ trueBranchLabel: $event as string } as any)"
-            />
-            <DropdownMenu>
+            <Button
+              v-if="trueBranchType"
+              variant="outline"
+              class="w-full justify-start gap-2 text-xs"
+              @click="openBranchDialog('true')"
+            >
+              <Icon :name="branchActionOptions.find(o => o.value === trueBranchType)?.icon ?? 'i-lucide-settings'" class="h-3.5 w-3.5" />
+              {{ trueBranchActionLabel }}
+            </Button>
+            <DropdownMenu v-else>
               <DropdownMenuTrigger as-child>
-                <Button variant="outline" class="w-full justify-start gap-2 h-8 text-xs">
+                <Button variant="outline" class="w-full justify-start gap-2 text-xs">
                   <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />
-                  {{ trueBranchActionLabel }}
+                  None
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-48">
-                <DropdownMenuItem @click="selectBranchAction('true', undefined)">
-                  <Icon name="i-lucide-x" class="mr-2 h-4 w-4" />
-                  None
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <template v-for="(opts, group) in branchActionGroups" :key="group">
                   <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
                   <DropdownMenuItem v-for="opt in opts" :key="opt.value" @click="selectBranchAction('true', opt.value)">
@@ -1102,32 +1158,29 @@ const showAltTriggerPicker = ref(false)
                 </template>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button v-if="trueBranchType" variant="outline" size="sm" class="w-full text-xs" @click="openBranchDialog('true')">
-              <Icon :name="branchActionOptions.find(o => o.value === trueBranchType)?.icon ?? 'i-lucide-settings'" class="h-3.5 w-3.5" />
-              Configure
-            </Button>
+            <p v-if="trueBranchSummary" class="text-xs text-muted-foreground">{{ trueBranchSummary }}</p>
           </div>
+
+          <!-- False Branch -->
           <div class="flex flex-col gap-2 rounded-md border p-3">
             <Label class="text-xs text-red-500">False Branch</Label>
-            <Input
-              :model-value="ifElseStep.falseBranchLabel"
-              class="text-sm"
-              placeholder="Condition not met"
-              @update:model-value="patch({ falseBranchLabel: $event as string } as any)"
-            />
-            <DropdownMenu>
+            <Button
+              v-if="falseBranchType"
+              variant="outline"
+              class="w-full justify-start gap-2 text-xs"
+              @click="openBranchDialog('false')"
+            >
+              <Icon :name="branchActionOptions.find(o => o.value === falseBranchType)?.icon ?? 'i-lucide-settings'" class="h-3.5 w-3.5" />
+              {{ falseBranchActionLabel }}
+            </Button>
+            <DropdownMenu v-else>
               <DropdownMenuTrigger as-child>
-                <Button variant="outline" class="w-full justify-start gap-2 h-8 text-xs">
+                <Button variant="outline" class="w-full justify-start gap-2 text-xs">
                   <Icon name="i-lucide-plus" class="h-3.5 w-3.5" />
-                  {{ falseBranchActionLabel }}
+                  None
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-48">
-                <DropdownMenuItem @click="selectBranchAction('false', undefined)">
-                  <Icon name="i-lucide-x" class="mr-2 h-4 w-4" />
-                  None
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <template v-for="(opts, group) in branchActionGroups" :key="group">
                   <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
                   <DropdownMenuItem v-for="opt in opts" :key="opt.value" @click="selectBranchAction('false', opt.value)">
@@ -1138,12 +1191,9 @@ const showAltTriggerPicker = ref(false)
                 </template>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button v-if="falseBranchType" variant="outline" size="sm" class="w-full text-xs" @click="openBranchDialog('false')">
-              <Icon :name="branchActionOptions.find(o => o.value === falseBranchType)?.icon ?? 'i-lucide-settings'" class="h-3.5 w-3.5" />
-              Configure
-            </Button>
-           </div>
-         </div>
+            <p v-if="falseBranchSummary" class="text-xs text-muted-foreground">{{ falseBranchSummary }}</p>
+          </div>
+        </div>
        </div>
 
       <!-- Hard Requirement -->
@@ -1422,6 +1472,24 @@ const showAltTriggerPicker = ref(false)
             <div>
               <Label>Payload</Label>
               <Textarea :model-value="(activeBranchStep as any)?.payload ?? ''" class="mt-1 min-h-24 text-sm" placeholder="Payload…" @update:model-value="patchActiveBranch({ payload: $event as string })" />
+            </div>
+          </div>
+
+          <!-- Hard Requirement -->
+          <div v-else-if="branchDialogType === 'hard_requirement'" class="flex flex-col gap-3">
+            <p class="text-xs text-muted-foreground">The branch action only runs if these conditions are met.</p>
+            <Button variant="outline" class="justify-start gap-2 w-full" @click="branchDialogTarget === 'true' ? openBranchConditionModal('true') : openBranchConditionModal('false')">
+              <Icon name="i-lucide-list-filter" class="h-4 w-4" />
+              <span>Configure Condition</span>
+              <Badge v-if="(activeBranchStep as any)?.rules?.length" variant="secondary" class="ml-auto h-4 px-1 text-[10px]">
+                {{ (activeBranchStep as any).rules.length }}
+              </Badge>
+            </Button>
+            <div v-if="(activeBranchStep as any)?.rules?.length" class="rounded-md border bg-muted/20 p-2 text-xs text-muted-foreground">
+              <div v-for="(r, i) in (activeBranchStep as any).rules" :key="r.id" class="flex items-center gap-2 py-0.5">
+                <span class="font-medium">{{ conditionMeta[r.type as ConditionType] ?? r.type }}</span>
+                <span v-if="i < ((activeBranchStep as any).rules.length - 1)" class="text-[10px]">{{ (activeBranchStep as any).combinator ?? 'and' }}</span>
+              </div>
             </div>
           </div>
         </div>
