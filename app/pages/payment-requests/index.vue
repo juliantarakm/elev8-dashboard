@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { DateRange } from 'reka-ui'
 import type { PaymentRequest } from '~/components/payment-request/data/payment-requests'
+import { CalendarDate, DateFormatter, getLocalTimeZone, today } from '@internationalized/date'
 import { listings } from '~/components/listings/data/listings'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
@@ -8,6 +10,10 @@ import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequ
 import PaymentRequestShareDialog from '~/components/payment-request/PaymentRequestShareDialog.vue'
 import PaymentRequestTable from '~/components/payment-request/PaymentRequestTable.vue'
 import { usePaymentRequests } from '~/composables/usePaymentRequests'
+
+const df = new DateFormatter('en-US', {
+  dateStyle: 'medium',
+})
 
 const {
   filteredRequests,
@@ -101,63 +107,39 @@ const selectedListingNames = computed(() => {
     .filter(Boolean) as string[]
 })
 
-// Date filter state
+// Date range filter with RangeCalendar
 const datePopoverOpen = ref(false)
-const datePreset = ref('')
 
-const datePresetOptions = [
-  { label: 'Today', value: 'today' },
-  { label: 'Yesterday', value: 'yesterday' },
-  { label: 'Last 7 days', value: 'last7' },
-  { label: 'This month', value: 'thisMonth' },
-  { label: 'Last month', value: 'lastMonth' },
-]
-
-function applyDatePreset(preset: string) {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-  switch (preset) {
-    case 'today': {
-      filters.value.dateFrom = today.toISOString().split('T')[0]
-      filters.value.dateTo = today.toISOString().split('T')[0]
-      break
-    }
-    case 'yesterday': {
-      const yest = new Date(today)
-      yest.setDate(yest.getDate() - 1)
-      filters.value.dateFrom = yest.toISOString().split('T')[0]
-      filters.value.dateTo = yest.toISOString().split('T')[0]
-      break
-    }
-    case 'last7': {
-      const d = new Date(today)
-      d.setDate(d.getDate() - 6)
-      filters.value.dateFrom = d.toISOString().split('T')[0]
-      filters.value.dateTo = today.toISOString().split('T')[0]
-      break
-    }
-    case 'thisMonth': {
-      filters.value.dateFrom = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
-      filters.value.dateTo = today.toISOString().split('T')[0]
-      break
-    }
-    case 'lastMonth': {
-      const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-      const lastDay = new Date(today.getFullYear(), today.getMonth(), 0)
-      filters.value.dateFrom = firstDay.toISOString().split('T')[0]
-      filters.value.dateTo = lastDay.toISOString().split('T')[0]
-      break
-    }
-  }
-  datePreset.value = preset
-  datePopoverOpen.value = false
+function parseDateToCalendarDate(dateStr: string): CalendarDate | undefined {
+  if (!dateStr)
+    return undefined
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new CalendarDate(year, month, day)
 }
+
+function calendarDateToString(date: CalendarDate | undefined): string {
+  if (!date)
+    return ''
+  const d = date.toDate(getLocalTimeZone())
+  return d.toISOString().split('T')[0]
+}
+
+const dateRange = computed<DateRange>({
+  get() {
+    return {
+      start: parseDateToCalendarDate(filters.value.dateFrom),
+      end: parseDateToCalendarDate(filters.value.dateTo),
+    }
+  },
+  set(value) {
+    filters.value.dateFrom = calendarDateToString(value.start)
+    filters.value.dateTo = calendarDateToString(value.end)
+  },
+})
 
 function clearDateFilter() {
   filters.value.dateFrom = ''
   filters.value.dateTo = ''
-  datePreset.value = ''
 }
 
 function clearAllFilters() {
@@ -166,7 +148,6 @@ function clearAllFilters() {
   filters.value.listings = []
   filters.value.dateFrom = ''
   filters.value.dateTo = ''
-  datePreset.value = ''
   selectedListingTags.value = []
   listingSearch.value = ''
   listingTagSearch.value = ''
@@ -346,42 +327,28 @@ const dateFilterLabel = computed(() => {
             :class="filters.dateFrom ? 'border-primary text-primary hover:bg-primary/10' : ''"
           >
             <Icon name="lucide:calendar" class="size-4" />
-            <span class="max-w-[140px] truncate">{{ dateFilterLabel }}</span>
+            <span class="max-w-[160px] truncate">{{ dateFilterLabel }}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent class="w-72 p-0" align="start">
-          <div class="p-3 space-y-3">
-            <p class="text-xs font-medium uppercase text-muted-foreground">Quick select</p>
-            <div class="flex flex-wrap gap-1.5">
-              <Button
-                v-for="preset in datePresetOptions"
-                :key="preset.value"
-                variant="outline"
-                size="sm"
-                class="h-7 text-xs"
-                :class="datePreset === preset.value ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' : ''"
-                @click="applyDatePreset(preset.value)"
-              >
-                {{ preset.label }}
-              </Button>
-            </div>
-            <Separator />
-            <div class="space-y-2">
-              <p class="text-xs font-medium uppercase text-muted-foreground">Custom range</p>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <Label class="text-[10px] text-muted-foreground">From</Label>
-                  <Input v-model="filters.dateFrom" type="date" class="h-8 text-xs" />
-                </div>
-                <div>
-                  <Label class="text-[10px] text-muted-foreground">To</Label>
-                  <Input v-model="filters.dateTo" type="date" class="h-8 text-xs" />
-                </div>
-              </div>
-            </div>
-            <div class="flex justify-end">
+        <PopoverContent class="w-auto p-0" align="start">
+          <div class="p-3">
+            <RangeCalendar
+              v-model="dateRange"
+              weekday-format="short"
+              :number-of-months="2"
+              initial-focus
+            />
+            <div class="mt-3 flex items-center justify-between border-t pt-3">
+              <p class="text-xs text-muted-foreground">
+                <template v-if="dateRange.start && dateRange.end">
+                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} – {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
+                </template>
+                <template v-else>
+                  Select a date range
+                </template>
+              </p>
               <Button v-if="filters.dateFrom || filters.dateTo" variant="ghost" size="sm" class="h-7 text-xs text-muted-foreground" @click="clearDateFilter">
-                Clear dates
+                Clear
               </Button>
             </div>
           </div>
