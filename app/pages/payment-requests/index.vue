@@ -124,22 +124,31 @@ function calendarDateToString(date: CalendarDate | undefined): string {
   return d.toISOString().split('T')[0]
 }
 
-const dateRange = computed<DateRange>({
-  get() {
-    return {
+const dateRange = ref<DateRange>({
+  start: parseDateToCalendarDate(filters.value.dateFrom),
+  end: parseDateToCalendarDate(filters.value.dateTo),
+})
+
+// Watch dateRange changes and sync to filters
+watch(() => dateRange.value, (val) => {
+  filters.value.dateFrom = calendarDateToString(val.start)
+  filters.value.dateTo = calendarDateToString(val.end)
+}, { deep: true })
+
+// Sync from filters when popover opens
+watch(datePopoverOpen, (open) => {
+  if (open) {
+    dateRange.value = {
       start: parseDateToCalendarDate(filters.value.dateFrom),
       end: parseDateToCalendarDate(filters.value.dateTo),
     }
-  },
-  set(value) {
-    filters.value.dateFrom = calendarDateToString(value.start)
-    filters.value.dateTo = calendarDateToString(value.end)
-  },
+  }
 })
 
 function clearDateFilter() {
   filters.value.dateFrom = ''
   filters.value.dateTo = ''
+  dateRange.value = { start: undefined, end: undefined }
 }
 
 function clearAllFilters() {
@@ -337,6 +346,8 @@ const dateFilterLabel = computed(() => {
               weekday-format="short"
               :number-of-months="2"
               initial-focus
+              :placeholder="dateRange.start"
+              @update:start-value="(startDate: any) => dateRange.start = startDate"
             />
             <div class="mt-3 flex items-center justify-between border-t pt-3">
               <p class="text-xs text-muted-foreground">
