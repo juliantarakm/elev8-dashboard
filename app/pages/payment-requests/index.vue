@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DateRange } from 'reka-ui'
 import type { PaymentRequest } from '~/components/payment-request/data/payment-requests'
-import { CalendarDate, DateFormatter, getLocalTimeZone, today } from '@internationalized/date'
+import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import { listings } from '~/components/listings/data/listings'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
 import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
