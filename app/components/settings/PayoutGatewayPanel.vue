@@ -256,7 +256,7 @@ function bulkAssignSelected() {
     <div class="flex items-end justify-between gap-4">
       <div class="space-y-1">
         <h3 class="text-lg font-medium">Payment Gateways</h3>
-        <p class="text-sm text-muted-foreground">Add, edit, or remove payout accounts for Stripe, Doku, and Xendit.</p>
+        <p class="text-sm text-muted-foreground">Connect your payment gateway to send and receive payments securely on Elev8.</p>
       </div>
       <Button class="gap-2" @click="openCreateWizard">
         <Icon name="lucide:plus" class="size-4" />
@@ -488,12 +488,7 @@ function bulkAssignSelected() {
               <div class="mt-3 space-y-2">
                 <p v-for="stepItem in providerConfig.steps" :key="stepItem" class="flex gap-2"><span>•</span><span>{{ stepItem }}</span></p>
               </div>
-              <div class="mt-4 rounded-md border bg-background/80 p-3">
-                <p class="font-medium text-foreground">Field mapping</p>
-                <p class="mt-2" v-if="selectedProvider === 'stripe'">Publishable key and Secret key</p>
-                <p class="mt-2" v-else-if="selectedProvider === 'doku'">ClientID = Public Key, ActiveSecretKey = Secret Key</p>
-                <p class="mt-2" v-else>SecretKey, PublicKey, WebhookSecret</p>
-              </div>
+
             </div>
           </div>
 
