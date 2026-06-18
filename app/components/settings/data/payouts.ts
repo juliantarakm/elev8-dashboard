@@ -86,6 +86,7 @@ export const payoutProviders: PayoutProviderConfig[] = [
     id: 'doku',
     name: 'Doku',
     icon: 'lucide:badge-indian-rupee',
+    component: 'SettingsIconsDokuLogo',
     description: 'Connect Doku for local card and payment methods used by Indonesian guests.',
     connectCopy: 'Use your Doku API credentials, then map listings to this payout account.',
     fields: [
@@ -113,6 +114,7 @@ export const payoutProviders: PayoutProviderConfig[] = [
     id: 'xendit',
     name: 'Xendit',
     icon: 'lucide:badge-dollar-sign',
+    component: 'SettingsIconsXenditLogo',
     description: 'Connect Xendit for payments, webhooks, and settlement handling.',
     connectCopy: 'Add your Xendit keys and webhook secret, then route listings to the account.',
     fields: [

@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { createEmptyPayoutDraft, getListingName, getPayoutProvider, payoutAccounts, payoutProviderLabels, payoutProviders, type PayoutAccount, type PayoutAccountDraft, type PayoutProvider } from './data/payouts'
+import DokuLogo from './icons/DokuLogo.vue'
+import XenditLogo from './icons/XenditLogo.vue'
 
 const providerDialogOpen = ref(false)
 const deleteDialogOpen = ref(false)
@@ -195,7 +197,7 @@ function confirmDelete() {
 
 function backFromCredentials() {
   if (mode.value === 'edit') {
-    step.value = 3
+    providerDialogOpen.value = false
     return
   }
   step.value = 1
@@ -296,7 +298,9 @@ function bulkAssignSelected() {
           >
             <div class="flex items-start gap-3">
               <div class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-muted/30">
-                <Icon :name="getPayoutProvider(account.provider).icon" class="size-4" />
+                <DokuLogo v-if="account.provider === 'doku'" class="size-8" />
+                <XenditLogo v-else-if="account.provider === 'xendit'" class="size-8" />
+                <Icon v-else :name="getPayoutProvider(account.provider).icon" class="size-5" />
               </div>
               <div class="min-w-0 flex-1">
                 <button type="button" class="block w-full text-left" @click="openDetails(account)">
@@ -451,14 +455,16 @@ function bulkAssignSelected() {
                 <p class="text-xs text-muted-foreground">{{ provider.description }}</p>
               </div>
               <div class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-muted/30">
-                <Icon :name="provider.icon" class="size-4" />
+                <DokuLogo v-if="provider.id === 'doku'" class="size-8" />
+                <XenditLogo v-else-if="provider.id === 'xendit'" class="size-8" />
+                <Icon v-else :name="provider.icon" class="size-5" />
               </div>
             </button>
           </div>
 
-          <div v-else-if="providerConfig" class="space-y-5">
+          <div v-else-if="step === 2 && providerConfig" class="space-y-5">
             <div class="space-y-5">
-              <div v-if="mode === 'create' && step === 2">
+              <div v-if="mode === 'create'">
                 <Label for="account-name">Account Label</Label>
                 <Input id="account-name" v-model="formState.accountName" class="mt-2 h-11" placeholder="Main payout account" />
               </div>
@@ -491,7 +497,7 @@ function bulkAssignSelected() {
             </div>
           </div>
 
-          <div v-if="step === 3 || mode === 'edit'" class="space-y-4">
+          <div v-else-if="step === 3" class="space-y-4">
             <div class="flex flex-wrap items-center gap-2">
               <div class="relative min-w-[260px] flex-1">
                 <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -526,14 +532,8 @@ function bulkAssignSelected() {
                   </div>
                 </PopoverContent>
               </Popover>
-            </div>
-
-            <div class="flex items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3">
-              <p class="text-sm text-muted-foreground">
-                {{ selectedListings.length }} selected · {{ assignableListings.length }} shown
-              </p>
-              <Button variant="ghost" class="h-8" @click="assignSearch = ''; assignTagSearch = ''">
-                Clear filters
+              <Button v-if="assignSearch || assignTagSearch" variant="ghost" class="h-10 w-10 p-0" @click="assignSearch = ''; assignTagSearch = ''">
+                <Icon name="lucide:x" class="size-4" />
               </Button>
             </div>
 
@@ -552,21 +552,21 @@ function bulkAssignSelected() {
               </label>
             </div>
 
-            <div class="rounded-lg border bg-muted/20 p-5 text-sm text-muted-foreground">
-              <p class="font-medium text-foreground">Selected listings</p>
-              <p class="mt-2" v-for="listingId in selectedListings.slice(0, 4)" :key="listingId">{{ getListingName(listingId) }}</p>
-              <p v-if="selectedListings.length > 4" class="mt-2">+ {{ selectedListings.length - 4 }} more</p>
-              <p v-if="!selectedListings.length" class="mt-2">No listings selected.</p>
+            <div class="flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3 text-sm">
+              <p class="text-muted-foreground">{{ selectedListings.length }} listing{{ selectedListings.length !== 1 ? 's' : '' }} selected</p>
+              <Button v-if="selectedListings.length" variant="ghost" class="h-8 text-xs text-destructive" @click="selectedListings = []">
+                Clear all
+              </Button>
             </div>
           </div>
         </div>
 
-        <div v-if="(mode === 'create' && step === 2) || mode === 'edit' || step === 3" class="flex items-center justify-between gap-3 border-t pt-4">
-          <Button v-if="mode === 'create' && step === 2" variant="outline" @click="backFromCredentials">Back</Button>
-          <div v-else />
+        <div v-if="step === 2 || step === 3" class="flex items-center justify-between gap-3 border-t pt-4">
+          <Button v-if="step === 2" variant="outline" @click="backFromCredentials">Back</Button>
+          <Button v-else variant="outline" @click="step = 2">Back</Button>
 
           <Button
-            v-if="mode === 'create' && step === 2"
+            v-if="step === 2"
             @click="nextFromCredentials"
           >
             Continue

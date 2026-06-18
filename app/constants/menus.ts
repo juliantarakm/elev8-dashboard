@@ -186,6 +186,11 @@ export const navMenu: NavMenu[] = [
             link: '/settings/account',
           },
           {
+            title: 'Payouts',
+            icon: 'i-lucide-circle',
+            link: '/settings/payouts',
+          },
+          {
             title: 'Integrations',
             icon: 'i-lucide-circle',
             link: '/settings/integrations',
