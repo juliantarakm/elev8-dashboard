@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaymentRequest } from './data/payment-requests'
+import { getStaffName } from './data/payment-requests'
 import { listings } from '~/components/listings/data/listings'
 import { payoutAccounts } from '~/components/settings/data/payouts'
 
@@ -69,19 +70,35 @@ function formatAmount(req: PaymentRequest) {
             Expired on {{ formatDate(request.expiresAt) }}.
           </p>
           <p v-else-if="request.status === 'cancelled'" class="mt-1 text-xs">
-            Cancelled on {{ formatDate(request.cancelledAt!) }} by {{ request.cancelledBy }}.
+            Cancelled on {{ formatDate(request.cancelledAt!) }} by {{ getStaffName(request.cancelledBy!) }}.
           </p>
         </div>
 
         <div class="space-y-3">
-          <div>
-            <Label class="text-xs text-muted-foreground">Guest</Label>
-            <p class="text-sm font-medium">
-              {{ request.guestName }}
-            </p>
-            <p class="text-sm text-muted-foreground">
-              {{ request.guestEmail }}
-            </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <Label class="text-xs text-muted-foreground">Guest</Label>
+              <p class="text-sm font-medium">
+                {{ request.guestName }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                {{ request.guestEmail }}
+              </p>
+            </div>
+            <div>
+              <Label class="text-xs text-muted-foreground">Created by</Label>
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+                  {{ getStaffName(request.createdBy).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }}
+                </span>
+                <p class="text-sm">
+                  {{ getStaffName(request.createdBy) }}
+                </p>
+              </div>
+              <p class="text-xs text-muted-foreground">
+                {{ formatDate(request.createdAt) }}
+              </p>
+            </div>
           </div>
 
           <Separator />
@@ -122,6 +139,16 @@ function formatAmount(req: PaymentRequest) {
               <span>Total</span>
               <span>{{ formatAmount({ ...request, amount: request.totalAmount }) }}</span>
             </div>
+          </div>
+
+          <div v-if="request.status === 'cancelled'" class="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+            <Label class="text-xs text-destructive">Cancellation</Label>
+            <p class="mt-1 text-sm">
+              Cancelled by <span class="font-medium">{{ getStaffName(request.cancelledBy!) }}</span> on {{ formatDate(request.cancelledAt!) }}
+            </p>
+            <p v-if="request.notes" class="mt-1 text-xs text-muted-foreground">
+              Reason: {{ request.notes }}
+            </p>
           </div>
 
           <div v-if="request.status === 'pending'">

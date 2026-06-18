@@ -1,6 +1,12 @@
 import { ref } from 'vue'
+import { staffMembers } from '~/components/inbox/data/conversations'
 
 export type FeeMode = 'card' | 'manual'
+
+export function getStaffName(staffId: string): string {
+  const staff = staffMembers.find(s => s.id === staffId)
+  return staff?.name ?? staffId
+}
 export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'cancelled'
 
 export interface PaymentRequest {

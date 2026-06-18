@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaymentRequest } from './data/payment-requests'
+import { getStaffName } from './data/payment-requests'
 import { listings } from '~/components/listings/data/listings'
 
 const { requests } = defineProps<{
@@ -79,6 +80,7 @@ function timeAgo(date: string) {
           <TableHead>Listing</TableHead>
           <TableHead>Amount</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Created by</TableHead>
           <TableHead>Created</TableHead>
           <TableHead class="w-[60px]" />
         </TableRow>
@@ -110,6 +112,14 @@ function timeAgo(date: string) {
               <Icon :name="statusIcon(req.status)" class="size-3" :class="statusColor(req.status)" />
               {{ req.status }}
             </Badge>
+          </TableCell>
+          <TableCell class="text-muted-foreground">
+            <div class="flex items-center gap-1.5">
+              <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+                {{ getStaffName(req.createdBy).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }}
+              </span>
+              <span class="text-xs">{{ getStaffName(req.createdBy) }}</span>
+            </div>
           </TableCell>
           <TableCell class="text-muted-foreground">
             {{ timeAgo(req.createdAt) }}
@@ -148,7 +158,7 @@ function timeAgo(date: string) {
           </TableCell>
         </TableRow>
         <TableRow v-if="!requests.length">
-          <TableCell colspan="7" class="h-32 text-center text-muted-foreground">
+          <TableCell colspan="8" class="h-32 text-center text-muted-foreground">
             No payment requests found.
           </TableCell>
         </TableRow>
