@@ -348,23 +348,26 @@ watch(open, (val) => {
             </PopoverTrigger>
             <PopoverContent class="w-[380px] p-0" align="start">
               <Command>
-                <div class="flex items-center border-b px-1">
-                  <CommandInput v-model="listingSearch" placeholder="Search listing or location..." class="flex-1 border-0 focus:ring-0" />
-                  <Popover v-model:open="listingTagPopoverOpen">
-                    <PopoverTrigger as-child>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-7 gap-1 px-2 text-xs"
-                        :class="selectedListingTags.length ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground'"
-                      >
-                        <Icon name="lucide:tags" class="size-3.5" />
-                        Tags
-                        <Badge v-if="selectedListingTags.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
-                          {{ selectedListingTags.length }}
-                        </Badge>
-                      </Button>
-                    </PopoverTrigger>
+                <div class="flex w-full items-center">
+                  <div class="flex-1 min-w-0">
+                    <CommandInput v-model="listingSearch" placeholder="Search listing or location..." class="border-0 focus:ring-0" />
+                  </div>
+                  <div class="pr-2">
+                    <Popover v-model:open="listingTagPopoverOpen">
+                      <PopoverTrigger as-child>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          class="h-7 gap-1 px-2 text-xs"
+                          :class="selectedListingTags.length ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground'"
+                        >
+                          <Icon name="lucide:tags" class="size-3.5" />
+                          Tags
+                          <Badge v-if="selectedListingTags.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
+                            {{ selectedListingTags.length }}
+                          </Badge>
+                        </Button>
+                      </PopoverTrigger>
                     <PopoverContent class="w-56 p-0" align="end">
                       <div class="space-y-2 p-2">
                         <Input v-model="listingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
@@ -390,7 +393,8 @@ watch(open, (val) => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <CommandList>
+              </div>
+              <CommandList>
                   <CommandEmpty>
                     <div v-if="listingSearch.trim() || selectedListingTags.length" class="py-3 text-center">
                       <p class="text-sm text-muted-foreground">
