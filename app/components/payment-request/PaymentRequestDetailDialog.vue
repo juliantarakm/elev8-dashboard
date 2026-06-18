@@ -131,7 +131,9 @@ function formatAmount(req: PaymentRequest) {
               <span>{{ formatAmount(request) }}</span>
             </div>
             <div v-if="request.feeAmount > 0" class="flex justify-between text-sm">
-              <span class="text-muted-foreground">Fee ({{ request.feeMode === 'card' ? '3%' : 'manual' }})</span>
+              <span class="text-muted-foreground">
+                Fee ({{ request.feeMode === 'card' ? '3%' : request.feeMode === 'manual' ? `${request.customFeePercentage ?? 0}%` : '0%' }})
+              </span>
               <span>{{ formatAmount({ ...request, amount: request.feeAmount }) }}</span>
             </div>
             <Separator />

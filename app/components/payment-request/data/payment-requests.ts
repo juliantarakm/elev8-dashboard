@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { staffMembers } from '~/components/inbox/data/conversations'
 
-export type FeeMode = 'card' | 'manual'
+export type FeeMode = 'card' | 'manual' | 'no_fee'
 
 export function getStaffName(staffId: string): string {
   const staff = staffMembers.find(s => s.id === staffId)
@@ -20,6 +20,7 @@ export interface PaymentRequest {
   amount: number
   currency: 'USD' | 'IDR'
   feeMode: FeeMode
+  customFeePercentage?: number
   feeAmount: number
   totalAmount: number
   status: PaymentStatus
@@ -46,6 +47,7 @@ export interface PaymentRequestDraft {
   amount: number
   currency: 'USD' | 'IDR'
   feeMode: FeeMode
+  customFeePercentage?: number
   expiresInHours: number
 }
 
@@ -62,9 +64,14 @@ export interface GuestOption {
 
 export const FEE_PERCENTAGE = 0.03
 
-export function calculateFee(amount: number, feeMode: FeeMode): number {
-  if (feeMode === 'manual')
+export function calculateFee(amount: number, feeMode: FeeMode, customFeePercentage?: number): number {
+  if (feeMode === 'no_fee')
     return 0
+  if (feeMode === 'manual') {
+    const pct = (customFeePercentage ?? 0) / 100
+    const fee = amount * pct
+    return Math.round(fee * 100) / 100
+  }
   const fee = amount * FEE_PERCENTAGE
   return Math.round(fee * 100) / 100
 }
@@ -114,7 +121,7 @@ export const paymentRequests = ref<PaymentRequest[]>([
     title: 'Spa package payment',
     amount: 1500000,
     currency: 'IDR',
-    feeMode: 'manual',
+    feeMode: 'no_fee',
     feeAmount: 0,
     totalAmount: 1500000,
     status: 'paid',

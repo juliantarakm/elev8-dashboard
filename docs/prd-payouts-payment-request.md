@@ -38,7 +38,7 @@
 ### Requirements
 - Create a payment request for a guest linked to a listing.
 - Auto-route to the **payout account assigned to that listing**.
-- Support 2 fee modes: **Card** (+3% fee) and **Manual** (no fee).
+- Support 3 fee modes: **Card** (fixed 3% fee), **Manual** (custom % fee), and **No fee** (0%).
 - Status lifecycle: `pending` → `paid` / `expired` / `cancelled`.
 - Auto-expire pending requests when `expiresAt` is reached.
 
@@ -51,7 +51,10 @@
    - Add new guest manually (name, email, phone)
 2. **Select listing** — searchable + tag filter.
 3. **Fill details** — title, description, amount, currency (auto from payout account), expiry (hours).
-4. **Choose fee mode** — Card (+3%) or Manual (0%).
+4. **Choose fee mode**:
+   - **Card** — fixed 3% processing fee
+   - **Manual** — enter custom fee percentage (0–100%)
+   - **No fee** — 0% fee
 5. **Save** → status `pending`, payment link generated, auto-open **Share dialog**.
 
 #### Share Request
@@ -87,7 +90,7 @@ listingIds[], publicKey?, secretKey?, webhookSecret?, notes?
 ### PaymentRequest
 ```
 id, guestName, guestEmail, guestPhone?, listingId, title, description?,
-amount, currency, feeMode, feeAmount, totalAmount, status,
+amount, currency, feeMode, customFeePercentage?, feeAmount, totalAmount, status,
 payoutAccountId, paymentLink, qrCodeUrl?, expiresAt, paidAt?, receiptUrl?,
 cancelledAt?, cancelledBy?, createdAt, createdBy, notes?
 ```
@@ -102,6 +105,6 @@ lastStay?, listingName?
 
 ## 4. Key Business Rules
 - A listing **must** have a payout account before a payment request can be created for it.
-- Card fee is **3%** of amount; manual fee is **0**.
+- Card fee is fixed **3%**; Manual fee uses a custom percentage set by the user; No fee is **0%**.
 - Currency is derived from the payout account: Stripe → USD, Doku/Xendit → IDR.
 - One listing = one payout account. Re-assigning a listing to a new account unlinks it from the old one.

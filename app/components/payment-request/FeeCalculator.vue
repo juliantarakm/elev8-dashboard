@@ -5,15 +5,27 @@ import { calculateFee, calculateTotal } from './data/payment-requests'
 interface Props {
   amount: number
   feeMode: FeeMode
+  customFeePercentage?: number
   currency: string
 }
 
-const { amount, feeMode, currency } = defineProps<Props>()
+const { amount, feeMode, customFeePercentage, currency } = defineProps<Props>()
 
-const feeAmount = computed(() => calculateFee(amount, feeMode))
+const feeAmount = computed(() => calculateFee(amount, feeMode, customFeePercentage))
 const totalAmount = computed(() => calculateTotal(amount, feeAmount.value))
 
 const symbol = computed(() => currency === 'IDR' ? 'Rp' : '$')
+
+const feeLabel = computed(() => {
+  if (feeMode === 'card') return 'Card fee (3%)'
+  if (feeMode === 'manual') return `Manual fee (${customFeePercentage ?? 0}%)`
+  return 'No fee'
+})
+
+const feeDisplay = computed(() => {
+  if (feeMode === 'no_fee') return '-'
+  return `${symbol}${fmt(feeAmount.value)}`
+})
 
 function fmt(n: number) {
   if (currency === 'IDR')
@@ -35,9 +47,9 @@ function fmt(n: number) {
       </div>
       <div class="flex items-center justify-between text-sm">
         <span class="text-muted-foreground">
-          {{ feeMode === 'card' ? 'Card fee (3%)' : 'Manual (no fee)' }}
+          {{ feeLabel }}
         </span>
-        <span>{{ feeMode === 'card' ? `${symbol}${fmt(feeAmount)}` : '-' }}</span>
+        <span>{{ feeDisplay }}</span>
       </div>
       <Separator />
       <div class="flex items-center justify-between text-sm font-medium">
@@ -49,7 +61,9 @@ function fmt(n: number) {
     <p class="text-xs text-muted-foreground">
       {{ feeMode === 'card'
         ? 'Guest pays total amount including processing fee.'
-        : 'No processing fee. Guest pays exact amount.' }}
+        : feeMode === 'manual'
+          ? `Guest pays total amount including ${customFeePercentage ?? 0}% fee.`
+          : 'No processing fee. Guest pays exact amount.' }}
     </p>
   </div>
 </template>

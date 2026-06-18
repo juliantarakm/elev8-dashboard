@@ -27,6 +27,7 @@ const title = ref('')
 const description = ref('')
 const amount = ref<number | null>(null)
 const feeMode = ref<FeeMode>('card')
+const customFeePercentage = ref<number>(0)
 const expiresInHours = ref(24)
 
 // Guest search state
@@ -191,6 +192,7 @@ function reset() {
   description.value = ''
   amount.value = null
   feeMode.value = 'card'
+  customFeePercentage.value = 0
   expiresInHours.value = 24
   guestSearch.value = ''
   listingSearch.value = ''
@@ -212,6 +214,7 @@ function handleCreate() {
     amount: amount.value,
     currency: currency.value,
     feeMode: feeMode.value,
+    customFeePercentage: feeMode.value === 'manual' ? customFeePercentage.value : undefined,
     expiresInHours: expiresInHours.value,
   })
 
@@ -482,14 +485,35 @@ watch(open, (val) => {
             </div>
             <div class="flex items-center space-x-2">
               <RadioGroupItem id="manual" value="manual" />
-              <Label for="manual" class="text-sm font-normal">Manual (no fee)</Label>
+              <Label for="manual" class="text-sm font-normal">Manual</Label>
+            </div>
+            <div class="flex items-center space-x-2">
+              <RadioGroupItem id="no_fee" value="no_fee" />
+              <Label for="no_fee" class="text-sm font-normal">No fee</Label>
             </div>
           </RadioGroup>
+        </div>
+
+        <div v-if="feeMode === 'manual'" class="space-y-2">
+          <Label>Custom fee percentage</Label>
+          <div class="flex items-center gap-2">
+            <Input
+              v-model.number="customFeePercentage"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="e.g. 5"
+              class="h-10"
+            />
+            <span class="text-sm text-muted-foreground">%</span>
+          </div>
         </div>
 
         <FeeCalculator
           :amount="amount || 0"
           :fee-mode="feeMode"
+          :custom-fee-percentage="customFeePercentage"
           :currency="currency"
         />
       </div>
