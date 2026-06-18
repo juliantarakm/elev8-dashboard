@@ -121,3 +121,11 @@ export function useBookingWidgets() {
 
   return { bookingWidgets, getWidgetById, buildEmbedPreview, copyEmbedSnippet, getSnippetForForm }
 }
+
+export function buildEmbedPreview(widget: BookingWidgetConfig) {
+  return useBookingWidgets().buildEmbedPreview(widget)
+}
+
+export function getSnippetForForm(widget: BookingWidgetConfig) {
+  return useBookingWidgets().getSnippetForForm(widget)
+}
