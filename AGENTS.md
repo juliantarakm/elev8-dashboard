@@ -62,8 +62,16 @@ This file provides context for AI agents working on this project.
     - **Calendar-Based**: `send_once` (date + time), `gap_nights` (min/max + before/after + delay + time), `daily`, `weekly`, `monthly`, `yearly`
   - `TriggerCategory = 'conversation' | 'reservation' | 'calendar'`
   - `WaitStep`: `waitMode: 'time_delay' | 'until_condition'` — Time Delay has `durationDays/Hours/Minutes` + optional `waitUntilSpecificTime` + `waitUntilTime`; Until Condition uses `rules` + `combinator` (same condition system as Hard Requirement/If-Else)
-  - `IfElseStep`: `trueBranchStep` / `falseBranchStep` store full step configs (`Record<string, any>`) — user picks a step type from the same menu as "Add Step", and the full config UI opens in a Dialog popup. Each branch can have one action. Delete via Dialog.
-  - Condition system: `ConditionRule` with 14 types, `ConditionCombinator = 'and' | 'or'` — configured via `JourneyConditionsModal.vue` (reusable for Hard Requirement, If-Else, Wait Until Condition)
+  - **IfElseStep**: `trueBranchStep` / `falseBranchStep` store full step configs (`Record<string, any>`)
+    - Branch action picker uses same DropdownMenu as "Add Step" (groups + icons), **excludes If/Else** to prevent infinite loops
+    - Selecting an action **auto-opens Dialog popup** with full step config for that type
+    - Each branch shows a summary of the configured action (e.g., "Wait: 2d 3h", "Send a Message: AI Directive · WhatsApp")
+    - Delete Action button in popup resets branch to "None"
+    - Branches stack vertically (not grid) to fit sidebar width
+    - `defaultBranchConfig()` initializes correct fields per type (including `hard_requirement` with `rules: [], combinator: 'and'`)
+    - `branchStepType()` maps config to display type (handles `toggle_ai` → `toggle_ai_pause`/`toggle_ai_start`)
+    - Condition modal targets: `'branchTrue'` / `'branchFalse'` for Hard Requirement branches
+  - Condition system: `ConditionRule` with 14 types, `ConditionCombinator = 'and' | 'or'` — configured via `JourneyConditionsModal.vue` (reusable for Hard Requirement, If-Else, Wait Until Condition, and branch Hard Requirements)
   - `JourneyStatus = 'active' | 'inactive'` (no 'draft' — known pre-existing type error in `pages/journeys/index.vue`)
   - `addStepOptions`: Removed `context_check` and `end_journey`. Remaining: Wait, Send Message, If/Else, Hard Requirement, Create Action Item, Create Reservation Note, Pause/Start Auto-responses, Integrations
   - `handleStepUpdate` uses `splice` (not object spread) to avoid Select dropdown portal issues
@@ -78,6 +86,25 @@ This file provides context for AI agents working on this project.
   - `JourneyBuildAIModal.vue` — Build with AI modal
 
 - **Page**: `app/pages/journeys/index.vue` — Marketplace view, builder flow, editor routing
+
+### Booking Widgets Module (`app/components/booking-widget/`)
+
+- **Data + types**: `app/components/booking-widget/data/widgets.ts`
+  - `BookingWidgetConfig` type, `bookingWidgets` ref
+  - `useBookingWidgets()` composable: `getWidgetById()`, `buildEmbedPreview()`, `copyEmbedSnippet()`, `getSnippetForForm()`
+  - `buildEmbedPreview` and `getSnippetForForm` also exported as standalone functions (wrapping the composable) — needed by `pages/booking-widgets/[id].vue` which imports directly
+
+### Settings Module (`app/components/settings/`)
+
+- **Payouts**: `app/pages/settings/payouts.vue` + `app/components/settings/PayoutGatewayPanel.vue`
+  - Payout gateway configuration (Stripe, PayPal, bank transfer)
+  - Data: `app/components/settings/data/payouts.ts`
+
+### CI/CD
+
+- **GitHub Actions**: Two workflows — `CI` (lint + build check) and `Deploy to GitHub Pages`
+- **ESLint**: `eslint.config.js` uses `@antfu/eslint-config` + Nuxt config. Ignores `docs/**`, `dist/**`, `.output/**`
+- **Known pre-existing type errors**: `JourneyStatus` 'draft' in `pages/journeys/index.vue`, `useJourneys.ts` `lastModified` undefined — do not block deploy (build succeeds)
 
 ### Layout
 
