@@ -5,6 +5,8 @@ import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { payoutAccounts } from '~/components/settings/data/payouts'
 import { usePaymentRequests } from '~/composables/usePaymentRequests'
+import GuestSearchCombobox from './GuestSearchCombobox.vue'
+import FeeCalculator from './FeeCalculator.vue'
 
 const open = defineModel<boolean>('open', { default: false })
 

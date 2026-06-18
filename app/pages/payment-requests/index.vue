@@ -3,6 +3,10 @@ import type { PaymentRequest } from '~/components/payment-request/data/payment-r
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { usePaymentRequests } from '~/composables/usePaymentRequests'
+import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
+import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
+import PaymentRequestShareDialog from '~/components/payment-request/PaymentRequestShareDialog.vue'
+import PaymentRequestTable from '~/components/payment-request/PaymentRequestTable.vue'
 
 const {
   filteredRequests,
