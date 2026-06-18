@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PaymentRequest } from '~/components/payment-request/data/payment-requests'
-import { ref } from 'vue'
+import { listings } from '~/components/listings/data/listings'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
 import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
@@ -54,6 +55,138 @@ const statusOptions = [
   { label: 'Expired', value: 'expired' },
   { label: 'Cancelled', value: 'cancelled' },
 ]
+
+// Listing filter state
+const listingPopoverOpen = ref(false)
+const listingSearch = ref('')
+const listingTagSearch = ref('')
+const selectedListingTags = ref<string[]>([])
+
+const allListingTags = computed(() => {
+  const tags = new Set<string>()
+  for (const l of listings.value)
+    l.tags.forEach(t => tags.add(t))
+  return Array.from(tags).sort()
+})
+
+function toggleListingTag(tag: string) {
+  if (selectedListingTags.value.includes(tag))
+    selectedListingTags.value = selectedListingTags.value.filter(t => t !== tag)
+  else
+    selectedListingTags.value = [...selectedListingTags.value, tag]
+}
+
+function toggleListing(listingId: string) {
+  if (filters.value.listings.includes(listingId))
+    filters.value.listings = filters.value.listings.filter(id => id !== listingId)
+  else
+    filters.value.listings = [...filters.value.listings, listingId]
+}
+
+const filteredListingsForFilter = computed(() => {
+  const query = listingSearch.value.trim().toLowerCase()
+  return listings.value.filter((l) => {
+    const haystack = `${l.name} ${l.location} ${l.tags.join(' ')}`.toLowerCase()
+    if (query && !haystack.includes(query))
+      return false
+    if (selectedListingTags.value.length > 0 && !selectedListingTags.value.every(tag => l.tags.includes(tag)))
+      return false
+    return true
+  })
+})
+
+const selectedListingNames = computed(() => {
+  return filters.value.listings
+    .map(id => listings.value.find(l => l.id === id)?.name)
+    .filter(Boolean) as string[]
+})
+
+// Date filter state
+const datePopoverOpen = ref(false)
+const datePreset = ref('')
+
+const datePresetOptions = [
+  { label: 'Today', value: 'today' },
+  { label: 'Yesterday', value: 'yesterday' },
+  { label: 'Last 7 days', value: 'last7' },
+  { label: 'This month', value: 'thisMonth' },
+  { label: 'Last month', value: 'lastMonth' },
+]
+
+function applyDatePreset(preset: string) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  switch (preset) {
+    case 'today': {
+      filters.value.dateFrom = today.toISOString().split('T')[0]
+      filters.value.dateTo = today.toISOString().split('T')[0]
+      break
+    }
+    case 'yesterday': {
+      const yest = new Date(today)
+      yest.setDate(yest.getDate() - 1)
+      filters.value.dateFrom = yest.toISOString().split('T')[0]
+      filters.value.dateTo = yest.toISOString().split('T')[0]
+      break
+    }
+    case 'last7': {
+      const d = new Date(today)
+      d.setDate(d.getDate() - 6)
+      filters.value.dateFrom = d.toISOString().split('T')[0]
+      filters.value.dateTo = today.toISOString().split('T')[0]
+      break
+    }
+    case 'thisMonth': {
+      filters.value.dateFrom = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]
+      filters.value.dateTo = today.toISOString().split('T')[0]
+      break
+    }
+    case 'lastMonth': {
+      const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const lastDay = new Date(today.getFullYear(), today.getMonth(), 0)
+      filters.value.dateFrom = firstDay.toISOString().split('T')[0]
+      filters.value.dateTo = lastDay.toISOString().split('T')[0]
+      break
+    }
+  }
+  datePreset.value = preset
+  datePopoverOpen.value = false
+}
+
+function clearDateFilter() {
+  filters.value.dateFrom = ''
+  filters.value.dateTo = ''
+  datePreset.value = ''
+}
+
+function clearAllFilters() {
+  filters.value.search = ''
+  filters.value.status = 'all'
+  filters.value.listings = []
+  filters.value.dateFrom = ''
+  filters.value.dateTo = ''
+  datePreset.value = ''
+  selectedListingTags.value = []
+  listingSearch.value = ''
+  listingTagSearch.value = ''
+}
+
+const hasActiveFilters = computed(() =>
+  filters.value.search
+  || filters.value.status !== 'all'
+  || filters.value.listings.length > 0
+  || filters.value.dateFrom
+  || filters.value.dateTo,
+)
+
+const dateFilterLabel = computed(() => {
+  if (!filters.value.dateFrom && !filters.value.dateTo)
+    return 'Date range'
+  if (filters.value.dateFrom === filters.value.dateTo)
+    return filters.value.dateFrom
+  return `${filters.value.dateFrom} – ${filters.value.dateTo}`
+})
 </script>
 
 <template>
@@ -74,12 +207,15 @@ const statusOptions = [
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <div class="relative min-w-[260px] flex-1 max-w-sm">
+      <!-- Search -->
+      <div class="relative min-w-[200px] flex-1 max-w-xs">
         <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input v-model="filters.search" placeholder="Search guest or title..." class="pl-9" />
       </div>
+
+      <!-- Status -->
       <Select v-model="filters.status">
-        <SelectTrigger class="w-[140px]">
+        <SelectTrigger class="w-[130px]">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -88,9 +224,202 @@ const statusOptions = [
           </SelectItem>
         </SelectContent>
       </Select>
-      <Button v-if="filters.search || filters.status !== 'all'" variant="ghost" @click="filters.search = ''; filters.status = 'all'">
-        Clear filters
+
+      <!-- Listing Filter -->
+      <Popover v-model:open="listingPopoverOpen">
+        <PopoverTrigger as-child>
+          <Button
+            variant="outline"
+            class="h-9 gap-1.5 px-3"
+            :class="filters.listings.length ? 'border-primary text-primary hover:bg-primary/10' : ''"
+          >
+            <Icon name="lucide:building-2" class="size-4" />
+            Listings
+            <Badge v-if="filters.listings.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
+              {{ filters.listings.length }}
+            </Badge>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-[380px] p-0" align="start">
+          <Command>
+            <div class="flex w-full items-center">
+              <div class="flex-1 min-w-0">
+                <CommandInput v-model="listingSearch" placeholder="Search listing or location..." class="border-0 focus:ring-0" />
+              </div>
+              <div class="pr-2">
+                <Popover>
+                  <PopoverTrigger as-child>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="h-7 gap-1 px-2 text-xs"
+                      :class="selectedListingTags.length ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground'"
+                    >
+                      <Icon name="lucide:tags" class="size-3.5" />
+                      Tags
+                      <Badge v-if="selectedListingTags.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
+                        {{ selectedListingTags.length }}
+                      </Badge>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-56 p-0" align="end">
+                    <div class="space-y-2 p-2">
+                      <Input v-model="listingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
+                      <div class="max-h-40 space-y-1 overflow-auto">
+                        <button
+                          v-for="tag in allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase()))"
+                          :key="tag"
+                          type="button"
+                          class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                          @click="toggleListingTag(tag)"
+                        >
+                          <Checkbox :model-value="selectedListingTags.includes(tag)" class="size-3.5" />
+                          <span>{{ tag }}</span>
+                        </button>
+                        <p v-if="!allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
+                          No tags found.
+                        </p>
+                      </div>
+                      <Button v-if="selectedListingTags.length" variant="ghost" size="sm" class="h-7 w-full text-xs text-muted-foreground" @click="selectedListingTags = []">
+                        Clear all
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <CommandList>
+              <CommandEmpty>
+                <div v-if="listingSearch.trim() || selectedListingTags.length" class="py-3 text-center">
+                  <p class="text-sm text-muted-foreground">No listing found.</p>
+                </div>
+                <div v-else class="py-3 text-center text-sm text-muted-foreground">
+                  Type to search...
+                </div>
+              </CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  v-for="listing in filteredListingsForFilter"
+                  :key="listing.id"
+                  :value="listing.name"
+                  class="cursor-pointer"
+                  @select.prevent="toggleListing(listing.id)"
+                >
+                  <div class="flex items-start gap-2 w-full">
+                    <Checkbox :model-value="filters.listings.includes(listing.id)" class="mt-0.5 size-4" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium">{{ listing.name }}</p>
+                      <p class="text-xs text-muted-foreground">{{ listing.location }}</p>
+                      <div class="mt-1 flex flex-wrap gap-1">
+                        <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-[10px]">
+                          {{ tag }}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+          <div v-if="filters.listings.length" class="border-t p-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-muted-foreground">{{ filters.listings.length }} selected</span>
+              <Button variant="ghost" size="sm" class="h-6 text-xs text-muted-foreground" @click="filters.listings = []">
+                Clear all
+              </Button>
+            </div>
+            <div class="mt-1.5 flex flex-wrap gap-1">
+              <Badge v-for="name in selectedListingNames" :key="name" variant="secondary" class="text-[10px]">
+                {{ name }}
+              </Badge>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <!-- Date Range Filter -->
+      <Popover v-model:open="datePopoverOpen">
+        <PopoverTrigger as-child>
+          <Button
+            variant="outline"
+            class="h-9 gap-1.5 px-3"
+            :class="filters.dateFrom ? 'border-primary text-primary hover:bg-primary/10' : ''"
+          >
+            <Icon name="lucide:calendar" class="size-4" />
+            <span class="max-w-[140px] truncate">{{ dateFilterLabel }}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-72 p-0" align="start">
+          <div class="p-3 space-y-3">
+            <p class="text-xs font-medium uppercase text-muted-foreground">Quick select</p>
+            <div class="flex flex-wrap gap-1.5">
+              <Button
+                v-for="preset in datePresetOptions"
+                :key="preset.value"
+                variant="outline"
+                size="sm"
+                class="h-7 text-xs"
+                :class="datePreset === preset.value ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90' : ''"
+                @click="applyDatePreset(preset.value)"
+              >
+                {{ preset.label }}
+              </Button>
+            </div>
+            <Separator />
+            <div class="space-y-2">
+              <p class="text-xs font-medium uppercase text-muted-foreground">Custom range</p>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <Label class="text-[10px] text-muted-foreground">From</Label>
+                  <Input v-model="filters.dateFrom" type="date" class="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label class="text-[10px] text-muted-foreground">To</Label>
+                  <Input v-model="filters.dateTo" type="date" class="h-8 text-xs" />
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <Button v-if="filters.dateFrom || filters.dateTo" variant="ghost" size="sm" class="h-7 text-xs text-muted-foreground" @click="clearDateFilter">
+                Clear dates
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <!-- Clear All -->
+      <Button v-if="hasActiveFilters" variant="ghost" class="h-9 text-xs" @click="clearAllFilters">
+        Clear all
       </Button>
+    </div>
+
+    <!-- Active filter chips -->
+    <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2">
+      <Badge v-if="filters.search" variant="secondary" class="gap-1 text-xs">
+        Search: {{ filters.search }}
+        <button class="ml-1 hover:text-destructive" @click="filters.search = ''">
+          <Icon name="lucide:x" class="size-3" />
+        </button>
+      </Badge>
+      <Badge v-if="filters.status !== 'all'" variant="secondary" class="gap-1 text-xs capitalize">
+        Status: {{ filters.status }}
+        <button class="ml-1 hover:text-destructive" @click="filters.status = 'all'">
+          <Icon name="lucide:x" class="size-3" />
+        </button>
+      </Badge>
+      <Badge v-if="filters.listings.length" variant="secondary" class="gap-1 text-xs">
+        {{ filters.listings.length }} listing{{ filters.listings.length > 1 ? 's' : '' }}
+        <button class="ml-1 hover:text-destructive" @click="filters.listings = []">
+          <Icon name="lucide:x" class="size-3" />
+        </button>
+      </Badge>
+      <Badge v-if="filters.dateFrom || filters.dateTo" variant="secondary" class="gap-1 text-xs">
+        {{ dateFilterLabel }}
+        <button class="ml-1 hover:text-destructive" @click="clearDateFilter">
+          <Icon name="lucide:x" class="size-3" />
+        </button>
+      </Badge>
     </div>
 
     <PaymentRequestTable
