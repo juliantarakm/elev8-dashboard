@@ -35,16 +35,17 @@ const guestSearch = ref('')
 // Listing search state
 const listingPopoverOpen = ref(false)
 const listingSearch = ref('')
+const listingTagPopoverOpen = ref(false)
 const listingTagSearch = ref('')
+const selectedListingTags = ref<string[]>([])
 
 const filteredListings = computed(() => {
   const query = listingSearch.value.trim().toLowerCase()
-  const tagQuery = listingTagSearch.value.trim().toLowerCase()
   return listings.value.filter((l) => {
     const haystack = `${l.name} ${l.location} ${l.tags.join(' ')}`.toLowerCase()
     if (query && !haystack.includes(query))
       return false
-    if (tagQuery && !l.tags.some(t => t.toLowerCase().includes(tagQuery)))
+    if (selectedListingTags.value.length > 0 && !selectedListingTags.value.every(tag => l.tags.includes(tag)))
       return false
     return true
   })
@@ -57,11 +58,17 @@ const allListingTags = computed(() => {
   return Array.from(tags).sort()
 })
 
+function toggleListingTag(tag: string) {
+  if (selectedListingTags.value.includes(tag))
+    selectedListingTags.value = selectedListingTags.value.filter(t => t !== tag)
+  else
+    selectedListingTags.value = [...selectedListingTags.value, tag]
+}
+
 function selectListing(listingId: string) {
   selectedListingId.value = listingId
   listingPopoverOpen.value = false
   listingSearch.value = ''
-  listingTagSearch.value = ''
 }
 
 const guestOptions = computed<GuestOption[]>(() => {
@@ -187,6 +194,7 @@ function reset() {
   guestSearch.value = ''
   listingSearch.value = ''
   listingTagSearch.value = ''
+  selectedListingTags.value = []
 }
 
 function handleCreate() {
@@ -341,17 +349,41 @@ watch(open, (val) => {
             <PopoverContent class="w-[380px] p-0" align="start">
               <Command>
                 <CommandInput v-model="listingSearch" placeholder="Search listing or location..." />
-                <div class="flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
-                  <Badge
-                    v-for="tag in allListingTags"
-                    :key="tag"
-                    variant="outline"
-                    class="cursor-pointer text-[10px]"
-                    :class="listingTagSearch === tag ? 'bg-primary text-primary-foreground border-primary' : ''"
-                    @click="listingTagSearch = listingTagSearch === tag ? '' : tag"
-                  >
-                    {{ tag }}
-                  </Badge>
+                <div class="flex items-center gap-2 border-b px-3 py-2">
+                  <Popover v-model:open="listingTagPopoverOpen">
+                    <PopoverTrigger as-child>
+                      <Button variant="outline" size="sm" class="gap-1.5 h-7 text-xs">
+                        <Icon name="lucide:tags" class="size-3.5" />
+                        Tags
+                        <Badge v-if="selectedListingTags.length" variant="secondary" class="ml-0.5 h-4 px-1 text-[10px]">
+                          {{ selectedListingTags.length }}
+                        </Badge>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-56 p-0" align="start">
+                      <div class="space-y-2 p-2">
+                        <Input v-model="listingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
+                        <div class="max-h-40 space-y-1 overflow-auto">
+                          <button
+                            v-for="tag in allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase()))"
+                            :key="tag"
+                            type="button"
+                            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                            @click="toggleListingTag(tag)"
+                          >
+                            <Checkbox :model-value="selectedListingTags.includes(tag)" class="size-3.5" />
+                            <span>{{ tag }}</span>
+                          </button>
+                          <p v-if="!allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
+                            No tags found.
+                          </p>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button v-if="selectedListingTags.length" variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="selectedListingTags = []">
+                    Clear tags
+                  </Button>
                 </div>
                 <CommandList>
                   <CommandEmpty>No listing found.</CommandEmpty>
