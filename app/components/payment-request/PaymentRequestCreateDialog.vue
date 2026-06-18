@@ -348,19 +348,24 @@ watch(open, (val) => {
             </PopoverTrigger>
             <PopoverContent class="w-[380px] p-0" align="start">
               <Command>
-                <CommandInput v-model="listingSearch" placeholder="Search listing or location..." />
-                <div class="flex items-center gap-2 border-b px-3 py-2">
+                <div class="flex items-center border-b px-1">
+                  <CommandInput v-model="listingSearch" placeholder="Search listing or location..." class="flex-1 border-0 focus:ring-0" />
                   <Popover v-model:open="listingTagPopoverOpen">
                     <PopoverTrigger as-child>
-                      <Button variant="outline" size="sm" class="gap-1.5 h-7 text-xs">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 gap-1 px-2 text-xs"
+                        :class="selectedListingTags.length ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground'"
+                      >
                         <Icon name="lucide:tags" class="size-3.5" />
                         Tags
-                        <Badge v-if="selectedListingTags.length" variant="secondary" class="ml-0.5 h-4 px-1 text-[10px]">
+                        <Badge v-if="selectedListingTags.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
                           {{ selectedListingTags.length }}
                         </Badge>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent class="w-56 p-0" align="start">
+                    <PopoverContent class="w-56 p-0" align="end">
                       <div class="space-y-2 p-2">
                         <Input v-model="listingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
                         <div class="max-h-40 space-y-1 overflow-auto">
@@ -378,15 +383,24 @@ watch(open, (val) => {
                             No tags found.
                           </p>
                         </div>
+                        <Button v-if="selectedListingTags.length" variant="ghost" size="sm" class="h-7 w-full text-xs text-muted-foreground" @click="selectedListingTags = []">
+                          Clear all
+                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>
-                  <Button v-if="selectedListingTags.length" variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="selectedListingTags = []">
-                    Clear tags
-                  </Button>
                 </div>
                 <CommandList>
-                  <CommandEmpty>No listing found.</CommandEmpty>
+                  <CommandEmpty>
+                    <div v-if="listingSearch.trim() || selectedListingTags.length" class="py-3 text-center">
+                      <p class="text-sm text-muted-foreground">
+                        No listing found.
+                      </p>
+                    </div>
+                    <div v-else class="py-3 text-center text-sm text-muted-foreground">
+                      Type to search...
+                    </div>
+                  </CommandEmpty>
                   <CommandGroup>
                     <CommandItem
                       v-for="listing in filteredListings"
