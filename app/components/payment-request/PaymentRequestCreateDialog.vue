@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FeeMode, GuestOption } from './data/payment-requests'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { payoutAccounts } from '~/components/settings/data/payouts'
@@ -28,6 +28,8 @@ const amount = ref<number | null>(null)
 const feeMode = ref<FeeMode>('card')
 const expiresInHours = ref(24)
 
+// Guest search state
+const guestPopoverOpen = ref(false)
 const guestSearch = ref('')
 
 const guestOptions = computed<GuestOption[]>(() => {
@@ -80,7 +82,6 @@ const filteredGuests = computed(() => {
 
 const inboxGuests = computed(() => filteredGuests.value.filter(g => g.source === 'inbox'))
 const previousGuests = computed(() => filteredGuests.value.filter(g => g.source === 'payment_request'))
-const hasExactMatch = computed(() => filteredGuests.value.some(g => g.name.toLowerCase() === guestSearch.value.trim().toLowerCase()))
 
 function selectGuest(guest: GuestOption) {
   guestName.value = guest.name
@@ -88,6 +89,7 @@ function selectGuest(guest: GuestOption) {
   guestPhone.value = guest.phone ?? ''
   selectedGuest.value = guest
   guestSearch.value = ''
+  guestPopoverOpen.value = false
   if (guest.listingName) {
     const listing = listings.value.find(l => l.name === guest.listingName)
     if (listing)
@@ -104,6 +106,7 @@ function addNewGuest() {
   guestPhone.value = ''
   selectedGuest.value = { id: `manual-${Date.now()}`, name, email: '', source: 'manual' }
   guestSearch.value = ''
+  guestPopoverOpen.value = false
 }
 
 const assigned = computed(() => selectedListingId.value ? isListingAssigned(selectedListingId.value) : true)
@@ -149,6 +152,7 @@ function reset() {
   amount.value = null
   feeMode.value = 'card'
   expiresInHours.value = 24
+  guestSearch.value = ''
 }
 
 function handleCreate() {
@@ -200,85 +204,95 @@ watch(open, (val) => {
       <div class="space-y-4">
         <div class="space-y-2">
           <Label>Guest name *</Label>
-          <Combobox v-model="guestName">
-            <ComboboxAnchor class="w-full">
-              <div class="relative w-full">
-                <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <ComboboxInput
-                  v-model="guestSearch"
-                  :display-value="() => guestName"
-                  placeholder="Search guest by name or email..."
-                  class="h-10 w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-            </ComboboxAnchor>
-            <ComboboxList class="w-full">
-              <ComboboxEmpty v-if="!filteredGuests.length && !guestSearch.trim()">
-                Type to search guests...
-              </ComboboxEmpty>
-              <ComboboxEmpty v-else-if="!filteredGuests.length && guestSearch.trim() && !hasExactMatch">
-                <button type="button" class="flex w-full items-center gap-2 py-2 text-sm hover:text-primary" @click="addNewGuest">
-                  <Icon name="lucide:plus" class="size-4" />
-                  Add new guest "{{ guestSearch.trim() }}"
-                </button>
-              </ComboboxEmpty>
-              <ComboboxGroup v-if="inboxGuests.length" heading="Recent Guests">
-                <ComboboxItem
-                  v-for="guest in inboxGuests"
-                  :key="guest.id"
-                  :value="guest.name"
-                  @select="selectGuest(guest)"
-                >
-                  <div class="flex items-center gap-2">
-                    <Avatar v-if="guest.avatar" class="size-6">
-                      <AvatarImage :src="guest.avatar" />
-                    </Avatar>
-                    <div v-else class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
-                      {{ guest.name.charAt(0) }}
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-sm font-medium">
-                        {{ guest.name }}
-                      </p>
-                      <p class="text-xs text-muted-foreground">
-                        {{ guest.email }}
-                      </p>
-                    </div>
-                  </div>
-                </ComboboxItem>
-              </ComboboxGroup>
-              <ComboboxGroup v-if="previousGuests.length" heading="Previous Requests">
-                <ComboboxItem
-                  v-for="guest in previousGuests"
-                  :key="guest.id"
-                  :value="guest.name"
-                  @select="selectGuest(guest)"
-                >
-                  <div class="flex items-center gap-2">
-                    <div class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
-                      {{ guest.name.charAt(0) }}
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-sm font-medium">
-                        {{ guest.name }}
-                      </p>
-                      <p class="text-xs text-muted-foreground">
-                        {{ guest.email }}
-                      </p>
-                    </div>
-                  </div>
-                </ComboboxItem>
-              </ComboboxGroup>
-              <ComboboxGroup v-if="guestSearch.trim() && !hasExactMatch">
-                <ComboboxItem :value="guestSearch.trim()" @select="addNewGuest">
-                  <div class="flex items-center gap-2">
-                    <Icon name="lucide:plus" class="size-4" />
-                    <span>Add new guest "{{ guestSearch.trim() }}"</span>
-                  </div>
-                </ComboboxItem>
-              </ComboboxGroup>
-            </ComboboxList>
-          </Combobox>
+          <Popover v-model:open="guestPopoverOpen">
+            <PopoverTrigger as-child>
+              <Button variant="outline" class="w-full justify-between">
+                {{ guestName || 'Search guest...' }}
+                <Icon name="lucide:chevrons-up-down" class="size-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-[380px] p-0" align="start">
+              <Command>
+                <CommandInput v-model="guestSearch" placeholder="Search guest by name or email..." />
+                <CommandList>
+                  <CommandEmpty v-if="!guestSearch.trim()">
+                    Type to search guests...
+                  </CommandEmpty>
+                  <CommandEmpty v-else-if="!filteredGuests.length">
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 py-2 text-sm hover:text-primary"
+                      @click="addNewGuest"
+                    >
+                      <Icon name="lucide:plus" class="size-4" />
+                      Add new guest "{{ guestSearch.trim() }}"
+                    </button>
+                  </CommandEmpty>
+                  <CommandGroup v-if="inboxGuests.length" heading="Recent Guests">
+                    <CommandItem
+                      v-for="guest in inboxGuests"
+                      :key="guest.id"
+                      :value="guest.name"
+                      class="cursor-pointer"
+                      @select="selectGuest(guest)"
+                    >
+                      <div class="flex items-center gap-2">
+                        <Avatar v-if="guest.avatar" class="size-6">
+                          <AvatarImage :src="guest.avatar" />
+                        </Avatar>
+                        <div v-else class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
+                          {{ guest.name.charAt(0) }}
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-sm font-medium">
+                            {{ guest.name }}
+                          </p>
+                          <p class="text-xs text-muted-foreground">
+                            {{ guest.email }}
+                          </p>
+                        </div>
+                      </div>
+                    </CommandItem>
+                  </CommandGroup>
+                  <CommandGroup v-if="previousGuests.length" heading="Previous Requests">
+                    <CommandItem
+                      v-for="guest in previousGuests"
+                      :key="guest.id"
+                      :value="guest.name"
+                      class="cursor-pointer"
+                      @select="selectGuest(guest)"
+                    >
+                      <div class="flex items-center gap-2">
+                        <div class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
+                          {{ guest.name.charAt(0) }}
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-sm font-medium">
+                            {{ guest.name }}
+                          </p>
+                          <p class="text-xs text-muted-foreground">
+                            {{ guest.email }}
+                          </p>
+                        </div>
+                      </div>
+                    </CommandItem>
+                  </CommandGroup>
+                  <CommandGroup v-if="guestSearch.trim() && filteredGuests.length > 0">
+                    <CommandItem
+                      :value="`__add_new__${guestSearch.trim()}`"
+                      class="cursor-pointer"
+                      @select="addNewGuest"
+                    >
+                      <div class="flex items-center gap-2">
+                        <Icon name="lucide:plus" class="size-4" />
+                        <span>Add new guest "{{ guestSearch.trim() }}"</span>
+                      </div>
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div class="space-y-2">
