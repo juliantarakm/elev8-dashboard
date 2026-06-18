@@ -59,6 +59,12 @@ export const navMenu: NavMenu[] = [
         link: '/finance',
         new: true,
       },
+      {
+        title: 'Payment Requests',
+        icon: 'i-lucide-link',
+        link: '/payment-requests',
+        new: true,
+      },
     ],
   },
   {
