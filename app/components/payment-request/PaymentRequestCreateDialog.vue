@@ -14,8 +14,9 @@ const emit = defineEmits<{
 
 const open = defineModel<boolean>('open', { default: false })
 
-const { createRequest, checkDuplicate, isListingAssigned } = usePaymentRequests()
+const { createRequest, isListingAssigned } = usePaymentRequests()
 const { conversations } = useInbox()
+const paymentRequestStore = usePaymentRequests()
 
 const guestName = ref('')
 const guestEmail = ref('')
@@ -91,7 +92,7 @@ const guestOptions = computed<GuestOption[]>(() => {
     }
   }
 
-  for (const req of usePaymentRequests().requests.value) {
+  for (const req of paymentRequestStore.requests.value) {
     const key = req.guestName.toLowerCase()
     if (!seen.has(key)) {
       seen.add(key)
@@ -200,13 +201,6 @@ function reset() {
 function handleCreate() {
   if (!amount.value)
     return
-
-  if (checkDuplicate(guestName.value, amount.value)) {
-    // eslint-disable-next-line no-alert
-    const confirmed = window.confirm('A similar pending request exists. Create anyway?')
-    if (!confirmed)
-      return
-  }
 
   const request = createRequest({
     guestName: guestName.value,
