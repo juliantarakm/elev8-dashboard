@@ -57,7 +57,7 @@ function shareEmail() {
           </Button>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <Button variant="outline" class="flex-col gap-1 h-auto py-3" @click="shareWhatsApp">
             <Icon name="lucide:message-circle" class="size-5" />
             <span class="text-xs">WhatsApp</span>
@@ -65,10 +65,6 @@ function shareEmail() {
           <Button variant="outline" class="flex-col gap-1 h-auto py-3" @click="shareEmail">
             <Icon name="lucide:mail" class="size-5" />
             <span class="text-xs">Email</span>
-          </Button>
-          <Button variant="outline" class="flex-col gap-1 h-auto py-3">
-            <Icon name="lucide:qr-code" class="size-5" />
-            <span class="text-xs">QR Code</span>
           </Button>
         </div>
       </div>
