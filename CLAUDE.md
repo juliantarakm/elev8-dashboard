@@ -409,7 +409,9 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 ### Settings (`app/components/settings/`)
 - **Layout.vue** — Settings page shell
 - **AccountForm.vue**, **AppearanceForm.vue**, **DisplayForm.vue**, **NotificationsForm.vue**, **ProfileForm.vue**
+- **PayoutGatewayPanel.vue** — Payment gateway configuration (Stripe, Doku, Xendit) with custom SVG logos, step-based wizard (credentials → listing assignment), bulk listing assignment
 - **SidebarNav.vue** — Settings sub-navigation
+- **icons/** — Custom SVG components: `DokuLogo.vue`, `XenditLogo.vue`
 
 ### Auth (`app/components/auth/`)
 - **SignIn.vue**, **SignUp.vue**, **OTPForm.vue**, **OTPForm1.vue**, **OTPForm2.vue**, **ForgotPassword.vue**
