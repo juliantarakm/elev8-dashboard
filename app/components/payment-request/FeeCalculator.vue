@@ -24,7 +24,7 @@ const feeLabel = computed(() => {
 
 const feeDisplay = computed(() => {
   if (feeMode === 'no_fee') return '-'
-  return `${symbol}${fmt(feeAmount.value)}`
+  return `${symbol.value}${fmt(feeAmount.value)}`
 })
 
 function fmt(n: number) {
