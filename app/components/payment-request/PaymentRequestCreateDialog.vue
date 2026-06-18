@@ -32,6 +32,38 @@ const expiresInHours = ref(24)
 const guestPopoverOpen = ref(false)
 const guestSearch = ref('')
 
+// Listing search state
+const listingPopoverOpen = ref(false)
+const listingSearch = ref('')
+const listingTagSearch = ref('')
+
+const filteredListings = computed(() => {
+  const query = listingSearch.value.trim().toLowerCase()
+  const tagQuery = listingTagSearch.value.trim().toLowerCase()
+  return listings.value.filter((l) => {
+    const haystack = `${l.name} ${l.location} ${l.tags.join(' ')}`.toLowerCase()
+    if (query && !haystack.includes(query))
+      return false
+    if (tagQuery && !l.tags.some(t => t.toLowerCase().includes(tagQuery)))
+      return false
+    return true
+  })
+})
+
+const allListingTags = computed(() => {
+  const tags = new Set<string>()
+  for (const l of listings.value)
+    l.tags.forEach(t => tags.add(t))
+  return Array.from(tags).sort()
+})
+
+function selectListing(listingId: string) {
+  selectedListingId.value = listingId
+  listingPopoverOpen.value = false
+  listingSearch.value = ''
+  listingTagSearch.value = ''
+}
+
 const guestOptions = computed<GuestOption[]>(() => {
   const options: GuestOption[] = []
   const seen = new Set<string>()
@@ -153,6 +185,8 @@ function reset() {
   feeMode.value = 'card'
   expiresInHours.value = 24
   guestSearch.value = ''
+  listingSearch.value = ''
+  listingTagSearch.value = ''
 }
 
 function handleCreate() {
@@ -297,16 +331,60 @@ watch(open, (val) => {
 
         <div class="space-y-2">
           <Label>Select Listing *</Label>
-          <Select v-model="selectedListingId">
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a property" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="listing in listings" :key="listing.id" :value="listing.id">
-                {{ listing.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover v-model:open="listingPopoverOpen">
+            <PopoverTrigger as-child>
+              <Button variant="outline" class="w-full justify-between">
+                {{ listings.find(l => l.id === selectedListingId)?.name || 'Choose a property' }}
+                <Icon name="lucide:chevrons-up-down" class="size-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-[380px] p-0" align="start">
+              <Command>
+                <CommandInput v-model="listingSearch" placeholder="Search listing or location..." />
+                <div class="flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
+                  <Badge
+                    v-for="tag in allListingTags"
+                    :key="tag"
+                    variant="outline"
+                    class="cursor-pointer text-[10px]"
+                    :class="listingTagSearch === tag ? 'bg-primary text-primary-foreground border-primary' : ''"
+                    @click="listingTagSearch = listingTagSearch === tag ? '' : tag"
+                  >
+                    {{ tag }}
+                  </Badge>
+                </div>
+                <CommandList>
+                  <CommandEmpty>No listing found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      v-for="listing in filteredListings"
+                      :key="listing.id"
+                      :value="listing.name"
+                      class="cursor-pointer"
+                      @select="selectListing(listing.id)"
+                    >
+                      <div class="flex items-start gap-2 w-full">
+                        <div class="min-w-0 flex-1">
+                          <p class="text-sm font-medium">
+                            {{ listing.name }}
+                          </p>
+                          <p class="text-xs text-muted-foreground">
+                            {{ listing.location }}
+                          </p>
+                          <div class="mt-1 flex flex-wrap gap-1">
+                            <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-[10px]">
+                              {{ tag }}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Icon v-if="selectedListingId === listing.id" name="lucide:check" class="size-4 text-primary mt-1" />
+                      </div>
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <Alert v-if="selectedListingId && !assigned" variant="destructive" class="text-xs">
             <Icon name="lucide:alert-circle" class="size-4" />
             <AlertTitle>Not assigned</AlertTitle>
