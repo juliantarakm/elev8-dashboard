@@ -94,10 +94,36 @@ This file provides context for AI agents working on this project.
   - `useBookingWidgets()` composable: `getWidgetById()`, `buildEmbedPreview()`, `copyEmbedSnippet()`, `getSnippetForForm()`
   - `buildEmbedPreview` and `getSnippetForForm` also exported as standalone functions (wrapping the composable) — needed by `pages/booking-widgets/[id].vue` which imports directly
 
+### Payment Request Module (`app/components/payment-request/`)
+
+- **Data + types**: `app/components/payment-request/data/payment-requests.ts`
+  - `PaymentRequest` type (with `status: 'pending' | 'paid' | 'expired' | 'cancelled'`, `feeMode: 'card' | 'manual'`, `createdBy: string`, `cancelledAt?`, `cancelledBy?`)
+  - `PaymentRequestDraft` type for creation
+  - `GuestOption` type for guest search (sources: inbox, payment_request, manual)
+  - Fee helpers: `calculateFee()` (3% for card, 0 for manual), `calculateTotal()`, `generatePaymentLink()`, `getStaffName()`
+  - Mock data: 4 requests (pending, paid, expired, cancelled)
+- **State**: `app/composables/usePaymentRequests.ts`
+  - `requests` uses `useState<PaymentRequest[]>` — mutations use spread syntax
+  - Filters: `status` (single), `listings` (multi-select `string[]`), `dateFrom`/`dateTo`, `search`
+  - Actions: `createRequest()`, `cancelRequest()`, `duplicateRequest()`, `checkDuplicate()`, `expireOldRequests()`, `isListingAssigned()`
+- **Page**: `app/pages/payment-requests/index.vue`
+  - Filter bar: Search input, Status dropdown, Listing filter (Popover + search + Tags button inside search bar), Date range (RangeCalendar 2-month view)
+  - Active filters shown as removable chips below filter bar
+  - Stats: pending count, paid count
+- **Components**:
+  - `PaymentRequestCreateDialog.vue` — Create form with guest search (Popover+Command from inbox guests + previous PR guests + manual), listing picker (search + tag filter), fee mode toggle (Card/Manual), amount + title + description + expiry
+  - `PaymentRequestTable.vue` — Table with Guest, Title, Listing, Amount, Status, Created by (avatar initials + name), Created (time ago)
+  - `PaymentRequestDetailDialog.vue` — Status banner, creator info (name + date), cancellation info (who + when + reason), amount breakdown, payment link copy
+  - `PaymentRequestShareDialog.vue` — Copy link (toast confirmation), WhatsApp share, Email share
+  - `FeeCalculator.vue` — Live fee preview (Card: +3%, Manual: no fee)
+- **Guest search**: Sources from `useInbox().conversations` + existing payment requests. "Add new guest" option when no match. Email auto-fills for existing guests, empty for new guests.
+- **Share dialog**: Opens AFTER creation via `@created` event. No QR Code button.
+
 ### Settings Module (`app/components/settings/`)
 
 - **Payouts**: `app/pages/settings/payouts.vue` + `app/components/settings/PayoutGatewayPanel.vue`
   - Payout gateway configuration (Stripe, PayPal, bank transfer)
+  - Custom SVG logos: `DokuLogo.vue`, `XenditLogo.vue`
   - Data: `app/components/settings/data/payouts.ts`
 
 ### CI/CD
