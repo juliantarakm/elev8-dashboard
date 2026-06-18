@@ -5,14 +5,17 @@ import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { payoutAccounts } from '~/components/settings/data/payouts'
 import { usePaymentRequests } from '~/composables/usePaymentRequests'
-import GuestSearchCombobox from './GuestSearchCombobox.vue'
 import FeeCalculator from './FeeCalculator.vue'
+import GuestSearchCombobox from './GuestSearchCombobox.vue'
+
+const emit = defineEmits<{
+  created: [request: PaymentRequest]
+}>()
 
 const open = defineModel<boolean>('open', { default: false })
 
 const { createRequest, checkDuplicate, isListingAssigned } = usePaymentRequests()
 
-const step = ref<1 | 2>(1)
 const guestName = ref('')
 const guestEmail = ref('')
 const guestPhone = ref('')
@@ -24,7 +27,6 @@ const amount = ref<number | null>(null)
 const feeMode = ref<FeeMode>('card')
 const expiresInHours = ref(24)
 
-const selectedListing = computed(() => listings.value.find(l => l.id === selectedListingId.value))
 const assigned = computed(() => selectedListingId.value ? isListingAssigned(selectedListingId.value) : true)
 const account = computed(() => payoutAccounts.value.find(a => a.listingIds.includes(selectedListingId.value)))
 const currency = computed(() => account.value?.currency ?? 'USD')
@@ -71,7 +73,6 @@ watch(selectedGuest, (guest) => {
 })
 
 function reset() {
-  step.value = 1
   guestName.value = ''
   guestEmail.value = ''
   guestPhone.value = ''
@@ -95,7 +96,7 @@ function handleCreate() {
       return
   }
 
-  createRequest({
+  const request = createRequest({
     guestName: guestName.value,
     guestEmail: guestEmail.value,
     guestPhone: guestPhone.value || undefined,
@@ -108,14 +109,10 @@ function handleCreate() {
     expiresInHours: expiresInHours.value,
   })
 
+  emit('created', request)
   toast.success('Payment request created')
   open.value = false
   reset()
-}
-
-function copyLink() {
-  navigator.clipboard.writeText('')
-  toast.success('Link copied')
 }
 
 watch(open, (val) => {
@@ -128,13 +125,13 @@ watch(open, (val) => {
   <Dialog v-model:open="open">
     <DialogContent class="max-w-lg">
       <DialogHeader>
-        <DialogTitle>{{ step === 1 ? 'Create Payment Request' : 'Share Payment Link' }}</DialogTitle>
+        <DialogTitle>Create Payment Request</DialogTitle>
         <DialogDescription>
-          {{ step === 1 ? 'Enter payment details for the guest.' : 'Your payment link is ready to share.' }}
+          Enter payment details for the guest.
         </DialogDescription>
       </DialogHeader>
 
-      <div v-if="step === 1" class="space-y-4">
+      <div class="space-y-4">
         <div class="space-y-2">
           <Label>Guest name *</Label>
           <GuestSearchCombobox
@@ -220,89 +217,11 @@ watch(open, (val) => {
         />
       </div>
 
-      <div v-else class="space-y-4">
-        <div class="rounded-lg border bg-muted/20 p-4">
-          <Label class="text-xs text-muted-foreground">Payment link</Label>
-          <div class="mt-1 flex items-center gap-2">
-            <Input readonly value="https://pay.elev8.co/r/pr-xxx" />
-            <Button size="sm" variant="outline" @click="copyLink">
-              <Icon name="lucide:copy" class="size-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div class="flex gap-2">
-          <Button variant="outline" class="flex-1 gap-2">
-            <Icon name="lucide:qr-code" class="size-4" />
-            QR Code
-          </Button>
-          <Button variant="outline" class="flex-1 gap-2">
-            <Icon name="lucide:message-circle" class="size-4" />
-            WhatsApp
-          </Button>
-          <Button variant="outline" class="flex-1 gap-2">
-            <Icon name="lucide:mail" class="size-4" />
-            Email
-          </Button>
-        </div>
-
-        <div class="space-y-2">
-          <Label>Expires in</Label>
-          <Select v-model.number="expiresInHours">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem :value="1">
-                1 hour
-              </SelectItem>
-              <SelectItem :value="6">
-                6 hours
-              </SelectItem>
-              <SelectItem :value="24">
-                24 hours
-              </SelectItem>
-              <SelectItem :value="72">
-                3 days
-              </SelectItem>
-              <SelectItem :value="168">
-                7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div class="rounded-lg border p-4 space-y-1 text-sm">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Guest</span><span>{{ guestName }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Listing</span><span>{{ selectedListing?.name }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Amount</span><span>{{ currency === 'IDR' ? 'Rp' : '$' }}{{ amount }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-muted-foreground">Fee</span><span>{{ feeMode === 'card' ? '3%' : 'No fee' }}</span>
-          </div>
-          <Separator />
-          <div class="flex justify-between font-medium">
-            <span>Total</span><span>{{ currency === 'IDR' ? 'Rp' : '$' }}{{ (amount || 0) * (feeMode === 'card' ? 1.03 : 1) }}</span>
-          </div>
-        </div>
-      </div>
-
       <DialogFooter class="gap-2">
-        <Button v-if="step === 2" variant="outline" @click="step = 1">
-          Back
-        </Button>
-        <Button v-if="step === 1" variant="outline" @click="open = false">
+        <Button variant="outline" @click="open = false">
           Cancel
         </Button>
-        <Button v-if="step === 1" :disabled="!canContinue" @click="step = 2">
-          Continue
-        </Button>
-        <Button v-else @click="handleCreate">
+        <Button :disabled="!canContinue" @click="handleCreate">
           Create & Share
         </Button>
       </DialogFooter>

@@ -2,11 +2,11 @@
 import type { PaymentRequest } from '~/components/payment-request/data/payment-requests'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { usePaymentRequests } from '~/composables/usePaymentRequests'
 import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
 import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
 import PaymentRequestShareDialog from '~/components/payment-request/PaymentRequestShareDialog.vue'
 import PaymentRequestTable from '~/components/payment-request/PaymentRequestTable.vue'
+import { usePaymentRequests } from '~/composables/usePaymentRequests'
 
 const {
   filteredRequests,
@@ -41,6 +41,10 @@ function handleCancel(id: string) {
 function handleDuplicate(id: string) {
   duplicateRequest(id)
   toast.success('Request duplicated')
+}
+
+function handleCreated(request: PaymentRequest) {
+  shareRequest.value = request
 }
 
 const statusOptions = [
@@ -97,7 +101,10 @@ const statusOptions = [
       @duplicate="handleDuplicate"
     />
 
-    <PaymentRequestCreateDialog v-model:open="createOpen" />
+    <PaymentRequestCreateDialog
+      v-model:open="createOpen"
+      @created="handleCreated"
+    />
 
     <PaymentRequestDetailDialog
       :request="detailRequest"
