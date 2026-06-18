@@ -372,34 +372,6 @@ const dateFilterLabel = computed(() => {
       </Button>
     </div>
 
-    <!-- Active filter chips -->
-    <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2">
-      <Badge v-if="filters.search" variant="secondary" class="gap-1 text-xs">
-        Search: {{ filters.search }}
-        <button class="ml-1 hover:text-destructive" @click="filters.search = ''">
-          <Icon name="lucide:x" class="size-3" />
-        </button>
-      </Badge>
-      <Badge v-if="filters.status !== 'all'" variant="secondary" class="gap-1 text-xs capitalize">
-        Status: {{ filters.status }}
-        <button class="ml-1 hover:text-destructive" @click="filters.status = 'all'">
-          <Icon name="lucide:x" class="size-3" />
-        </button>
-      </Badge>
-      <Badge v-if="filters.listings.length" variant="secondary" class="gap-1 text-xs">
-        {{ filters.listings.length }} listing{{ filters.listings.length > 1 ? 's' : '' }}
-        <button class="ml-1 hover:text-destructive" @click="filters.listings = []">
-          <Icon name="lucide:x" class="size-3" />
-        </button>
-      </Badge>
-      <Badge v-if="filters.dateFrom || filters.dateTo" variant="secondary" class="gap-1 text-xs">
-        {{ dateFilterLabel }}
-        <button class="ml-1 hover:text-destructive" @click="clearDateFilter">
-          <Icon name="lucide:x" class="size-3" />
-        </button>
-      </Badge>
-    </div>
-
     <PaymentRequestTable
       :requests="filteredRequests"
       @view="openDetail"
