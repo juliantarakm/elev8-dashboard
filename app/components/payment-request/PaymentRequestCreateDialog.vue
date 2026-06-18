@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { FeeMode, GuestOption } from './data/payment-requests'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { payoutAccounts } from '~/components/settings/data/payouts'
+import { useInbox } from '~/composables/useInbox'
 import { usePaymentRequests } from '~/composables/usePaymentRequests'
 import FeeCalculator from './FeeCalculator.vue'
-import GuestSearchCombobox from './GuestSearchCombobox.vue'
 
 const emit = defineEmits<{
   created: [request: PaymentRequest]
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 const open = defineModel<boolean>('open', { default: false })
 
 const { createRequest, checkDuplicate, isListingAssigned } = usePaymentRequests()
+const { conversations } = useInbox()
 
 const guestName = ref('')
 const guestEmail = ref('')
@@ -26,6 +27,84 @@ const description = ref('')
 const amount = ref<number | null>(null)
 const feeMode = ref<FeeMode>('card')
 const expiresInHours = ref(24)
+
+const guestSearch = ref('')
+
+const guestOptions = computed<GuestOption[]>(() => {
+  const options: GuestOption[] = []
+  const seen = new Set<string>()
+
+  for (const conv of conversations.value) {
+    const key = conv.guestName.toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      options.push({
+        id: `inbox-${conv.id}`,
+        name: conv.guestName,
+        email: conv.guestEmail ?? '',
+        avatar: conv.guestAvatar,
+        source: 'inbox',
+        lastStay: conv.reservation ? new Date(conv.reservation.checkIn).toLocaleDateString() : undefined,
+        listingName: conv.listingName,
+      })
+    }
+  }
+
+  for (const req of usePaymentRequests().requests.value) {
+    const key = req.guestName.toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      options.push({
+        id: `pr-${req.id}`,
+        name: req.guestName,
+        email: req.guestEmail,
+        phone: req.guestPhone,
+        source: 'payment_request',
+      })
+    }
+  }
+
+  return options
+})
+
+const filteredGuests = computed(() => {
+  const query = guestSearch.value.trim().toLowerCase()
+  if (!query)
+    return guestOptions.value
+  return guestOptions.value.filter(g =>
+    g.name.toLowerCase().includes(query)
+    || g.email.toLowerCase().includes(query)
+    || (g.phone?.toLowerCase().includes(query) ?? false),
+  )
+})
+
+const inboxGuests = computed(() => filteredGuests.value.filter(g => g.source === 'inbox'))
+const previousGuests = computed(() => filteredGuests.value.filter(g => g.source === 'payment_request'))
+const hasExactMatch = computed(() => filteredGuests.value.some(g => g.name.toLowerCase() === guestSearch.value.trim().toLowerCase()))
+
+function selectGuest(guest: GuestOption) {
+  guestName.value = guest.name
+  guestEmail.value = guest.email
+  guestPhone.value = guest.phone ?? ''
+  selectedGuest.value = guest
+  guestSearch.value = ''
+  if (guest.listingName) {
+    const listing = listings.value.find(l => l.name === guest.listingName)
+    if (listing)
+      selectedListingId.value = listing.id
+  }
+}
+
+function addNewGuest() {
+  const name = guestSearch.value.trim()
+  if (!name)
+    return
+  guestName.value = name
+  guestEmail.value = ''
+  guestPhone.value = ''
+  selectedGuest.value = { id: `manual-${Date.now()}`, name, email: '', source: 'manual' }
+  guestSearch.value = ''
+}
 
 const assigned = computed(() => selectedListingId.value ? isListingAssigned(selectedListingId.value) : true)
 const account = computed(() => payoutAccounts.value.find(a => a.listingIds.includes(selectedListingId.value)))
@@ -57,19 +136,6 @@ const canContinue = computed(() => {
     && amount.value && amount.value > 0
     && amount.value >= minAmount.value
     && assigned.value
-})
-
-watch(selectedGuest, (guest) => {
-  if (guest) {
-    guestName.value = guest.name
-    guestEmail.value = guest.email
-    guestPhone.value = guest.phone ?? ''
-    if (guest.listingName) {
-      const listing = listings.value.find(l => l.name === guest.listingName)
-      if (listing)
-        selectedListingId.value = listing.id
-    }
-  }
 })
 
 function reset() {
@@ -134,10 +200,85 @@ watch(open, (val) => {
       <div class="space-y-4">
         <div class="space-y-2">
           <Label>Guest name *</Label>
-          <GuestSearchCombobox
-            v-model="guestName"
-            v-model:guest="selectedGuest"
-          />
+          <Combobox v-model="guestName">
+            <ComboboxAnchor class="w-full">
+              <div class="relative w-full">
+                <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <ComboboxInput
+                  v-model="guestSearch"
+                  :display-value="() => guestName"
+                  placeholder="Search guest by name or email..."
+                  class="h-10 w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+            </ComboboxAnchor>
+            <ComboboxList class="w-full">
+              <ComboboxEmpty v-if="!filteredGuests.length && !guestSearch.trim()">
+                Type to search guests...
+              </ComboboxEmpty>
+              <ComboboxEmpty v-else-if="!filteredGuests.length && guestSearch.trim() && !hasExactMatch">
+                <button type="button" class="flex w-full items-center gap-2 py-2 text-sm hover:text-primary" @click="addNewGuest">
+                  <Icon name="lucide:plus" class="size-4" />
+                  Add new guest "{{ guestSearch.trim() }}"
+                </button>
+              </ComboboxEmpty>
+              <ComboboxGroup v-if="inboxGuests.length" heading="Recent Guests">
+                <ComboboxItem
+                  v-for="guest in inboxGuests"
+                  :key="guest.id"
+                  :value="guest.name"
+                  @select="selectGuest(guest)"
+                >
+                  <div class="flex items-center gap-2">
+                    <Avatar v-if="guest.avatar" class="size-6">
+                      <AvatarImage :src="guest.avatar" />
+                    </Avatar>
+                    <div v-else class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
+                      {{ guest.name.charAt(0) }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium">
+                        {{ guest.name }}
+                      </p>
+                      <p class="text-xs text-muted-foreground">
+                        {{ guest.email }}
+                      </p>
+                    </div>
+                  </div>
+                </ComboboxItem>
+              </ComboboxGroup>
+              <ComboboxGroup v-if="previousGuests.length" heading="Previous Requests">
+                <ComboboxItem
+                  v-for="guest in previousGuests"
+                  :key="guest.id"
+                  :value="guest.name"
+                  @select="selectGuest(guest)"
+                >
+                  <div class="flex items-center gap-2">
+                    <div class="flex size-6 items-center justify-center rounded-full bg-muted text-[10px]">
+                      {{ guest.name.charAt(0) }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium">
+                        {{ guest.name }}
+                      </p>
+                      <p class="text-xs text-muted-foreground">
+                        {{ guest.email }}
+                      </p>
+                    </div>
+                  </div>
+                </ComboboxItem>
+              </ComboboxGroup>
+              <ComboboxGroup v-if="guestSearch.trim() && !hasExactMatch">
+                <ComboboxItem :value="guestSearch.trim()" @select="addNewGuest">
+                  <div class="flex items-center gap-2">
+                    <Icon name="lucide:plus" class="size-4" />
+                    <span>Add new guest "{{ guestSearch.trim() }}"</span>
+                  </div>
+                </ComboboxItem>
+              </ComboboxGroup>
+            </ComboboxList>
+          </Combobox>
         </div>
 
         <div class="space-y-2">

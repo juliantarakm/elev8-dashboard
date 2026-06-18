@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PaymentRequest } from './data/payment-requests'
+import { toast } from 'vue-sonner'
 
 const { request } = defineProps<{
   request: PaymentRequest | null
@@ -16,6 +17,7 @@ function copyLink() {
     return
   navigator.clipboard.writeText(request.paymentLink)
   copied.value = true
+  toast.success('Link copied to clipboard')
   setTimeout(() => copied.value = false, 2000)
 }
 
