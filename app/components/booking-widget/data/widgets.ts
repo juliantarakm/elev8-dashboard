@@ -1,5 +1,38 @@
 export type BookingWidgetMode = 'single' | 'multi'
 
+export interface ToggleableAmount {
+  mode: 'currency' | 'percent'
+  value: number
+}
+
+export interface LengthOfStayDiscountTier {
+  id: string
+  minNights: number
+  discountType: '%' | 'fixed'
+  value: number
+}
+
+export interface SeasonalCondition {
+  id: string
+  startDate: string
+  endDate: string
+  arrivalDays: number[]
+  departureDays: number[]
+}
+
+export type ContactFieldSetting = 'required' | 'optional' | 'hidden'
+
+export interface ContactFields {
+  firstName: ContactFieldSetting
+  lastName: ContactFieldSetting
+  email: ContactFieldSetting
+  phone: ContactFieldSetting
+  country: ContactFieldSetting
+  address: ContactFieldSetting
+  notes: ContactFieldSetting
+  arrivalTime: ContactFieldSetting
+}
+
 export interface BookingWidgetPromoCode {
   code: string
   discountType: '%' | 'fixed'
@@ -21,6 +54,7 @@ export interface BookingWidgetConfig {
   paymentMethods?: string[]
   defaultPaymentOption?: string | null
   requestNumberOfPersons?: string | null
+  contactFields?: ContactFields | null
   contactCopy?: string | null
   legalRequirementsCopy?: string | null
   detailsCopy?: string | null
@@ -30,8 +64,19 @@ export interface BookingWidgetConfig {
   cornerRadius: number
   depositPct: number
   minDaysBeforeArrival: number
+  cleaningFee?: ToggleableAmount
+  prepayment?: ToggleableAmount
+  extraGuestPerNight?: ToggleableAmount
+  extraGuestStartAt?: number
+  maxGuests?: number
+  extraChildPerNight?: ToggleableAmount
+  arrivalDays?: number[]
+  departureDays?: number[]
+  seasonalConditions?: SeasonalCondition[]
+  lengthOfStayDiscounts?: LengthOfStayDiscountTier[]
   allowedDomains: string[]
   promoCodes: BookingWidgetPromoCode[]
+  status?: 'active' | 'inactive'
   embedVersion: 'v1'
   utmSource?: string | null
   utmMedium?: string | null
@@ -49,10 +94,35 @@ export const bookingWidgets = ref<BookingWidgetConfig[]>([
     cornerRadius: 14,
     depositPct: 30,
     minDaysBeforeArrival: 2,
+    cleaningFee: { mode: 'currency', value: 120 },
+    prepayment: { mode: 'percent', value: 50 },
+    extraGuestPerNight: { mode: 'currency', value: 25 },
+    extraGuestStartAt: 3,
+    maxGuests: 4,
+    extraChildPerNight: { mode: 'currency', value: 0 },
+    seasonalConditions: [
+      { id: 'sc-1', startDate: '2026-06-01', endDate: '2026-09-30', arrivalDays: [1, 2, 3, 4, 5], departureDays: [5, 6, 0] },
+    ],
+    lengthOfStayDiscounts: [
+      { id: 'lod-1', minNights: 7, discountType: '%', value: 10 },
+      { id: 'lod-2', minNights: 14, discountType: '%', value: 15 },
+    ],
+    requestNumberOfPersons: 'Request separately adults and children',
+    contactFields: {
+      firstName: 'required',
+      lastName: 'required',
+      email: 'required',
+      phone: 'optional',
+      country: 'optional',
+      address: 'optional',
+      notes: 'optional',
+      arrivalTime: 'optional',
+    },
     allowedDomains: ['partner-bali.com', '*.agency.com'],
     promoCodes: [
       { code: 'WELCOME10', discountType: '%', value: 10, active: true, redemptionCount: 3 },
     ],
+    status: 'active',
     embedVersion: 'v1',
     utmSource: 'partner-bali',
     utmMedium: 'partner-site',
@@ -77,6 +147,7 @@ export function useBookingWidgets() {
       paymentMethods: widget.paymentMethods ?? [],
       defaultPaymentOption: widget.defaultPaymentOption ?? null,
       requestNumberOfPersons: widget.requestNumberOfPersons ?? null,
+      contactFields: widget.contactFields ?? null,
       contactCopy: widget.contactCopy ?? null,
       legalRequirementsCopy: widget.legalRequirementsCopy ?? null,
       detailsCopy: widget.detailsCopy ?? null,
@@ -86,8 +157,19 @@ export function useBookingWidgets() {
       cornerRadius: widget.cornerRadius,
       depositPct: widget.depositPct,
       minDaysBeforeArrival: widget.minDaysBeforeArrival,
+      cleaningFee: widget.cleaningFee ?? null,
+      prepayment: widget.prepayment ?? null,
+      extraGuestPerNight: widget.extraGuestPerNight ?? null,
+      extraGuestStartAt: widget.extraGuestStartAt ?? null,
+      maxGuests: widget.maxGuests ?? null,
+      extraChildPerNight: widget.extraChildPerNight ?? null,
+      arrivalDays: widget.arrivalDays ?? null,
+      departureDays: widget.departureDays ?? null,
+      seasonalConditions: widget.seasonalConditions ?? null,
+      lengthOfStayDiscounts: widget.lengthOfStayDiscounts ?? null,
       allowedDomains: widget.allowedDomains,
       promoCodes: widget.promoCodes,
+      status: widget.status ?? null,
       embedVersion: widget.embedVersion,
       utmSource: widget.utmSource ?? null,
       utmMedium: widget.utmMedium ?? null,

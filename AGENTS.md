@@ -90,9 +90,28 @@ This file provides context for AI agents working on this project.
 ### Booking Widgets Module (`app/components/booking-widget/`)
 
 - **Data + types**: `app/components/booking-widget/data/widgets.ts`
-  - `BookingWidgetConfig` type, `bookingWidgets` ref
+  - `BookingWidgetConfig` type with new fields: `cleaningFee`, `prepayment`, `extraGuestPerNight`, `extraGuestStartAt`, `maxGuests`, `extraChildPerNight`, `seasonalConditions`, `lengthOfStayDiscounts`, `contactFields`, `status`
+  - `ToggleableAmount` = `{ mode: 'currency' | 'percent', value: number }`
+  - `SeasonalCondition` = `{ id, startDate, endDate, arrivalDays, departureDays }`
+  - `LengthOfStayDiscountTier` = `{ id, minNights, discountType: '%' | 'fixed', value }`
+  - `ContactFields` = `{ firstName, lastName, email, phone, country, address, notes, arrivalTime }` (each `'required' | 'optional' | 'hidden'`)
+  - `bookingWidgets` ref (local reactive copy `widgets` used in index page for reliable reactivity)
   - `useBookingWidgets()` composable: `getWidgetById()`, `buildEmbedPreview()`, `copyEmbedSnippet()`, `getSnippetForForm()`
-  - `buildEmbedPreview` and `getSnippetForForm` also exported as standalone functions (wrapping the composable) — needed by `pages/booking-widgets/[id].vue` which imports directly
+
+- **Page**: `app/pages/booking-widgets/index.vue`
+  - Minimal card layout: widget name, listing count, status toggle (active/inactive), more menu (Edit/Preview/Delete)
+  - Status toggle uses native `<button>` styled as switch (not shadcn Switch) for reliable reactivity
+  - Delete confirmation dialog
+
+- **Page**: `app/pages/booking-widgets/new.vue`
+  - 3 tabs: Accommodation Setting | Booking System Setting | Embed in Website
+  - **Accommodation tab**: multi-select listings (checkbox dialog with tags), cleaning fee/prepayment/extra guests/extra child (all with currency/% toggle), min days before arrival, max guests, seasonal conditions (RangeCalendar popover + arrival/departure day toggles), length of stay discounts, promo codes
+  - **Booking System tab**: currency, payment methods (multi-select), default payment option, locked requestNumberOfPersons, contact field configuration (8 fields × Required/Optional/Hidden dropdown)
+  - **Embed tab**: allowed domains, embed snippet, UTM params, preview dialog
+
+- **Components**:
+  - `BookingWidgetPreview.vue` — Embed preview with listing selector, deposit info
+  - `BookingWidgetWysiwyg.vue` — WYSIWYG editor (unused after Contact section redesign)
 
 ### Payment Request Module (`app/components/payment-request/`)
 
