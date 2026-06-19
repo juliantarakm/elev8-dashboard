@@ -759,7 +759,7 @@ function saveWidget() {
                         </PopoverTrigger>
                         <PopoverContent class="w-auto p-0" align="start">
                           <RangeCalendar
-                            v-model="popoverDateRange as any"
+                            v-model="popoverDateRange"
                             weekday-format="short"
                             :number-of-months="2"
                             initial-focus
