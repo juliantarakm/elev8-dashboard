@@ -80,9 +80,6 @@ const form = reactive({
   depositPct: 30,
   allowedDomains: [''],
   promoCodes: [] as Array<{ id: string, code: string, discountType: '%' | 'fixed', value: number, currency: string | null, active: boolean, redemptionCount: number, validFrom: string, validUntil: string }>,
-  utmSource: '',
-  utmMedium: '',
-  utmCampaign: '',
 })
 
 const weekdayOptions = [
@@ -238,9 +235,6 @@ const embedPreviewWidget = computed(() => buildEmbedPreview({
     validUntil: promo.validUntil || null,
   })),
   embedVersion: 'v1',
-  utmSource: form.utmSource || null,
-  utmMedium: form.utmMedium || null,
-  utmCampaign: form.utmCampaign || null,
 }))
 
 const embedSnippet = computed(() => getSnippetForForm({
@@ -279,9 +273,6 @@ const embedSnippet = computed(() => getSnippetForForm({
     validUntil: promo.validUntil || null,
   })),
   embedVersion: 'v1',
-  utmSource: form.utmSource || null,
-  utmMedium: form.utmMedium || null,
-  utmCampaign: form.utmCampaign || null,
 }))
 
 async function copySnippet() {
@@ -460,9 +451,6 @@ function saveWidget() {
     successfullyBookedCopy: form.successfullyBookedCopy,
     customStyleCopy: form.customStyleCopy,
     embedVersion: 'v1',
-    utmSource: form.utmSource || null,
-    utmMedium: form.utmMedium || null,
-    utmCampaign: form.utmCampaign || null,
   })
 
   toast.success('Booking widget created')
@@ -488,10 +476,16 @@ function saveWidget() {
           Configure accommodation, booking system, and embed settings.
         </p>
       </div>
-      <Button @click="saveWidget">
-        <Icon name="i-lucide-save" class="size-4 mr-2" />
-        Save Widget
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="embedPreviewOpen = true">
+          <Icon name="i-lucide-eye" class="size-4 mr-2" />
+          Preview
+        </Button>
+        <Button @click="saveWidget">
+          <Icon name="i-lucide-save" class="size-4 mr-2" />
+          Save Widget
+        </Button>
+      </div>
     </div>
 
     <Tabs v-model="activeTab" class="w-full">
@@ -1107,33 +1101,12 @@ function saveWidget() {
             <div class="space-y-2">
               <div class="flex items-center justify-between gap-3">
                 <Label>Embed snippet</Label>
-                <div class="flex items-center gap-2">
-                  <Button variant="outline" size="sm" class="h-8 gap-1.5" @click="embedPreviewOpen = true">
-                    <Icon name="lucide:eye" class="size-4" />
-                    Preview
-                  </Button>
-                  <Button size="sm" class="h-8 gap-1.5" @click="copySnippet">
-                    <Icon name="lucide:copy" class="size-4" />
-                    Copy snippet
-                  </Button>
-                </div>
+                <Button size="sm" class="h-8 gap-1.5" @click="copySnippet">
+                  <Icon name="lucide:copy" class="size-4" />
+                  Copy snippet
+                </Button>
               </div>
               <pre class="overflow-x-auto rounded-md border bg-muted/40 p-4 text-xs leading-6"><code>{{ embedSnippet }}</code></pre>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-3">
-              <div class="space-y-2">
-                <Label>UTM source</Label>
-                <Input v-model="form.utmSource" placeholder="partner-name" />
-              </div>
-              <div class="space-y-2">
-                <Label>UTM medium</Label>
-                <Input v-model="form.utmMedium" placeholder="partner-site" />
-              </div>
-              <div class="space-y-2">
-                <Label>UTM campaign</Label>
-                <Input v-model="form.utmCampaign" placeholder="summer-2026" />
-              </div>
             </div>
           </CardContent>
         </Card>
