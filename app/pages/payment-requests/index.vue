@@ -2,9 +2,10 @@
 import type { DateRange } from 'reka-ui'
 import type { PaymentRequest } from '~/components/payment-request/data/payment-requests'
 import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date'
-import { listings } from '~/components/listings/data/listings'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
+import { listings } from '~/components/listings/data/listings'
+import { getStaffName } from '~/components/payment-request/data/payment-requests'
 import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
 import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
 import PaymentRequestShareDialog from '~/components/payment-request/PaymentRequestShareDialog.vue'
@@ -52,6 +53,41 @@ function handleDuplicate(id: string) {
 
 function handleCreated(request: PaymentRequest) {
   shareRequest.value = request
+}
+
+function exportToExcel() {
+  const headers = ['ID', 'Guest Name', 'Guest Email', 'Listing', 'Title', 'Amount', 'Fee', 'Total', 'Currency', 'Status', 'Fee Mode', 'Created By', 'Created At', 'Expires At', 'Paid At', 'Cancelled At', 'Cancelled By']
+  const rows = filteredRequests.value.map((r) => {
+    const listing = listings.value.find(l => l.id === r.listingId)
+    return [
+      r.id,
+      r.guestName,
+      r.guestEmail,
+      listing?.name ?? r.listingId,
+      r.title,
+      r.amount,
+      r.feeAmount,
+      r.totalAmount,
+      r.currency,
+      r.status,
+      r.feeMode,
+      getStaffName(r.createdBy),
+      r.createdAt ? new Date(r.createdAt).toLocaleString() : '',
+      r.expiresAt ? new Date(r.expiresAt).toLocaleString() : '',
+      r.paidAt ? new Date(r.paidAt).toLocaleString() : '',
+      r.cancelledAt ? new Date(r.cancelledAt).toLocaleString() : '',
+      r.cancelledBy ? getStaffName(r.cancelledBy) : '',
+    ]
+  })
+  const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `payment-requests-${new Date().toISOString().split('T')[0]}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  toast.success('Exported to CSV.')
 }
 
 const statusOptions = [
@@ -190,10 +226,16 @@ const dateFilterLabel = computed(() => {
           {{ pendingCount }} pending · {{ paidCount }} paid
         </p>
       </div>
-      <Button class="gap-2" @click="createOpen = true">
-        <Icon name="lucide:plus" class="size-4" />
-        Create Request
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" class="gap-2" @click="exportToExcel">
+          <Icon name="lucide:download" class="size-4" />
+          Export
+        </Button>
+        <Button class="gap-2" @click="createOpen = true">
+          <Icon name="lucide:plus" class="size-4" />
+          Create Request
+        </Button>
+      </div>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
