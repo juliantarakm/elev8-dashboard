@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { CalendarEvent, CalendarListing } from '~/components/operations-calendar/data/operations-calendar'
+import type { CalendarEvent, CalendarListing, OperationsFilters } from '~/components/operations-calendar/data/operations-calendar'
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
   formatTime,
-  formatWeekRange,
   getCalendarListings,
   HOUR_HEIGHT,
   isDayOccupied,
@@ -25,6 +24,7 @@ const props = defineProps<{
   view: 'week' | 'day'
   selectedDay?: string
   showAllListings?: boolean
+  filters: OperationsFilters
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +34,11 @@ const emit = defineEmits<{
   'eventClick': [event: CalendarEvent]
   'moveEvent': [payload: { id: string, listingId: string, scheduledAt: string, originalEvent: CalendarEvent }]
   'create': [payload: { listingId: string, dayKey: string }]
+  'update:filters': [filters: OperationsFilters]
+  'clear': []
+  'previousWeek': []
+  'nextWeek': []
+  'goToToday': []
 }>()
 
 const totalHours = DAY_END_HOUR - DAY_START_HOUR
@@ -185,8 +190,6 @@ function getStayBars(listing: CalendarListing): StayBar[] {
     })
 }
 
-const weekRangeLabel = computed(() => formatWeekRange(props.weekDays))
-
 const selectedDayKey = computed(() => props.selectedDay ?? props.weekDays[0]?.key ?? '')
 
 const dayListings = computed(() => {
@@ -302,35 +305,48 @@ function onCellClick(listingId: string, dayKey: string) {
 <template>
   <div class="rounded-2xl border bg-background shadow-sm">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {{ view === 'day' ? 'Day operations view' : 'Weekly operations timeline' }}
-        </p>
-        <p class="mt-1 text-sm text-muted-foreground">
-          {{ weekRangeLabel }}
-        </p>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <div v-if="view === 'week'" class="flex items-center gap-1">
-          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="expandAll">
-            <Icon name="lucide:chevrons-down" class="mr-1 size-3.5" />
-            Expand all
-          </Button>
-          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="collapseAll">
-            <Icon name="lucide:chevrons-up" class="mr-1 size-3.5" />
-            Collapse all
-          </Button>
-        </div>
+      <OperationsCalendarFilters
+        :filters="props.filters"
+        @update:filters="emit('update:filters', $event)"
+        @clear="emit('clear')"
+      />
+      <div class="flex items-center gap-2">
+        <Tabs :model-value="view" @update:model-value="emit('update:view', $event as 'week' | 'day')">
+          <TabsList>
+            <TabsTrigger value="week">
+              Week
+            </TabsTrigger>
+            <TabsTrigger value="day">
+              Day
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Button variant="outline" size="sm" @click="emit('previousWeek')">
+          <Icon name="lucide:chevron-left" class="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="sm" @click="emit('goToToday')">
+          Today
+        </Button>
+        <Button variant="outline" size="sm" @click="emit('nextWeek')">
+          <Icon name="lucide:chevron-right" class="h-4 w-4" />
+        </Button>
       </div>
     </div>
-
     <!-- Week view -->
     <div v-if="view === 'week'" class="overflow-auto">
       <div class="min-w-[1100px]">
         <!-- Header -->
         <div class="sticky top-0 z-20 flex border-b bg-background">
-          <div class="sticky left-0 z-30 w-[240px] shrink-0 border-r bg-background px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Listing
+          <div class="sticky left-0 z-30 flex w-[240px] shrink-0 items-center justify-between border-r bg-background px-4 py-3">
+            <span class="text-xs font-semibold text-muted-foreground">Listing</span>
+            <div class="flex items-center gap-1">
+              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="expandAll">
+                <Icon name="lucide:chevrons-down" class="size-3.5" />
+              </button>
+              <button class="text-muted-foreground hover:text-foreground transition-colors" @click="collapseAll">
+                <Icon name="lucide:chevrons-up" class="size-3.5" />
+              </button>
+            </div>
           </div>
           <div class="grid flex-1 grid-cols-7">
             <div
@@ -339,7 +355,7 @@ function onCellClick(listingId: string, dayKey: string) {
               class="border-l bg-background px-4 py-3"
               :class="selectedDay === day.key && 'bg-muted/30'"
             >
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <p class="text-xs font-semibold text-muted-foreground">
                 {{ day.label.slice(0, 3) }}
               </p>
               <p class="mt-1 text-sm font-semibold">
@@ -363,7 +379,7 @@ function onCellClick(listingId: string, dayKey: string) {
                   :name="isNodeExpanded(node.id) ? 'lucide:chevron-down' : 'lucide:chevron-right'"
                   class="size-3.5 shrink-0 text-muted-foreground"
                 />
-                <p class="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <p class="truncate text-xs font-semibold text-muted-foreground">
                   {{ node.label }}
                 </p>
                 <Badge v-if="node.eventCount > 0" variant="outline" class="text-[10px]">
@@ -556,3 +572,4 @@ function onCellClick(listingId: string, dayKey: string) {
     </Dialog>
   </div>
 </template>
+e>

@@ -77,7 +77,7 @@ function clear() {
         </Button>
       </PopoverTrigger>
       <PopoverContent class="w-56 p-0" align="start">
-        <div class="border-b px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <div class="border-b px-3 py-2 text-xs font-semibold text-muted-foreground">
           Filter by tag
         </div>
         <div class="p-2">
@@ -120,7 +120,7 @@ function clear() {
         </Button>
       </PopoverTrigger>
       <PopoverContent class="w-56 p-0" align="start">
-        <div class="border-b px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <div class="border-b px-3 py-2 text-xs font-semibold text-muted-foreground">
           Filter by event type
         </div>
         <div class="p-2">

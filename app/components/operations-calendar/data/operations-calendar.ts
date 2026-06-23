@@ -242,7 +242,40 @@ export function buildAllEvents(jobs?: CleaningJob[]): CalendarEvent[] {
 
   events.push(...buildCleaningEvents(listingMap, jobs))
   events.push(...buildCheckoutCleanings(listingMap, jobs))
+  events.push(...buildMockTaskEvents(calendarListings))
   return events
+}
+
+export function buildMockTaskEvents(calendarListings: CalendarListing[]): CalendarEvent[] {
+  const taskTitles = [
+    'AC filter replacement',
+    'Pool pump check',
+    'Garden maintenance',
+    'Deep clean bathroom',
+    'WiFi speed test',
+    'Fire extinguisher check',
+    'Drain unclogging',
+    'Light bulb replacement',
+    'Termite inspection',
+    'Water heater service',
+    'Septic tank check',
+    'Pest control spray',
+    'Mattress rotation',
+    'Gas line inspection',
+    'Roof gutter cleaning',
+  ]
+  const weekDays = ['2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25', '2026-06-26', '2026-06-27', '2026-06-28']
+
+  return calendarListings.map((listing, index) => ({
+    id: `task-mock-${listing.id}`,
+    listingId: listing.id,
+    listingName: listing.name,
+    type: 'task' as CalendarEventType,
+    title: taskTitles[index % taskTitles.length]!,
+    start: `${weekDays[index % weekDays.length]}T${String(8 + (index % 8)).padStart(2, '0')}:00:00+08:00`,
+    end: `${weekDays[index % weekDays.length]}T${String(9 + (index % 8)).padStart(2, '0')}:00:00+08:00`,
+    colorIndex: listing.colorIndex,
+  }))
 }
 
 export function eventsForDay(events: CalendarEvent[], dayKey: string) {

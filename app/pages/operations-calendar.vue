@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
 import OperationsCalendarCreateDialog from '~/components/operations-calendar/OperationsCalendarCreateDialog.vue'
-import OperationsCalendarFilters from '~/components/operations-calendar/OperationsCalendarFilters.vue'
 import { useOperationsCalendar } from '~/composables/useOperationsCalendar'
 
 const {
@@ -52,38 +51,9 @@ function handleMoveEvent(payload: { id: string, listingId: string, scheduledAt: 
           Time-based view of guest stays, cleaning, and tasks.
         </p>
       </div>
-      <div class="flex items-center gap-2">
-        <Tabs v-model="view">
-          <TabsList>
-            <TabsTrigger value="week">
-              Week
-            </TabsTrigger>
-            <TabsTrigger value="day">
-              Day
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Button variant="outline" size="sm" @click="previousWeek">
-          <Icon name="lucide:chevron-left" class="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="sm" @click="goToToday">
-          Today
-        </Button>
-        <Button variant="outline" size="sm" @click="nextWeek">
-          <Icon name="lucide:chevron-right" class="h-4 w-4" />
-        </Button>
-      </div>
     </div>
 
     <ClientOnly>
-      <div class="flex items-center justify-between gap-3 rounded-2xl border bg-card p-4 shadow-sm">
-        <OperationsCalendarFilters
-          :filters="filters"
-          @update:filters="filters = $event"
-          @clear="clearFilters"
-        />
-      </div>
-
       <LazyOperationsCalendarBoard
         :events="filteredEvents"
         :events-by-day="eventsByDay"
@@ -93,9 +63,15 @@ function handleMoveEvent(payload: { id: string, listingId: string, scheduledAt: 
         :view="view"
         :selected-day="selectedDay"
         :show-all-listings="showAllListingsInDay"
+        :filters="filters"
+        @update:filters="filters = $event"
+        @clear="clearFilters"
         @update:selected-day="selectedDay = $event"
         @update:show-all-listings="showAllListingsInDay = $event"
         @update:view="view = $event"
+        @previous-week="previousWeek"
+        @next-week="nextWeek"
+        @go-to-today="goToToday"
         @event-click="handleEventClick"
         @move-event="handleMoveEvent"
         @create="handleCreate"
