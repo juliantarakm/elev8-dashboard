@@ -185,6 +185,7 @@ export function buildCleaningEvents(listingMap?: Map<string, CalendarListing>, j
       start: job.scheduledAt,
       end: new Date(new Date(job.scheduledAt).getTime() + job.durationMinutes * 60000).toISOString(),
       assignedTo: job.cleanerName ?? undefined,
+      status: job.status,
       notes: job.notes,
       source: job.source,
       colorIndex: listing?.colorIndex ?? getListingColorIndex(job.listingId),

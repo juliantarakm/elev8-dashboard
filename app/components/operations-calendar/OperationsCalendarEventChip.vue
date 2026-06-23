@@ -36,6 +36,21 @@ const timeRange = computed(() => {
     return ''
   return `${formatTime(props.event.start)} - ${formatTime(props.event.end)}`
 })
+
+const cleaningStatusConfig: Record<string, { label: string, variant: 'outline' | 'default' | 'secondary' | 'destructive', class: string }> = {
+  draft: { label: 'Draft', variant: 'outline', class: '' },
+  scheduled: { label: 'Scheduled', variant: 'default', class: 'bg-sky-500/80' },
+  confirmed: { label: 'Confirmed', variant: 'default', class: 'bg-blue-500/80' },
+  in_progress: { label: 'In Progress', variant: 'default', class: 'bg-amber-500/80' },
+  done: { label: 'Done', variant: 'default', class: 'bg-emerald-500/80' },
+  cancelled: { label: 'Cancelled', variant: 'destructive', class: '' },
+}
+
+const statusConfig = computed(() => {
+  if (props.event.type !== 'cleaning' || !props.event.status)
+    return null
+  return cleaningStatusConfig[props.event.status] ?? null
+})
 </script>
 
 <template>
@@ -52,8 +67,13 @@ const timeRange = computed(() => {
     <p v-if="timeRange" class="truncate text-[10px] text-muted-foreground">
       {{ timeRange }}
     </p>
-    <Badge v-if="event.type === 'cleaning' && !event.assignedTo" variant="destructive" class="mt-0.5 w-fit text-[9px] font-medium">
-      Unassigned
-    </Badge>
+    <div v-if="event.type === 'cleaning'" class="mt-0.5 flex flex-wrap items-center gap-1">
+      <Badge v-if="!event.assignedTo" variant="destructive" class="text-[9px] font-medium">
+        Unassigned
+      </Badge>
+      <Badge v-if="statusConfig" :variant="statusConfig.variant" class="text-[9px] font-medium" :class="statusConfig.class">
+        {{ statusConfig.label }}
+      </Badge>
+    </div>
   </button>
 </template>
