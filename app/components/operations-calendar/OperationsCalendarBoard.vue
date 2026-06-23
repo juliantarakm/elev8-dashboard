@@ -441,13 +441,14 @@ function onCellClick(listingId: string, dayKey: string) {
                 <div
                   v-for="(day, index) in weekDays"
                   :key="`${node.id}-${day.key}`"
-                  class="min-h-[132px] cursor-pointer border-l bg-background/70 p-2 transition-colors hover:bg-muted/40"
+                  class="group relative min-h-[132px] cursor-pointer border-l bg-background/70 p-2 transition-colors hover:bg-muted/40"
                   :class="selectedDay === day.key && 'bg-muted/30'"
                   :style="{ gridColumn: `${index + 1} / ${index + 2}`, gridRow: '2 / 3' }"
                   @dragover.prevent
                   @drop.prevent="onDrop(node.listing?.id ?? '', day.key)"
                   @click="onCellClick(node.listing?.id ?? '', day.key)"
                 >
+                  <Icon name="lucide:plus" class="absolute right-1.5 top-1.5 size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                   <div class="flex h-full flex-col gap-2">
                     <OperationsCalendarEventChip
                       v-for="event in node.listing ? (eventsByListingAndDay.get(node.listing.id)?.get(day.key) ?? []).filter(e => e.type !== 'guest_stay') : []"
