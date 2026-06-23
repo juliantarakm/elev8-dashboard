@@ -39,7 +39,6 @@ const timeRange = computed(() => {
 
 const cleaningStatusConfig: Record<string, { label: string, variant: 'outline' | 'default' | 'secondary' | 'destructive', class: string }> = {
   draft: { label: 'Draft', variant: 'outline', class: '' },
-  scheduled: { label: 'Scheduled', variant: 'default', class: 'bg-sky-500/80' },
   confirmed: { label: 'Confirmed', variant: 'default', class: 'bg-blue-500/80' },
   in_progress: { label: 'In Progress', variant: 'default', class: 'bg-amber-500/80' },
   done: { label: 'Done', variant: 'default', class: 'bg-emerald-500/80' },

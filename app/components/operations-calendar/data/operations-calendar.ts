@@ -181,7 +181,7 @@ export function buildCleaningEvents(listingMap?: Map<string, CalendarListing>, j
       listingId: job.listingId,
       listingName: listing?.name ?? job.listingName,
       type: 'cleaning' as CalendarEventType,
-      title: `Cleaning${guestSuffix}${job.cleanerName ? ` · ${job.cleanerName}` : ''}`,
+      title: `Cleaning${guestSuffix}`,
       start: job.scheduledAt,
       end: new Date(new Date(job.scheduledAt).getTime() + job.durationMinutes * 60000).toISOString(),
       assignedTo: job.cleanerName ?? undefined,
