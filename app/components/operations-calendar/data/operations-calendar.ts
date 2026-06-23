@@ -15,7 +15,7 @@ export interface CalendarEvent {
   end: string // ISO datetime
   guestName?: string
   status?: string
-  assignedTo?: string
+  assignedTo?: string[]
   notes?: string
   source?: string
   colorIndex: number
@@ -184,7 +184,7 @@ export function buildCleaningEvents(listingMap?: Map<string, CalendarListing>, j
       title: `Cleaning${guestSuffix}`,
       start: job.scheduledAt,
       end: new Date(new Date(job.scheduledAt).getTime() + job.durationMinutes * 60000).toISOString(),
-      assignedTo: job.cleanerName ?? undefined,
+      assignedTo: job.cleanerName ? job.cleanerName.split(',').map(s => s.trim()) : [],
       status: job.status,
       notes: job.notes,
       source: job.source,

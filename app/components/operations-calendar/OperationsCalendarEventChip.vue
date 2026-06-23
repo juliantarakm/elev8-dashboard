@@ -68,8 +68,16 @@ const statusConfig = computed(() => {
       {{ timeRange }}
     </p>
     <div v-if="event.type === 'cleaning'" class="mt-0.5 flex flex-wrap items-center gap-1">
-      <Badge v-if="!event.assignedTo" variant="destructive" class="text-[9px] font-medium">
+      <Badge v-if="!event.assignedTo?.length" variant="destructive" class="text-[9px] font-medium">
         Unassigned
+      </Badge>
+      <Badge
+        v-for="name in event.assignedTo"
+        :key="name"
+        variant="secondary"
+        class="text-[9px] font-medium"
+      >
+        {{ name }}
       </Badge>
       <Badge v-if="statusConfig" :variant="statusConfig.variant" class="text-[9px] font-medium" :class="statusConfig.class">
         {{ statusConfig.label }}
