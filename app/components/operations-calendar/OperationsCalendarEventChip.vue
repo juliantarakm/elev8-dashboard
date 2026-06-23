@@ -52,5 +52,8 @@ const timeRange = computed(() => {
     <p v-if="timeRange" class="truncate text-[10px] text-muted-foreground">
       {{ timeRange }}
     </p>
+    <Badge v-if="event.type === 'cleaning' && !event.assignedTo" variant="destructive" class="mt-0.5 w-fit text-[9px] font-medium">
+      Unassigned
+    </Badge>
   </button>
 </template>
