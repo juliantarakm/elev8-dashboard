@@ -8,6 +8,7 @@ export const taskSchema = z.object({
   priority: z.string(),
   listing: z.string().optional(),
   description: z.string().optional(),
+  dueDate: z.string().optional(),
   linkedInventoryItemId: z.string().optional(),
   linkedInventoryItemName: z.string().optional(),
   linkedInventoryEntryId: z.string().optional(),

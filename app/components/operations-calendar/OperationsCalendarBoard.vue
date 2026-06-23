@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CalendarEvent } from '~/components/operations-calendar/data/operations-calendar'
+import type { CalendarEvent, CalendarListing } from '~/components/operations-calendar/data/operations-calendar'
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
@@ -32,24 +32,168 @@ const emit = defineEmits<{
   'update:showAllListings': [value: boolean]
   'update:view': [view: 'week' | 'day']
   'eventClick': [event: CalendarEvent]
+  'moveEvent': [payload: { id: string, listingId: string, scheduledAt: string, originalEvent: CalendarEvent }]
+  'create': [payload: { listingId: string, dayKey: string }]
 }>()
 
 const totalHours = DAY_END_HOUR - DAY_START_HOUR
 const totalHeight = totalHours * HOUR_HEIGHT
 
 const allListings = getCalendarListings()
+const visibleListingIds = computed(() => new Set(props.eventsByListingAndDay.keys()))
+const visibleListings = computed(() => allListings.filter(l => visibleListingIds.value.has(l.id)))
+
 const sortedListings = computed(() => {
-  return [...allListings].sort((a, b) => a.name.localeCompare(b.name))
+  return [...visibleListings.value].sort((a, b) => {
+    const propertyCompare = a.property.localeCompare(b.property)
+    if (propertyCompare !== 0)
+      return propertyCompare
+    const unitTypeCompare = a.unitTypeLabel.localeCompare(b.unitTypeLabel)
+    if (unitTypeCompare !== 0)
+      return unitTypeCompare
+    return a.roomLabel.localeCompare(b.roomLabel)
+  })
 })
+
+interface ListingTreeNode {
+  id: string
+  type: 'property' | 'unitType' | 'room'
+  label: string
+  listing?: CalendarListing
+  depth: number
+  eventCount: number
+}
+
+interface StayBar {
+  id: string
+  guestName: string
+  startDayIndex: number
+  endDayIndex: number
+  colorIndex: number
+}
+
+function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
+  const map = new Map<string, T[]>()
+  for (const item of items) {
+    const key = keyFn(item)
+    const list = map.get(key) ?? []
+    list.push(item)
+    map.set(key, list)
+  }
+  return map
+}
+
+const collapsedNodes = ref<Set<string>>(new Set())
+
+function isNodeExpanded(nodeId: string) {
+  return !collapsedNodes.value.has(nodeId)
+}
+
+function toggleNode(nodeId: string) {
+  const next = new Set(collapsedNodes.value)
+  if (next.has(nodeId))
+    next.delete(nodeId)
+  else
+    next.add(nodeId)
+  collapsedNodes.value = next
+}
+
+const propertyIds = computed(() => {
+  const ids = new Set<string>()
+  for (const listing of visibleListings.value) {
+    ids.add(`prop-${listing.property}`)
+  }
+  return ids
+})
+
+const unitTypeIds = computed(() => {
+  const ids = new Set<string>()
+  for (const listing of visibleListings.value) {
+    if (!listing.isSingleUnit)
+      ids.add(`unit-${listing.property}-${listing.unitTypeLabel}`)
+  }
+  return ids
+})
+
+function expandAll() {
+  collapsedNodes.value = new Set()
+}
+
+function collapseAll() {
+  collapsedNodes.value = new Set([...propertyIds.value, ...unitTypeIds.value])
+}
+
+const listingTree = computed<ListingTreeNode[]>(() => {
+  const tree: ListingTreeNode[] = []
+  const byProperty = groupBy(sortedListings.value, l => l.property)
+
+  for (const [property, propertyListings] of byProperty) {
+    const propertyId = `prop-${property}`
+    const propertyEventCount = propertyListings.reduce((sum, l) => sum + weeklyEventCount(l.id), 0)
+    tree.push({ id: propertyId, type: 'property', label: property, depth: 0, eventCount: propertyEventCount })
+
+    if (!isNodeExpanded(propertyId))
+      continue
+
+    const hasMultiUnit = propertyListings.some(l => !l.isSingleUnit)
+
+    if (!hasMultiUnit) {
+      for (const listing of propertyListings) {
+        tree.push({ id: listing.id, type: 'room', label: listing.roomLabel, listing, depth: 1, eventCount: weeklyEventCount(listing.id) })
+      }
+    }
+    else {
+      const byUnitType = groupBy(propertyListings, l => l.unitTypeLabel)
+      for (const [unitType, unitListings] of byUnitType) {
+        const unitId = `unit-${property}-${unitType}`
+        const unitEventCount = unitListings.reduce((sum, l) => sum + weeklyEventCount(l.id), 0)
+        tree.push({ id: unitId, type: 'unitType', label: unitType, depth: 1, eventCount: unitEventCount })
+
+        if (!isNodeExpanded(unitId))
+          continue
+
+        for (const listing of unitListings) {
+          tree.push({ id: listing.id, type: 'room', label: listing.roomLabel, listing, depth: 2, eventCount: weeklyEventCount(listing.id) })
+        }
+      }
+    }
+  }
+
+  return tree
+})
+
+function getStayBars(listing: CalendarListing): StayBar[] {
+  const firstDay = props.weekDays[0]
+  const lastDay = props.weekDays[props.weekDays.length - 1]
+  if (!firstDay || !lastDay)
+    return []
+  const weekStart = firstDay.key
+  const weekEnd = lastDay.key
+
+  return listing.bookings
+    .filter(booking => booking.checkIn <= weekEnd && booking.checkOut >= weekStart)
+    .map((booking) => {
+      const checkInIndex = props.weekDays.findIndex(d => d.key === booking.checkIn)
+      const checkOutIndex = props.weekDays.findIndex(d => d.key === booking.checkOut)
+      return {
+        id: `stay-bar-${booking.id}`,
+        guestName: booking.guestName,
+        startDayIndex: checkInIndex === -1 ? 0 : checkInIndex,
+        endDayIndex: checkOutIndex === -1 ? 6 : checkOutIndex,
+        colorIndex: listing.colorIndex,
+      }
+    })
+}
+
 const weekRangeLabel = computed(() => formatWeekRange(props.weekDays))
 
 const selectedDayKey = computed(() => props.selectedDay ?? props.weekDays[0]?.key ?? '')
 
 const dayListings = computed(() => {
   if (props.showAllListings)
-    return allListings
+    return visibleListings.value
   const activeIds = Array.from(props.eventsByDayAndListing.keys())
-  return allListings.filter(listing => activeIds.includes(listing.id))
+  return visibleListings.value.filter(listing => activeIds.includes(listing.id))
 })
 
 const timeLabels = computed(() => {
@@ -69,14 +213,6 @@ const listingColors = [
   'bg-amber-500',
   'bg-rose-500',
   'bg-slate-500',
-]
-
-const listingBorderColors = [
-  'border-l-sky-500',
-  'border-l-emerald-500',
-  'border-l-amber-500',
-  'border-l-rose-500',
-  'border-l-slate-500',
 ]
 
 const listingLightColors = [
@@ -107,8 +243,8 @@ function eventClasses(event: CalendarEvent) {
   if (event.type === 'guest_stay') {
     return `${base} ${listingLightColors[event.colorIndex] ?? listingLightColors[0]}`
   }
-  if (event.type === 'arrival' || event.type === 'checkout') {
-    return `${base} bg-background border-l-4 ${listingBorderColors[event.colorIndex] ?? 'border-l-slate-500'} text-foreground`
+  if (event.type === 'task') {
+    return `${base} bg-amber-500/10 border-amber-500/20 text-foreground`
   }
   return `${base} bg-card border-border text-foreground`
 }
@@ -119,14 +255,47 @@ function weeklyEventCount(listingId: string) {
     return 0
   let count = 0
   for (const events of listingMap.values()) {
-    count += events.length
+    count += events.filter(e => e.type !== 'guest_stay').length
   }
   return count
 }
 
-function handleCellClick(dayKey: string) {
-  emit('update:selectedDay', dayKey)
-  emit('update:view', 'day')
+const draggedEvent = ref<CalendarEvent | null>(null)
+const pendingMove = ref<{ event: CalendarEvent, listingId: string, dayKey: string } | null>(null)
+const moveConfirmOpen = ref(false)
+
+function onDragStart(event: CalendarEvent) {
+  if (event.type !== 'cleaning')
+    return
+  draggedEvent.value = event
+}
+
+function onDrop(listingId: string, dayKey: string) {
+  if (!draggedEvent.value)
+    return
+  pendingMove.value = { event: draggedEvent.value, listingId, dayKey }
+  moveConfirmOpen.value = true
+  draggedEvent.value = null
+}
+
+function confirmMove() {
+  if (!pendingMove.value)
+    return
+  const { event, listingId, dayKey } = pendingMove.value
+  const time = event.start.slice(11, 16)
+  const scheduledAt = `${dayKey}T${time}:00+08:00`
+  emit('moveEvent', { id: event.id, listingId, scheduledAt, originalEvent: event })
+  pendingMove.value = null
+  moveConfirmOpen.value = false
+}
+
+function cancelMove() {
+  pendingMove.value = null
+  moveConfirmOpen.value = false
+}
+
+function onCellClick(listingId: string, dayKey: string) {
+  emit('create', { listingId, dayKey })
 }
 </script>
 
@@ -141,68 +310,143 @@ function handleCellClick(dayKey: string) {
           {{ weekRangeLabel }}
         </p>
       </div>
-      <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-sky-500" />Stay</span>
-        <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-emerald-500" />Clean</span>
-        <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-amber-500" />Maint</span>
-        <span class="flex items-center gap-1.5"><span class="size-2 rounded-full bg-rose-500" />Insp</span>
+      <div class="flex flex-wrap items-center gap-3">
+        <div v-if="view === 'week'" class="flex items-center gap-1">
+          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="expandAll">
+            <Icon name="lucide:chevrons-down" class="mr-1 size-3.5" />
+            Expand all
+          </Button>
+          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs text-muted-foreground" @click="collapseAll">
+            <Icon name="lucide:chevrons-up" class="mr-1 size-3.5" />
+            Collapse all
+          </Button>
+        </div>
       </div>
     </div>
 
     <!-- Week view -->
     <div v-if="view === 'week'" class="overflow-auto">
-      <div class="grid min-w-[1100px] grid-cols-[240px_repeat(7,minmax(140px,1fr))]">
+      <div class="min-w-[1100px]">
         <!-- Header -->
-        <div class="sticky left-0 z-20 border-b bg-background px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Listing
-        </div>
-        <div
-          v-for="day in weekDays"
-          :key="day.key"
-          class="border-b border-l bg-background px-4 py-3"
-          :class="selectedDay === day.key && 'bg-muted/30'"
-        >
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {{ day.label.slice(0, 3) }}
-          </p>
-          <p class="mt-1 text-sm font-semibold">
-            {{ day.key.slice(8, 10) }}
-          </p>
+        <div class="sticky top-0 z-20 flex border-b bg-background">
+          <div class="sticky left-0 z-30 w-[240px] shrink-0 border-r bg-background px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Listing
+          </div>
+          <div class="grid flex-1 grid-cols-7">
+            <div
+              v-for="day in weekDays"
+              :key="day.key"
+              class="border-l bg-background px-4 py-3"
+              :class="selectedDay === day.key && 'bg-muted/30'"
+            >
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {{ day.label.slice(0, 3) }}
+              </p>
+              <p class="mt-1 text-sm font-semibold">
+                {{ day.key.slice(8, 10) }}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Listing rows -->
-        <template v-for="listing in sortedListings" :key="listing.id">
-          <div class="sticky left-0 z-10 border-t border-r bg-muted/30 px-4 py-3">
-            <div class="flex items-start gap-3">
-              <span class="mt-1 size-2.5 rounded-full" :class="[listingColors[listing.colorIndex]]" />
-              <div class="min-w-0">
-                <p class="truncate text-sm font-semibold">
-                  {{ listing.name }}
+        <!-- Tree rows -->
+        <div class="flex flex-col">
+          <template v-for="node in listingTree" :key="node.id">
+            <!-- Property group header -->
+            <div
+              v-if="node.type === 'property'"
+              class="sticky left-0 z-10 flex cursor-pointer border-t bg-muted/50 px-4 py-2 hover:bg-muted/70"
+              @click="toggleNode(node.id)"
+            >
+              <div class="flex items-center gap-2">
+                <Icon
+                  :name="isNodeExpanded(node.id) ? 'lucide:chevron-down' : 'lucide:chevron-right'"
+                  class="size-3.5 shrink-0 text-muted-foreground"
+                />
+                <p class="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {{ node.label }}
                 </p>
-                <Badge variant="outline" class="mt-1 text-[10px]">
-                  {{ weeklyEventCount(listing.id) }} events
+                <Badge v-if="node.eventCount > 0" variant="outline" class="text-[10px]">
+                  {{ node.eventCount }} events
                 </Badge>
               </div>
             </div>
-          </div>
 
-          <div
-            v-for="day in weekDays"
-            :key="`${listing.id}-${day.key}`"
-            class="min-h-[132px] border-t border-l bg-background/70 p-2"
-            :class="selectedDay === day.key && 'bg-muted/30'"
-            @click="handleCellClick(day.key)"
-          >
-            <div class="flex h-full flex-col gap-2">
-              <OperationsCalendarEventChip
-                v-for="event in eventsByListingAndDay.get(listing.id)?.get(day.key) ?? []"
-                :key="`${day.key}-${event.id}`"
-                :event="event"
-                @click="emit('eventClick', event)"
-              />
+            <!-- Unit type group header -->
+            <div
+              v-else-if="node.type === 'unitType'"
+              class="sticky left-0 z-10 flex cursor-pointer border-t bg-muted/30 px-4 py-2 pl-8 hover:bg-muted/50"
+              @click="toggleNode(node.id)"
+            >
+              <div class="flex items-center gap-2">
+                <Icon
+                  :name="isNodeExpanded(node.id) ? 'lucide:chevron-down' : 'lucide:chevron-right'"
+                  class="size-3.5 shrink-0 text-muted-foreground"
+                />
+                <p class="truncate text-xs font-medium text-foreground">
+                  {{ node.label }}
+                </p>
+                <Badge v-if="node.eventCount > 0" variant="outline" class="text-[10px]">
+                  {{ node.eventCount }} events
+                </Badge>
+              </div>
             </div>
-          </div>
-        </template>
+
+            <!-- Room row -->
+            <div v-else class="flex border-t">
+              <div class="sticky left-0 z-10 w-[240px] shrink-0 border-r bg-muted/30 px-4 py-3" :class="node.depth === 2 ? 'pl-12' : 'pl-8'">
+                <div class="flex items-start gap-3">
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold">
+                      {{ node.label }}
+                    </p>
+                    <Badge variant="outline" class="mt-1 text-[10px]">
+                      {{ node.eventCount }} events
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div class="relative grid flex-1 grid-cols-7 grid-rows-[auto_1fr]">
+                <!-- Stay bars -->
+                <template v-if="node.listing">
+                  <div
+                    v-for="stay in getStayBars(node.listing)"
+                    :key="stay.id"
+                    class="mx-0.5 mt-1 flex items-center overflow-hidden rounded px-2 text-xs font-semibold text-white"
+                    :class="[listingColors[stay.colorIndex]]"
+                    :style="{ gridColumn: `${stay.startDayIndex + 1} / ${stay.endDayIndex + 2}`, gridRow: '1 / 2' }"
+                  >
+                    <span class="truncate">{{ stay.guestName }}</span>
+                  </div>
+                </template>
+
+                <!-- Day cells -->
+                <div
+                  v-for="(day, index) in weekDays"
+                  :key="`${node.id}-${day.key}`"
+                  class="min-h-[132px] cursor-pointer border-l bg-background/70 p-2 transition-colors hover:bg-muted/40"
+                  :class="selectedDay === day.key && 'bg-muted/30'"
+                  :style="{ gridColumn: `${index + 1} / ${index + 2}`, gridRow: '2 / 3' }"
+                  @dragover.prevent
+                  @drop.prevent="onDrop(node.listing?.id ?? '', day.key)"
+                  @click="onCellClick(node.listing?.id ?? '', day.key)"
+                >
+                  <div class="flex h-full flex-col gap-2">
+                    <OperationsCalendarEventChip
+                      v-for="event in node.listing ? (eventsByListingAndDay.get(node.listing.id)?.get(day.key) ?? []).filter(e => e.type !== 'guest_stay') : []"
+                      :key="`${day.key}-${event.id}`"
+                      :event="event"
+                      :draggable="event.type === 'cleaning'"
+                      @click="emit('eventClick', event)"
+                      @dragstart="onDragStart(event)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -212,7 +456,7 @@ function handleCellClick(dayKey: string) {
         <!-- Header -->
         <div class="sticky left-0 z-20 border-b bg-background px-2 py-3">
           <Button
-            v-if="eventsByDayAndListing.size < allListings.length"
+            v-if="eventsByDayAndListing.size < visibleListings.length"
             variant="ghost"
             size="sm"
             class="h-auto px-0 text-xs text-muted-foreground"
@@ -226,11 +470,25 @@ function handleCellClick(dayKey: string) {
           :key="listing.id"
           class="border-b border-l bg-background px-3 py-3"
         >
-          <div class="flex items-center gap-2">
-            <span class="size-2.5 rounded-full" :class="[listingColors[listing.colorIndex]]" />
-            <p class="truncate text-sm font-semibold">
-              {{ listing.name }}
-            </p>
+          <div class="flex items-start gap-2">
+            <div class="min-w-0">
+              <template v-if="listing.isSingleUnit">
+                <p class="truncate text-sm font-semibold">
+                  {{ listing.roomLabel }}
+                </p>
+              </template>
+              <template v-else>
+                <p class="truncate text-[10px] text-muted-foreground">
+                  {{ listing.property }}
+                </p>
+                <p class="truncate text-xs font-medium text-foreground">
+                  {{ listing.unitTypeLabel }}
+                </p>
+                <p class="truncate text-sm font-semibold">
+                  {{ listing.roomLabel }}
+                </p>
+              </template>
+            </div>
           </div>
           <Badge
             :variant="isDayOccupied(eventsByDayAndListing.get(listing.id) ?? [], selectedDayKey) ? 'default' : 'outline'"
@@ -276,5 +534,25 @@ function handleCellClick(dayKey: string) {
         </div>
       </div>
     </div>
+
+    <!-- Move confirmation dialog -->
+    <Dialog v-model:open="moveConfirmOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Move cleaning?</DialogTitle>
+          <DialogDescription>
+            Move <strong>{{ pendingMove?.event.title }}</strong> to {{ pendingMove?.listingId ? allListings.find(l => l.id === pendingMove?.listingId)?.roomLabel : '' }} on {{ pendingMove?.dayKey }}?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="cancelMove">
+            Cancel
+          </Button>
+          <Button @click="confirmMove">
+            Move
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

@@ -1,8 +1,9 @@
+import type { CleaningJob } from '~/components/cleaning/data/cleaning-jobs'
 import type { Booking } from '~/components/listings/data/listings'
 import { cleaningJobs } from '~/components/cleaning/data/cleaning-jobs'
 import { listings } from '~/components/listings/data/listings'
 
-export type CalendarEventType = 'guest_stay' | 'arrival' | 'checkout' | 'cleaning' | 'maintenance' | 'inspection'
+export type CalendarEventType = 'guest_stay' | 'cleaning' | 'task'
 
 export interface CalendarEvent {
   id: string
@@ -21,7 +22,8 @@ export interface CalendarEvent {
 }
 
 export interface OperationsFilters {
-  listingIds: string[]
+  listingSearch: string
+  listingTags: string[]
   eventTypes: CalendarEventType[]
 }
 
@@ -32,26 +34,26 @@ export const TIME_SLOT_INTERVAL = 2 // 2-hour labels keep the grid light
 
 export const eventTypeLabels: Record<CalendarEventType, string> = {
   guest_stay: 'Guest stay',
-  arrival: 'Arrival',
-  checkout: 'Checkout',
   cleaning: 'Cleaning',
-  maintenance: 'Maintenance',
-  inspection: 'Inspection',
+  task: 'Task',
 }
 
 export const eventTypeTones: Record<CalendarEventType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   guest_stay: 'default',
-  arrival: 'secondary',
-  checkout: 'secondary',
   cleaning: 'default',
-  maintenance: 'outline',
-  inspection: 'outline',
+  task: 'outline',
 }
 
 export interface CalendarListing {
   id: string
   name: string
   colorIndex: number
+  property: string
+  unitTypeLabel: string
+  roomLabel: string
+  isSingleUnit: boolean
+  tags: string[]
+  bookings: Booking[]
 }
 
 export function getListingColorIndex(listingId: string) {
@@ -68,6 +70,12 @@ export function getCalendarListings(): CalendarListing[] {
     id: listing.id,
     name: listing.name,
     colorIndex: getListingColorIndex(listing.id),
+    property: listing.property,
+    unitTypeLabel: listing.room,
+    roomLabel: listing.name,
+    isSingleUnit: listing.unitType === 'single',
+    tags: listing.tags,
+    bookings: listing.bookings,
   }))
 }
 
@@ -134,36 +142,8 @@ function addDays(dateStr: string, days: number) {
   return date.toISOString().slice(0, 10)
 }
 
-export function buildGuestStayEvents(booking: Booking, listing: CalendarListing, checkInTime: string, checkOutTime: string): CalendarEvent[] {
+export function buildGuestStayEvents(booking: Booking, listing: CalendarListing, _checkInTime: string, _checkOutTime: string): CalendarEvent[] {
   const events: CalendarEvent[] = []
-
-  // Arrival event at check-in time
-  events.push({
-    id: `arrival-${booking.id}`,
-    listingId: listing.id,
-    listingName: listing.name,
-    type: 'arrival',
-    title: `Check-in: ${booking.guestName}`,
-    start: toLocalDateTime(booking.checkIn, checkInTime),
-    end: toLocalDateTime(booking.checkIn, checkInTime),
-    guestName: booking.guestName,
-    source: booking.source,
-    colorIndex: listing.colorIndex,
-  })
-
-  // Checkout event at check-out time
-  events.push({
-    id: `checkout-${booking.id}`,
-    listingId: listing.id,
-    listingName: listing.name,
-    type: 'checkout',
-    title: `Check-out: ${booking.guestName}`,
-    start: toLocalDateTime(booking.checkOut, checkOutTime),
-    end: toLocalDateTime(booking.checkOut, checkOutTime),
-    guestName: booking.guestName,
-    source: booking.source,
-    colorIndex: listing.colorIndex,
-  })
 
   // Overnight guest stay blocks for each night between check-in and check-out
   let nightDate = booking.checkIn
@@ -186,59 +166,65 @@ export function buildGuestStayEvents(booking: Booking, listing: CalendarListing,
   return events
 }
 
-export function buildCleaningEvents(listingMap?: Map<string, CalendarListing>) {
-  return cleaningJobs.value.map(job => ({
-    id: job.id,
-    listingId: job.listingId,
-    listingName: listingMap?.get(job.listingId)?.name ?? job.listingName,
-    type: 'cleaning' as CalendarEventType,
-    title: `Cleaning${job.cleanerName ? ` · ${job.cleanerName}` : ''}`,
-    start: job.scheduledAt,
-    end: new Date(new Date(job.scheduledAt).getTime() + job.durationMinutes * 60000).toISOString(),
-    assignedTo: job.cleanerName ?? undefined,
-    notes: job.notes,
-    source: job.source,
-    colorIndex: listingMap?.get(job.listingId)?.colorIndex ?? getListingColorIndex(job.listingId),
-  }))
+export function buildCleaningEvents(listingMap?: Map<string, CalendarListing>, jobs?: CleaningJob[]) {
+  const source = jobs ?? cleaningJobs.value
+  return source.map((job) => {
+    const listing = listingMap?.get(job.listingId)
+    const fullListing = listings.value.find(l => l.id === job.listingId)
+    const scheduledDate = job.scheduledAt.slice(0, 10)
+    const checkoutBooking = fullListing?.bookings.find(b => b.checkOut === scheduledDate)
+    const guestSuffix = job.source === 'checkout' && checkoutBooking
+      ? ` · ${checkoutBooking.guestName}`
+      : ''
+    return {
+      id: job.id,
+      listingId: job.listingId,
+      listingName: listing?.name ?? job.listingName,
+      type: 'cleaning' as CalendarEventType,
+      title: `Cleaning${guestSuffix}${job.cleanerName ? ` · ${job.cleanerName}` : ''}`,
+      start: job.scheduledAt,
+      end: new Date(new Date(job.scheduledAt).getTime() + job.durationMinutes * 60000).toISOString(),
+      assignedTo: job.cleanerName ?? undefined,
+      notes: job.notes,
+      source: job.source,
+      colorIndex: listing?.colorIndex ?? getListingColorIndex(job.listingId),
+    }
+  })
 }
 
-export function buildMaintenanceEvents(listingMap?: Map<string, CalendarListing>): CalendarEvent[] {
-  // Placeholder maintenance/inspection events scheduled around the current week
-  const baseDate = new Date()
-  const monday = getWeekDays(baseDate)[0]?.date ?? baseDate
-  const dateKey = monday.toISOString().slice(0, 10)
+export function buildCheckoutCleanings(listingMap?: Map<string, CalendarListing>, jobs?: CleaningJob[]): CalendarEvent[] {
+  const existingKeys = new Set((jobs ?? cleaningJobs.value).map(job => `${job.listingId}:${job.scheduledAt.slice(0, 10)}`))
+  const events: CalendarEvent[] = []
 
-  const getListing = (id: string) => listingMap?.get(id) ?? { id, name: getListingName(id), colorIndex: getListingColorIndex(id) }
+  for (const listing of getCalendarListings()) {
+    const fullListing = listings.value.find(l => l.id === listing.id)
+    if (!fullListing)
+      continue
+    const checkOutTime = getDefaultCheckOutTime(listing.id)
+    for (const booking of fullListing.bookings) {
+      const key = `${listing.id}:${booking.checkOut}`
+      if (existingKeys.has(key))
+        continue
+      const start = toLocalDateTime(booking.checkOut, checkOutTime)
+      events.push({
+        id: `checkout-cleaning-${booking.id}`,
+        listingId: listing.id,
+        listingName: listingMap?.get(listing.id)?.name ?? listing.name,
+        type: 'cleaning' as CalendarEventType,
+        title: `Cleaning · ${booking.guestName}`,
+        start,
+        end: new Date(new Date(start).getTime() + 120 * 60000).toISOString(),
+        guestName: booking.guestName,
+        source: booking.source,
+        colorIndex: listingMap?.get(listing.id)?.colorIndex ?? listing.colorIndex,
+      })
+    }
+  }
 
-  return [
-    {
-      id: 'ops-maint-1',
-      listingId: 'lst-1',
-      listingName: getListing('lst-1').name,
-      type: 'maintenance',
-      title: 'Pool pump check',
-      start: toLocalDateTime(dateKey, '09:00'),
-      end: toLocalDateTime(dateKey, '11:00'),
-      assignedTo: 'Wayan Adi',
-      notes: 'Routine pool pump inspection.',
-      colorIndex: getListing('lst-1').colorIndex,
-    },
-    {
-      id: 'ops-insp-1',
-      listingId: 'lst-4',
-      listingName: getListing('lst-4').name,
-      type: 'inspection',
-      title: 'Pre-arrival inspection',
-      start: toLocalDateTime(addDays(dateKey, 2), '10:00'),
-      end: toLocalDateTime(addDays(dateKey, 2), '11:30'),
-      assignedTo: 'Made Surya',
-      notes: 'Inspect before next guest arrival.',
-      colorIndex: getListing('lst-4').colorIndex,
-    },
-  ]
+  return events
 }
 
-export function buildAllEvents(): CalendarEvent[] {
+export function buildAllEvents(jobs?: CleaningJob[]): CalendarEvent[] {
   const calendarListings = getCalendarListings()
   const listingMap = new Map(calendarListings.map(l => [l.id, l]))
   const events: CalendarEvent[] = []
@@ -254,9 +240,9 @@ export function buildAllEvents(): CalendarEvent[] {
     }
   }
 
-  events.push(...buildCleaningEvents(listingMap))
-  events.push(...buildMaintenanceEvents(listingMap))
-  return Object.freeze(events)
+  events.push(...buildCleaningEvents(listingMap, jobs))
+  events.push(...buildCheckoutCleanings(listingMap, jobs))
+  return events
 }
 
 export function eventsForDay(events: CalendarEvent[], dayKey: string) {

@@ -9,6 +9,7 @@ export const mockTasks: Task[] = [
     priority: 'high',
     listing: 'The R Villa Merapi',
     description: 'AC Split 1 PK di kamar utama tidak mengeluarkan udara dingin. Teknisi Daikin sudah dihubungi.',
+    dueDate: '2026-06-24',
     linkedInventoryItemId: 'inv-010',
     linkedInventoryItemName: 'AC Split 1 PK',
     linkedInventoryEntryId: 'entry-004',
@@ -37,6 +38,7 @@ export const mockTasks: Task[] = [
     priority: 'high',
     listing: 'The R Villa Merapi',
     description: 'Pompa kolam mengeluarkan suara aneh dan tekanan air sangat lemah.',
+    dueDate: '2026-06-26',
   },
   {
     id: 'TASK-004',

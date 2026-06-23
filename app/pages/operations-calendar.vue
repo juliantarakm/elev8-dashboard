@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner'
+import OperationsCalendarCreateDialog from '~/components/operations-calendar/OperationsCalendarCreateDialog.vue'
 import OperationsCalendarFilters from '~/components/operations-calendar/OperationsCalendarFilters.vue'
 import { useOperationsCalendar } from '~/composables/useOperationsCalendar'
 
@@ -16,10 +18,26 @@ const {
   nextWeek,
   goToToday,
   clearFilters,
+  moveCleaning,
 } = useOperationsCalendar()
+
+const createOpen = ref(false)
+const createListingId = ref<string>()
+const createDayKey = ref<string>()
 
 function handleEventClick(_event: any) {
   // TODO: open event detail dialog
+}
+
+function handleCreate(payload: { listingId: string, dayKey: string }) {
+  createListingId.value = payload.listingId
+  createDayKey.value = payload.dayKey
+  createOpen.value = true
+}
+
+function handleMoveEvent(payload: { id: string, listingId: string, scheduledAt: string }) {
+  moveCleaning(payload)
+  toast.success('Cleaning job moved')
 }
 </script>
 
@@ -31,7 +49,7 @@ function handleEventClick(_event: any) {
           Operations Calendar
         </h2>
         <p class="text-muted-foreground">
-          Time-based view of guest stays, cleaning, and maintenance tasks.
+          Time-based view of guest stays, cleaning, and tasks.
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -79,6 +97,15 @@ function handleEventClick(_event: any) {
         @update:show-all-listings="showAllListingsInDay = $event"
         @update:view="view = $event"
         @event-click="handleEventClick"
+        @move-event="handleMoveEvent"
+        @create="handleCreate"
+      />
+
+      <OperationsCalendarCreateDialog
+        :open="createOpen"
+        :listing-id="createListingId"
+        :day-key="createDayKey"
+        @update:open="createOpen = $event"
       />
 
       <template #fallback>

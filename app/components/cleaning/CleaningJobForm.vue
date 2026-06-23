@@ -7,10 +7,14 @@ const props = withDefaults(defineProps<{
   modelValue?: Partial<CleaningJob> | null
   defaultListingId?: string | null
   defaultListingName?: string | null
+  defaultScheduledAt?: string | null
+  mode?: 'create' | 'edit'
 }>(), {
   modelValue: null,
   defaultListingId: null,
   defaultListingName: null,
+  defaultScheduledAt: null,
+  mode: 'edit',
 })
 
 const emit = defineEmits<{
@@ -18,10 +22,12 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const isCreate = computed(() => props.mode === 'create')
+
 const form = reactive<CleaningJobInput>({
   listingId: props.modelValue?.listingId ?? props.defaultListingId ?? '',
   listingName: props.modelValue?.listingName ?? props.defaultListingName ?? '',
-  scheduledAt: props.modelValue?.scheduledAt ?? '',
+  scheduledAt: props.modelValue?.scheduledAt ?? props.defaultScheduledAt ?? '',
   cleanerId: props.modelValue?.cleanerId ?? null,
   cleanerName: props.modelValue?.cleanerName ?? null,
   teamName: props.modelValue?.teamName ?? 'Housekeeping',
@@ -52,7 +58,7 @@ watch(() => props.modelValue, (next) => {
     return
   form.listingId = next.listingId ?? props.defaultListingId ?? ''
   form.listingName = next.listingName ?? props.defaultListingName ?? ''
-  form.scheduledAt = next.scheduledAt ?? ''
+  form.scheduledAt = next.scheduledAt ?? props.defaultScheduledAt ?? ''
   form.cleanerId = next.cleanerId ?? null
   form.cleanerName = next.cleanerName ?? null
   form.teamName = next.teamName ?? 'Housekeeping'
@@ -85,12 +91,13 @@ function handleCleanerChange(value: string) {
   const cleaner = cleanerOptions.find(option => option.id === value)
   form.cleanerId = cleaner?.id ?? null
   form.cleanerName = cleaner?.name ?? null
-  form.teamName = cleaner?.role ?? form.teamName
+  form.teamName = cleaner?.role ?? 'Housekeeping'
 }
 
 function submit() {
   emit('save', {
     ...form,
+    teamName: 'Housekeeping',
     recurrence: recurrenceModel.value,
   })
 }
@@ -110,7 +117,7 @@ function submit() {
           </SelectItem>
         </SelectContent>
       </Select>
-      <Input v-model="form.listingName" placeholder="Listing name" class="mt-2" />
+      <Input v-if="!isCreate" v-model="form.listingName" placeholder="Listing name" class="mt-2" />
     </div>
 
     <div class="grid gap-1.5 md:grid-cols-2">
@@ -141,14 +148,10 @@ function submit() {
           </SelectContent>
         </Select>
       </div>
-      <div class="grid gap-1.5">
-        <Label>Team</Label>
-        <Input :model-value="form.teamName ?? ''" placeholder="Housekeeping" @update:model-value="value => { form.teamName = typeof value === 'string' ? value : '' }" />
-      </div>
     </div>
 
-    <div class="grid gap-1.5 md:grid-cols-3">
-      <div class="grid gap-1.5">
+    <div class="grid gap-1.5" :class="isCreate ? 'md:grid-cols-1' : 'md:grid-cols-3'">
+      <div v-if="!isCreate" class="grid gap-1.5">
         <Label>Status</Label>
         <Select :model-value="form.status" @update:model-value="value => { form.status = value as CleaningJobStatus }">
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -170,7 +173,7 @@ function submit() {
           </SelectContent>
         </Select>
       </div>
-      <div class="grid gap-1.5">
+      <div v-if="!isCreate" class="grid gap-1.5">
         <Label>Source</Label>
         <Select :model-value="form.source" @update:model-value="value => { form.source = value as CleaningJobSource }">
           <SelectTrigger><SelectValue /></SelectTrigger>

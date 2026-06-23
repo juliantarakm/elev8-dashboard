@@ -5,10 +5,12 @@ import { formatTime } from '~/components/operations-calendar/data/operations-cal
 
 const props = defineProps<{
   event: CalendarEvent
+  draggable?: boolean
 }>()
 
 const emit = defineEmits<{
   click: [event: CalendarEvent]
+  dragstart: [event: CalendarEvent]
 }>()
 
 const chipClasses = computed(() => {
@@ -16,8 +18,9 @@ const chipClasses = computed(() => {
   if (props.event.type === 'guest_stay') {
     return `${base} bg-primary/10 border-primary/20 text-foreground`
   }
-  if (props.event.type === 'arrival' || props.event.type === 'checkout') {
-    return `${base} bg-background border-l-4 border-l-slate-500 text-foreground`
+
+  if (props.event.type === 'task') {
+    return `${base} bg-amber-500/10 border-amber-500/20 text-foreground`
   }
   return `${base} bg-card border-border text-foreground`
 })
@@ -36,7 +39,13 @@ const timeRange = computed(() => {
 </script>
 
 <template>
-  <button type="button" :class="chipClasses" @click.stop="emit('click', event)">
+  <button
+    type="button"
+    :class="chipClasses"
+    :draggable="draggable"
+    @click.stop="emit('click', event)"
+    @dragstart.stop="emit('dragstart', event)"
+  >
     <p class="truncate font-semibold">
       {{ displayTitle }}
     </p>

@@ -12,15 +12,33 @@ const emit = defineEmits<{
 }>()
 
 const calendarListings = computed(() => getCalendarListings())
+const tagSearch = ref('')
+const tagPopoverOpen = ref(false)
 
-const eventTypes: CalendarEventType[] = ['guest_stay', 'arrival', 'checkout', 'cleaning', 'maintenance', 'inspection']
+const eventTypes: CalendarEventType[] = ['guest_stay', 'cleaning', 'task']
 
-function toggleListing(listingId: string) {
-  const current = props.filters.listingIds
-  const next = current.includes(listingId)
-    ? current.filter(id => id !== listingId)
-    : [...current, listingId]
-  emit('update:filters', { ...props.filters, listingIds: next })
+const allTags = computed(() => {
+  const tags = new Set(calendarListings.value.flatMap(l => l.tags))
+  return [...tags].sort()
+})
+
+const filteredTags = computed(() => {
+  const q = tagSearch.value.trim().toLowerCase()
+  if (!q)
+    return allTags.value
+  return allTags.value.filter(t => t.toLowerCase().includes(q))
+})
+
+function updateSearch(value: string | number) {
+  emit('update:filters', { ...props.filters, listingSearch: String(value) })
+}
+
+function toggleTag(tag: string) {
+  const current = props.filters.listingTags
+  const next = current.includes(tag)
+    ? current.filter(t => t !== tag)
+    : [...current, tag]
+  emit('update:filters', { ...props.filters, listingTags: next })
 }
 
 function toggleEventType(type: CalendarEventType) {
@@ -38,35 +56,54 @@ function clear() {
 
 <template>
   <div class="flex flex-wrap items-end gap-3">
-    <Popover>
+    <div class="relative">
+      <Icon name="lucide:search" class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        :model-value="filters.listingSearch"
+        placeholder="Search listings..."
+        class="h-9 w-64 pl-9 text-sm"
+        @update:model-value="updateSearch"
+      />
+    </div>
+
+    <Popover v-model:open="tagPopoverOpen">
       <PopoverTrigger as-child>
-        <Button variant="outline" size="sm">
-          <Icon name="lucide:building" class="mr-2 h-4 w-4" />
-          Listings
-          <span v-if="filters.listingIds.length" class="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
-            {{ filters.listingIds.length }}
+        <Button variant="outline" size="sm" :class="filters.listingTags.length > 0 ? 'border-primary text-primary' : ''">
+          <Icon name="lucide:tag" class="mr-2 h-4 w-4" />
+          Tags
+          <span v-if="filters.listingTags.length" class="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+            {{ filters.listingTags.length }}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent class="w-64 p-0" align="start">
+      <PopoverContent class="w-56 p-0" align="start">
         <div class="border-b px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Filter by listing
+          Filter by tag
         </div>
-        <div class="max-h-64 overflow-y-auto p-2">
-          <div
-            v-for="listing in calendarListings"
-            :key="listing.id"
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
-          >
-            <Checkbox
-              :id="`listing-${listing.id}`"
-              :checked="filters.listingIds.includes(listing.id)"
-              @update:checked="toggleListing(listing.id)"
-            />
-            <label :for="`listing-${listing.id}`" class="flex-1 cursor-pointer truncate text-sm">
-              {{ listing.name }}
-            </label>
+        <div class="p-2">
+          <Input v-model="tagSearch" placeholder="Search tags..." class="mb-2 h-8 text-xs" />
+          <div class="max-h-48 overflow-y-auto">
+            <div
+              v-for="tag in filteredTags"
+              :key="tag"
+              class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+            >
+              <Checkbox
+                :id="`tag-${tag}`"
+                :checked="filters.listingTags.includes(tag)"
+                @update:checked="toggleTag(tag)"
+              />
+              <label :for="`tag-${tag}`" class="flex-1 cursor-pointer text-sm">
+                {{ tag }}
+              </label>
+            </div>
+            <p v-if="filteredTags.length === 0" class="px-2 py-3 text-sm text-muted-foreground">
+              No tags found.
+            </p>
           </div>
+          <Button v-if="filters.listingTags.length" variant="ghost" size="sm" class="mt-2 h-7 w-full text-xs text-muted-foreground" @click="emit('update:filters', { ...filters, listingTags: [] })">
+            Clear tags
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
