@@ -145,6 +145,21 @@ This file provides context for AI agents working on this project.
   - Custom SVG logos: `DokuLogo.vue`, `XenditLogo.vue`
   - Data: `app/components/settings/data/payouts.ts`
 
+### Operations Calendar Module (`app/components/operations-calendar/`)
+
+- **Data + types**: `app/components/operations-calendar/data/operations-calendar.ts`
+  - `OperationsFilters` type with `listingSearch`, `listingTags` (AND logic), `eventTypes` (OR logic)
+  - `CalendarEvent` type with `type: 'guest_stay' | 'cleaning' | 'task'`, `listingId`, scheduled times
+- **State**: `app/composables/useOperationsCalendar.ts`
+  - `filters` — `ref<OperationsFilters>`, computed filter pipelines
+  - Navigation: `previousWeek()`, `nextWeek()`, `goToToday()`
+- **Page**: `app/pages/operations-calendar.vue` — Week/Day toggle, filter bar, board grid
+- **Components**:
+  - `OperationsCalendarFilters.vue` — Search input, Tags Popover, Event Types Popover, Clear button. Uses native `<button @click>` + plain `<span>` checkbox visuals (bypasses Reka UI CheckboxRoot `:checked` prop issue)
+  - `OperationsCalendarBoard.vue` — Week/day grid
+  - `OperationsCalendarEventChip.vue` — Event chip in grid cells
+  - `OperationsCalendarCreateDialog.vue` — Create cleaning job / task
+
 ### CI/CD
 
 - **GitHub Actions**: Two workflows — `CI` (lint + build check) and `Deploy to GitHub Pages`

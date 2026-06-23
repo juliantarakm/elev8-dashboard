@@ -83,20 +83,21 @@ function clear() {
         <div class="p-2">
           <Input v-model="tagSearch" placeholder="Search tags..." class="mb-2 h-8 text-xs" />
           <div class="max-h-48 overflow-y-auto">
-            <div
+            <button
               v-for="tag in filteredTags"
               :key="tag"
-              class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+              type="button"
+              class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+              @click="toggleTag(tag)"
             >
-              <Checkbox
-                :id="`tag-${tag}`"
-                :checked="filters.listingTags.includes(tag)"
-                @update:checked="toggleTag(tag)"
-              />
-              <label :for="`tag-${tag}`" class="flex-1 cursor-pointer text-sm">
-                {{ tag }}
-              </label>
-            </div>
+              <span
+                class="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border shadow-xs transition-colors"
+                :class="filters.listingTags.includes(tag) ? 'bg-primary border-primary text-primary-foreground' : 'border-input bg-transparent'"
+              >
+                <Icon v-if="filters.listingTags.includes(tag)" name="lucide:check" class="size-3.5" />
+              </span>
+              {{ tag }}
+            </button>
             <p v-if="filteredTags.length === 0" class="px-2 py-3 text-sm text-muted-foreground">
               No tags found.
             </p>
@@ -123,20 +124,21 @@ function clear() {
           Filter by event type
         </div>
         <div class="p-2">
-          <div
+          <button
             v-for="type in eventTypes"
             :key="type"
-            class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
+            type="button"
+            class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+            @click="toggleEventType(type)"
           >
-            <Checkbox
-              :id="`type-${type}`"
-              :checked="filters.eventTypes.includes(type)"
-              @update:checked="toggleEventType(type)"
-            />
-            <label :for="`type-${type}`" class="flex-1 cursor-pointer text-sm">
-              {{ eventTypeLabels[type] }}
-            </label>
-          </div>
+            <span
+              class="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border shadow-xs transition-colors"
+              :class="filters.eventTypes.includes(type) ? 'bg-primary border-primary text-primary-foreground' : 'border-input bg-transparent'"
+            >
+              <Icon v-if="filters.eventTypes.includes(type)" name="lucide:check" class="size-3.5" />
+            </span>
+            {{ eventTypeLabels[type] }}
+          </button>
         </div>
       </PopoverContent>
     </Popover>

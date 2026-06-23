@@ -487,6 +487,31 @@ interface PaymentRequest {
 
 **Sidebar:** Added under Finance section (`i-lucide-link` icon)
 
+### Operations Calendar Module (`app/components/operations-calendar/`)
+
+Time-based view of guest stays, cleaning jobs, and tasks. Week/day views with hierarchical tree.
+
+- **Data + types**: `app/components/operations-calendar/data/operations-calendar.ts`
+  - `OperationsFilters` type with `listingSearch`, `listingTags` (AND logic), `eventTypes` (OR logic)
+  - `CalendarEvent` type with `type: 'guest_stay' | 'cleaning' | 'task'`, `listingId`, scheduled times
+  - Build helpers: `buildAllEvents()`, `eventsForDay()`, `getWeekDays()`, `groupEventsByListingAndDay()`
+  - Events built from cleaning jobs + tasks (not inbox conversations)
+- **State**: `app/composables/useOperationsCalendar.ts`
+  - `filters` — `ref<OperationsFilters>` with spread assignment to trigger reactivity
+  - Computed: `filteredListings` (search + tag AND filter), `filteredListingIds` (Set), `hasListingFilter`, `filteredEvents` (listing + event type), `eventsByDay`, `eventsByDayAndListing`, `eventsByListingAndDay`
+  - Navigation: `previousWeek()`, `nextWeek()`, `goToToday()`
+  - Actions: `moveCleaning()`, `clearFilters()`, `toggleEventType()`
+- **Page**: `app/pages/operations-calendar.vue`
+  - Week/Day toggle (Tabs), prev/next/Today navigation buttons
+  - Filters bar + board grid, wrapped in `<ClientOnly>`
+  - Lazy-loaded board, create dialog
+- **Components**:
+  - `OperationsCalendarFilters.vue` — Search input, Tags Popover (multi-select with search, AND logic), Event Types Popover (OR logic), Clear button
+  - `OperationsCalendarBoard.vue` — Week/day grid rendering events by listing rows
+  - `OperationsCalendarEventChip.vue` — Individual event chip in grid cells
+  - `OperationsCalendarCreateDialog.vue` — New cleaning job / task creation
+- **Key fix**: Reka UI `CheckboxRoot` ignores external `:checked` prop changes after initial render. Filter checkboxes use native `<button @click>` for toggle logic + plain `<span>` with reactive Tailwind classes for visual — no Reka UI checkbox component to avoid desync.
+
 ### Auth (`app/components/auth/`)
 - **SignIn.vue**, **SignUp.vue**, **OTPForm.vue**, **OTPForm1.vue**, **OTPForm2.vue**, **ForgotPassword.vue**
 - Layout: `app/components/layout/Auth.vue`
