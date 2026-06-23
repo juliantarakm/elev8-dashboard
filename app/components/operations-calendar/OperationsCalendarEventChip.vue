@@ -22,6 +22,10 @@ const chipClasses = computed(() => {
   if (props.event.type === 'task') {
     return `${base} bg-amber-500/10 border-amber-500/20 text-foreground`
   }
+
+  if (props.event.type === 'upsell') {
+    return `${base} bg-violet-500/10 border-violet-500/20 text-foreground`
+  }
   return `${base} bg-card border-border text-foreground`
 })
 
@@ -81,6 +85,16 @@ const statusConfig = computed(() => {
       </Badge>
       <Badge v-if="statusConfig" :variant="statusConfig.variant" class="text-[9px] font-medium" :class="statusConfig.class">
         {{ statusConfig.label }}
+      </Badge>
+    </div>
+    <div v-if="event.type === 'upsell'" class="mt-0.5 flex flex-wrap items-center gap-1">
+      <Badge
+        v-if="event.status"
+        :variant="event.status === 'completed' ? 'default' : event.status === 'in_progress' ? 'secondary' : 'outline'"
+        class="text-[9px] font-medium"
+        :class="event.status === 'completed' ? 'bg-emerald-500/80' : ''"
+      >
+        {{ event.status === 'not_started' ? 'Pending' : event.status === 'in_progress' ? 'In Progress' : 'Done' }}
       </Badge>
     </div>
   </button>

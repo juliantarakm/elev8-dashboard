@@ -1,9 +1,11 @@
 import type { CleaningJob } from '~/components/cleaning/data/cleaning-jobs'
 import type { Booking } from '~/components/listings/data/listings'
+import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
 import { cleaningJobs } from '~/components/cleaning/data/cleaning-jobs'
 import { listings } from '~/components/listings/data/listings'
+import { mockUpsellOrders } from '~/components/upsells/data/upsell-orders'
 
-export type CalendarEventType = 'guest_stay' | 'cleaning' | 'task'
+export type CalendarEventType = 'guest_stay' | 'cleaning' | 'task' | 'upsell'
 
 export interface CalendarEvent {
   id: string
@@ -36,12 +38,14 @@ export const eventTypeLabels: Record<CalendarEventType, string> = {
   guest_stay: 'Guest stay',
   cleaning: 'Cleaning',
   task: 'Task',
+  upsell: 'Upsell',
 }
 
 export const eventTypeTones: Record<CalendarEventType, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   guest_stay: 'default',
   cleaning: 'default',
   task: 'outline',
+  upsell: 'secondary',
 }
 
 export interface CalendarListing {
@@ -244,7 +248,33 @@ export function buildAllEvents(jobs?: CleaningJob[]): CalendarEvent[] {
   events.push(...buildCleaningEvents(listingMap, jobs))
   events.push(...buildCheckoutCleanings(listingMap, jobs))
   events.push(...buildMockTaskEvents(calendarListings))
+  events.push(...buildUpsellEvents(calendarListings))
   return events
+}
+
+export function buildUpsellEvents(calendarListings: CalendarListing[]): CalendarEvent[] {
+  const listingByName = new Map(calendarListings.map(l => [l.name, l]))
+
+  return mockUpsellOrders
+    .filter(order => order.serviceDate)
+    .map((order) => {
+      const listing = listingByName.get(order.listing)
+      if (!listing)
+        return null
+      return {
+        id: `upsell-${order.id}`,
+        listingId: listing.id,
+        listingName: listing.name,
+        type: 'upsell' as CalendarEventType,
+        title: `${order.serviceName} · ${order.guestName}`,
+        start: `${order.serviceDate}T10:00:00+08:00`,
+        end: `${order.serviceDate}T12:00:00+08:00`,
+        guestName: order.guestName,
+        status: order.fulfillmentStatus,
+        colorIndex: listing.colorIndex,
+      }
+    })
+    .filter((e): e is CalendarEvent => e !== null)
 }
 
 export function buildMockTaskEvents(calendarListings: CalendarListing[]): CalendarEvent[] {
