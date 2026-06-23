@@ -44,6 +44,7 @@ const cleaningStatusConfig: Record<string, { label: string, variant: 'outline' |
   in_progress: { label: 'In Progress', variant: 'default', class: 'bg-amber-500/80' },
   done: { label: 'Done', variant: 'default', class: 'bg-emerald-500/80' },
   cancelled: { label: 'Cancelled', variant: 'destructive', class: '' },
+  missed: { label: 'Missed', variant: 'destructive', class: '' },
 }
 
 const statusConfig = computed(() => {

@@ -34,3 +34,4 @@
 
 # data
 - Prefer real data from Elev8 Suite OS MCP over mock data when available. Confidence: 0.70
+- Cleaning job statuses: 'scheduled' (today/future), 'in_progress' (today only), 'done' (today/past, not future), 'missed' (past only — housekeeping missed it). Confidence: 0.75
