@@ -1,12 +1,24 @@
 import { Icon } from '#components'
 import { h } from 'vue'
 
-export const labels = [
+export const assigneeRoles = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'guest-relations', label: 'Guest Relations' },
+  { value: 'listing-manager', label: 'Listing Manager' },
+  { value: 'housekeeping', label: 'Housekeeping' },
   { value: 'maintenance', label: 'Maintenance' },
-  { value: 'replacement', label: 'Replacement' },
-  { value: 'inspection', label: 'Inspection' },
-  { value: 'cleaning', label: 'Cleaning' },
-  { value: 'other', label: 'Other' },
+]
+
+export const staffMembers = [
+  { value: 'komang-juliantara', label: 'Komang Juliantara', role: 'guest-relations' },
+  { value: 'made-surya', label: 'Made Surya', role: 'listing-manager' },
+  { value: 'wayan-adi', label: 'Wayan Adi', role: 'listing-manager' },
+  { value: 'you', label: 'You', role: 'admin' },
+]
+
+export const assigneeOptions = [
+  ...assigneeRoles.map(r => ({ value: r.value, label: r.label, type: 'role' as const })),
+  ...staffMembers.map(s => ({ value: s.value, label: s.label, type: 'person' as const })),
 ]
 
 export const statuses = [

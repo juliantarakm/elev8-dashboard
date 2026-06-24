@@ -4,7 +4,8 @@ import { Icon } from '#components'
 import { h } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { labels, priorities, statuses } from '../data/data'
+import { assigneeOptions, priorities, statuses } from '../data/data'
+import { selectedTaskRef } from '~/composables/useTaskDetail'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 
@@ -16,6 +17,15 @@ export function shortListingName(name: string): string {
   if (name.startsWith('TAMBORA'))
     return 'TAMBORA'
   return name.replace('The R Villa ', 'Villa ')
+}
+
+function getAssigneeLabel(value: string | undefined): { label: string, type?: 'role' | 'person' } | null {
+  if (!value)
+    return null
+  const opt = assigneeOptions.find(a => a.value === value)
+  if (opt)
+    return { label: opt.label, type: opt.type }
+  return { label: value }
 }
 
 export const columns: ColumnDef<Task>[] = [
@@ -37,19 +47,35 @@ export const columns: ColumnDef<Task>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'id',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Task' }),
-    cell: ({ row }) => h('div', { class: 'w-20 text-sm text-muted-foreground' }, row.getValue('id')),
-    enableSorting: false,
-    enableHiding: false,
+    accessorKey: 'status',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
+    cell: ({ row }) => {
+      const status = statuses.find(s => s.value === row.getValue('status'))
+      if (!status)
+        return null
+      return h('div', { class: 'flex items-center' }, [
+        status.icon && h(status.icon, { class: 'mr-1.5 h-4 w-4 text-muted-foreground' }),
+        h('span', { class: 'text-sm' }, status.label),
+      ])
+    },
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     accessorKey: 'title',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Title' }),
     cell: ({ row }) => {
-      const label = labels.find(l => l.value === row.original.label)
-      return h('div', { class: 'flex space-x-2' }, [
-        label ? h(Badge, { variant: 'outline' }, () => label.label) : null,
+      const task = row.original
+      const assignee = getAssigneeLabel(task.assignee)
+      return h('button', {
+        class: 'flex items-center gap-2 text-left hover:underline underline-offset-2',
+        onClick: () => { selectedTaskRef.value = task },
+      }, [
+        assignee
+          ? h(Badge, {
+            variant: task.assigneeType === 'role' ? 'secondary' : 'outline',
+            class: 'shrink-0 text-xs font-normal',
+          }, () => assignee.label)
+          : null,
         h('span', { class: 'max-w-[300px] truncate font-medium' }, row.getValue('title')),
       ])
     },
@@ -82,18 +108,18 @@ export const columns: ColumnDef<Task>[] = [
     },
   },
   {
-    accessorKey: 'status',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
+    accessorKey: 'dueDate',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Due Date' }),
     cell: ({ row }) => {
-      const status = statuses.find(s => s.value === row.getValue('status'))
-      if (!status)
-        return null
-      return h('div', { class: 'flex w-[110px] items-center' }, [
-        status.icon && h(status.icon, { class: 'mr-2 h-4 w-4 text-muted-foreground' }),
-        h('span', status.label),
-      ])
+      const date = row.getValue('dueDate') as string | undefined
+      if (!date)
+        return h('span', { class: 'text-muted-foreground text-sm' }, '—')
+      const today = new Date().toISOString().slice(0, 10)
+      const isOverdue = date < today && row.original.status !== 'done' && row.original.status !== 'canceled'
+      return h('span', {
+        class: isOverdue ? 'text-destructive text-sm font-medium' : 'text-sm',
+      }, date)
     },
-    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     accessorKey: 'priority',

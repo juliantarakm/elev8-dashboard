@@ -1,37 +1,73 @@
 <script setup lang="ts">
-import type { CleaningJobPriority, CleaningJobStatus } from '~/components/cleaning/data/cleaning-jobs'
 import { toast } from 'vue-sonner'
 import { columns } from '@/components/tasks/components/columns'
 import DataTable from '@/components/tasks/components/DataTable.vue'
-import { labels, priorities } from '@/components/tasks/data/data'
-import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
+import { assigneeOptions, priorities } from '@/components/tasks/data/data'
 import { useHostBuddyInventorySync } from '@/composables/useHostBuddyInventorySync'
 import { useTaskStore } from '@/composables/useTaskStore'
-import CleaningCalendarBoard from '~/components/cleaning/CleaningCalendarBoard.vue'
-import CleaningFilters from '~/components/cleaning/CleaningFilters.vue'
-import CleaningJobForm from '~/components/cleaning/CleaningJobForm.vue'
-import { useCleaningJobs } from '~/composables/useCleaningJobs'
+import { useTaskDetail } from '@/composables/useTaskDetail'
+import { listings } from '@/components/listings/data/listings'
 
 const { tasks, addTask } = useTaskStore()
-const { detectInventoryItem } = useHostBuddyInventorySync()
-const { jobs, jobsForFilters, createJob, updateJob, resolveCleanerName, resolveListingName } = useCleaningJobs()
 
-const view = ref<'tasks' | 'week' | 'agenda'>('week')
+const { selectedTask, closeTaskDetail } = useTaskDetail()
+const detailSheetOpen = computed({
+  get: () => selectedTask.value !== null,
+  set: (val) => {
+    if (!val)
+      closeTaskDetail()
+  },
+})
+const { detectInventoryItem } = useHostBuddyInventorySync()
+
 const newTaskOpen = ref(false)
 const newTitle = ref('')
 const newListing = ref('')
+const assignee = ref('')
+const assigneeType = ref<'role' | 'person'>('role')
+const dueDate = ref('')
 const newPriority = ref('medium')
-const newLabel = ref('maintenance')
 const newDescription = ref('')
 const isDetecting = ref(false)
-const cleaningCreateOpen = ref(false)
-const cleaningEditOpen = ref(false)
-const editingCleaningId = ref<string | null>(null)
-const weekAnchor = ref(new Date())
-const selectedListingIds = ref<string[]>([])
-const selectedCleanerIds = ref<string[]>([])
-const selectedStatuses = ref<CleaningJobStatus[]>([])
-const selectedPriorities = ref<CleaningJobPriority[]>([])
+const newImages = ref<string[]>([])
+const imageInputRef = ref<HTMLInputElement | null>(null)
+
+// Listing picker state
+const listingPopoverOpen = ref(false)
+const listingSearch = ref('')
+const listingTagPopoverOpen = ref(false)
+const listingTagSearch = ref('')
+const selectedListingTags = ref<string[]>([])
+
+// Assignee picker state
+const assigneePopoverOpen = ref(false)
+const assigneeSearch = ref('')
+
+const filteredListings = computed(() => {
+  const query = listingSearch.value.trim().toLowerCase()
+  return listings.value.filter((l) => {
+    const haystack = `${l.name} ${l.location} ${l.tags.join(' ')}`.toLowerCase()
+    if (query && !haystack.includes(query))
+      return false
+    if (selectedListingTags.value.length > 0 && !selectedListingTags.value.every(tag => l.tags.includes(tag)))
+      return false
+    return true
+  })
+})
+
+const allListingTags = computed(() => {
+  const tags = new Set<string>()
+  for (const l of listings.value)
+    l.tags.forEach(t => tags.add(t))
+  return Array.from(tags).sort()
+})
+
+const filteredAssigneeOptions = computed(() => {
+  const query = assigneeSearch.value.trim().toLowerCase()
+  if (!query)
+    return assigneeOptions
+  return assigneeOptions.filter(a => a.label.toLowerCase().includes(query))
+})
 
 const detected = computed(() => {
   if (!newTitle.value.trim() || !newListing.value)
@@ -39,26 +75,67 @@ const detected = computed(() => {
   return detectInventoryItem(newTitle.value, newListing.value)
 })
 
-const filteredCleaningJobs = computed(() => jobsForFilters({
-  listingIds: selectedListingIds.value,
-  cleanerIds: selectedCleanerIds.value,
-  statuses: selectedStatuses.value,
-  priorities: selectedPriorities.value,
-}))
-
-const editingCleaningJob = computed(() => jobs.value.find(job => job.id === editingCleaningId.value) ?? null)
-
 watch([() => newTitle.value, () => newListing.value], () => {
   isDetecting.value = true
   setTimeout(() => { isDetecting.value = false }, 400)
 })
 
+function toggleListingTag(tag: string) {
+  if (selectedListingTags.value.includes(tag))
+    selectedListingTags.value = selectedListingTags.value.filter(t => t !== tag)
+  else
+    selectedListingTags.value = [...selectedListingTags.value, tag]
+}
+
+function selectListing(listingId: string) {
+  const listing = listings.value.find(l => l.id === listingId)
+  if (listing) {
+    newListing.value = listing.name
+  }
+  listingPopoverOpen.value = false
+  listingSearch.value = ''
+}
+
+function selectAssignee(opt: typeof assigneeOptions[number]) {
+  assignee.value = opt.value
+  assigneeType.value = opt.type
+  assigneePopoverOpen.value = false
+  assigneeSearch.value = ''
+}
+
+function handleCreateImageUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = input.files
+  if (!files)
+    return
+  Array.from(files).forEach((file) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      newImages.value = [...newImages.value, dataUrl]
+    }
+    reader.readAsDataURL(file)
+  })
+  input.value = ''
+}
+
+function removeNewImage(index: number) {
+  newImages.value = newImages.value.filter((_, i) => i !== index)
+}
+
 function resetForm() {
   newTitle.value = ''
   newListing.value = ''
+  assignee.value = ''
+  assigneeType.value = 'role'
+  dueDate.value = ''
   newPriority.value = 'medium'
-  newLabel.value = 'maintenance'
   newDescription.value = ''
+  newImages.value = []
+  listingSearch.value = ''
+  listingTagSearch.value = ''
+  selectedListingTags.value = []
+  assigneeSearch.value = ''
 }
 
 function handleCreateTask() {
@@ -68,10 +145,13 @@ function handleCreateTask() {
   addTask({
     title: newTitle.value.trim(),
     status: 'todo',
-    label: newLabel.value,
+    assignee: assignee.value || undefined,
+    assigneeType: assignee.value ? assigneeType.value : undefined,
     priority: newPriority.value,
     listing: newListing.value || undefined,
     description: newDescription.value.trim() || undefined,
+    dueDate: dueDate.value || undefined,
+    images: newImages.value.length ? newImages.value : undefined,
     linkedInventoryItemId: detection?.itemId,
     linkedInventoryItemName: detection?.itemName,
     linkedInventoryEntryId: detection?.entryId,
@@ -83,52 +163,11 @@ function handleCreateTask() {
   resetForm()
 }
 
-function handleCreateCleaning(input: Parameters<typeof createJob>[0]) {
-  createJob({
-    ...input,
-    cleanerName: input.cleanerId ? resolveCleanerName(input.cleanerId) : null,
-    listingName: input.listingId ? resolveListingName(input.listingId) : input.listingName,
-  })
-  cleaningCreateOpen.value = false
-  toast.success('Cleaning job created')
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0]
 }
 
-function handleUpdateCleaning(input: Parameters<typeof createJob>[0]) {
-  if (!editingCleaningJob.value)
-    return
-  updateJob(editingCleaningJob.value.id, {
-    ...input,
-    cleanerName: input.cleanerId ? resolveCleanerName(input.cleanerId) : null,
-    listingName: input.listingId ? resolveListingName(input.listingId) : input.listingName,
-  })
-  cleaningEditOpen.value = false
-  editingCleaningId.value = null
-  toast.success('Cleaning job updated')
-}
-
-function openCleaningEdit(id: string) {
-  editingCleaningId.value = id
-  cleaningEditOpen.value = true
-}
-
-function handleMoveCleaning(payload: { id: string, listingId: string, scheduledAt: string }) {
-  const job = jobs.value.find(item => item.id === payload.id)
-  if (!job)
-    return
-  updateJob(job.id, {
-    listingId: payload.listingId,
-    listingName: resolveListingName(payload.listingId),
-    scheduledAt: payload.scheduledAt,
-  })
-  toast.success('Cleaning job moved')
-}
-
-function clearCleaningFilters() {
-  selectedListingIds.value = []
-  selectedCleanerIds.value = []
-  selectedStatuses.value = []
-  selectedPriorities.value = []
-}
+const todayDate = formatDate(new Date())
 </script>
 
 <template>
@@ -136,68 +175,20 @@ function clearCleaningFilters() {
     <div class="flex flex-wrap items-end justify-between gap-2">
       <div>
         <h2 class="text-2xl font-bold tracking-tight">
-          Tasks & Cleaning
+          Tasks
         </h2>
         <p class="text-muted-foreground">
-          Operational tasks plus a multi-listing cleaning scheduler.
+          Operational task management.
         </p>
       </div>
-      <div class="flex items-center gap-2">
-        <Tabs v-model="view">
-          <TabsList>
-            <TabsTrigger value="tasks">
-              Tasks
-            </TabsTrigger>
-            <TabsTrigger value="week">
-              Week
-            </TabsTrigger>
-            <TabsTrigger value="agenda">
-              Agenda
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Button variant="outline" @click="view === 'tasks' ? newTaskOpen = true : cleaningCreateOpen = true">
-          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
-          {{ view === 'tasks' ? 'New Task' : 'New Cleaning' }}
-        </Button>
-      </div>
+      <Button variant="outline" @click="newTaskOpen = true">
+        <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
+        New Task
+      </Button>
     </div>
 
-    <div v-if="view === 'tasks'" class="grid gap-4">
+    <div class="grid gap-4">
       <DataTable :data="tasks" :columns="columns" />
-    </div>
-
-    <div v-else class="grid gap-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4 shadow-sm">
-        <div>
-          <h3 class="text-sm font-semibold">
-            Cleaning Calendar
-          </h3>
-          <p class="text-xs text-muted-foreground">
-            Guesty-style multi-listing scheduler with drag and drop.
-          </p>
-        </div>
-        <CleaningFilters
-          :listing-ids="selectedListingIds"
-          :cleaner-ids="selectedCleanerIds"
-          :statuses="selectedStatuses"
-          :priorities="selectedPriorities"
-          @update:listing-ids="selectedListingIds = $event"
-          @update:cleaner-ids="selectedCleanerIds = $event"
-          @update:statuses="selectedStatuses = $event"
-          @update:priorities="selectedPriorities = $event"
-          @clear="clearCleaningFilters"
-        />
-      </div>
-
-      <CleaningCalendarBoard
-        :jobs="filteredCleaningJobs"
-        :week-anchor="weekAnchor"
-        :mode="view === 'agenda' ? 'agenda' : 'week'"
-        @edit="openCleaningEdit"
-        @create="cleaningCreateOpen = true"
-        @move="handleMoveCleaning"
-      />
     </div>
 
     <Dialog v-model:open="newTaskOpen">
@@ -211,17 +202,107 @@ function clearCleaningFilters() {
             <Label>Title <span class="text-destructive">*</span></Label>
             <Input v-model="newTitle" placeholder="e.g. AC Split tidak dingin di Villa Merapi" />
           </div>
+
           <div class="flex flex-col gap-1.5">
             <Label>Listing</Label>
-            <Select v-model="newListing">
-              <SelectTrigger><SelectValue placeholder="Select a listing" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="listing in BALI_LISTINGS" :key="listing" :value="listing">
-                  {{ listing }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover v-model:open="listingPopoverOpen">
+              <PopoverTrigger as-child>
+                <Button variant="outline" class="w-full justify-between">
+                  {{ newListing || 'Select a listing' }}
+                  <Icon name="lucide:chevrons-up-down" class="size-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent class="w-[380px] p-0" align="start">
+                <Command>
+                  <div class="flex w-full items-center">
+                    <div class="flex-1 min-w-0">
+                      <CommandInput v-model="listingSearch" placeholder="Search listing or location..." class="border-0 focus:ring-0" />
+                    </div>
+                    <div class="pr-2">
+                      <Popover v-model:open="listingTagPopoverOpen">
+                        <PopoverTrigger as-child>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-7 gap-1 px-2 text-xs"
+                            :class="selectedListingTags.length ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground'"
+                          >
+                            <Icon name="lucide:tags" class="size-3.5" />
+                            Tags
+                            <Badge v-if="selectedListingTags.length" variant="default" class="ml-0.5 h-4 px-1 text-[10px]">
+                              {{ selectedListingTags.length }}
+                            </Badge>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-56 p-0" align="end">
+                          <div class="space-y-2 p-2">
+                            <Input v-model="listingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
+                            <div class="max-h-40 space-y-1 overflow-auto">
+                              <button
+                                v-for="tag in allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase()))"
+                                :key="tag"
+                                type="button"
+                                class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
+                                @click="toggleListingTag(tag)"
+                              >
+                                <Checkbox :model-value="selectedListingTags.includes(tag)" class="size-3.5" />
+                                <span>{{ tag }}</span>
+                              </button>
+                              <p v-if="!allListingTags.filter(t => t.toLowerCase().includes(listingTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
+                                No tags found.
+                              </p>
+                            </div>
+                            <Button v-if="selectedListingTags.length" variant="ghost" size="sm" class="h-7 w-full text-xs text-muted-foreground" @click="selectedListingTags = []">
+                              Clear all
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  <CommandList>
+                    <CommandEmpty>
+                      <div v-if="listingSearch.trim() || selectedListingTags.length" class="py-3 text-center">
+                        <p class="text-sm text-muted-foreground">
+                          No listing found.
+                        </p>
+                      </div>
+                      <div v-else class="py-3 text-center text-sm text-muted-foreground">
+                        Type to search...
+                      </div>
+                    </CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        v-for="listing in filteredListings"
+                        :key="listing.id"
+                        :value="listing.name"
+                        class="cursor-pointer"
+                        @select="selectListing(listing.id)"
+                      >
+                        <div class="flex items-start gap-2 w-full">
+                          <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium">
+                              {{ listing.name }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                              {{ listing.location }}
+                            </p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                              <Badge v-for="tag in listing.tags" :key="tag" variant="outline" class="text-[10px]">
+                                {{ tag }}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Icon v-if="newListing === listing.name" name="lucide:check" class="size-4 text-primary mt-1" />
+                        </div>
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
+
           <div v-if="newTitle.trim() && newListing" class="rounded-md border px-3 py-2.5 flex items-start gap-2.5" :class="detected ? 'border-amber-200 bg-amber-50 dark:bg-amber-950/20' : 'border-border bg-muted/40'">
             <Icon :name="isDetecting ? 'lucide:loader-circle' : detected ? 'lucide:sparkles' : 'lucide:search'" class="h-4 w-4 mt-0.5 shrink-0" :class="[isDetecting ? 'animate-spin text-muted-foreground' : '', detected && !isDetecting ? 'text-[#C8A84B]' : '', !detected && !isDetecting ? 'text-muted-foreground' : '']" />
             <div class="flex flex-col gap-0.5">
@@ -241,17 +322,56 @@ function clearCleaningFilters() {
               </p>
             </div>
           </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1.5">
-              <Label>Label</Label>
-              <Select v-model="newLabel">
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="l in labels" :key="l.value" :value="l.value">
-                    {{ l.label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Assignee</Label>
+              <Popover v-model:open="assigneePopoverOpen">
+                <PopoverTrigger as-child>
+                  <Button variant="outline" class="w-full justify-between h-10">
+                    {{ assigneeOptions.find(a => a.value === assignee)?.label || 'Unassigned' }}
+                    <Icon name="lucide:chevrons-up-down" class="size-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput v-model="assigneeSearch" placeholder="Search role or person..." />
+                    <CommandList>
+                      <CommandEmpty>No match found.</CommandEmpty>
+                      <CommandGroup heading="Roles">
+                        <CommandItem
+                          v-for="opt in filteredAssigneeOptions.filter(a => a.type === 'role')"
+                          :key="opt.value"
+                          :value="opt.label"
+                          class="cursor-pointer"
+                          @select="selectAssignee(opt)"
+                        >
+                          <div class="flex items-center gap-2 w-full">
+                            <Icon name="lucide:badge" class="size-4 text-muted-foreground" />
+                            <span>{{ opt.label }}</span>
+                            <Icon v-if="assignee === opt.value" name="lucide:check" class="size-4 text-primary ml-auto" />
+                          </div>
+                        </CommandItem>
+                      </CommandGroup>
+                      <CommandGroup heading="People">
+                        <CommandItem
+                          v-for="opt in filteredAssigneeOptions.filter(a => a.type === 'person')"
+                          :key="opt.value"
+                          :value="opt.label"
+                          class="cursor-pointer"
+                          @select="selectAssignee(opt)"
+                        >
+                          <div class="flex items-center gap-2 w-full">
+                            <Icon name="lucide:user" class="size-4 text-muted-foreground" />
+                            <span>{{ opt.label }}</span>
+                            <Icon v-if="assignee === opt.value" name="lucide:check" class="size-4 text-primary ml-auto" />
+                          </div>
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div class="flex flex-col gap-1.5">
               <Label>Priority</Label>
@@ -265,9 +385,50 @@ function clearCleaningFilters() {
               </Select>
             </div>
           </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1.5">
+              <Label>Due Date</Label>
+              <Input v-model="dueDate" type="date" :min="todayDate" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <Label>&nbsp;</Label>
+              <!-- spacer for grid alignment -->
+            </div>
+          </div>
+
           <div class="flex flex-col gap-1.5">
             <Label>Description</Label>
             <Textarea v-model="newDescription" placeholder="Additional details…" rows="3" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <Label>Images</Label>
+            <div class="flex flex-wrap gap-2">
+              <div v-for="(img, idx) in newImages" :key="idx" class="relative group">
+                <img :src="img" alt="" class="h-16 w-16 rounded-md border object-cover">
+                <button
+                  class="absolute -top-1.5 -right-1.5 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+                  @click="removeNewImage(idx)"
+                >
+                  <Icon name="lucide:x" class="h-3 w-3" />
+                </button>
+              </div>
+              <button
+                class="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-muted-foreground hover:bg-muted/50 transition-colors"
+                @click="imageInputRef?.click()"
+              >
+                <Icon name="lucide:plus" class="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              ref="imageInputRef"
+              type="file"
+              accept="image/*"
+              multiple
+              class="hidden"
+              @change="handleCreateImageUpload"
+            >
           </div>
         </div>
         <DialogFooter>
@@ -281,24 +442,10 @@ function clearCleaningFilters() {
       </DialogContent>
     </Dialog>
 
-    <Dialog v-model:open="cleaningCreateOpen">
-      <DialogContent class="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>New Cleaning Job</DialogTitle>
-          <DialogDescription>Create a manual cleaning job.</DialogDescription>
-        </DialogHeader>
-        <CleaningJobForm @cancel="cleaningCreateOpen = false" @save="handleCreateCleaning" />
-      </DialogContent>
-    </Dialog>
-
-    <Dialog v-model:open="cleaningEditOpen">
-      <DialogContent class="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Edit Cleaning Job</DialogTitle>
-          <DialogDescription>Update schedule, assignment, and priority.</DialogDescription>
-        </DialogHeader>
-        <CleaningJobForm v-if="editingCleaningJob" :model-value="editingCleaningJob" @cancel="cleaningEditOpen = false; editingCleaningId = null" @save="handleUpdateCleaning" />
-      </DialogContent>
-    </Dialog>
+    <TasksTaskDetailSheet
+      :task="selectedTask"
+      :open="detailSheetOpen"
+      @update:open="detailSheetOpen = $event"
+    />
   </div>
 </template>
