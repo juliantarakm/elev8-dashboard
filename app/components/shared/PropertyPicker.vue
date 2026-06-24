@@ -15,12 +15,11 @@ const search = ref('')
 const tagSearch = ref('')
 const selectedTags = ref<string[]>([])
 
-// Derive tags: regions + unique cities, sorted
+// Derive tags: unique cities only (regions removed per request), sorted
 const allTags = computed(() => {
-  const regions = new Set<string>()
   const cities = new Set<string>()
-  allListings.forEach((l) => { regions.add(l.region); cities.add(l.city) })
-  return [...Array.from(regions).sort(), ...Array.from(cities).sort()]
+  allListings.forEach((l) => { cities.add(l.city) })
+  return [...Array.from(cities).sort()]
 })
 
 const filteredTags = computed(() => {
@@ -92,9 +91,6 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
       <Button variant="outline" class="h-8 w-44 justify-start gap-1.5 text-sm font-normal">
         <Icon name="i-lucide-building-2" class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span class="flex-1 truncate text-left">{{ displayLabel }}</span>
-        <Badge v-if="selectedCount > 0" variant="secondary" class="h-4 px-1 text-[10px]">
-          {{ selectedCount }}
-        </Badge>
         <Icon name="i-lucide-chevrons-up-down" class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       </Button>
     </PopoverTrigger>
@@ -221,17 +217,10 @@ const selectedCount = computed(() => isAllProperties.value ? 0 : props.modelValu
               >
                 <Icon v-if="isSelected(listing.name)" name="i-lucide-check" class="h-3 w-3" />
               </div>
-              <div class="flex min-w-0 flex-col">
+              <div class="flex min-w-0 flex-col text-left">
                 <span class="truncate text-sm leading-tight">{{ listing.name }}</span>
                 <span class="text-xs text-muted-foreground">{{ listing.city }}</span>
               </div>
-              <span
-                class="ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium" :class="[
-                  listing.region === 'Bali'
-                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400'
-                    : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
-                ]"
-              >{{ listing.region }}</span>
             </button>
           </template>
           <p v-else class="py-6 text-center text-sm text-muted-foreground">

@@ -84,6 +84,7 @@ This file provides context for AI agents working on this project.
   - `JourneyConditionsModal.vue` — Reusable Configure Conditions modal (14 types, AND/OR)
   - `JourneySaveTemplateModal.vue` — Save as Template modal
   - `JourneyBuildAIModal.vue` — Build with AI modal
+- **Shared**: `app/components/shared/PropertyPicker.vue` — Reusable multi-select property/listing picker with search and city tag filter. Globally auto-imported as `<SharedPropertyPicker>` — used in JourneyEditor but can be used on any page or component.
 
 - **Page**: `app/pages/journeys/index.vue` — Marketplace view, builder flow, editor routing
 

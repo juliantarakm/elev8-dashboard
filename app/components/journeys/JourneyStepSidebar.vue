@@ -121,7 +121,6 @@ const branchActionOptions: { value: string, icon: string, label: string, group: 
   { value: 'create_note', icon: 'i-lucide-file-pen-line', label: 'Create Reservation Note', group: 'Actions' },
   { value: 'toggle_ai_pause', icon: 'i-lucide-pause', label: 'Pause Auto-responses', group: 'Actions' },
   { value: 'toggle_ai_start', icon: 'i-lucide-play', label: 'Start Auto-responses', group: 'Actions' },
-  { value: 'integration', icon: 'i-lucide-plug', label: 'Integrations', group: 'Actions' },
 ]
 
 const branchActionGroups = computed(() => {

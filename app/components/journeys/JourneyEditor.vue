@@ -185,7 +185,6 @@ const addStepOptions: { type: StepType, icon: string, label: string, group: stri
   { type: 'create_note', icon: 'i-lucide-file-pen-line', label: 'Create Reservation Note', group: 'Actions' },
   { type: 'toggle_ai', icon: 'i-lucide-pause', label: 'Pause Auto-responses', group: 'Actions', enable: false },
   { type: 'toggle_ai', icon: 'i-lucide-play', label: 'Start Auto-responses', group: 'Actions', enable: true },
-  { type: 'integration', icon: 'i-lucide-plug', label: 'Integrations', group: 'Actions' },
 ]
 
 const addStepGroups = computed(() => {
@@ -233,7 +232,7 @@ const addStepGroups = computed(() => {
       </div>
 
       <div class="flex shrink-0 items-center gap-2">
-        <JourneysJourneyPropertySelect
+        <SharedPropertyPicker
           :model-value="localJourney.properties"
           @update:model-value="setProperties"
         />
