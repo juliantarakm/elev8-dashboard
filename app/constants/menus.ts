@@ -102,8 +102,18 @@ export const navMenu: NavMenu[] = [
       {
         title: 'Booking Widgets',
         icon: 'i-lucide-code-2',
-        link: '/booking-widgets',
-        new: true,
+        children: [
+          {
+            title: 'v1 (Full)',
+            icon: 'i-lucide-circle',
+            link: '/booking-widgets/v1',
+          },
+          {
+            title: 'v2 (Simple)',
+            icon: 'i-lucide-circle',
+            link: '/booking-widgets',
+          },
+        ],
       },
     ],
   },
