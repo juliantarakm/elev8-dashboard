@@ -32,6 +32,9 @@
 # workflow
 - Prefer `pnpm dev` over `pnpm build` during development to avoid browser crash from heavy builds. Confidence: 0.65
 
+# whatsapp
+- WhatsApp connection must use OAuth flow, not manual form fields. Confidence: 0.70
+
 # data
 - Prefer real data from Elev8 Suite OS MCP over mock data when available. Confidence: 0.70
 - Cleaning job statuses: 'scheduled' (today/future), 'in_progress' (today only), 'done' (today/past, not future), 'missed' (past only — housekeeping missed it). Confidence: 0.75

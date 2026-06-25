@@ -163,12 +163,12 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 
 #### Settings → Integrations (`app/pages/settings/integrations.vue`)
 - Route added to `SettingsSidebarNav.vue` + `constants/menus.ts`
-- Shows only `SettingsWhatsAppIntegration` (routing rules removed)
-- **`SettingsWhatsAppIntegration.vue`** — connection card: disconnected (Connect WhatsApp + Meta signup sim) / connected (phone, business name, date, Disconnect + Test Send) + disconnect confirmation `Dialog`
+- Shows only `SettingsWhatsAppIntegration`
+- **`SettingsWhatsAppIntegration.vue`** — multi-account WhatsApp management: Connected tab (account cards with business name, phone, listing count, Edit/Test Send/Disconnect) + Unassigned tab (bulk assign listings to accounts). OAuth flow (simulated Meta Embedded Signup popup) — no manual form fields. Add account triggers OAuth → auto-creates account → opens Assign Listings dialog. Listing assignment: one account per listing enforced.
 
 #### Composables
-- **`useWhatsApp.ts`** — `useState('whatsapp-connection')`; `connection`, `isConnected`, `connect()`, `disconnect()`. Defaults to connected. Shared with inbox.
-- **`useWhatsAppRules.ts`** — `useState('whatsapp-rules')`; `RoutingRule` type, `conditionTypeLabels`, `routeToLabels`, `ruleConditionText()`, `saveRule()`, `deleteRule()`, `toggleRule()`
+- **`useWhatsApp.ts`** — `useState('whatsapp-accounts')`; multi-account `WhatsAppAccount[]` with `listingIds: string[]`. Key exports: `whatsappAccounts`, `isConnected`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `connect()`, `disconnect()`. Backward compat: `isConnected` checks if any account is connected. Shared with inbox.
+- **`useWhatsAppRules.ts`** — `useState('whatsapp-rules')`; `RoutingRule` type, `conditionTypeLabels`, `routeToLabels`, `ruleConditionText()`, `saveRule()`, `deleteRule()`, `toggleRule()` (component not currently used in UI)
 - **`useWhatsAppTemplates.ts`** — `waTemplates` (booking_confirmation, checkin_instructions, upsell_early_checkin, review_request) + `renderTemplate()`
 
 #### Inbox features (reuse existing channel filter / notes / assignment / AI / send-status)
@@ -981,7 +981,7 @@ app/
 │   │   ├── ProfileForm.vue
 │   │   ├── SidebarNav.vue
 │   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
-│   │   └── WhatsAppRoutingRules.vue ← Phase 4 routing rules list + editor
+│   │   └── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
 │   └── tasks/
 │       ├── components/
 │       │   ├── columns.ts
