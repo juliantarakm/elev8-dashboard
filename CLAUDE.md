@@ -22,6 +22,7 @@
 - **Settings** — Profile, appearance, notifications, account
 - **Auth** — Login, register, OTP, forgot password
 - **Mail** — Email interface (demo)
+- **Changelog** — Timeline-style release history page (version, date, badges, change categories)
 - **Components Gallery** — All shadcn-vue component demos
 
 ---
@@ -219,7 +220,7 @@ A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`.
 
 ### Layout (`app/components/layout/`)
 - **Header.vue** — SidebarTrigger + user menu (no breadcrumb)
-- **HeaderUserMenu.vue** — Komang Juliantara + "Guest Relations" role dropdown
+- **HeaderUserMenu.vue** — Komang Juliantara + "Guest Relations" role dropdown (includes Changelog link)
 - **AppSidebar.vue** — No footer (user menu moved to topbar)
 - **SidebarNavLink.vue** — Unread count badge on Inbox link
 
@@ -1035,6 +1036,7 @@ app/
     │   ├── 404.vue
     │   ├── 500.vue
     │   └── 503.vue
+    ├── changelog.vue
     ├── components/            # Component demo pages
     │   ├── accordion.vue
     │   ├── alert-dialog.vue
