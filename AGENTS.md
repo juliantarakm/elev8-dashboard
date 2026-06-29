@@ -18,24 +18,38 @@ This file provides context for AI agents working on this project.
 ### Listing Module (`app/components/listings/`)
 
 - **Data + types**: `app/components/listings/data/listings.ts`
-  - `Listing` type (with `photos: string[]`, `aiSchedule: AiSchedule`)
-  - `AiSchedule` type (with `enabled`, `repeatType: 'weekly' | 'monthly'`, `activeDays: number[]`, `activeHours: { start, end }`)
+  - `Listing` type with `unitTypes?: UnitType[]` (Property → Unit Type → Unit hierarchy)
+  - `UnitType` — `quantity`, `maxAdults/maxChildren/maxInfants`, `bedrooms/bathrooms`, `beds: Bed[]`, `photos[]`, `pricing: UnitTypePricing`
+  - `Unit` — `name`, `identifier`, `status`, `aiStatus`, `otaConnected` (no per-unit capacity)
+  - `UnitTypePricing` — `currency`, `ratePlans: RatePlan[]`, `offerings: RatePlanOffering[]`, `lengthOfStayDiscounts[]`, `fees: Fee[]`
+  - `RatePlan` — `name`, `pricePerNight`, `pricePerAdditionalGuest`, `isBase`
+  - `Fee` — `type: 'cleaning' | 'early_checkin' | 'late_checkout'`, `enabled`, `amount`
+  - Helper exports: `getUnits()`, `getUnitTypes()`, `getUnitById()`, `getUnitTypeForUnit()`
   - Reactive: `listings` uses `ref<Listing[]>` — mutations use `listings.value[index] = updated`
-  - Helper exports: `allTags`, `allLocations`, `allProperties`, `allOtas` (computed)
-  - Mock data: 16 listings with Unsplash photos
+  - Mock data: 19 listings with Unsplash photos
 
 - **Page**: `app/pages/listings/[id].vue`
-  - Tabbed layout: Overview | Property Settings | AI Schedule
+  - 6-tab layout: Overview | Pricing | Calendar | Reviews | Maintenance | Settings
   - Imports child components explicitly (not auto-imported)
 
 - **Child components**:
-  - `ListingHero.vue` — Photo gallery (360px grid) + name/location/AI badge + tags + OTA connections
-  - `ListingOverview.vue` — Stats cards + editable amenities (add/remove via Popover)
-  - `ListingPropertySettings.vue` — Sub-tabs: Details form + Distribution Channels
-  - `ListingAiSchedule.vue` — AI toggle (Switch) + schedule config (repeat type, days, hours, timeline preview)
+  - `ListingHeroCompact.vue` — Photo gallery + name/location/AI badge + tags + OTA connections + unit switcher grouped by unit type
+  - `ListingOverviewTab.vue` — Stats cards + upcoming bookings + recent reviews
+  - `ListingPricingTab.vue` — Editable nightly rate, fees, discounts
+  - `ListingCalendarTab.vue` — Bookings list, blocked dates
+  - `ListingReviewsTab.vue` — Rating breakdown, host reply
+  - `ListingMaintenanceTab.vue` — Cleaning schedule/jobs, tasks
+  - `ListingSettingsTab.vue` — Distribution channels
+  - `UnitTypeManager.vue` — CRUD for unit types with Details and Pricing tabs
+  - `ListingExpandRow.vue` — Expanded rows grouped by unit type in table
+  - `ListingSingleToggle.vue` — Status switch for table rows
+  - `ListingAiStatusCell.vue` — AI status display
+  - `ListingOtaCell.vue` — OTA icon display
+  - `ListingRowActions.vue` — Dropdown menu: View Detail, Activate/Deactivate, Toggle AI
+  - `SavedViewsDropdown.vue` — Save/load/update/delete table views
 
 - **Listings index**: `app/pages/listings/index.vue`
-  - TanStack Table with search, tag filter, AI status filter
+  - TanStack Table with search, tag filter, AI status filter, column toggle, pagination
 
 ### Inbox Module (`app/components/inbox/`)
 
