@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { alertRouteMap, getDescription as getAlertDescription, mockAlerts } from '~/components/notifications/data/alerts'
 
 export type SeverityFilter = 'all' | 'critical' | 'warning' | 'info'
-export type NotificationKindFilter = 'all' | 'system' | 'upsell'
+export type NotificationKindFilter = 'all' | 'system' | 'upsell' | 'cleaning' | 'calls'
 
 function makeAlert(
   alert_id: string,
@@ -116,10 +116,11 @@ export function useNotifications() {
   const unreadCount = computed(() => activeAlerts.value.length)
 
   const filteredAlerts = computed(() => {
-    const active = activeAlerts.value
-    return active.filter((a) => {
+    const cleaningTypes = new Set(['CLEANING_NOT_STARTED_IMMINENT', 'CLEANING_NOT_DONE_CHECKIN_PASSED', 'NO_HOUSEKEEPING_ASSIGNED'])
+    const callTypes = new Set(['CALL_INCOMING', 'CALL_MISSED', 'CALL_COMPLETED'])
+    return alerts.value.filter((a) => {
       const severityMatch = selectedSeverity.value === 'all' || a.severity.toLowerCase() === selectedSeverity.value
-      const kind = a.type.startsWith('UPSELL_') ? 'upsell' : 'system'
+      const kind = cleaningTypes.has(a.type) ? 'cleaning' : callTypes.has(a.type) ? 'calls' : a.type.startsWith('UPSELL_') ? 'upsell' : 'system'
       const kindMatch = selectedKind.value === 'all' || kind === selectedKind.value
       return severityMatch && kindMatch
     })

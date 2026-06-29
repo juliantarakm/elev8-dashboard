@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Alert } from '~/components/notifications/data/alerts'
 import { formatDistanceToNow } from 'date-fns'
-import { alertDisplayLabels, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
+import { alertDisplayLabels, alertIcons, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
 
 const props = defineProps<{
   alert: Alert
@@ -10,16 +10,20 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   click: [alert: Alert]
-  dismiss: [alertId: string]
 }>()
 
 const severityClasses = computed(() => {
+  if (props.alert.status === 'RESOLVED') {
+    return { bg: 'bg-white hover:bg-muted/30', border: 'border-l-4 border-muted' }
+  }
   return props.alert.severity === 'CRITICAL'
-    ? { bg: 'bg-red-50/50 hover:bg-red-50', border: 'border-l-4 border-red-500', dot: 'text-red-500' }
+    ? { bg: 'bg-red-50/50 hover:bg-red-50', border: 'border-l-4 border-red-500' }
     : props.alert.severity === 'WARNING'
-      ? { bg: 'bg-amber-50/50 hover:bg-amber-50', border: 'border-l-4 border-amber-500', dot: 'text-amber-500' }
-      : { bg: 'bg-muted/30 hover:bg-muted/50', border: 'border-l-4 border-primary/40', dot: 'text-primary' }
+      ? { bg: 'bg-amber-50/50 hover:bg-amber-50', border: 'border-l-4 border-amber-500' }
+      : { bg: 'bg-muted/30 hover:bg-muted/50', border: 'border-l-4 border-primary/40' }
 })
+
+const alertIcon = computed(() => alertIcons[props.alert.type] || 'i-lucide-bell')
 
 function handleClick() {
   emit('click', props.alert)
@@ -32,13 +36,9 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-function handleDismiss(e: MouseEvent) {
-  e.stopPropagation()
-  emit('dismiss', props.alert.alert_id)
-}
-
 const displayLabel = computed(() => alertDisplayLabels[props.alert.type])
 const description = computed(() => getAlertDescription(props.alert.type, props.alert.context))
+const hasAiSummary = computed(() => props.alert.type === 'CALL_COMPLETED' && props.alert.context.aiSummary)
 
 function getTimeAgo(isoString: string): string {
   return formatDistanceToNow(new Date(isoString), { addSuffix: true })
@@ -55,34 +55,23 @@ function getTimeAgo(isoString: string): string {
     @keydown="handleKeydown"
   >
     <Icon
-      name="i-lucide-circle"
-      class="mt-0.5 size-2.5 shrink-0 fill-current"
-      :class="severityClasses.dot"
+      :name="alertIcon"
+      class="mt-0.5 size-4 shrink-0 text-foreground/50"
     />
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium truncate">
         {{ displayLabel }}
       </p>
-      <p
-        v-if="kind"
-        class="inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-        :class="kind === 'Upsell' ? 'bg-cyan-50 text-cyan-700' : 'bg-muted text-muted-foreground'"
-      >
-        {{ kind }}
-      </p>
       <p class="text-xs text-muted-foreground truncate mt-0.5">
         {{ description }}
+      </p>
+      <p v-if="hasAiSummary" class="inline-flex items-center gap-1 text-xs text-[#C8A84B] mt-1">
+        <Icon name="i-lucide-sparkles" class="size-3" />
+        <span class="truncate">AI Summary</span>
       </p>
       <p class="text-xs text-muted-foreground/70 mt-0.5">
         {{ getTimeAgo(props.alert.triggered_at) }}
       </p>
     </div>
-    <button
-      aria-label="Dismiss alert"
-      class="shrink-0 size-5 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-      @click="handleDismiss"
-    >
-      <Icon name="i-lucide-x" class="size-3" />
-    </button>
   </div>
 </template>

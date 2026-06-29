@@ -11,8 +11,8 @@
 - Use confirmation dialogs for destructive actions (delete, duplicate). Confidence: 0.80
 
 # workflow
-- Push to GitHub after completing each feature chunk. Confidence: 0.85
-- Update CLAUDE.md alongside pushes to keep project context current. Confidence: 0.85
+- Push to GitHub after completing each feature chunk. Confidence: 0.88
+- Update CLAUDE.md alongside pushes to keep project context current. Confidence: 0.88
 - Commit first, then push (`git commit` → `git push`). Confidence: 0.70
 - Check git status (uncommitted/untracked) before pushing. Confidence: 0.65
 - Brainstorm and discuss design before implementation. Confidence: 0.75
@@ -37,4 +37,9 @@
 
 # data
 - Prefer real data from Elev8 Suite OS MCP over mock data when available. Confidence: 0.70
+
+# notifications
+- Marking a notification as read should NOT remove/dismiss it from the list. Confidence: 0.75
 - Cleaning job statuses: 'scheduled' (today/future), 'in_progress' (today only), 'done' (today/past, not future), 'missed' (past only — housekeeping missed it). Confidence: 0.75
+- Each notification category should have a unique icon (e.g., cleaning = broom icon) instead of just a dot. Confidence: 0.70
+- Use a single dash (hyphen) in place of em dashes in notification text. Confidence: 0.75

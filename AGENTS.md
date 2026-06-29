@@ -161,6 +161,34 @@ This file provides context for AI agents working on this project.
   - `OperationsCalendarEventChip.vue` — Event chip in grid cells
   - `OperationsCalendarCreateDialog.vue` — Create cleaning job / task
 
+### Notification Center (`app/components/notifications/`)
+
+- **Data + types**: `app/components/notifications/data/alerts.ts`
+  - `AlertType` — 29 alert types: system alerts (smart locks, channels, bookings, cleaning, Stripe, quotas, bridge, tasks, templates, warranties), upsell alerts, and call alerts
+  - `AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'`
+  - `Alert` interface with `status: 'ACTIVE' | 'RESOLVED'`
+  - `alertDisplayLabels` — Human-readable labels (uses single dash, no em dash)
+  - `alertIcons` — Category-specific icons per alert type
+  - `alertRouteMap` — Routes for navigation on click
+  - `getDescription()` — Dynamic descriptions from context
+  - Mock data: 13 alerts including 4 call alerts
+- **Call alerts**: `CALL_INCOMING`, `CALL_MISSED`, `CALL_COMPLETED`
+  - Context: `guestName`, `callerNumber`, `listingName`, `listingId`, `duration`, `aiSummary`
+  - Falls back to phone number when guest name unknown
+  - `CALL_COMPLETED` shows AI summary with sparkle icon (`i-lucide-sparkles`, color `#C8A84B`)
+- **State**: `app/composables/useNotifications.ts`
+  - `alerts` uses `useState<Alert[]>` — all alerts shown (ACTIVE + RESOLVED)
+  - `activeAlerts` — only ACTIVE alerts (for unread count)
+  - `unreadCount` — count of ACTIVE alerts
+  - `selectedSeverity` — filter: `'all' | 'critical' | 'warning' | 'info'`
+  - `selectedKind` — filter: `'all' | 'system' | 'upsell' | 'cleaning' | 'calls'`
+  - `filteredAlerts` — alerts filtered by severity + kind
+  - Actions: `markAsRead()`, `markAllAsRead()`, `navigateToAlert()`
+- **Components**:
+  - `NotificationCenter.vue` — Bell icon with unread badge (red only for CRITICAL alerts, muted otherwise), popover with kind tabs (All Types/System/Cleanings/Calls/Upsell), severity tabs (All/Critical/Warning/Info), Mark All Read button
+  - `NotificationItem.vue` — Notification card with category icon (opacity 50%), severity-colored left border, display label, description, time ago, AI summary badge for calls
+  - No X dismiss button — notifications stay visible after read with white background
+
 ### CI/CD
 
 - **GitHub Actions**: Two workflows — `CI` (lint + build check) and `Deploy to GitHub Pages`

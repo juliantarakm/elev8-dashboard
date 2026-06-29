@@ -13,13 +13,15 @@ const popoverOpen = ref(false)
 
 const {
   unreadCount,
+  activeAlerts,
   selectedSeverity,
   selectedKind,
   filteredAlerts,
   markAllAsRead,
-  dismiss,
   navigateToAlert,
 } = useNotifications()
+
+const hasCritical = computed(() => activeAlerts.value.some(a => a.severity === 'CRITICAL'))
 
 const tabs: { label: string, value: SeverityFilter }[] = [
   { label: 'All', value: 'all' },
@@ -28,13 +30,20 @@ const tabs: { label: string, value: SeverityFilter }[] = [
   { label: 'Info', value: 'info' },
 ]
 
+const cleaningTypes = new Set(['CLEANING_NOT_STARTED_IMMINENT', 'CLEANING_NOT_DONE_CHECKIN_PASSED', 'NO_HOUSEKEEPING_ASSIGNED'])
+const callTypes = new Set(['CALL_INCOMING', 'CALL_MISSED', 'CALL_COMPLETED'])
+
 const kindTabs: { label: string, value: NotificationKindFilter }[] = [
   { label: 'All Types', value: 'all' },
   { label: 'System', value: 'system' },
+  { label: 'Cleanings', value: 'cleaning' },
+  { label: 'Calls', value: 'calls' },
   { label: 'Upsell', value: 'upsell' },
 ]
 
 function alertKind(alert: Alert) {
+  if (cleaningTypes.has(alert.type)) return 'Cleaning'
+  if (callTypes.has(alert.type)) return 'Call'
   return alert.type.startsWith('UPSELL_') ? 'Upsell' : 'System'
 }
 
@@ -47,16 +56,6 @@ function handleMarkAllRead() {
   markAllAsRead()
   toast.success('All notifications marked as read')
 }
-
-function resetFilters() {
-  selectedSeverity.value = 'all'
-  selectedKind.value = 'all'
-}
-
-function handleDismiss(alertId: string) {
-  dismiss(alertId)
-  toast.info('Notification dismissed')
-}
 </script>
 
 <template>
@@ -67,7 +66,7 @@ function handleDismiss(alertId: string) {
         <Badge
           v-if="unreadCount > 0"
           class="absolute -top-1.5 -right-1.5 h-4 min-w-4 rounded-full px-1 text-[10px] leading-none"
-          variant="default"
+          :class="hasCritical ? 'bg-red-500 text-white' : 'bg-muted text-foreground'"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </Badge>
@@ -80,12 +79,6 @@ function handleDismiss(alertId: string) {
           Notifications
         </h3>
         <div class="flex items-center gap-2">
-          <button
-            class="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            @click="resetFilters"
-          >
-            Reset Filters
-          </button>
           <button v-if="unreadCount > 0" class="text-xs text-muted-foreground hover:text-foreground transition-colors" @click="handleMarkAllRead">
             Mark All Read
           </button>
@@ -143,7 +136,6 @@ function handleDismiss(alertId: string) {
           :alert="alert"
           :kind="alertKind(alert)"
           @click="handleNavigate(alert)"
-          @dismiss="handleDismiss"
         />
       </ScrollArea>
     </PopoverContent>

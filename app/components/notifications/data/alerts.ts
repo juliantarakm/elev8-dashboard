@@ -25,6 +25,9 @@ export type AlertType
     | 'UPSELL_PAYMENT_RECEIVED'
     | 'UPSELL_FULFILLMENT_STARTED'
     | 'UPSELL_FULFILLMENT_COMPLETED'
+    | 'CALL_INCOMING'
+    | 'CALL_MISSED'
+    | 'CALL_COMPLETED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
@@ -43,32 +46,67 @@ export interface Alert {
 }
 
 export const alertDisplayLabels: Record<AlertType, string> = {
-  SMART_LOCK_DEAD: 'Smart Lock — Battery Dead',
-  SMART_LOCK_OFFLINE: 'Smart Lock — Offline',
-  SMART_LOCK_CODE_FAILED: 'Smart Lock — Access Code Not Generated',
-  CHANNEL_DISCONNECTED: 'Channel Manager — Disconnected',
+  SMART_LOCK_DEAD: 'Smart Lock - Battery Dead',
+  SMART_LOCK_OFFLINE: 'Smart Lock - Offline',
+  SMART_LOCK_CODE_FAILED: 'Smart Lock - Access Code Not Generated',
+  CHANNEL_DISCONNECTED: 'Channel Manager - Disconnected',
   DOUBLE_BOOKING: 'Double Booking Detected',
-  CLEANING_NOT_STARTED_IMMINENT: 'Cleaning Not Started — Check-in in 2 Hours',
-  CLEANING_NOT_DONE_CHECKIN_PASSED: 'Cleaning Incomplete — Guest Checking In Now',
-  STRIPE_DISCONNECTED: 'Stripe — Payment Connection Lost',
-  DEPOSIT_FAILED_AT_CHECKIN: 'Security Deposit — Payment Failed',
-  BOOKING_QUOTA_EMPTY: 'Booking Quota — 0 Remaining',
-  BRIDGE_OFFLINE: 'Elev8 Bridge — Offline',
-  SMART_LOCK_BATTERY_CRITICAL: 'Smart Lock — Battery Critical',
-  SMART_LOCK_BATTERY_LOW: 'Smart Lock — Battery Low',
-  NO_HOUSEKEEPING_ASSIGNED: 'No Housekeeping Assigned — Check-out Today',
+  CLEANING_NOT_STARTED_IMMINENT: 'Cleaning Not Started - Check-in in 2 Hours',
+  CLEANING_NOT_DONE_CHECKIN_PASSED: 'Cleaning Incomplete - Guest Checking In Now',
+  STRIPE_DISCONNECTED: 'Stripe - Payment Connection Lost',
+  DEPOSIT_FAILED_AT_CHECKIN: 'Security Deposit - Payment Failed',
+  BOOKING_QUOTA_EMPTY: 'Booking Quota - 0 Remaining',
+  BRIDGE_OFFLINE: 'Elev8 Bridge - Offline',
+  SMART_LOCK_BATTERY_CRITICAL: 'Smart Lock - Battery Critical',
+  SMART_LOCK_BATTERY_LOW: 'Smart Lock - Battery Low',
+  NO_HOUSEKEEPING_ASSIGNED: 'No Housekeeping Assigned - Check-out Today',
   TASK_OVERDUE: 'Task Overdue',
-  RATE_PLAN_UNMAPPED: 'Booking.com — Rate Plan Unmapped',
-  BOOKING_QUOTA_LOW: 'Booking Quota — Running Low',
-  DYNAMIC_TEMPLATE_FAILED: 'Automated Message — Failed to Send',
-  WARRANTY_EXPIRING_SOON: 'Inventory — Warranty Expiring Soon',
-  WARRANTY_EXPIRED: 'Inventory — Warranty Expired',
+  RATE_PLAN_UNMAPPED: 'Booking.com - Rate Plan Unmapped',
+  BOOKING_QUOTA_LOW: 'Booking Quota - Running Low',
+  DYNAMIC_TEMPLATE_FAILED: 'Automated Message - Failed to Send',
+  WARRANTY_EXPIRING_SOON: 'Inventory - Warranty Expiring Soon',
+  WARRANTY_EXPIRED: 'Inventory - Warranty Expired',
   UPSELL_ORDER_REQUESTED: 'Upsell Order Requested',
   UPSELL_ORDER_APPROVED: 'Upsell Order Approved',
   UPSELL_ORDER_DECLINED: 'Upsell Order Declined',
   UPSELL_PAYMENT_RECEIVED: 'Upsell Payment Received',
   UPSELL_FULFILLMENT_STARTED: 'Upsell Fulfillment Started',
   UPSELL_FULFILLMENT_COMPLETED: 'Upsell Fulfillment Completed',
+  CALL_INCOMING: 'Incoming Call',
+  CALL_MISSED: 'Missed Call',
+  CALL_COMPLETED: 'Call Completed',
+}
+
+export const alertIcons: Record<AlertType, string> = {
+  SMART_LOCK_DEAD: 'i-lucide-lock',
+  SMART_LOCK_OFFLINE: 'i-lucide-lock',
+  SMART_LOCK_CODE_FAILED: 'i-lucide-lock',
+  CHANNEL_DISCONNECTED: 'i-lucide-unplug',
+  DOUBLE_BOOKING: 'i-lucide-calendar-x',
+  CLEANING_NOT_STARTED_IMMINENT: 'i-lucide-spray-can',
+  CLEANING_NOT_DONE_CHECKIN_PASSED: 'i-lucide-spray-can',
+  STRIPE_DISCONNECTED: 'i-lucide-credit-card',
+  DEPOSIT_FAILED_AT_CHECKIN: 'i-lucide-credit-card',
+  BOOKING_QUOTA_EMPTY: 'i-lucide-ticket',
+  BRIDGE_OFFLINE: 'i-lucide-router',
+  SMART_LOCK_BATTERY_CRITICAL: 'i-lucide-lock',
+  SMART_LOCK_BATTERY_LOW: 'i-lucide-lock',
+  NO_HOUSEKEEPING_ASSIGNED: 'i-lucide-spray-can',
+  TASK_OVERDUE: 'i-lucide-clipboard-check',
+  RATE_PLAN_UNMAPPED: 'i-lucide-ticket',
+  BOOKING_QUOTA_LOW: 'i-lucide-ticket',
+  DYNAMIC_TEMPLATE_FAILED: 'i-lucide-message-square-warning',
+  WARRANTY_EXPIRING_SOON: 'i-lucide-shield-alert',
+  WARRANTY_EXPIRED: 'i-lucide-shield-alert',
+  UPSELL_ORDER_REQUESTED: 'i-lucide-shopping-bag',
+  UPSELL_ORDER_APPROVED: 'i-lucide-shopping-bag',
+  UPSELL_ORDER_DECLINED: 'i-lucide-shopping-bag',
+  UPSELL_PAYMENT_RECEIVED: 'i-lucide-shopping-bag',
+  UPSELL_FULFILLMENT_STARTED: 'i-lucide-shopping-bag',
+  UPSELL_FULFILLMENT_COMPLETED: 'i-lucide-shopping-bag',
+  CALL_INCOMING: 'i-lucide-phone-incoming',
+  CALL_MISSED: 'i-lucide-phone-missed',
+  CALL_COMPLETED: 'i-lucide-phone',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -98,6 +136,9 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   UPSELL_PAYMENT_RECEIVED: '/upsells?tab=orders',
   UPSELL_FULFILLMENT_STARTED: '/upsells?tab=orders',
   UPSELL_FULFILLMENT_COMPLETED: '/upsells?tab=orders',
+  CALL_INCOMING: '/inbox',
+  CALL_MISSED: '/inbox',
+  CALL_COMPLETED: '/inbox',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -106,34 +147,34 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
     case 'SMART_LOCK_OFFLINE':
     case 'SMART_LOCK_BATTERY_CRITICAL':
     case 'SMART_LOCK_BATTERY_LOW':
-      return `Lock${context.lock_names?.length ? `s: ${context.lock_names.join(', ')}` : ''}${context.next_checkin_at ? ' — next check-in soon' : ''}`
+      return `Lock${context.lock_names?.length ? `s: ${context.lock_names.join(', ')}` : ''}${context.next_checkin_at ? ', next check-in soon' : ''}`
     case 'SMART_LOCK_CODE_FAILED':
-      return `${context.guest_name || 'Guest'} — code not generated`
+      return `${context.guest_name || 'Guest'}, code not generated`
     case 'CHANNEL_DISCONNECTED':
-      return `${context.channel_name || 'Channel'} — ${context.affected_listing_names?.length || 0} listing(s) affected`
+      return `${context.channel_name || 'Channel'}, ${context.affected_listing_names?.length || 0} listing(s) affected`
     case 'DOUBLE_BOOKING':
-      return `${context.listing_name || 'Property'} — ${context.reservation_a_guest || 'Guest A'} / ${context.reservation_b_guest || 'Guest B'}`
+      return `${context.listing_name || 'Property'}, ${context.reservation_a_guest || 'Guest A'} / ${context.reservation_b_guest || 'Guest B'}`
     case 'CLEANING_NOT_STARTED_IMMINENT':
     case 'CLEANING_NOT_DONE_CHECKIN_PASSED':
-      return `${context.listing_name || 'Property'}${context.assigned_to ? ` — assigned to ${context.assigned_to}` : ' — unassigned'}`
+      return `${context.listing_name || 'Property'}${context.assigned_to ? `, assigned to ${context.assigned_to}` : ', unassigned'}`
     case 'STRIPE_DISCONNECTED':
       return `${context.pending_payments_count || 0} pending payment(s)`
     case 'DEPOSIT_FAILED_AT_CHECKIN':
-      return `${context.guest_name || 'Guest'} — ${context.currency || 'USD'} ${context.deposit_amount || 0}`
+      return `${context.guest_name || 'Guest'}, ${context.currency || 'USD'} ${context.deposit_amount || 0}`
     case 'BOOKING_QUOTA_EMPTY':
       return `Auto-refill ${context.auto_refill_failed ? 'failed' : 'attempted'}`
     case 'BRIDGE_OFFLINE':
       return `${context.affected_automations_count || 0} automation(s) affected`
     case 'NO_HOUSEKEEPING_ASSIGNED':
-      return `${context.listing_name || 'Property'} — check-out today`
+      return `${context.listing_name || 'Property'}, check-out today`
     case 'TASK_OVERDUE':
       return context.task_title || 'Overdue task'
     case 'RATE_PLAN_UNMAPPED':
-      return `${context.listing_name || 'Property'} — ${context.unmapped_plans?.length || 0} unmapped plan(s)`
+      return `${context.listing_name || 'Property'}, ${context.unmapped_plans?.length || 0} unmapped plan(s)`
     case 'BOOKING_QUOTA_LOW':
       return `${context.percentage_remaining || 0}% remaining`
     case 'DYNAMIC_TEMPLATE_FAILED':
-      return `${context.template_name || 'Template'} — ${context.guest_name || 'Guest'}`
+      return `${context.template_name || 'Template'}, ${context.guest_name || 'Guest'}`
     case 'WARRANTY_EXPIRING_SOON':
       return `${context.itemName} warranty expires on ${context.expiryDate}.`
     case 'WARRANTY_EXPIRED':
@@ -150,6 +191,12 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
       return `${context.serviceName || 'Upsell'} moved to fulfillment.`
     case 'UPSELL_FULFILLMENT_COMPLETED':
       return `${context.serviceName || 'Upsell'} completed.`
+    case 'CALL_INCOMING':
+      return `${context.guestName || context.callerNumber || 'Unknown'}, ${context.listingName || context.listingId || 'Unknown listing'}${context.duration ? `, ${context.duration}` : ''}`
+    case 'CALL_MISSED':
+      return `${context.guestName || context.callerNumber || 'Unknown'}, ${context.listingName || context.listingId || 'Unknown listing'}`
+    case 'CALL_COMPLETED':
+      return `${context.guestName || context.callerNumber || 'Unknown'}, ${context.listingName || context.listingId || 'Unknown listing'}${context.duration ? `, ${context.duration}` : ''}${context.aiSummary ? ` - ${context.aiSummary}` : ''}`
     default:
       return ''
   }
@@ -272,5 +319,57 @@ export const mockAlerts: Alert[] = [
     auto_resolve: false,
     resolve_condition: 'Warranty renewed or item replaced',
     context: { itemName: 'AC Split 1 PK', expiryDate: 'Nov 1, 2025' },
+  },
+  {
+    alert_id: 'alert-call-001',
+    type: 'CALL_INCOMING',
+    severity: 'INFO',
+    status: 'ACTIVE',
+    listing_id: 'listing-villa-1',
+    property_id: null,
+    triggered_at: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+    resolved_at: null,
+    auto_resolve: true,
+    resolve_condition: 'Call ends',
+    context: { guestName: 'John Smith', callerNumber: '+62 812-3456-7890', listingName: 'Villa Kayu', listingId: 'listing-villa-1' },
+  },
+  {
+    alert_id: 'alert-call-002',
+    type: 'CALL_MISSED',
+    severity: 'WARNING',
+    status: 'ACTIVE',
+    listing_id: 'listing-villa-2',
+    property_id: null,
+    triggered_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+    resolved_at: null,
+    auto_resolve: true,
+    resolve_condition: 'Call returned',
+    context: { guestName: 'Sarah Johnson', callerNumber: '+61 412-345-678', listingName: 'Villa Cendana', listingId: 'listing-villa-2' },
+  },
+  {
+    alert_id: 'alert-call-003',
+    type: 'CALL_COMPLETED',
+    severity: 'INFO',
+    status: 'ACTIVE',
+    listing_id: 'listing-villa-3',
+    property_id: null,
+    triggered_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+    resolved_at: null,
+    auto_resolve: true,
+    resolve_condition: 'Call ends',
+    context: { guestName: 'Michael Tan', callerNumber: '+65 9123-4567', listingName: 'Villa Sari', listingId: 'listing-villa-3', duration: '4m 32s', aiSummary: 'Guest asked about late checkout options and pool heating availability. Confirmed late checkout until 2pm and pool heating is available on request.' },
+  },
+  {
+    alert_id: 'alert-call-004',
+    type: 'CALL_MISSED',
+    severity: 'WARNING',
+    status: 'ACTIVE',
+    listing_id: null,
+    property_id: null,
+    triggered_at: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    resolved_at: null,
+    auto_resolve: true,
+    resolve_condition: 'Call returned',
+    context: { callerNumber: '+81 90-1234-5678' },
   },
 ]
