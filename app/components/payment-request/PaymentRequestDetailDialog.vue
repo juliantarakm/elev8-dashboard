@@ -69,9 +69,7 @@ function formatAmount(req: PaymentRequest) {
           <p v-else-if="request.status === 'expired'" class="mt-1 text-xs">
             Expired on {{ formatDate(request.expiresAt) }}.
           </p>
-          <p v-else-if="request.status === 'cancelled'" class="mt-1 text-xs">
-            Cancelled on {{ formatDate(request.cancelledAt!) }} by {{ getStaffName(request.cancelledBy!) }}.
-          </p>
+
         </div>
 
         <div class="space-y-3">
