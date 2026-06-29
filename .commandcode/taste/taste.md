@@ -24,6 +24,7 @@
 - Use sheet/drawer components for forms rather than full-page navigation. Confidence: 0.75
 - Reuse existing shadcn-vue components rather than building custom ones. Confidence: 0.75
 - SelectTrigger inside table cells must use `w-full` to fill the container instead of hugging content width. Confidence: 0.65
+- Use hatscripts.github.io/circle-flags for flag icons. Confidence: 0.65
 
 # vue-nuxt
 - Reka UI SwitchRoot ignores external `:checked` prop changes — use `:key` force re-mount as workaround. Confidence: 0.85
@@ -45,6 +46,10 @@ See [finance/taste.md](finance/taste.md)
 
 # data
 - Prefer real data from Elev8 Suite OS MCP over mock data when available. Confidence: 0.70
+- Property hierarchy must support three levels: Property → Unit Type (e.g., Kingbed, Single Bed) → Unit (room with specific bed). Confidence: 0.75
+
+# data
+- Within a unit type, guest capacity settings (max adults, max children, max infants) must be uniform across all units — no per-unit capacity overrides. Confidence: 0.65
 
 # notifications
 - Marking a notification as read should NOT remove/dismiss it from the list. Confidence: 0.75

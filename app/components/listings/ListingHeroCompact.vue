@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AiSchedule, DateOverride, Listing, OverrideAudience, TimeSlot, Unit } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
-import { allTags, listings } from '~/components/listings/data/listings'
+import { allTags, getUnitById, getUnitTypeForUnit, getUnits, listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing, openSchedule?: boolean }>()
 const emit = defineEmits<{ update: [listing: Listing], openSetup: [], openTestAi: [], openSchedule: [] }>()
@@ -125,7 +125,7 @@ function addTag(tag: string) {
 
 // Unit switcher
 const activeUnit = computed(() =>
-  props.listing.units?.find(r => r.id === props.listing.activeUnitId) ?? null,
+  props.listing.activeUnitId ? getUnitById(props.listing, props.listing.activeUnitId) : null,
 )
 
 function switchUnit(roomId: string) {
@@ -135,14 +135,28 @@ function switchUnit(roomId: string) {
 function addUnit() {
   const newUnit: Unit = {
     id: `un-${Date.now()}`,
-    name: `Unit ${(props.listing.units?.length ?? 0) + 1}`,
+    name: `Unit ${getUnits(props.listing).length + 1}`,
     capacity: 2,
   }
-  emit('update', {
-    ...props.listing,
-    units: [...(props.listing.units ?? []), newUnit],
-    activeUnitId: newUnit.id,
-  })
+  // Add to first unit type or create a default one
+  const unitTypes = props.listing.unitTypes ?? []
+  if (unitTypes.length > 0) {
+    const updated = unitTypes.map((ut, i) =>
+      i === 0 ? { ...ut, units: [...ut.units, newUnit] } : ut,
+    )
+    emit('update', {
+      ...props.listing,
+      unitTypes: updated,
+      activeUnitId: newUnit.id,
+    })
+  }
+  else {
+    emit('update', {
+      ...props.listing,
+      unitTypes: [{ id: `ut-${Date.now()}`, name: 'Default', units: [newUnit] }],
+      activeUnitId: newUnit.id,
+    })
+  }
 }
 
 // AI Schedule
@@ -434,7 +448,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
 
         <!-- Unit switcher + Action buttons row -->
         <div class="flex items-center gap-2">
-          <DropdownMenu v-if="listing.units && listing.units.length > 0 || listing.unitType === 'multi'">
+          <DropdownMenu v-if="getUnits(listing).length > 0 || listing.unitType === 'multi'">
             <DropdownMenuTrigger as-child>
               <button class="flex flex-1 items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:bg-accent">
                 <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -443,7 +457,7 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-semibold">{{ activeUnit ? activeUnit.name : 'Multi-Unit' }}</span>
                   <span class="truncate text-xs text-muted-foreground">
-                    {{ activeUnit ? `${activeUnit.capacity} guests` : `${listing.units?.length ?? 0} units` }}
+                    {{ activeUnit ? '' : `${getUnits(listing).length} units` }}
                   </span>
                 </div>
                 <Icon name="lucide:chevrons-up-down" class="size-4 shrink-0 text-muted-foreground" />
@@ -457,22 +471,24 @@ function toggleAudience(o: DateOverride, value: OverrideAudience) {
                   </div>
                   <div class="flex flex-col leading-tight">
                     <span class="text-sm font-medium">Multi-Unit</span>
-                    <span class="text-xs text-muted-foreground">{{ listing.units?.length ?? 0 }} units</span>
+                    <span class="text-xs text-muted-foreground">{{ getUnits(listing).length }} units</span>
                   </div>
                 </div>
                 <Icon v-if="!listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel class="text-xs text-muted-foreground">
-                Units
-              </DropdownMenuLabel>
-              <DropdownMenuItem v-for="unit in listing.units" :key="unit.id" class="flex items-center justify-between cursor-pointer" @click="switchUnit(unit.id)">
-                <div class="flex flex-col leading-tight">
-                  <span class="text-sm font-medium">{{ unit.name }}</span>
-                  <span class="text-xs text-muted-foreground">{{ unit.capacity }} guests</span>
-                </div>
-                <Icon v-if="unit.id === listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
-              </DropdownMenuItem>
+              <template v-for="unitType in listing.unitTypes" :key="unitType.id">
+                <DropdownMenuLabel class="text-xs text-muted-foreground">
+                  {{ unitType.name }}
+                </DropdownMenuLabel>
+                <DropdownMenuItem v-for="unit in unitType.units" :key="unit.id" class="flex items-center justify-between cursor-pointer" @click="switchUnit(unit.id)">
+                  <div class="flex flex-col leading-tight">
+                    <span class="text-sm font-medium">{{ unit.name }}</span>
+                    <span class="text-xs text-muted-foreground">{{ unitType.maxAdults + unitType.maxChildren }} guests</span>
+                  </div>
+                  <Icon v-if="unit.id === listing.activeUnitId" name="lucide:check" class="size-4 shrink-0 text-primary" />
+                </DropdownMenuItem>
+              </template>
               <DropdownMenuSeparator />
               <DropdownMenuItem class="flex items-center gap-2 cursor-pointer text-muted-foreground" @click="addUnit">
                 <Icon name="lucide:plus" class="size-4" />

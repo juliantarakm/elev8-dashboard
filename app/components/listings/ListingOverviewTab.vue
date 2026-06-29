@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import type { Listing, Unit } from '~/components/listings/data/listings'
+import { getUnitTypeForUnit } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing, activeUnit?: Unit | null }>()
 const emit = defineEmits<{ switchTab: [tab: string] }>()
+
+const activeUnitType = computed(() => {
+  if (!props.activeUnit)
+    return null
+  return getUnitTypeForUnit(props.listing, props.activeUnit.id)
+})
 
 const stats = computed(() => [
   { label: 'Monthly Revenue', value: `$${props.listing.stats.monthlyRevenue.toLocaleString()}`, trend: props.listing.stats.revenueTrend, icon: 'lucide:dollar-sign' },
@@ -32,7 +39,7 @@ function renderStars(rating: number) {
     <div v-if="activeUnit" class="flex items-center gap-2 rounded-lg border bg-muted/40 px-4 py-2.5">
       <Icon name="lucide:door-open" class="size-4 text-muted-foreground" />
       <span class="text-sm font-medium">{{ activeUnit.name }}</span>
-      <span class="text-xs text-muted-foreground">· {{ activeUnit.capacity }} guests</span>
+      <span v-if="activeUnitType" class="text-xs text-muted-foreground">· {{ activeUnitType.maxAdults + activeUnitType.maxChildren }} guests</span>
     </div>
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <Card v-for="stat in stats" :key="stat.label" class="p-5">

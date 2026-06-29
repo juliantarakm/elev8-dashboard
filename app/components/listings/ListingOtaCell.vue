@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { listings } from '~/components/listings/data/listings'
+import { getUnits, listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listingId: string }>()
 
@@ -13,7 +13,7 @@ const inactive = computed(() => {
   if (!live.value)
     return false
   if (live.value.unitType === 'multi')
-    return (live.value.units ?? []).every(u => u.status === 'inactive')
+    return getUnits(live.value).every(u => u.status === 'inactive')
   return live.value.status === 'inactive'
 })
 </script>

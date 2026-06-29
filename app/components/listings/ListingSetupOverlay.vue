@@ -1,33 +1,56 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
+import { getUnitById, getUnits } from '~/components/listings/data/listings'
 import ListingSetupFieldPanel from '~/components/listings/ListingSetupFieldPanel.vue'
 import ListingSetupResourcePanel from '~/components/listings/ListingSetupResourcePanel.vue'
+import UnitTypeManager from '~/components/listings/UnitTypeManager.vue'
 
 const props = defineProps<{ listing: Listing, open: boolean }>()
 const emit = defineEmits<{ 'update:open': [val: boolean], 'update': [listing: Listing] }>()
 
 const showResources = ref(false)
-const viewMode = ref<'property' | 'unit'>('property')
+const viewMode = ref<'property' | 'unit' | 'unit-types'>('property')
 
-const units = computed(() => props.listing.units ?? [])
+const units = computed(() => getUnits(props.listing))
+const unitTypes = computed(() => props.listing.unitTypes ?? [])
 const activeUnitId = ref(props.listing.activeUnitId ?? units.value[0]?.id ?? '')
-const activeUnit = computed(() => units.value.find(u => u.id === activeUnitId.value))
+const activeUnit = computed(() => activeUnitId.value ? getUnitById(props.listing, activeUnitId.value) : undefined)
 
 function selectUnit(id: string) {
   activeUnitId.value = id
   viewMode.value = 'unit'
 }
 
+function selectUnitType(typeId: string) {
+  const ut = unitTypes.value.find(t => t.id === typeId)
+  if (ut && ut.units.length > 0) {
+    activeUnitId.value = ut.units[0].id
+    viewMode.value = 'unit'
+  }
+}
+
 function copyToOtherUnits() {
   const active = activeUnit.value
   if (!active)
     return
+  // Copy unit name pattern to other units in same type
+  const unitType = props.listing.unitTypes?.find(ut => ut.units.some(u => u.id === active.id))
+  if (!unitType)
+    return
+  const unitTypes = props.listing.unitTypes?.map(ut => {
+    if (ut.id !== unitType.id)
+      return ut
+    return {
+      ...ut,
+      units: ut.units.map(u => u.id === active.id ? u : { ...u }),
+    }
+  })
   emit('update', {
     ...props.listing,
-    units: props.listing.units?.map(u => u.id === active.id ? u : { ...u, capacity: active.capacity }),
+    unitTypes,
   })
-  toast.success(`Copied "${active.name}" settings to other units`)
+  toast.success('Unit settings copied')
 }
 
 function saveChanges() {
@@ -58,8 +81,8 @@ function saveChanges() {
             </h2>
           </div>
 
-          <!-- Property/Unit toggle (multi-unit listings) -->
-          <div v-if="units.length" class="flex items-center gap-0.5 rounded-md border p-0.5">
+          <!-- Property/Unit/UnitTypes toggle (multi-unit listings) -->
+          <div v-if="units.length || unitTypes.length" class="flex items-center gap-0.5 rounded-md border p-0.5">
             <Button
               :variant="viewMode === 'property' ? 'secondary' : 'ghost'"
               size="sm" class="h-7 gap-1.5 text-xs"
@@ -68,7 +91,7 @@ function saveChanges() {
               <Icon name="lucide:building-2" class="size-3.5" /> Property
             </Button>
 
-            <DropdownMenu v-if="units.length > 1">
+            <DropdownMenu v-if="unitTypes.length > 0">
               <DropdownMenuTrigger as-child>
                 <Button :variant="viewMode === 'unit' ? 'secondary' : 'ghost'" size="sm" class="h-7 gap-1.5 text-xs">
                   <Icon name="lucide:door-open" class="size-3.5" />
@@ -76,26 +99,44 @@ function saveChanges() {
                   <Icon name="lucide:chevron-down" class="size-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" class="w-48">
-                <DropdownMenuItem v-for="u in units" :key="u.id" class="cursor-pointer gap-2" @click="selectUnit(u.id)">
-                  <Icon
-                    :name="activeUnitId === u.id && viewMode === 'unit' ? 'lucide:check' : 'lucide:door-open'"
-                    class="size-3.5"
-                    :class="activeUnitId === u.id && viewMode === 'unit' ? 'text-primary' : 'text-muted-foreground'"
-                  />
-                  <span class="flex-1 truncate">{{ u.name }}</span>
-                  <span class="text-xs text-muted-foreground">{{ u.capacity }}p</span>
-                </DropdownMenuItem>
+              <DropdownMenuContent align="center" class="w-56">
+                <template v-for="ut in unitTypes" :key="ut.id">
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">
+                    {{ ut.name }}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    v-for="u in ut.units"
+                    :key="u.id"
+                    class="cursor-pointer gap-2"
+                    @click="selectUnit(u.id)"
+                  >
+                    <Icon
+                      :name="activeUnitId === u.id && viewMode === 'unit' ? 'lucide:check' : 'lucide:door-open'"
+                      class="size-3.5"
+                      :class="activeUnitId === u.id && viewMode === 'unit' ? 'text-primary' : 'text-muted-foreground'"
+                    />
+                    <span class="flex-1 truncate">{{ u.name }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </template>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <Button
-              v-else
+              v-else-if="units.length === 1"
               :variant="viewMode === 'unit' ? 'secondary' : 'ghost'"
               size="sm" class="h-7 gap-1.5 text-xs"
               @click="viewMode = 'unit'"
             >
               <Icon name="lucide:door-open" class="size-3.5" /> Unit
+            </Button>
+
+            <Button
+              :variant="viewMode === 'unit-types' ? 'secondary' : 'ghost'"
+              size="sm" class="h-7 gap-1.5 text-xs"
+              @click="viewMode = 'unit-types'"
+            >
+              <Icon name="lucide:layers" class="size-3.5" /> Unit Types
             </Button>
           </div>
 
@@ -115,9 +156,18 @@ function saveChanges() {
       <div class="flex flex-1 overflow-hidden">
         <!-- Field panel — full width on mobile, flex-1 on lg -->
         <div class="flex-1 overflow-hidden" :class="showResources ? 'hidden lg:flex lg:flex-col' : 'flex flex-col'">
+          <!-- Unit Types view -->
+          <div v-if="viewMode === 'unit-types'" class="flex-1 overflow-y-auto">
+            <div class="mx-auto w-full max-w-2xl px-6 py-5">
+              <UnitTypeManager :listing="listing" @update="emit('update', $event)" />
+            </div>
+          </div>
+
+          <!-- Property/Unit view -->
           <ListingSetupFieldPanel
+            v-else
             :listing="listing"
-            :view-mode="viewMode"
+            :view-mode="viewMode === 'property' ? 'property' : 'unit'"
             :active-unit-id="activeUnitId"
             @update="emit('update', $event)"
           />

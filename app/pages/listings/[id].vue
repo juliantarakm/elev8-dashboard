@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
-import { listings } from '~/components/listings/data/listings'
+import { getUnitById, listings } from '~/components/listings/data/listings'
 import ListingCalendarTab from '~/components/listings/ListingCalendarTab.vue'
 import ListingHeroCompact from '~/components/listings/ListingHeroCompact.vue'
 import ListingMaintenanceTab from '~/components/listings/ListingMaintenanceTab.vue'
@@ -26,7 +26,7 @@ function updateListing(updated: Listing) {
 }
 
 const activeUnitId = computed(() => listing.value?.activeUnitId ?? null)
-const activeUnit = computed(() => listing.value?.units?.find(u => u.id === activeUnitId.value) ?? null)
+const activeUnit = computed(() => listing.value ? getUnitById(listing.value, activeUnitId.value ?? '') : null)
 
 const activeTab = ref('overview')
 

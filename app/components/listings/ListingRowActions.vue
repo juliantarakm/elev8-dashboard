@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Listing } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
-import { listings } from '~/components/listings/data/listings'
+import { getUnits, listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listing: Listing }>()
 const router = useRouter()
@@ -28,11 +28,15 @@ function toggleUnit(unitId: string) {
   const idx = listings.value.findIndex(l => l.id === props.listing.id)
   if (idx === -1)
     return
-  const units = (listings.value[idx]!.units ?? []).map(u =>
-    u.id === unitId ? { ...u, status: (u.status === 'inactive' ? 'active' : 'inactive') as 'active' | 'inactive' } : u,
-  )
-  listings.value[idx] = { ...listings.value[idx]!, units }
-  const unit = units.find(u => u.id === unitId)
+  const listing = listings.value[idx]!
+  const unitTypes = listing.unitTypes?.map(ut => ({
+    ...ut,
+    units: ut.units.map(u =>
+      u.id === unitId ? { ...u, status: (u.status === 'inactive' ? 'active' : 'inactive') as 'active' | 'inactive' } : u,
+    ),
+  }))
+  listings.value[idx] = { ...listing, unitTypes }
+  const unit = getUnits(listing).find(u => u.id === unitId)
   toast.success(`${unit?.name} ${unit?.status === 'inactive' ? 'deactivated' : 'activated'}`)
 }
 

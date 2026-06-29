@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table'
-import { aiStatusLabels, aiStatusOptions, allTags, listings } from '~/components/listings/data/listings'
+import { aiStatusLabels, aiStatusOptions, allTags, getUnits, listings } from '~/components/listings/data/listings'
 import ListingAiStatusCell from '~/components/listings/ListingAiStatusCell.vue'
 import ListingExpandRow from '~/components/listings/ListingExpandRow.vue'
 import ListingOtaCell from '~/components/listings/ListingOtaCell.vue'
@@ -62,7 +62,7 @@ function otaIcon(ota: string) {
 const expandedRows = ref<Set<string>>(new Set())
 
 const listingsKey = computed(() =>
-  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${(l.units ?? []).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|'),
+  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${getUnits(l).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|'),
 )
 
 function toggleExpand(id: string) {
@@ -91,7 +91,7 @@ const columns: ColumnDef<Listing, any>[] = [
       const isExpanded = expandedRows.value.has(listing.id)
       const live = listings.value.find(l => l.id === listing.id)
       const isInactive = live?.unitType === 'multi'
-        ? (live.units ?? []).every(u => u.status === 'inactive')
+        ? getUnits(live!).every(u => u.status === 'inactive')
         : live?.status === 'inactive'
 
       return h('div', { class: 'flex items-start gap-1.5 min-w-0' }, [
@@ -111,7 +111,7 @@ const columns: ColumnDef<Listing, any>[] = [
             isInactive && h(Badge, { variant: 'outline', class: 'text-[10px] px-1.5 py-0 text-muted-foreground shrink-0' }, () => 'Inactive'),
           ]),
           h('div', { class: 'flex items-center gap-1 mt-0.5' }, [
-            h('span', { class: 'text-[11px] text-muted-foreground' }, isMulti ? `Multi-unit · ${listing.units?.length ?? 0} units` : 'Single unit'),
+            h('span', { class: 'text-[11px] text-muted-foreground' }, isMulti ? `Multi-unit · ${getUnits(listing).length} units` : 'Single unit'),
           ]),
           isExpanded && isMulti && h(ListingExpandRow, { listingId: listing.id }),
         ]),

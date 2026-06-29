@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import type { Listing, Unit } from '~/components/listings/data/listings'
+import { getUnitById } from '~/components/listings/data/listings'
 import FieldConfigDialog from '~/components/listings/FieldConfigDialog.vue'
 
 const props = defineProps<{ listing: Listing, viewMode?: 'property' | 'unit', activeUnitId?: string }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
 
-const activeUnit = computed(() => props.listing.units?.find(u => u.id === props.activeUnitId))
+const activeUnit = computed(() => props.activeUnitId ? getUnitById(props.listing, props.activeUnitId) : undefined)
 function updateUnit(patch: Partial<Unit>) {
-  emit('update', { ...props.listing, units: props.listing.units?.map(u => u.id === props.activeUnitId ? { ...u, ...patch } : u) })
+  const unitTypes = props.listing.unitTypes?.map(ut => ({
+    ...ut,
+    units: ut.units.map(u => u.id === props.activeUnitId ? { ...u, ...patch } : u),
+  }))
+  emit('update', { ...props.listing, unitTypes })
 }
 
 const configField = ref<{ key: string, label: string } | null>(null)
@@ -106,16 +111,16 @@ const isFilled = (val?: string) => !!val?.trim()
         <div class="mx-auto w-full max-w-2xl px-6 py-5 flex flex-col gap-4">
           <!-- Unit view: unit-specific fields -->
           <template v-if="viewMode === 'unit' && activeUnit">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <Label>Unit Name</Label>
-                <Input :model-value="activeUnit.name" @update:model-value="(v) => updateUnit({ name: String(v) })" />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <Label>Capacity (guests)</Label>
-                <Input type="number" :model-value="activeUnit.capacity" @update:model-value="(v) => updateUnit({ capacity: Number(v) || 1 })" />
-              </div>
+            <div class="flex flex-col gap-1.5">
+              <Label>Unit Name</Label>
+              <Input :model-value="activeUnit.name" @update:model-value="(v) => updateUnit({ name: String(v) })" />
             </div>
+            <p class="text-xs text-muted-foreground">
+              Guest capacity is configured at the room type level.
+              <button class="text-primary underline" @click="emit('update', { ...listing })">
+                Edit room type settings
+              </button>
+            </p>
           </template>
 
           <!-- Property view: property-level fields -->

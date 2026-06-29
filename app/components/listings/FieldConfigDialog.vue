@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FieldConfig, Listing, ReservationStage } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
-import { listings } from '~/components/listings/data/listings'
+import { getUnits, listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{
   open: boolean
@@ -60,7 +60,7 @@ function save() {
   emit('update:open', false)
 }
 
-const unitCount = computed(() => props.listing.units?.length ?? 0)
+const unitCount = computed(() => getUnits(props.listing).length)
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toast } from 'vue-sonner'
-import { listings } from '~/components/listings/data/listings'
+import { getUnits, listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ listingId: string }>()
 
@@ -10,21 +10,25 @@ function toggle() {
   const idx = listings.value.findIndex(l => l.id === props.listingId)
   if (idx === -1)
     return
-  const isMulti = listings.value[idx]!.unitType === 'multi'
+  const currentListing = listings.value[idx]!
+  const isMulti = currentListing.unitType === 'multi'
   const newStatus = listing.value.status === 'inactive' ? 'active' : 'inactive'
   if (isMulti) {
-    const isOn = (listings.value[idx]!.units ?? []).some(u => u.status !== 'inactive')
+    const isOn = getUnits(currentListing).some(u => u.status !== 'inactive')
     const newUnitStatus = isOn ? 'inactive' : 'active'
-    const units = (listings.value[idx]!.units ?? []).map(u => ({
-      ...u,
-      status: newUnitStatus as 'active' | 'inactive',
-      aiStatus: newUnitStatus === 'inactive' ? 'paused' : ('active' as 'active' | 'paused'),
+    const unitTypes = currentListing.unitTypes?.map(ut => ({
+      ...ut,
+      units: ut.units.map(u => ({
+        ...u,
+        status: newUnitStatus as 'active' | 'inactive',
+        aiStatus: newUnitStatus === 'inactive' ? 'paused' : ('active' as 'active' | 'paused'),
+      })),
     }))
-    listings.value[idx] = { ...listings.value[idx]!, status: newUnitStatus, aiStatus: newUnitStatus === 'inactive' ? 'paused' : 'active', units }
+    listings.value[idx] = { ...currentListing, status: newUnitStatus, aiStatus: newUnitStatus === 'inactive' ? 'paused' : 'active', unitTypes }
     toast[newUnitStatus === 'inactive' ? 'info' : 'success'](`Listing ${newUnitStatus === 'inactive' ? 'deactivated' : 'activated'}`)
   }
   else {
-    listings.value[idx] = { ...listings.value[idx]!, status: newStatus, aiStatus: newStatus === 'inactive' ? 'paused' : 'active' }
+    listings.value[idx] = { ...currentListing, status: newStatus, aiStatus: newStatus === 'inactive' ? 'paused' : 'active' }
     toast[newStatus === 'inactive' ? 'info' : 'success'](`Listing ${newStatus === 'inactive' ? 'deactivated' : 'activated'}`)
   }
 }
@@ -33,7 +37,7 @@ function toggle() {
 <template>
   <Switch
     v-if="listing"
-    :model-value="listing.unitType === 'multi' ? (listing.units ?? []).some(u => u.status !== 'inactive') : listing.status !== 'inactive'"
+    :model-value="listing.unitType === 'multi' ? getUnits(listing).some(u => u.status !== 'inactive') : listing.status !== 'inactive'"
     @update:model-value="toggle"
   />
 </template>

@@ -118,10 +118,71 @@ export interface ListingResources {
 export interface Unit {
   id: string
   name: string
-  capacity: number
+  identifier?: string
   status?: 'active' | 'inactive'
   aiStatus?: 'active' | 'paused' | 'not_set'
   otaConnected?: string[]
+}
+
+export interface Bed {
+  id: string
+  type: string
+  count: number
+}
+
+export interface RatePlan {
+  id: string
+  name: string
+  pricePerNight: number
+  pricePerAdditionalGuest: number
+  isBase: boolean
+}
+
+export interface RatePlanOffering {
+  id: string
+  name: string
+  adjustmentType: 'fixed' | 'percent'
+  adjustmentValue: number
+}
+
+export interface LengthOfStayDiscount {
+  id: string
+  minNights: number
+  discountType: 'percent' | 'fixed'
+  value: number
+}
+
+export interface Fee {
+  id: string
+  name: string
+  enabled: boolean
+  amount: number
+  type: 'cleaning' | 'early_checkin' | 'late_checkout'
+}
+
+export interface UnitTypePricing {
+  currency: string
+  ratePlans: RatePlan[]
+  offerings: RatePlanOffering[]
+  lengthOfStayDiscounts: LengthOfStayDiscount[]
+  fees: Fee[]
+}
+
+export interface UnitType {
+  id: string
+  name: string
+  identifier?: string
+  description?: string
+  quantity: number
+  maxAdults: number
+  maxChildren: number
+  maxInfants: number
+  bedrooms: number
+  bathrooms: number
+  beds: Bed[]
+  photos: string[]
+  pricing: UnitTypePricing
+  units: Unit[]
 }
 
 export interface Listing {
@@ -133,7 +194,7 @@ export interface Listing {
   otaConnected: string[]
   amenities: string[]
   room: string
-  units?: Unit[]
+  unitTypes?: UnitType[]
   activeUnitId?: string
   capacity: number
   aiStatus: 'active' | 'paused' | 'not_set'
@@ -148,6 +209,22 @@ export interface Listing {
   reviews: Review[]
   maintenance: ListingMaintenance
   resources: ListingResources
+}
+
+export function getUnits(listing: Listing): Unit[] {
+  return listing.unitTypes?.flatMap(ut => ut.units) ?? []
+}
+
+export function getUnitTypes(listing: Listing): UnitType[] {
+  return listing.unitTypes ?? []
+}
+
+export function getUnitById(listing: Listing, unitId: string): Unit | undefined {
+  return getUnits(listing).find(u => u.id === unitId)
+}
+
+export function getUnitTypeForUnit(listing: Listing, unitId: string): UnitType | undefined {
+  return listing.unitTypes?.find(ut => ut.units.some(u => u.id === unitId))
 }
 
 function alwaysOn(): AiSchedule {
@@ -168,11 +245,73 @@ export const listings = ref<Listing[]>([
     otaConnected: ['Airbnb'],
     amenities: ['Pool', 'WiFi', 'AC', 'Kitchen', 'Parking', 'Garden'],
     room: 'Master Suite',
-    units: [
-      { id: 'un-1', name: 'Master Suite', capacity: 2 },
-      { id: 'un-2', name: 'Garden Unit', capacity: 2 },
-      { id: 'un-3', name: 'Pool Unit', capacity: 4 },
-      { id: 'un-4', name: 'Loft Unit', capacity: 2 },
+    unitTypes: [
+      {
+        id: 'ut-1',
+        name: 'Kingbed',
+        identifier: 'king',
+        description: 'Spacious room with king-size bed and garden view',
+        quantity: 2,
+        maxAdults: 2,
+        maxChildren: 1,
+        maxInfants: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+        beds: [{ id: 'bed-1', type: 'Double Bed', count: 1 }],
+        photos: [
+          'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop',
+        ],
+        pricing: {
+          currency: 'USD',
+          ratePlans: [
+            { id: 'rp-1', name: 'Standard Rate', pricePerNight: 100, pricePerAdditionalGuest: 50, isBase: true },
+          ],
+          offerings: [],
+          lengthOfStayDiscounts: [],
+          fees: [
+            { id: 'fee-1', name: 'Cleaning Fee', enabled: true, amount: 50, type: 'cleaning' },
+            { id: 'fee-2', name: 'Early Check-in Fee', enabled: false, amount: 25, type: 'early_checkin' },
+            { id: 'fee-3', name: 'Late Check-out Fee', enabled: false, amount: 25, type: 'late_checkout' },
+          ],
+        },
+        units: [
+          { id: 'un-1', name: 'Master Suite', identifier: 'K1' },
+          { id: 'un-2', name: 'Garden Unit', identifier: 'K2' },
+        ],
+      },
+      {
+        id: 'ut-2',
+        name: 'Single Bed',
+        identifier: 'single',
+        description: 'Cozy room with single beds',
+        quantity: 2,
+        maxAdults: 2,
+        maxChildren: 0,
+        maxInfants: 0,
+        bedrooms: 1,
+        bathrooms: 1,
+        beds: [{ id: 'bed-2', type: 'Single Bed', count: 2 }],
+        photos: [
+          'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&h=600&fit=crop',
+        ],
+        pricing: {
+          currency: 'USD',
+          ratePlans: [
+            { id: 'rp-2', name: 'Standard Rate', pricePerNight: 75, pricePerAdditionalGuest: 30, isBase: true },
+          ],
+          offerings: [],
+          lengthOfStayDiscounts: [],
+          fees: [
+            { id: 'fee-4', name: 'Cleaning Fee', enabled: true, amount: 35, type: 'cleaning' },
+            { id: 'fee-5', name: 'Early Check-in Fee', enabled: false, amount: 20, type: 'early_checkin' },
+            { id: 'fee-6', name: 'Late Check-out Fee', enabled: false, amount: 20, type: 'late_checkout' },
+          ],
+        },
+        units: [
+          { id: 'un-3', name: 'Pool Unit', identifier: 'S1' },
+          { id: 'un-4', name: 'Loft Unit', identifier: 'S2' },
+        ],
+      },
     ],
     capacity: 10,
     aiStatus: 'active',
