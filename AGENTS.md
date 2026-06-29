@@ -125,7 +125,7 @@ This file provides context for AI agents working on this project.
 - **State**: `app/composables/usePaymentRequests.ts`
   - `requests` uses `useState<PaymentRequest[]>` — mutations use spread syntax
   - Filters: `status` (single), `listings` (multi-select `string[]`), `dateFrom`/`dateTo`, `search`
-  - Actions: `createRequest()`, `cancelRequest()`, `duplicateRequest()`, `checkDuplicate()`, `expireOldRequests()`, `isListingAssigned()`
+  - Actions: `createRequest()`, `cancelRequest(id, reason?)` (reason stored in `notes`), `duplicateRequest()`, `checkDuplicate()`, `expireOldRequests()`, `isListingAssigned()`
 - **Page**: `app/pages/payment-requests/index.vue`
   - Filter bar: Search input, Status dropdown, Listing filter (Popover + search + Tags button inside search bar), Date range (RangeCalendar 2-month view)
   - Active filters shown as removable chips below filter bar
@@ -135,6 +135,7 @@ This file provides context for AI agents working on this project.
   - `PaymentRequestTable.vue` — Table with Guest, Title, Listing, Amount, Status, Created by (avatar initials + name), Created (time ago)
   - `PaymentRequestDetailDialog.vue` — Status banner, creator info (name + date), cancellation info (who + when + reason), amount breakdown, payment link copy
   - `PaymentRequestShareDialog.vue` — Copy link (toast confirmation), WhatsApp share, Email share
+  - `PaymentRequestCancelDialog.vue` — Cancel confirmation with reason selection (6 predefined reasons + "Other" with textarea). Stores reason in `request.notes`. Opens from both table row action and detail dialog.
   - `FeeCalculator.vue` — Live fee preview (Card: +3%, Manual: no fee)
 - **Guest search**: Sources from `useInbox().conversations` + existing payment requests. "Add new guest" option when no match. Email auto-fills for existing guests, empty for new guests.
 - **Share dialog**: Opens AFTER creation via `@created` event. No QR Code button.

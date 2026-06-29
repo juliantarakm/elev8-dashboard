@@ -6,6 +6,7 @@ import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import { getStaffName } from '~/components/payment-request/data/payment-requests'
+import PaymentRequestCancelDialog from '~/components/payment-request/PaymentRequestCancelDialog.vue'
 import PaymentRequestCreateDialog from '~/components/payment-request/PaymentRequestCreateDialog.vue'
 import PaymentRequestDetailDialog from '~/components/payment-request/PaymentRequestDetailDialog.vue'
 import PaymentRequestShareDialog from '~/components/payment-request/PaymentRequestShareDialog.vue'
@@ -28,6 +29,11 @@ const {
 const createOpen = ref(false)
 const detailRequest = ref<PaymentRequest | null>(null)
 const shareRequest = ref<PaymentRequest | null>(null)
+const cancelRequestId = ref<string | null>(null)
+const cancelDialogOpen = computed({
+  get: () => cancelRequestId.value !== null,
+  set: (val: boolean) => { if (!val) cancelRequestId.value = null },
+})
 
 function openDetail(request: PaymentRequest) {
   detailRequest.value = request
@@ -39,11 +45,13 @@ function copyLink(link: string) {
 }
 
 function handleCancel(id: string) {
-  // eslint-disable-next-line no-alert
-  if (window.confirm('Cancel this payment request?')) {
-    cancelRequest(id)
-    toast.success('Request cancelled')
-  }
+  cancelRequestId.value = id
+}
+
+function handleCancelConfirm(payload: { id: string, reason: string }) {
+  cancelRequest(payload.id, payload.reason)
+  toast.success('Payment link deleted')
+  detailRequest.value = null
 }
 
 function handleDuplicate(id: string) {
@@ -437,6 +445,12 @@ const dateFilterLabel = computed(() => {
     <PaymentRequestShareDialog
       :request="shareRequest"
       @close="shareRequest = null"
+    />
+
+    <PaymentRequestCancelDialog
+      v-model:open="cancelDialogOpen"
+      :request-id="cancelRequestId"
+      @confirm="handleCancelConfirm"
     />
   </div>
 </template>
