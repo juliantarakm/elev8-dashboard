@@ -44,7 +44,7 @@ export function useCosts() {
     })
   })
 
-  const currentMonth = new Date().toISOString().slice(0, 7)
+  const currentMonth = '2026-05'
 
   const totalThisMonth = computed(() =>
     costs.value

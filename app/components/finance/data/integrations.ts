@@ -7,6 +7,7 @@ export interface Integration {
   description: string
   category: IntegrationCategory
   icon: string
+  logo?: string
   status: IntegrationStatus
   component?: string
   docsUrl?: string
@@ -19,6 +20,7 @@ export const integrations: Integration[] = [
     description: 'Push cost and revenue entries to your Jurnal accounting ledger.',
     category: 'Accounting',
     icon: 'i-lucide-book-open',
+    logo: 'FinanceJurnalLogo',
     status: 'connected',
     component: 'FinanceJurnalIntegration',
   },
@@ -28,6 +30,7 @@ export const integrations: Integration[] = [
     description: 'Sync financial data with bexio for Swiss accounting and invoicing.',
     category: 'Accounting',
     icon: 'i-lucide-file-spreadsheet',
+    logo: 'FinanceBexioLogo',
     status: 'available',
     component: 'FinanceBexioIntegration',
   },
@@ -45,14 +48,6 @@ export const integrations: Integration[] = [
     description: 'Sync staff salary data and push labor costs to Talenta payroll.',
     category: 'HR & Payroll',
     icon: 'i-lucide-users',
-    status: 'coming_soon',
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Reconcile payment data from Stripe with your cost and revenue entries.',
-    category: 'Payments',
-    icon: 'i-lucide-credit-card',
     status: 'coming_soon',
   },
 ]

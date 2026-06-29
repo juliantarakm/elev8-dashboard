@@ -58,6 +58,8 @@ const statusDot: Record<string, string> = {
 const componentMap: Record<string, ReturnType<typeof resolveComponent>> = {
   FinanceJurnalIntegration: resolveComponent('FinanceJurnalIntegration'),
   FinanceBexioIntegration: resolveComponent('FinanceBexioIntegration'),
+  FinanceJurnalLogo: resolveComponent('FinanceJurnalLogo'),
+  FinanceBexioLogo: resolveComponent('FinanceBexioLogo'),
 }
 
 const activeComponent = computed(() =>
@@ -79,8 +81,11 @@ const activeComponent = computed(() =>
           :class="integration.status === 'coming_soon' ? 'opacity-60' : 'hover:border-border/80'"
         >
           <div class="mb-3 flex items-start justify-between">
-            <div class="flex h-9 w-9 items-center justify-center rounded-md border bg-muted">
-              <Icon :name="integration.icon" class="h-4 w-4 text-muted-foreground" />
+            <div class="flex h-9 items-center justify-center">
+              <component :is="componentMap[integration.logo]" v-if="integration.logo && componentMap[integration.logo]" class="h-5 w-auto" />
+              <div v-else class="flex h-9 w-9 items-center justify-center rounded-md border bg-muted">
+                <Icon :name="integration.icon" class="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
             <span
               class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
@@ -116,17 +121,7 @@ const activeComponent = computed(() =>
     <SheetContent class="flex w-full flex-col gap-0 p-0 sm:max-w-xl" side="right">
       <SheetHeader class="border-b px-6 py-4">
         <div class="flex items-center gap-3">
-          <div class="flex h-8 w-8 items-center justify-center rounded-md border bg-muted">
-            <Icon v-if="selected" :name="selected.icon" class="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div>
-            <SheetTitle class="text-base">
-              {{ selected?.name }}
-            </SheetTitle>
-            <SheetDescription class="text-xs">
-              {{ selected?.category }}
-            </SheetDescription>
-          </div>
+          <SheetTitle class="text-base">Accounting Software Integration</SheetTitle>
         </div>
       </SheetHeader>
       <ScrollArea class="flex-1">

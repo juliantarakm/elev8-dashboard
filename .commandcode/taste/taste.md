@@ -6,9 +6,11 @@
 - Always respond in English, even when the user writes in Indonesian. Confidence: 0.85
 
 # finance
+- For Booking Revenue double-entry tables: each line item must have separate Debit and Credit account columns/selectors, not a single account with a pre-assigned debit/credit indicator. Confidence: 0.65
 - No charts or progress bars — use full data tables only. Confidence: 0.90
 - Use toast feedback for all user actions (create, rename, delete, toggle, save, move). Confidence: 0.85
 - Use confirmation dialogs for destructive actions (delete, duplicate). Confidence: 0.80
+- Header currency must dynamically reflect the tenant account's currency setting (currently CHF). Confidence: 0.70
 
 # workflow
 - Push to GitHub after completing each feature chunk. Confidence: 0.88
@@ -21,6 +23,7 @@
 - Show empty state first, then provide an add/create button to populate. Confidence: 0.80
 - Use sheet/drawer components for forms rather than full-page navigation. Confidence: 0.75
 - Reuse existing shadcn-vue components rather than building custom ones. Confidence: 0.75
+- SelectTrigger inside table cells must use `w-full` to fill the container instead of hugging content width. Confidence: 0.65
 
 # vue-nuxt
 - Reka UI SwitchRoot ignores external `:checked` prop changes — use `:key` force re-mount as workaround. Confidence: 0.85
@@ -29,11 +32,13 @@
 - Nuxt auto-imports components with directory prefix: `components/inventory/FooDrawer.vue` → `<InventoryFooDrawer>`. Confidence: 0.80
 - Use `useState<T>()` with spread syntax for shared reactive state in composables. Confidence: 0.80
 
+# finance
+See [finance/taste.md](finance/taste.md)
 # workflow
 - Prefer `pnpm dev` over `pnpm build` during development to avoid browser crash from heavy builds. Confidence: 0.65
 
 # payment-requests
-- Use "cancel" terminology (not "delete") for cancelling payment links. Confidence: 0.65
+- Use "cancel" terminology (not "delete") for cancelling payment links. Confidence: 0.75
 
 # whatsapp
 - WhatsApp connection must use OAuth flow, not manual form fields. Confidence: 0.70

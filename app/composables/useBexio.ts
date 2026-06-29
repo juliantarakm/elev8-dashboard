@@ -5,33 +5,32 @@ import { allListings, useListingMappings } from '@/composables/useListingMapping
 export type BexioStep = 'connect' | 'mapping' | 'connected'
 
 export function useBexio() {
-  const isConnected = useState<boolean>('bexio-connected', () => true)
-  const step = useState<BexioStep>('bexio-step', () => 'connected')
-  const apiKey = useState<string>('bexio-api-key', () => 'bx-••••••••••••••••••••••••')
+  const isConnected = useState<boolean>('bexio-connected', () => false)
+  const step = useState<BexioStep>('bexio-step', () => 'connect')
+  const apiKey = useState<string>('bexio-api-key', () => '')
   const apiKeyInput = ref('')
-  const companyName = useState<string>('bexio-company', () => 'Elev8 Suite AG')
-  const lastConnected = useState<string | null>('bexio-last-connected', () => '2026-05-01')
+  const companyName = useState<string>('bexio-company', () => '')
+  const lastConnected = useState<string | null>('bexio-last-connected', () => null)
   const isSaving = ref(false)
 
-  // Local mapping selection (bexio-only, during the setup flow)
-  // Pre-seeded to match the initial shared mappings for Bexio
+  // Local tag selections (bexio-only, during the setup flow)
   const localSelections = useState<Record<string, string>>('bexio-local-selections', () => ({
-    'The R Apartment Rosengasse': 'ba-3000',
-    'Luxurious Renovated Apartment in Basel': 'ba-3000',
-    'The R Apartment Margaretha - free public transport': 'ba-3000',
-    'The R Apartment Hurbig - old Town': 'ba-3000',
-    'The R Apartment Roggen': 'ba-3000',
-    'The R Apartment Chrischona - free public transport': 'ba-3000',
-    'The R Apartment Adlisberg': 'ba-3000',
-    'The R Suites Hasenberg': 'ba-3000',
-    'The R Apartment Munot - Old Town': 'ba-3000',
-    'The R Apartment Hemmental': 'ba-3000',
-    'The R Apartment Froburg, Parking, ÖV, Golfplatz': 'ba-3000',
-    'The R Apartment Weinsteig': 'ba-3000',
-    'The R Loft (Suites)': 'ba-3000',
-    'The R Apartment Engelberg, Gym, Balkon, Parking': 'ba-3000',
-    'The R Hasenberg Suite': 'ba-3000',
-    'The R Apartment Passwang, Gym, Balkon, Parking': 'ba-3000',
+    'The R Apartment Rosengasse': 'Schaffhausen',
+    'Luxurious Renovated Apartment in Basel': 'Basel',
+    'The R Apartment Margaretha - free public transport': 'Basel',
+    'The R Apartment Hurbig - old Town': 'Schaffhausen',
+    'The R Apartment Roggen': 'Kestenholz',
+    'The R Apartment Chrischona - free public transport': 'Basel',
+    'The R Apartment Adlisberg': 'Zürich',
+    'The R Suites Hasenberg': 'Aargau',
+    'The R Apartment Munot - Old Town': 'Schaffhausen',
+    'The R Apartment Hemmental': 'Schaffhausen',
+    'The R Apartment Froburg, Parking, ÖV, Golfplatz': 'Obergösgen',
+    'The R Apartment Weinsteig': 'Schaffhausen',
+    'The R Loft (Suites)': 'Olten',
+    'The R Apartment Engelberg, Gym, Balkon, Parking': 'Solothurn',
+    'The R Hasenberg Suite': 'Widen',
+    'The R Apartment Passwang, Gym, Balkon, Parking': 'Solothurn',
   }))
 
   const { setMapping, clearMapping, getMappingFor, mappings } = useListingMappings()
@@ -71,23 +70,24 @@ export function useBexio() {
     bexioListings.forEach((l) => {
       const existing = getMappingFor(l.name)
       if (existing?.integration === 'bexio')
-        pre[l.name] = existing.accountId
+        pre[l.name] = existing.tag
     })
     localSelections.value = pre
-    step.value = 'mapping'
+    isConnected.value = true
+    step.value = 'connected'
     isSaving.value = false
   }
 
-  function setLocalSelection(listingName: string, accountId: string) {
-    localSelections.value = { ...localSelections.value, [listingName]: accountId }
+  function setLocalSelection(listingName: string, tag: string) {
+    localSelections.value = { ...localSelections.value, [listingName]: tag }
   }
 
-  function applyAccountToAll(accountId: string, region?: 'Bali' | 'Switzerland') {
+  function applyTagToAll(tag: string, region?: 'Bali' | 'Switzerland') {
     const updated = { ...localSelections.value }
     bexioListings
       .filter(l => !region || l.region === region)
       .filter(l => getMappingFor(l.name)?.integration !== 'jurnal')
-      .forEach((l) => { updated[l.name] = accountId })
+      .forEach((l) => { updated[l.name] = tag })
     localSelections.value = updated
   }
 
@@ -98,9 +98,9 @@ export function useBexio() {
       if (existing?.integration === 'bexio')
         clearMapping(l.name)
     })
-    Object.entries(localSelections.value).forEach(([name, accountId]) => {
-      if (accountId)
-        setMapping(name, 'bexio', accountId)
+    Object.entries(localSelections.value).forEach(([name, tag]) => {
+      if (tag)
+        setMapping(name, 'bexio', tag)
     })
     isConnected.value = true
     step.value = 'connected'
@@ -125,16 +125,11 @@ export function useBexio() {
     localSelections.value = {}
   }
 
-  function accountLabel(id: string) {
-    const acc = bexioAccounts.find(a => a.id === id)
-    return acc ? `${acc.code} – ${acc.name}` : '—'
-  }
-
   // Read from shared mappings for the summary view
   const confirmedMappings = computed(() =>
     bexioListings.map(l => ({
       ...l,
-      accountId: getMappingFor(l.name)?.integration === 'bexio' ? getMappingFor(l.name)!.accountId : '',
+      tag: getMappingFor(l.name)?.integration === 'bexio' ? getMappingFor(l.name)!.tag : '',
     })),
   )
 
@@ -159,10 +154,9 @@ export function useBexio() {
     formatAccounting,
     connect,
     setLocalSelection,
-    applyAccountToAll,
+    applyTagToAll,
     confirmMapping,
     editMapping,
     disconnect,
-    accountLabel,
   }
 }

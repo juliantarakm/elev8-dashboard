@@ -2,15 +2,46 @@ export interface JurnalAccount {
   id: string
   code: string
   name: string
+  category: 'asset' | 'liability' | 'revenue' | 'expense'
 }
 
 export const jurnalAccounts: JurnalAccount[] = [
-  { id: 'ja-4100', code: '4-10000', name: 'Pendapatan Sewa Harian – Switzerland' },
-  { id: 'ja-4110', code: '4-10100', name: 'Pendapatan Sewa Harian – Bali' },
-  { id: 'ja-4200', code: '4-10200', name: 'Pendapatan Sewa Jangka Panjang' },
-  { id: 'ja-4300', code: '4-20000', name: 'Pendapatan Jasa Tambahan' },
-  { id: 'ja-4400', code: '4-20100', name: 'Pendapatan Transfer & Logistik' },
+  // ── Assets (1-xxx) ─────────────────────────────────────────────────────
+  { id: 'ja-1100', code: '1-1100', name: 'Kas dan Bank', category: 'asset' },
+  { id: 'ja-1110', code: '1-1110', name: 'Bank BCA', category: 'asset' },
+  { id: 'ja-1120', code: '1-1120', name: 'Bank Mandiri', category: 'asset' },
+  // ── Liabilities (2-xxx) ────────────────────────────────────────────────
+  { id: 'ja-2100', code: '2-1100', name: 'Deposit Jaminan (Security Deposit)', category: 'liability' },
+  { id: 'ja-2200', code: '2-1200', name: 'Hutang Pajak Hotel (City Tax)', category: 'liability' },
+  // ── Revenue (4-xxx) ───────────────────────────────────────────────────
+  { id: 'ja-4100', code: '4-10000', name: 'Pendapatan Sewa Harian – Switzerland', category: 'revenue' },
+  { id: 'ja-4110', code: '4-10100', name: 'Pendapatan Sewa Harian – Bali', category: 'revenue' },
+  { id: 'ja-4200', code: '4-10200', name: 'Pendapatan Sewa Jangka Panjang', category: 'revenue' },
+  { id: 'ja-4300', code: '4-20000', name: 'Pendapatan Jasa Tambahan (Upsell)', category: 'revenue' },
+  { id: 'ja-4400', code: '4-30000', name: 'Pendapatan Deposit Diklaim (Forfeited)', category: 'revenue' },
+  // ── Expenses (5-xxx) ──────────────────────────────────────────────────
+  { id: 'ja-5100', code: '5-10000', name: 'Biaya Platform (Fee)', category: 'expense' },
+  { id: 'ja-5200', code: '5-20000', name: 'Biaya Pemeliharaan', category: 'expense' },
+  { id: 'ja-5300', code: '5-30000', name: 'Biaya Utilitas', category: 'expense' },
+  { id: 'ja-5400', code: '5-40000', name: 'Biaya Operasional (Cost)', category: 'expense' },
+  // ── COGS / Direct Costs (6-xxx) ───────────────────────────────────────
+  { id: 'ja-6100', code: '6-0110', name: 'Biaya Merchant (OTA Fee)', category: 'expense' },
 ]
+
+// Helper to filter accounts by category
+export function getAccountsByCategory(category: JurnalAccount['category']): JurnalAccount[] {
+  return jurnalAccounts.filter(a => a.category === category)
+}
+
+// Helper to filter accounts by code prefix
+export function getAccountsByPrefix(prefix: string): JurnalAccount[] {
+  return jurnalAccounts.filter(a => a.code.startsWith(prefix))
+}
+
+// Helper to get expense accounts (5-xxx and 6-xxx)
+export function getExpenseAccounts(): JurnalAccount[] {
+  return jurnalAccounts.filter(a => a.category === 'expense')
+}
 
 export type SyncType = 'Cost' | 'Revenue'
 export type SyncStatus = 'Success' | 'Failed' | 'Partial'

@@ -11,17 +11,19 @@ const { costs, unsyncedCount: unsyncedCosts } = useCosts()
 const { unsyncedCount: unsyncedReservations } = useReservations()
 const { upsells, unsyncedCount: unsyncedUpsells } = useUpsells()
 
-const currentMonth = new Date().toISOString().slice(0, 7)
+const currentMonth = '2026-05'
 
-const totalCostsIDR = computed(() =>
+const IDR_TO_CHF = 18_524
+
+const totalCostsCHF = computed(() =>
   costs.value
     .filter(c => c.date.startsWith(currentMonth))
-    .reduce((sum, c) => sum + c.amount, 0),
+    .reduce((sum, c) => sum + (c.currency === 'IDR' ? c.amount / IDR_TO_CHF : c.amount), 0),
 )
 
 const upsellRevenueCHF = computed(() =>
   upsells.value
-    .filter(u => u.date.startsWith(currentMonth) && u.status === 'Paid')
+    .filter(u => u.date.startsWith(currentMonth))
     .reduce((sum, u) => sum + u.amount, 0),
 )
 
@@ -35,10 +37,6 @@ const totalUnsynced = computed(() =>
 
 function formatCHF(amount: number) {
   return `CHF ${amount.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatIDR(amount: number) {
-  return `Rp ${amount.toLocaleString('id-ID')}`
 }
 </script>
 
@@ -75,7 +73,7 @@ function formatIDR(amount: number) {
           Total Costs (May)
         </p>
         <p class="mt-1 text-2xl font-bold tracking-tight">
-          {{ formatIDR(totalCostsIDR) }}
+          {{ formatCHF(totalCostsCHF) }}
         </p>
         <p class="mt-1 text-xs text-muted-foreground">
           {{ costs.filter(c => c.date.startsWith(currentMonth)).length }} entries this month
@@ -91,7 +89,7 @@ function formatIDR(amount: number) {
           {{ formatCHF(upsellRevenueCHF) }}
         </p>
         <p class="mt-1 text-xs text-muted-foreground">
-          {{ upsells.filter(u => u.date.startsWith(currentMonth) && u.status === 'Paid').length }} paid upsells
+          {{ upsells.filter(u => u.date.startsWith(currentMonth)).length }} upsells
         </p>
       </div>
 
