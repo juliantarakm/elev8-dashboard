@@ -383,6 +383,22 @@ export function useInbox() {
     notes.value = { ...notes.value, [conversationId]: [...convNotes, newNote] }
   }
 
+  function editNote(conversationId: string, noteId: string, content: string, visibleToAI?: boolean) {
+    const convNotes = notes.value[conversationId] ?? []
+    notes.value = {
+      ...notes.value,
+      [conversationId]: convNotes.map(n => n.id === noteId ? { ...n, content, ...(visibleToAI !== undefined ? { visibleToAI } : {}) } : n),
+    }
+  }
+
+  function deleteNote(conversationId: string, noteId: string) {
+    const convNotes = notes.value[conversationId] ?? []
+    notes.value = {
+      ...notes.value,
+      [conversationId]: convNotes.filter(n => n.id !== noteId),
+    }
+  }
+
   function actionNeededCount(): number {
     return conversations.value.filter(c => c.status === 'action_needed').length
   }
@@ -528,9 +544,9 @@ export function useInbox() {
     pendingSuggestion.value = content
   }
 
-  function sendMessage(conversationId: string, content: string, channel: string, upsellOffer?: Message['upsellOffer']) {
+  function sendMessage(conversationId: string, content: string, channel: string, upsellOffer?: Message['upsellOffer'], mediaUrl?: string, mediaDims?: string) {
     const conv = conversations.value.find(c => c.id === conversationId)
-    if (!conv || !content.trim())
+    if (!conv || (!content.trim() && !mediaUrl))
       return
 
     const tempId = `msg-${conversationId}-${Date.now()}`
@@ -545,6 +561,7 @@ export function useInbox() {
       timestamp: new Date().toISOString(),
       sendStatus: 'sending',
       upsellOffer,
+      ...(mediaUrl ? { mediaUrl, mediaDims } : {}),
     }
 
     const currentMessages = messages.value[conversationId] ?? []
@@ -571,7 +588,7 @@ export function useInbox() {
     if (convIndex !== -1) {
       conversations.value[convIndex] = {
         ...conversations.value[convIndex],
-        lastMessage: newMessage.content,
+        lastMessage: newMessage.content || (mediaUrl ? '📷 Photo' : ''),
         lastMessageAt: newMessage.timestamp,
         status: null,
       }
@@ -691,6 +708,8 @@ export function useInbox() {
     clearSuggestion,
     getNotes,
     addNote,
+    editNote,
+    deleteNote,
     sendMessage,
     retryMessage,
     getPhoneCalls,

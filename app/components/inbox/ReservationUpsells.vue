@@ -1,6 +1,7 @@
 <script lang="ts" setup>
+import type { UpsellOrder } from '~/components/upsells/data/upsell-orders'
+import { getOrderStatusMeta } from '~/components/upsells/data/upsell-orders'
 import { useUpsellOrders } from '@/composables/useUpsellOrders'
-import { cn } from '~/lib/utils'
 
 interface ReservationUpsellsProps {
   linkedOrderIds?: string[]
@@ -18,11 +19,8 @@ const linkedOrders = computed(() => {
   return orders.value.filter(o => props.linkedOrderIds.includes(o.id))
 })
 
-const statusConfig: Record<string, { label: string, class: string }> = {
-  confirmed: { label: 'Confirmed', class: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-  pending: { label: 'Pending', class: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
-  completed: { label: 'Completed', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-  cancelled: { label: 'Cancelled', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' },
+function getStatus(order: UpsellOrder) {
+  return getOrderStatusMeta(order)
 }
 
 function formatPrice(price: number, currency: string): string {
@@ -56,8 +54,8 @@ function formatPrice(price: number, currency: string): string {
             {{ order.guestName }}
           </div>
         </div>
-        <span :class="cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0', statusConfig[order.status].class)">
-          {{ statusConfig[order.status].label }}
+        <span :class="['inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0', getStatus(order).color]">
+          {{ getStatus(order).label }}
         </span>
       </div>
       <div class="flex items-center justify-between text-xs">

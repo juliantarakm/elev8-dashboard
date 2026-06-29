@@ -3,9 +3,12 @@ import type { PhoneCall } from '~/components/inbox/data/conversations'
 import { differenceInDays, format, isToday, isYesterday } from 'date-fns'
 import { toast } from 'vue-sonner'
 
-const { selectedConversation, selectedMessages, selectedReservation, markAsHandled, markAsUnread, isElevaiEnabled, useSuggestion, getNotes, addNote, getPhoneCalls, rightPanelCollapsed, toggleRightPanel, autoTranslate, matchUnmatched, createFromUnmatched, dismissUnmatched, conversations } = useInbox()
+const { selectedConversation, selectedMessages, selectedReservation, markAsHandled, markAsUnread, isElevaiEnabled, useSuggestion, getNotes, addNote, editNote, deleteNote, getPhoneCalls, rightPanelCollapsed, toggleRightPanel, autoTranslate, matchUnmatched, createFromUnmatched, dismissUnmatched, conversations } = useInbox()
 
 const activeThreadTab = ref<'messages' | 'notes' | 'phone'>('messages')
+const editingNoteId = ref<string | null>(null)
+const editingNoteContent = ref('')
+const editingNoteVisibleToAI = ref(false)
 const templateOpen = ref(false)
 const { isConnected: whatsappConnected } = useWhatsApp()
 const matchOpen = ref(false)
@@ -160,6 +163,35 @@ function handleAddNote() {
   newNoteContent.value = ''
   newNoteVisibleToAI.value = false
   toast.success('Note added')
+}
+
+function startEditNote(noteId: string, content: string, visibleToAI: boolean) {
+  editingNoteId.value = noteId
+  editingNoteContent.value = content
+  editingNoteVisibleToAI.value = visibleToAI
+}
+
+function cancelEditNote() {
+  editingNoteId.value = null
+  editingNoteContent.value = ''
+  editingNoteVisibleToAI.value = false
+}
+
+function saveEditNote() {
+  if (!selectedConversation.value || !editingNoteId.value || !editingNoteContent.value.trim())
+    return
+  editNote(selectedConversation.value.id, editingNoteId.value, editingNoteContent.value.trim(), editingNoteVisibleToAI.value)
+  editingNoteId.value = null
+  editingNoteContent.value = ''
+  editingNoteVisibleToAI.value = false
+  toast.success('Note updated')
+}
+
+function handleDeleteNote(noteId: string) {
+  if (!selectedConversation.value)
+    return
+  deleteNote(selectedConversation.value.id, noteId)
+  toast.success('Note deleted')
 }
 
 function toggleAutoTranslate() {
@@ -407,16 +439,52 @@ function formatCallDate(timestamp: string): string {
                       <Icon name="lucide:sticky-note" class="size-4 text-warning" />
                     </div>
                     <span class="text-xs font-medium">Internal Note</span>
+                    <span class="text-[10px] text-muted-foreground">· {{ item.data.authorName }}</span>
                     <span v-if="item.data.visibleToAI" class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
                       <Icon name="lucide:sparkles" class="size-3" />
                       ElevAI
                     </span>
-                    <span v-if="getDateLabel(item.timestamp)" class="text-[10px] text-muted-foreground">{{ getDateLabel(item.timestamp) }} · </span>
-                    <span class="text-[10px] text-muted-foreground">{{ formatNoteDate(item.data.createdAt) }}</span>
                   </div>
-                  <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2 text-sm">
-                    {{ item.data.content }}
-                  </div>
+                  <template v-if="editingNoteId === item.data.id">
+                    <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2">
+                      <Textarea v-model="editingNoteContent" class="min-h-[60px] text-sm resize-none bg-warning text-warning-foreground placeholder:text-warning-foreground/50 border-warning-foreground/20" />
+                      <div class="flex items-center justify-between mt-2">
+                        <label class="flex items-center gap-1.5 text-[10px] text-warning-foreground/70 cursor-pointer select-none">
+                          <input
+                            v-model="editingNoteVisibleToAI"
+                            type="checkbox"
+                            class="size-3 rounded border-warning-foreground/30 accent-[#FBC800]"
+                          >
+                          <Icon name="lucide:sparkles" class="size-2.5 text-[#FBC800]" />
+                          ElevAI
+                        </label>
+                        <div class="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" class="h-6 text-[10px] text-warning-foreground/70 hover:text-warning-foreground hover:bg-warning-foreground/10" @click="cancelEditNote">
+                            Cancel
+                          </Button>
+                          <Button size="sm" class="h-6 text-[10px] bg-warning-foreground text-warning hover:bg-warning-foreground/90" :disabled="!editingNoteContent.trim()" @click="saveEditNote">
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="rounded-2xl bg-warning text-warning-foreground px-3 py-2 text-sm">
+                      {{ item.data.content }}
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] text-muted-foreground">{{ formatNoteDate(item.data.createdAt) }}</span>
+                      <div v-if="item.data.authorId !== 'guest'" class="flex items-center gap-0.5">
+                        <button type="button" class="text-muted-foreground hover:text-foreground transition-colors" @click="startEditNote(item.data.id, item.data.content, item.data.visibleToAI)">
+                          <Icon name="lucide:pencil" class="size-3" />
+                        </button>
+                        <button type="button" class="text-muted-foreground hover:text-destructive transition-colors" @click="handleDeleteNote(item.data.id)">
+                          <Icon name="lucide:trash-2" class="size-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </template>
@@ -478,33 +546,69 @@ function formatCallDate(timestamp: string): string {
             <!-- Call notes from phone calls -->
             <template v-for="call of conversationPhoneCalls" :key="`call-note-${call.id}`">
               <div v-if="call.summary" class="rounded-lg border bg-muted/50 p-3">
-                <div class="flex items-center gap-2 mb-2">
-                  <Icon name="lucide:phone" class="size-3.5 text-muted-foreground" />
-                  <span class="text-xs font-medium">Call summary</span>
-                  <span class="inline-flex items-center gap-0.5 text-[10px] text-[#FBC800]">
+                <p class="text-sm leading-relaxed whitespace-pre-line">
+                  {{ call.summary }}
+                </p>
+                <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+                  <Icon name="lucide:phone" class="size-3" />
+                  <span>{{ call.direction === 'outbound' ? 'Komang Juliantara' : (selectedConversation?.guestName ?? 'Guest') }}</span>
+                  <span>·</span>
+                  <span>{{ formatNoteDate(call.timestamp) }}</span>
+                  <span class="inline-flex items-center gap-0.5 text-[#FBC800]">
                     <Icon name="lucide:sparkles" class="size-3" />
                     ElevAI
                   </span>
                 </div>
-                <p class="text-sm leading-relaxed whitespace-pre-line">
-                  {{ call.summary }}
-                </p>
               </div>
             </template>
 
             <div v-for="note of conversationNotes" :key="note.id" class="rounded-lg border bg-muted/50 p-3">
-              <p class="text-sm leading-relaxed">
-                {{ note.content }}
-              </p>
-              <div class="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-                <span>{{ note.authorName }}</span>
-                <span>·</span>
-                <span>{{ formatNoteDate(note.createdAt) }}</span>
-                <span v-if="note.visibleToAI" class="inline-flex items-center gap-0.5 text-[#FBC800]">
-                  <Icon name="lucide:sparkles" class="size-3" />
-                  ElevAI
-                </span>
-              </div>
+              <template v-if="editingNoteId === note.id">
+                <Textarea v-model="editingNoteContent" class="min-h-[60px] text-sm resize-none" />
+                <div class="flex items-center justify-between mt-2">
+                  <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input
+                      v-model="editingNoteVisibleToAI"
+                      type="checkbox"
+                      class="size-3.5 rounded border-muted-foreground/30 accent-[#FBC800]"
+                    >
+                    <Icon name="lucide:sparkles" class="size-3 text-[#FBC800]" />
+                    Let ElevAI read this note
+                  </label>
+                  <div class="flex items-center gap-1.5">
+                    <Button variant="ghost" size="sm" class="h-7 text-xs" @click="cancelEditNote">
+                      Cancel
+                    </Button>
+                    <Button size="sm" class="h-7 text-xs" :disabled="!editingNoteContent.trim()" @click="saveEditNote">
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <p class="text-sm leading-relaxed">
+                  {{ note.content }}
+                </p>
+                <div class="flex items-center justify-between mt-2">
+                  <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <span>{{ note.authorName }}</span>
+                    <span>·</span>
+                    <span>{{ formatNoteDate(note.createdAt) }}</span>
+                    <span v-if="note.visibleToAI" class="inline-flex items-center gap-0.5 text-[#FBC800]">
+                      <Icon name="lucide:sparkles" class="size-3" />
+                      ElevAI
+                    </span>
+                  </div>
+                  <div v-if="note.authorId !== 'guest'" class="flex items-center gap-0.5">
+                    <Button variant="ghost" size="icon" class="size-6" @click="startEditNote(note.id, note.content, note.visibleToAI)">
+                      <Icon name="lucide:pencil" class="size-3 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" class="size-6" @click="handleDeleteNote(note.id)">
+                      <Icon name="lucide:trash-2" class="size-3 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </div>
+              </template>
             </div>
             <div v-if="!conversationNotes.length && !conversationPhoneCalls.length" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Icon name="lucide:sticky-note" class="size-10 mb-2" />
@@ -519,7 +623,11 @@ function formatCallDate(timestamp: string): string {
             <Textarea v-model="newNoteContent" placeholder="Add a note..." class="min-h-[60px] text-sm resize-none" />
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-                <Checkbox v-model:checked="newNoteVisibleToAI" class="size-3.5" />
+                <input
+                  v-model="newNoteVisibleToAI"
+                  type="checkbox"
+                  class="size-3.5 rounded border-muted-foreground/30 accent-[#FBC800]"
+                >
                 <Icon name="lucide:sparkles" class="size-3 text-[#FBC800]" />
                 Let ElevAI read this note
               </label>
@@ -612,6 +720,13 @@ function formatCallDate(timestamp: string): string {
                     </div>
                     <div v-if="call.note" class="mt-1.5 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
                       {{ call.note }}
+                    </div>
+                    <div v-if="call.summary" class="mt-1.5 text-xs leading-relaxed bg-[#FBC800]/5 border border-[#FBC800]/20 rounded px-2 py-1.5">
+                      <div class="flex items-center gap-1 mb-0.5 text-[10px] text-[#FBC800]">
+                        <Icon name="lucide:sparkles" class="size-2.5" />
+                        <span class="font-medium">AI Summary</span>
+                      </div>
+                      <span class="text-muted-foreground">{{ call.summary }}</span>
                     </div>
                   </div>
                   <div class="flex items-center gap-1 shrink-0">

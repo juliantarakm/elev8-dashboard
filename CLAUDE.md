@@ -152,9 +152,22 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 
 #### Phone Call Features
 - `PhoneCall` interface with `direction`, `status`, `duration`, `transcript`, `summary`, `recording_url`
-- Phone tab in Thread.vue — call history with transcript expand/collapse, download recording
-- Call summaries in Notes tab (tagged ElevAI for AI consumption)
+- Phone tab in Thread.vue — call history with transcript expand/collapse, download recording, AI summary block per call (gold-tinted, ElevAI badge)
+- Call summaries in Notes tab — same layout as regular notes (caller name + date + ElevAI badge), caller derived from `direction` (outbound → "Komang Juliantara", inbound → guest name)
 - Phone call entries in Activity timeline with Send button for unsent templates
+
+#### Image Sending
+- `ReplyBox.vue` — paperclip button opens native file picker (images only), preview thumbnail above textarea with X remove button, `canSend` computed enables Send for image-only messages
+- `sendMessage()` accepts optional `mediaUrl` and `mediaDims` params, passes to `Message` object
+- Image-only messages show "📷 Photo" in conversation list lastMessage
+- `ThreadMessage.vue` already renders `mediaUrl` images in bubbles (no change needed)
+
+#### Notes System
+- Notes appear in both Messages tab (inline with chat) and Notes tab (dedicated view)
+- Notes tab: call summaries first, then staff/guest notes; native checkbox for "Let ElevAI read this note" (Reka UI Checkbox has reactivity bug)
+- Edit/delete on staff notes only (`authorId !== 'guest'`); inline edit mode with Textarea + ElevAI checkbox + Save/Cancel
+- Messages tab notes: author name shown, edit/delete buttons below bubble, edit mode styled to match yellow bubble
+- `useInbox` exports: `addNote()`, `editNote(conversationId, noteId, content, visibleToAI?)`, `deleteNote(conversationId, noteId)`
 
 ### WhatsApp Integration (`app/components/settings/` + `app/components/inbox/`)
 
@@ -378,7 +391,7 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 - **`UpsellOrderCreator.vue`** — Mini Sheet drawer for creating upsell orders from chat; service picker (Select component), item checkboxes (with `isCreateDisabled` computed), date picker
 - **`UpsellOfferCard.vue`** — Renders upsell offer in chat thread with service details, pricing breakdown, status badge, action buttons (Withdraw / View Order)
 - **`ReplyBox.vue`** — "Upsell" button (shopping-cart icon) next to channel dropdown, opens UpsellOrderCreator
-- **`ReservationUpsells.vue`** — Tab in ReservationPanel showing linked upsell orders from `conversation.linkedUpsellOrderIds`, displays order status, service date, grand total
+- **`ReservationUpsells.vue`** — Tab in ReservationPanel showing linked upsell orders from `conversation.linkedUpsellOrderIds`, displays order status (via `getOrderStatusMeta()`), service date, grand total
 - **`Thread.vue`** — Linked order badges removed from thread header (moved to ReservationPanel Upsell tab)
 
 #### Data + Types (`app/components/inbox/data/conversations.ts`)
@@ -389,7 +402,7 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 - Reservation `R-2026-0521` added for Emma Thompson
 
 #### Composable (`app/composables/useInbox.ts`)
-- `sendMessage()` accepts optional `upsellOffer` payload — creates order + sends chat message with offer card
+- `sendMessage()` accepts optional `upsellOffer` payload + optional `mediaUrl`/`mediaDims` for image attachments — creates order + sends chat message with offer card
 - `getLinkedOrders(conversationId)` — returns UpsellOrder[] for a conversation
 - `linkOrderToConversation(conversationId, orderId)` — adds order ID to `linkedUpsellOrderIds`
 

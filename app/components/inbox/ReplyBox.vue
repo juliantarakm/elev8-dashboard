@@ -15,8 +15,12 @@ const showOrderCreator = ref(false)
 
 const replyText = ref('')
 const isRewriting = ref(false)
+const attachedImage = ref<string | null>(null)
+const attachedImageDims = ref<string | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const elevaiOn = computed(() => isElevaiEnabled(props.conversationId))
 const showRewrite = computed(() => replyText.value.trim().length > 0)
+const canSend = computed(() => replyText.value.trim().length > 0 || attachedImage.value)
 
 const sendChannel = ref('ota')
 
@@ -54,11 +58,41 @@ const rewrites = [
   'Thanks for letting us know! We want to make sure your stay is perfect. I\'ll have our team address this immediately.',
 ]
 
-function send() {
-  if (!replyText.value.trim())
+function handleFileSelect(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file)
     return
-  sendMessage(props.conversationId, replyText.value, sendChannel.value === 'ota' ? props.channel : sendChannel.value)
+  const url = URL.createObjectURL(file)
+  attachedImage.value = url
+  const img = new Image()
+  img.onload = () => {
+    attachedImageDims.value = `${img.naturalWidth} × ${img.naturalHeight}`
+  }
+  img.src = url
+  if (fileInputRef.value)
+    fileInputRef.value.value = ''
+}
+
+function removeAttachedImage() {
+  if (attachedImage.value)
+    URL.revokeObjectURL(attachedImage.value)
+  attachedImage.value = null
+  attachedImageDims.value = null
+}
+
+function send() {
+  if (!replyText.value.trim() && !attachedImage.value)
+    return
+  sendMessage(
+    props.conversationId,
+    replyText.value,
+    sendChannel.value === 'ota' ? props.channel : sendChannel.value,
+    undefined,
+    attachedImage.value ?? undefined,
+    attachedImageDims.value ?? undefined,
+  )
   replyText.value = ''
+  removeAttachedImage()
   toast.success('Message sent')
 }
 
@@ -128,6 +162,16 @@ function templateStatusBadge(status: ScheduledTemplate['status']) {
 
 <template>
   <div class="border-t p-3 space-y-2">
+    <div v-if="attachedImage" class="relative inline-block">
+      <img :src="attachedImage" alt="Attached image" class="max-h-32 rounded-lg border object-cover">
+      <button
+        type="button"
+        class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-foreground text-background shadow-sm hover:bg-foreground/80"
+        @click="removeAttachedImage"
+      >
+        <Icon name="lucide:x" class="size-3" />
+      </button>
+    </div>
     <div class="relative">
       <Textarea
         v-model="replyText"
@@ -164,6 +208,16 @@ function templateStatusBadge(status: ScheduledTemplate['status']) {
     </div>
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="handleFileSelect"
+        >
+        <Button variant="ghost" size="sm" class="h-7 gap-1 text-xs text-muted-foreground" @click="fileInputRef?.click()">
+          <Icon name="lucide:paperclip" class="size-3.5" />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="outline" size="sm" class="h-7 gap-1.5 text-xs">
@@ -248,7 +302,7 @@ function templateStatusBadge(status: ScheduledTemplate['status']) {
       <Button
         variant="default"
         size="sm"
-        :disabled="!replyText.trim()"
+        :disabled="!canSend"
         @click="send"
       >
         <Icon name="lucide:send" class="size-4" />
