@@ -32,6 +32,9 @@
 # workflow
 - Prefer `pnpm dev` over `pnpm build` during development to avoid browser crash from heavy builds. Confidence: 0.65
 
+# payment-requests
+- Use "cancel" terminology (not "delete") for cancelling payment links. Confidence: 0.65
+
 # whatsapp
 - WhatsApp connection must use OAuth flow, not manual form fields. Confidence: 0.70
 

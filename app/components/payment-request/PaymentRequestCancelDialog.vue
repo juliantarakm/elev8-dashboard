@@ -85,9 +85,10 @@ function handleConfirm() {
           Cancel
         </Button>
         <Button variant="destructive" :disabled="!canConfirm" @click="handleConfirm">
-          Delete Link
+          Cancel Link
         </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
+te>

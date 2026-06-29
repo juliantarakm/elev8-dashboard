@@ -50,7 +50,7 @@ function handleCancel(id: string) {
 
 function handleCancelConfirm(payload: { id: string, reason: string }) {
   cancelRequest(payload.id, payload.reason)
-  toast.success('Payment link deleted')
+  toast.success('Payment link cancelled')
   detailRequest.value = null
 }
 
