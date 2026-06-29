@@ -233,8 +233,9 @@ A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`.
 - **NotificationItem.vue** — Single alert row with severity-based coloring (red/amber), keyboard accessible, dismiss + navigate actions
 
 ### Layout (`app/components/layout/`)
-- **Header.vue** — SidebarTrigger + user menu (no breadcrumb)
+- **Header.vue** — SidebarTrigger + language selector + notification bell + user menu
 - **HeaderUserMenu.vue** — Komang Juliantara + "Guest Relations" role dropdown (includes Changelog link)
+- **LanguageSelector.vue** — Mockup language switcher (circle-flags SVGs from hatscripts.github.io). Popover dropdown with EN/DE/FR/ID/NL options. Flag icon + uppercase code in trigger button. Purely visual - no i18n integration.
 - **AppSidebar.vue** — No footer (user menu moved to topbar)
 - **SidebarNavLink.vue** — Unread count badge on Inbox link
 
@@ -1003,6 +1004,7 @@ app/
 │   │   ├── Auth.vue
 │   │   ├── Header.vue
 │   │   ├── HeaderUserMenu.vue
+│   │   ├── LanguageSelector.vue    ← Mockup language switcher (circle-flags)
 │   │   ├── SidebarNavFooter.vue
 │   │   ├── SidebarNavGroup.vue
 │   │   ├── SidebarNavHeader.vue
