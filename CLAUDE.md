@@ -1,6 +1,7 @@
 # CLAUDE.md — Elev8 Dashboard AI Design System
 
 > **Stack**: Nuxt 3 + Vue 3 + shadcn-vue + Tailwind CSS v4
+> **Font**: Inter (set in `app/assets/css/tailwind.css` via `--font-sans` / `--font-mono`, loaded by `@nuxt/fonts`)
 > **Project**: elev8-dashboard — Property management for Bali vacation rentals
 > **Current User**: Komang Juliantara (Guest Relations role)
 
