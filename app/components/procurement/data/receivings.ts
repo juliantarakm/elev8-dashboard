@@ -5,7 +5,7 @@ export type ReceivingStatus = 'draft' | 'completed'
 export interface ReceivingItem {
   id: string
   itemId: string
-  purchaseOrderItemId: string
+  purchaseOrderItemId?: string
   quantityReceived: number
   condition: ItemCondition
   notes?: string
@@ -14,7 +14,7 @@ export interface ReceivingItem {
 export interface Receiving {
   id: string
   receivingNumber: string
-  purchaseOrderId: string
+  purchaseOrderId?: string
   status: ReceivingStatus
   receivedBy: string
   items: ReceivingItem[]

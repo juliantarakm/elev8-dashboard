@@ -18,6 +18,11 @@ const { getOrderById } = usePurchaseOrders()
 const drawerOpen = ref(false)
 const selectedReceiving = ref<Receiving | null>(null)
 
+function openAdd() {
+  selectedReceiving.value = null
+  drawerOpen.value = true
+}
+
 function openView(rcv: Receiving) {
   selectedReceiving.value = rcv
   drawerOpen.value = true
@@ -32,11 +37,13 @@ function getStaffName(staffId: string): string {
   return staffMembers.find(s => s.id === staffId)?.name ?? staffId
 }
 
-function getPoNumber(poId: string): string {
+function getPoNumber(poId?: string): string {
+  if (!poId) return '-'
   return getOrderById(poId)?.poNumber ?? poId
 }
 
-function getSupplierName(poId: string): string {
+function getSupplierName(poId?: string): string {
+  if (!poId) return '-'
   return getOrderById(poId)?.supplier.name ?? '-'
 }
 
@@ -79,6 +86,13 @@ const STATUS_OPTIONS: { value: ReceivingStatus | 'all', label: string }[] = [
           </SelectItem>
         </SelectContent>
       </Select>
+
+      <div class="ml-auto">
+        <Button size="sm" @click="openAdd">
+          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
+          New Receiving
+        </Button>
+      </div>
     </div>
 
     <div class="rounded-md border">

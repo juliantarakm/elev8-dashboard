@@ -43,14 +43,27 @@ export function useReceivings() {
     if (!receiving)
       return
 
-    const { updateReceivedQuantity } = usePurchaseOrders()
+    // Only update PO if linked to one
+    if (receiving.purchaseOrderId) {
+      const { updateReceivedQuantity } = usePurchaseOrders()
+      for (const item of receiving.items) {
+        if (item.purchaseOrderItemId) {
+          updateReceivedQuantity(receiving.purchaseOrderId, item.purchaseOrderItemId, item.quantityReceived)
+        }
+      }
+    }
 
+    // Update catalog stock for consumable items
+    const { getItemById, updateItem } = useInventoryCatalog()
     for (const item of receiving.items) {
-      updateReceivedQuantity(receiving.purchaseOrderId, item.purchaseOrderItemId, item.quantityReceived)
+      const catalogItem = getItemById(item.itemId)
+      if (catalogItem?.type === 'consumable' && catalogItem.stockLevel !== undefined) {
+        updateItem(item.itemId, { stockLevel: catalogItem.stockLevel + item.quantityReceived })
+      }
     }
 
     updateReceiving(id, { status: 'completed' })
-    toast.success('Receiving completed - PO quantities updated')
+    toast.success('Receiving completed')
   }
 
   function getReceivingById(id: string): Receiving | undefined {

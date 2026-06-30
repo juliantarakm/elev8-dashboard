@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Receiving } from '@/components/procurement/data/receivings'
+import type { Receiving, ReceivingItem } from '@/components/procurement/data/receivings'
 import type { PurchaseOrder } from '@/components/procurement/data/purchase-orders'
 import type { ItemCondition } from '@/components/inventory/data/listing-entries'
 import { computed, ref, watch } from 'vue'
@@ -8,6 +8,7 @@ import { staffMembers } from '@/components/inbox/data/conversations'
 import { useReceivings } from '@/composables/useReceivings'
 import { usePurchaseOrders } from '@/composables/usePurchaseOrders'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
+import { useSuppliers } from '@/composables/useSuppliers'
 
 const props = defineProps<{
   open: boolean
@@ -21,7 +22,8 @@ const emit = defineEmits<{
 
 const { addReceiving, updateReceiving, completeReceiving } = useReceivings()
 const { getOrderById } = usePurchaseOrders()
-const { getItemById } = useInventoryCatalog()
+const { items: catalogItems, getItemById } = useInventoryCatalog()
+const { suppliers, getSupplierById } = useSuppliers()
 
 const isOpen = computed({
   get: () => props.open,
@@ -29,29 +31,65 @@ const isOpen = computed({
 })
 
 const isCreatingFromPo = computed(() => !!props.purchaseOrder && !props.receiving)
+const isCreatingStandalone = computed(() => !props.purchaseOrder && !props.receiving)
 
-// Editable item quantities and conditions
-const editItems = ref<{ quantityReceived: number, condition: ItemCondition, notes?: string }[]>([])
+// Form state
 const receivedBy = ref('staff-3')
+const supplierId = ref('')
+const notes = ref('')
+const editItems = ref<{ itemId: string, itemName: string, quantityReceived: number, condition: ItemCondition, poItemId?: string }[]>([])
 
-function populateForm(rcv: Receiving) {
-  receivedBy.value = rcv.receivedBy
-  editItems.value = rcv.items.map(i => ({
-    quantityReceived: i.quantityReceived,
-    condition: i.condition,
-    notes: i.notes,
-  }))
-}
+// Item picker
+const itemPickerOpen = ref(false)
+const itemSearchValue = ref('')
+
+const filteredCatalogItems = computed(() => {
+  if (!itemSearchValue.value)
+    return catalogItems.value
+  const q = itemSearchValue.value.toLowerCase()
+  return catalogItems.value.filter(i => i.name.toLowerCase().includes(q))
+})
 
 function populateFromPo(po: PurchaseOrder) {
   receivedBy.value = 'staff-3'
+  const match = suppliers.value.find(s => s.name === po.supplier.name)
+  supplierId.value = match?.id ?? ''
+  notes.value = ''
   editItems.value = po.items
     .filter(i => i.receivedQuantity < i.quantity)
     .map(i => ({
+      itemId: i.itemId,
+      itemName: getItemById(i.itemId)?.name ?? i.itemId,
       quantityReceived: i.quantity - i.receivedQuantity,
       condition: 'good' as ItemCondition,
-      notes: '',
+      poItemId: i.id,
     }))
+}
+
+function populateForm(rcv: Receiving) {
+  receivedBy.value = rcv.receivedBy
+  notes.value = rcv.notes ?? ''
+  if (rcv.purchaseOrderId) {
+    const po = getOrderById(rcv.purchaseOrderId)
+    if (po) {
+      const match = suppliers.value.find(s => s.name === po.supplier.name)
+      supplierId.value = match?.id ?? ''
+    }
+  }
+  editItems.value = rcv.items.map(i => ({
+    itemId: i.itemId,
+    itemName: getItemById(i.itemId)?.name ?? i.itemId,
+    quantityReceived: i.quantityReceived,
+    condition: i.condition,
+    poItemId: i.purchaseOrderItemId,
+  }))
+}
+
+function resetForm() {
+  receivedBy.value = 'staff-3'
+  supplierId.value = ''
+  notes.value = ''
+  editItems.value = []
 }
 
 watch(() => props.open, (val) => {
@@ -60,22 +98,43 @@ watch(() => props.open, (val) => {
       populateForm(props.receiving)
     else if (props.purchaseOrder)
       populateFromPo(props.purchaseOrder)
+    else resetForm()
   }
 })
 
-function getItemName(itemId: string): string {
-  return getItemById(itemId)?.name ?? itemId
+function addItem() {
+  editItems.value = [
+    ...editItems.value,
+    {
+      itemId: '',
+      itemName: '',
+      quantityReceived: 1,
+      condition: 'good' as ItemCondition,
+    },
+  ]
 }
 
-function getPo(): PurchaseOrder | null {
+function removeItem(index: number) {
+  editItems.value = editItems.value.filter((_, i) => i !== index)
+}
+
+function selectItem(idx: number, item: { id: string, name: string }) {
+  editItems.value = editItems.value.map((l, i) => i === idx ? { ...l, itemId: item.id, itemName: item.name } : l)
+  itemPickerOpen.value = false
+  itemSearchValue.value = ''
+}
+
+function getPo() {
   if (props.purchaseOrder)
     return props.purchaseOrder
-  if (!props.receiving)
-    return null
-  return getOrderById(props.receiving.purchaseOrderId)
+  if (props.receiving?.purchaseOrderId)
+    return getOrderById(props.receiving.purchaseOrderId)
+  return null
 }
 
-function getPoItemOrderedQty(poItemId: string): number {
+function getPoItemOrderedQty(poItemId?: string): number {
+  if (!poItemId)
+    return 0
   const po = getPo()
   if (!po)
     return 0
@@ -99,40 +158,37 @@ const CONDITIONS: { value: ItemCondition, label: string }[] = [
   { value: 'missing', label: 'Missing' },
 ]
 
-function getUnreceivedItems() {
-  const po = getPo()
-  if (!po)
-    return []
-  return po.items.filter(i => i.receivedQuantity < i.quantity)
+function buildPayload() {
+  return editItems.value.map(item => ({
+    id: `rcvi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    itemId: item.itemId,
+    purchaseOrderItemId: item.poItemId,
+    quantityReceived: item.quantityReceived,
+    condition: item.condition,
+  }))
 }
 
 function handleSave() {
-  if (isCreatingFromPo.value && props.purchaseOrder) {
-    const unreceived = getUnreceivedItems()
+  if (isCreatingStandalone.value || isCreatingFromPo.value) {
+    const po = getPo()
     addReceiving({
-      purchaseOrderId: props.purchaseOrder.id,
+      purchaseOrderId: po?.id,
       status: 'draft',
       receivedBy: receivedBy.value,
-      items: unreceived.map((item, idx) => ({
-        id: `rcvi-${Date.now()}-${idx}`,
-        itemId: item.itemId,
-        purchaseOrderItemId: item.id,
-        quantityReceived: editItems.value[idx]?.quantityReceived ?? 0,
-        condition: editItems.value[idx]?.condition ?? 'good',
-        notes: editItems.value[idx]?.notes,
-      })),
+      items: buildPayload(),
       receivedAt: new Date().toISOString(),
-      notes: `Created from ${props.purchaseOrder.poNumber}`,
+      notes: notes.value.trim() || undefined,
     })
     toast.success('Receiving created')
   }
   else if (props.receiving) {
     updateReceiving(props.receiving.id, {
-      items: props.receiving.items.map((item, idx) => ({
-        ...item,
-        quantityReceived: editItems.value[idx]?.quantityReceived ?? item.quantityReceived,
-        condition: editItems.value[idx]?.condition ?? item.condition,
-        notes: editItems.value[idx]?.notes ?? item.notes,
+      items: editItems.value.map(item => ({
+        id: item.poItemId ?? `rcvi-${Date.now()}`,
+        itemId: item.itemId,
+        purchaseOrderItemId: item.poItemId,
+        quantityReceived: item.quantityReceived,
+        condition: item.condition,
       })),
     })
     toast.success('Receiving updated')
@@ -141,60 +197,57 @@ function handleSave() {
 }
 
 function handleComplete() {
-  if (isCreatingFromPo.value && props.purchaseOrder) {
-    const unreceived = getUnreceivedItems()
+  if (isCreatingStandalone.value || isCreatingFromPo.value) {
+    const po = getPo()
     const newId = addReceiving({
-      purchaseOrderId: props.purchaseOrder.id,
+      purchaseOrderId: po?.id,
       status: 'draft',
       receivedBy: receivedBy.value,
-      items: unreceived.map((item, idx) => ({
-        id: `rcvi-${Date.now()}-${idx}`,
-        itemId: item.itemId,
-        purchaseOrderItemId: item.id,
-        quantityReceived: editItems.value[idx]?.quantityReceived ?? 0,
-        condition: editItems.value[idx]?.condition ?? 'good',
-        notes: editItems.value[idx]?.notes,
-      })),
+      items: buildPayload(),
       receivedAt: new Date().toISOString(),
-      notes: `Created from ${props.purchaseOrder.poNumber}`,
+      notes: notes.value.trim() || undefined,
     })
     completeReceiving(newId)
   }
   else if (props.receiving) {
     updateReceiving(props.receiving.id, {
-      items: props.receiving.items.map((item, idx) => ({
-        ...item,
-        quantityReceived: editItems.value[idx]?.quantityReceived ?? item.quantityReceived,
-        condition: editItems.value[idx]?.condition ?? item.condition,
-        notes: editItems.value[idx]?.notes ?? item.notes,
+      items: editItems.value.map(item => ({
+        id: item.poItemId ?? `rcvi-${Date.now()}`,
+        itemId: item.itemId,
+        purchaseOrderItemId: item.poItemId,
+        quantityReceived: item.quantityReceived,
+        condition: item.condition,
       })),
     })
     completeReceiving(props.receiving.id)
   }
   isOpen.value = false
 }
+
+const isFormValid = computed(() =>
+  editItems.value.length > 0 && editItems.value.every(i => i.itemId && i.quantityReceived > 0))
 </script>
 
 <template>
   <Sheet v-model:open="isOpen">
     <SheetContent class="w-full sm:max-w-lg overflow-y-auto">
       <SheetHeader>
-        <SheetTitle>{{ isCreatingFromPo ? 'New Receiving' : (receiving?.receivingNumber ?? 'Receiving') }}</SheetTitle>
+        <SheetTitle>{{ isCreatingStandalone ? 'New Receiving' : isCreatingFromPo ? 'New Receiving' : (receiving?.receivingNumber ?? 'Receiving') }}</SheetTitle>
         <SheetDescription>
-          {{ isCreatingFromPo ? `Receive items from ${purchaseOrder?.poNumber}.` : 'Receiving details and item inspection.' }}
+          {{ isCreatingStandalone ? 'Receive items into inventory.' : isCreatingFromPo ? `Receive items from ${purchaseOrder?.poNumber}.` : 'Receiving details and item inspection.' }}
         </SheetDescription>
       </SheetHeader>
 
-      <div v-if="receiving || isCreatingFromPo" class="flex flex-col gap-4 px-4 py-4">
-        <!-- PO Info -->
-        <div class="rounded-md bg-muted/50 border p-3">
+      <div v-if="receiving || isCreatingStandalone || isCreatingFromPo" class="flex flex-col gap-4 px-4 py-4">
+        <!-- PO Info (when linked) -->
+        <div v-if="getPo()" class="rounded-md bg-muted/50 border p-3">
           <div class="grid grid-cols-2 gap-2">
             <div>
               <p class="text-xs text-muted-foreground">
                 Purchase Order
               </p>
               <p class="text-sm font-medium">
-                {{ getPo()?.poNumber ?? receiving?.purchaseOrderId }}
+                {{ getPo()?.poNumber }}
               </p>
             </div>
             <div>
@@ -202,30 +255,29 @@ function handleComplete() {
                 Supplier
               </p>
               <p class="text-sm font-medium">
-                {{ getPo()?.supplier.name ?? '-' }}
-              </p>
-            </div>
-            <div v-if="!isCreatingFromPo">
-              <p class="text-xs text-muted-foreground">
-                Received By
-              </p>
-              <p class="text-sm font-medium">
-                {{ getStaffName(receiving!.receivedBy) }}
-              </p>
-            </div>
-            <div v-if="!isCreatingFromPo">
-              <p class="text-xs text-muted-foreground">
-                Date
-              </p>
-              <p class="text-sm font-medium">
-                {{ formatDate(receiving!.receivedAt) }}
+                {{ getPo()?.supplier.name }}
               </p>
             </div>
           </div>
         </div>
 
-        <!-- Staff selector when creating -->
-        <div v-if="isCreatingFromPo" class="flex flex-col gap-1.5">
+        <!-- Supplier picker (standalone mode) -->
+        <div v-if="isCreatingStandalone" class="flex flex-col gap-1.5">
+          <Label>Supplier (optional)</Label>
+          <Select v-model="supplierId">
+            <SelectTrigger>
+              <SelectValue placeholder="Select supplier..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="sup in suppliers" :key="sup.id" :value="sup.id">
+                {{ sup.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <!-- Staff selector (create modes) -->
+        <div v-if="!receiving" class="flex flex-col gap-1.5">
           <Label>Received By</Label>
           <Select v-model="receivedBy">
             <SelectTrigger>
@@ -238,38 +290,87 @@ function handleComplete() {
             </SelectContent>
           </Select>
         </div>
+        <div v-else class="grid grid-cols-2 gap-2">
+          <div>
+            <p class="text-xs text-muted-foreground">Received By</p>
+            <p class="text-sm font-medium">{{ getStaffName(receiving.receivedBy) }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Date</p>
+            <p class="text-sm font-medium">{{ formatDate(receiving.receivedAt) }}</p>
+          </div>
+        </div>
 
         <Separator />
 
         <!-- Items -->
         <div class="flex flex-col gap-3">
-          <p class="text-sm font-medium">
-            Items
-          </p>
-          <div
-            v-for="(item, idx) in (isCreatingFromPo ? getUnreceivedItems() : receiving!.items)"
-            :key="item.id"
-            class="rounded-md border p-3"
-          >
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium">
+              Items <span class="text-destructive">*</span>
+            </p>
+            <Button v-if="isCreatingStandalone" variant="outline" size="sm" class="h-7 text-xs" @click="addItem">
+              <Icon name="lucide:plus" class="mr-1 h-3 w-3" />
+              Add Item
+            </Button>
+          </div>
+
+          <div v-if="editItems.length === 0" class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+            No items yet.
+          </div>
+
+          <div v-for="(item, idx) in editItems" :key="idx" class="rounded-md border p-3">
             <div class="flex items-start justify-between gap-2">
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium">
-                  {{ getItemName(item.itemId) }}
+                  {{ item.itemName || 'Select item...' }}
                 </p>
-                <p class="text-xs text-muted-foreground">
-                  Ordered: {{ getPoItemOrderedQty(item.purchaseOrderItemId) }}
-                  <template v-if="isCreatingFromPo && (item as any).receivedQuantity > 0">
-                    · Already received: {{ (item as any).receivedQuantity }}
-                  </template>
+                <p v-if="item.poItemId" class="text-xs text-muted-foreground">
+                  Ordered: {{ getPoItemOrderedQty(item.poItemId) }}
                 </p>
               </div>
+              <Button v-if="isCreatingStandalone" variant="ghost" size="icon" class="h-6 w-6 shrink-0" @click="removeItem(idx)">
+                <Icon name="lucide:x" class="h-3.5 w-3.5" />
+              </Button>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 mt-2">
+            <!-- Item picker for standalone mode -->
+            <div v-if="isCreatingStandalone && !item.itemId" class="mt-2">
+              <Popover>
+                <PopoverTrigger as-child>
+                  <Button variant="outline" size="sm" class="h-8 justify-start text-xs font-normal w-full">
+                    <Icon name="lucide:search" class="mr-2 h-3 w-3" />
+                    Pick item from catalog...
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-72 p-0" align="start">
+                  <Command>
+                    <CommandInput v-model="itemSearchValue" placeholder="Search..." />
+                    <CommandEmpty>No items found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        v-for="ci in filteredCatalogItems"
+                        :key="ci.id"
+                        :value="ci.id"
+                        @select="selectItem(idx, { id: ci.id, name: ci.name })"
+                      >
+                        <Icon name="lucide:package" class="mr-2 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p class="text-sm">{{ ci.name }}</p>
+                          <p class="text-xs text-muted-foreground">{{ ci.category }} · {{ ci.unit }}</p>
+                        </div>
+                      </CommandItem>
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div v-if="item.itemId" class="grid grid-cols-2 gap-2 mt-2">
               <div class="flex flex-col gap-1">
                 <Label class="text-xs">Received Qty</Label>
                 <Input
-                  v-model.number="editItems[idx].quantityReceived"
+                  v-model.number="item.quantityReceived"
                   type="number"
                   min="0"
                   class="h-8 text-sm"
@@ -278,7 +379,7 @@ function handleComplete() {
               </div>
               <div class="flex flex-col gap-1">
                 <Label class="text-xs">Condition</Label>
-                <Select v-model="editItems[idx].condition" :disabled="!!receiving && receiving.status === 'completed'">
+                <Select v-model="item.condition" :disabled="!!receiving && receiving.status === 'completed'">
                   <SelectTrigger class="h-8 text-sm w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -297,8 +398,7 @@ function handleComplete() {
 
         <div class="flex flex-col gap-1.5">
           <Label>Notes</Label>
-          <Textarea v-if="isCreatingFromPo" model-value="" placeholder="Notes..." rows="2" />
-          <Textarea v-else :model-value="receiving?.notes ?? ''" disabled placeholder="Notes..." rows="2" />
+          <Textarea v-model="notes" :disabled="!!receiving && receiving.status === 'completed'" placeholder="Notes..." rows="2" />
         </div>
       </div>
 
@@ -306,20 +406,20 @@ function handleComplete() {
         <Button variant="outline" @click="isOpen = false">
           Close
         </Button>
-        <template v-if="isCreatingFromPo">
-          <Button variant="secondary" @click="handleSave">
+        <template v-if="!receiving">
+          <Button variant="secondary" :disabled="!isFormValid" @click="handleSave">
             Save Draft
           </Button>
-          <Button @click="handleComplete">
+          <Button :disabled="!isFormValid" @click="handleComplete">
             <Icon name="lucide:check" class="mr-2 h-4 w-4" />
             Complete Receiving
           </Button>
         </template>
-        <template v-else-if="receiving">
-          <Button v-if="receiving.status === 'draft'" variant="secondary" @click="handleSave">
+        <template v-else-if="receiving.status === 'draft'">
+          <Button variant="secondary" @click="handleSave">
             Save
           </Button>
-          <Button v-if="receiving.status === 'draft'" @click="handleComplete">
+          <Button @click="handleComplete">
             <Icon name="lucide:check" class="mr-2 h-4 w-4" />
             Complete Receiving
           </Button>
