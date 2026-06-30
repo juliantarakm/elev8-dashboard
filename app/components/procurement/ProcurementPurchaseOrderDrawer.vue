@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { usePurchaseOrders } from '@/composables/usePurchaseOrders'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
+import { useSuppliers } from '@/composables/useSuppliers'
 
 const props = defineProps<{
   open: boolean
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 
 const { updateOrder, markSent } = usePurchaseOrders()
 const { getItemById } = useInventoryCatalog()
+const { suppliers, getSupplierById } = useSuppliers()
 
 const isOpen = computed({
   get: () => props.open,
@@ -24,16 +26,23 @@ const isOpen = computed({
 })
 
 // Form state
-const supplierName = ref('')
-const supplierContact = ref('')
+const supplierId = ref('')
 const expectedDeliveryDate = ref('')
 const notes = ref('')
 
 function populateForm(order: PurchaseOrder) {
-  supplierName.value = order.supplier.name
-  supplierContact.value = order.supplier.contact
+  // Try to find matching supplier by name
+  const match = suppliers.value.find(s => s.name === order.supplier.name)
+  supplierId.value = match?.id ?? ''
   expectedDeliveryDate.value = order.expectedDeliveryDate ?? ''
   notes.value = order.notes ?? ''
+}
+
+function getSelectedSupplier() {
+  if (supplierId.value)
+    return getSupplierById(supplierId.value)
+  // Fallback to order's inline supplier
+  return null
 }
 
 watch(() => props.open, (val) => {
@@ -44,8 +53,11 @@ watch(() => props.open, (val) => {
 function handleSave() {
   if (!props.order)
     return
+  const sup = getSelectedSupplier()
   updateOrder(props.order.id, {
-    supplier: { name: supplierName.value.trim(), contact: supplierContact.value.trim() },
+    supplier: sup
+      ? { name: sup.name, contact: sup.contact }
+      : props.order.supplier,
     expectedDeliveryDate: expectedDeliveryDate.value || undefined,
     notes: notes.value.trim() || undefined,
   })
@@ -106,15 +118,21 @@ function formatAmount(amount: number, currency: string) {
           </p>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1.5">
-            <Label>Supplier Name</Label>
-            <Input v-model="supplierName" :disabled="order.status !== 'draft'" placeholder="Supplier name" />
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <Label>Contact</Label>
-            <Input v-model="supplierContact" :disabled="order.status !== 'draft'" placeholder="Phone or email" />
-          </div>
+        <div class="flex flex-col gap-1.5">
+          <Label>Supplier</Label>
+          <Select v-model="supplierId" :disabled="order.status !== 'draft'">
+            <SelectTrigger>
+              <SelectValue :placeholder="order.supplier.name" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="sup in suppliers" :key="sup.id" :value="sup.id">
+                {{ sup.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p v-if="getSelectedSupplier()?.contact || (!supplierId && order.supplier.contact)" class="text-xs text-muted-foreground">
+            {{ getSelectedSupplier()?.contact ?? order.supplier.contact }}
+          </p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">

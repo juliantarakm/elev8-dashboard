@@ -4,7 +4,7 @@ import { usePurchaseOrders } from '@/composables/usePurchaseOrders'
 import { useReceivings } from '@/composables/useReceivings'
 import { useInventoryListings } from '@/composables/useInventoryListings'
 
-const activeTab = ref<'pr' | 'po' | 'rcv' | 'iss'>('pr')
+const activeTab = ref<'pr' | 'po' | 'rcv' | 'iss' | 'sup'>('pr')
 
 const { pendingApprovalCount } = usePurchaseRequests()
 const { openPoCount } = usePurchaseOrders()
@@ -91,6 +91,10 @@ const { lowStockCount } = useInventoryListings()
           <Icon name="lucide:package-minus" class="mr-2 h-4 w-4" />
           Issuing
         </TabsTrigger>
+        <TabsTrigger value="sup">
+          <Icon name="lucide:truck" class="mr-2 h-4 w-4" />
+          Suppliers
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="pr" class="mt-4">
@@ -104,6 +108,9 @@ const { lowStockCount } = useInventoryListings()
       </TabsContent>
       <TabsContent value="iss" class="mt-4">
         <ProcurementIssuingTab />
+      </TabsContent>
+      <TabsContent value="sup" class="mt-4">
+        <ProcurementSuppliersTab />
       </TabsContent>
     </Tabs>
   </div>
