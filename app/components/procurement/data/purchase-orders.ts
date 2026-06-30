@@ -14,7 +14,7 @@ export interface PurchaseOrderItem {
 export interface PurchaseOrder {
   id: string
   poNumber: string
-  purchaseRequestId: string
+  purchaseRequestId?: string
   status: PurchaseOrderStatus
   supplier: InventorySupplier
   items: PurchaseOrderItem[]

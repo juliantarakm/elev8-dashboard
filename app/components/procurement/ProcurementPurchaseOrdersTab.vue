@@ -17,6 +17,11 @@ const selectedOrder = ref<PurchaseOrder | null>(null)
 const rcvDrawerOpen = ref(false)
 const rcvPo = ref<PurchaseOrder | null>(null)
 
+function openAdd() {
+  selectedOrder.value = null
+  drawerOpen.value = true
+}
+
 function openEdit(order: PurchaseOrder) {
   selectedOrder.value = order
   drawerOpen.value = true
@@ -103,6 +108,13 @@ const STATUS_OPTIONS: { value: PurchaseOrderStatus | 'all', label: string }[] = 
           </SelectItem>
         </SelectContent>
       </Select>
+
+      <div class="ml-auto">
+        <Button size="sm" @click="openAdd">
+          <Icon name="lucide:plus" class="mr-2 h-4 w-4" />
+          New PO
+        </Button>
+      </div>
     </div>
 
     <div class="rounded-md border">
