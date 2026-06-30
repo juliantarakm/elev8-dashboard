@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ItemCondition, ListingInventoryEntry } from '@/components/inventory/data/listing-entries'
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { BALI_LISTINGS } from '@/components/upsells/data/upsell-services'
 import { useInventoryCatalog } from '@/composables/useInventoryCatalog'
@@ -8,6 +9,7 @@ import { useInventoryListings } from '@/composables/useInventoryListings'
 
 const LOW_STOCK_THRESHOLD = 5
 
+const router = useRouter()
 const { getItemById } = useInventoryCatalog()
 const { entries, filteredEntries, filterListing, filterCondition, deleteEntry } = useInventoryListings()
 
@@ -28,6 +30,10 @@ function handleDelete(entry: ListingInventoryEntry) {
   const item = getItemById(entry.itemId)
   deleteEntry(entry.id)
   toast.success(`"${item?.name ?? 'Item'}" removed from listing`)
+}
+
+function handleCreatePr(entry: ListingInventoryEntry) {
+  router.push(`/procurement?tab=pr&itemId=${entry.itemId}`)
 }
 
 const CONDITIONS: { value: ItemCondition | 'all', label: string }[] = [
@@ -199,6 +205,13 @@ function formatRelativeDate(iso: string) {
                   <DropdownMenuItem @click="openEdit(entry)">
                     <Icon name="lucide:pencil" class="mr-2 h-4 w-4" />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-if="entry.stockLevel !== undefined && entry.stockLevel <= LOW_STOCK_THRESHOLD"
+                    @click="handleCreatePr(entry)"
+                  >
+                    <Icon name="lucide:shopping-cart" class="mr-2 h-4 w-4" />
+                    Create Purchase Request
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem class="text-destructive" @click="handleDelete(entry)">
