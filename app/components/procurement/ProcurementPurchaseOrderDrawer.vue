@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
+  'createReceiving': [order: PurchaseOrder]
 }>()
 
 const { updateOrder, markSent } = usePurchaseOrders()
@@ -57,6 +58,13 @@ function handleMarkSent() {
     return
   markSent(props.order.id)
   toast.success(`${props.order.poNumber} marked as sent`)
+  isOpen.value = false
+}
+
+function handleCreateReceiving() {
+  if (!props.order)
+    return
+  emit('createReceiving', props.order)
   isOpen.value = false
 }
 
@@ -188,6 +196,10 @@ function formatAmount(amount: number, currency: string) {
         <Button v-if="order.status === 'draft'" @click="handleMarkSent">
           <Icon name="lucide:send" class="mr-2 h-4 w-4" />
           Mark as Sent
+        </Button>
+        <Button v-if="order.status === 'sent' || order.status === 'partially_received'" @click="handleCreateReceiving">
+          <Icon name="lucide:package-check" class="mr-2 h-4 w-4" />
+          Create Receiving
         </Button>
       </SheetFooter>
     </SheetContent>

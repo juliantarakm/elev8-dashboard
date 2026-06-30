@@ -14,6 +14,8 @@ const {
 
 const drawerOpen = ref(false)
 const selectedOrder = ref<PurchaseOrder | null>(null)
+const rcvDrawerOpen = ref(false)
+const rcvPo = ref<PurchaseOrder | null>(null)
 
 function openEdit(order: PurchaseOrder) {
   selectedOrder.value = order
@@ -28,6 +30,11 @@ function handleMarkSent(order: PurchaseOrder) {
 function handleCancel(order: PurchaseOrder) {
   cancelOrder(order.id)
   toast.success(`${order.poNumber} cancelled`)
+}
+
+function handleCreateReceiving(order: PurchaseOrder) {
+  rcvPo.value = order
+  rcvDrawerOpen.value = true
 }
 
 function formatDate(d?: string) {
@@ -154,6 +161,13 @@ const STATUS_OPTIONS: { value: PurchaseOrderStatus | 'all', label: string }[] = 
                     <Icon name="lucide:pencil" class="mr-2 h-4 w-4" />
                     View / Edit
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-if="order.status === 'sent' || order.status === 'partially_received'"
+                    @click="handleCreateReceiving(order)"
+                  >
+                    <Icon name="lucide:package-check" class="mr-2 h-4 w-4" />
+                    Create Receiving
+                  </DropdownMenuItem>
                   <DropdownMenuItem v-if="order.status === 'draft'" @click="handleMarkSent(order)">
                     <Icon name="lucide:send" class="mr-2 h-4 w-4" />
                     Mark as Sent
@@ -180,6 +194,7 @@ const STATUS_OPTIONS: { value: PurchaseOrderStatus | 'all', label: string }[] = 
       </Table>
     </div>
 
-    <ProcurementPurchaseOrderDrawer v-model:open="drawerOpen" :order="selectedOrder" />
+    <ProcurementPurchaseOrderDrawer v-model:open="drawerOpen" :order="selectedOrder" @create-receiving="handleCreateReceiving" />
+    <ProcurementReceivingDrawer v-model:open="rcvDrawerOpen" :purchase-order="rcvPo" />
   </div>
 </template>
