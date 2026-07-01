@@ -6,23 +6,37 @@ import type { WhatsAppAccount } from '~/composables/useWhatsApp'
 
 const {
   whatsappAccounts,
-  addAccount,
+  validateAndConnect,
   removeAccount,
   assignListings,
   bulkAssign,
 } = useWhatsApp()
 
 const activeTab = ref<'connected' | 'unassigned'>('connected')
-const dialogOpen = ref(false)
-const deleteDialogOpen = ref(false)
-const isConnecting = ref(false)
 
-// Edit mode
+// --- Connect form ---
+const connectDialogOpen = ref(false)
+const isConnecting = ref(false)
+const formAccessToken = ref('')
+const formWabaId = ref('')
+const formPhoneNumberId = ref('')
+const formError = ref('')
+
+// --- Webhook display ---
+const webhookDialogOpen = ref(false)
+const webhookAccount = ref<WhatsAppAccount | null>(null)
+const pendingAssignAfterWebhook = ref(false)
+
+// --- Edit / Assign listings ---
 const editAccountId = ref('')
 const selectedListings = ref<string[]>([])
+const dialogOpen = ref(false)
+
+// --- Delete ---
+const deleteDialogOpen = ref(false)
 const accountToDelete = ref<WhatsAppAccount | null>(null)
 
-// Unassigned tab
+// --- Unassigned tab ---
 const unassignedSearch = ref('')
 const unassignedTagSearch = ref('')
 const selectedUnassignedTags = ref<string[]>([])
@@ -30,7 +44,7 @@ const selectedUnassignedListings = ref<string[]>([])
 const selectedBulkAccountId = ref('')
 const unassignedTagPopoverOpen = ref(false)
 
-// Assign step in dialog
+// --- Assign dialog ---
 const assignSearch = ref('')
 const assignTagSearch = ref('')
 const assignTagPopoverOpen = ref(false)
@@ -88,52 +102,72 @@ const unassignedTags = computed(() =>
 const selectedUnassignedCount = computed(() => selectedUnassignedListings.value.length)
 const hasAccounts = computed(() => whatsappAccounts.value.length > 0)
 
-const mockAccounts = [
-  { phoneNumber: '+62 811 2345 6789', businessName: 'Elev8 Bali Office' },
-  { phoneNumber: '+62 877 8901 2345', businessName: 'Elev8 Seminyak Hub' },
-  { phoneNumber: '+62 813 5678 9012', businessName: 'Elev8 Canggu Lodge' },
-]
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]
+function resetConnectForm() {
+  formAccessToken.value = ''
+  formWabaId.value = ''
+  formPhoneNumberId.value = ''
+  formError.value = ''
 }
 
-function resetDialog() {
-  editAccountId.value = ''
-  selectedListings.value = []
-  assignSearch.value = ''
-  assignTagSearch.value = ''
-  assignTagPopoverOpen.value = false
-}
-
-function startOAuthFlow() {
+async function handleConnect() {
   if (isConnecting.value) return
+
+  // Validate fields not empty
+  if (!formAccessToken.value.trim() || !formWabaId.value.trim() || !formPhoneNumberId.value.trim()) {
+    formError.value = 'All fields are required.'
+    return
+  }
+
   isConnecting.value = true
+  formError.value = ''
 
-  toast.info('Opening Meta Embedded Signup…')
+  const result = await validateAndConnect(
+    formAccessToken.value.trim(),
+    formWabaId.value.trim(),
+    formPhoneNumberId.value.trim(),
+  )
 
-  setTimeout(() => {
-    // Simulate OAuth success — Meta returns phone + business name
-    const mock = pickRandom(mockAccounts)
-    const newId = `wa-${Date.now()}`
-    const newAccount: WhatsAppAccount = {
-      id: newId,
-      phoneNumber: mock.phoneNumber,
-      businessName: mock.businessName,
-      status: 'connected',
-      connectedAt: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      listingIds: [],
-    }
-
-    addAccount(newAccount)
-    toast.success(`${mock.businessName} connected.`)
-
-    // Open listing assignment dialog for the new account
-    editAccountId.value = newId
-    selectedListings.value = []
-    dialogOpen.value = true
+  if (result.success) {
+    toast.success(`${result.businessName} connected.`)
+    connectDialogOpen.value = false
+    resetConnectForm()
     isConnecting.value = false
-  }, 1200)
+
+    // Step 1: show webhook info
+    const newAccount = whatsappAccounts.value[whatsappAccounts.value.length - 1]
+    webhookAccount.value = newAccount
+    pendingAssignAfterWebhook.value = true
+    webhookDialogOpen.value = true
+  }
+  else {
+    formError.value = result.error
+    isConnecting.value = false
+  }
+}
+
+function openWebhookDialog(account: WhatsAppAccount) {
+  webhookAccount.value = account
+  webhookDialogOpen.value = true
+}
+
+function closeWebhookDialog() {
+  webhookDialogOpen.value = false
+  if (pendingAssignAfterWebhook.value && webhookAccount.value) {
+    pendingAssignAfterWebhook.value = false
+    // Step 2: assign listings
+    openEditDialog(webhookAccount.value)
+  }
+  webhookAccount.value = null
+}
+
+function copyWebhookToken(token: string) {
+  navigator.clipboard.writeText(token)
+  toast.success('Webhook verification token copied.')
+}
+
+function copyCallbackUrl(url: string) {
+  navigator.clipboard.writeText(url)
+  toast.success('Callback URL copied.')
 }
 
 function openEditDialog(account: WhatsAppAccount) {
@@ -206,7 +240,7 @@ function bulkAssignSelected() {
 }
 
 function handleTestSend(account: WhatsAppAccount) {
-  toast.success(`Test message sent to ${account.phoneNumber}.`)
+  toast.success(`Test message sent to ${account.displayPhoneNumber}.`)
 }
 </script>
 
@@ -215,33 +249,32 @@ function handleTestSend(account: WhatsAppAccount) {
     <div class="flex items-end justify-between gap-4">
       <div class="space-y-1">
         <h3 class="text-lg font-medium">WhatsApp Business</h3>
-        <p class="text-sm text-muted-foreground">Connect WhatsApp Business numbers to send and receive guest messages.</p>
+        <p class="text-sm text-muted-foreground">Connect WhatsApp Business numbers via Meta Cloud API to send and receive guest messages.</p>
       </div>
-      <Button class="gap-2" :disabled="isConnecting" @click="startOAuthFlow">
-        <Icon v-if="isConnecting" name="lucide:loader-circle" class="size-4 animate-spin" />
-        <Icon v-else name="lucide:plus" class="size-4" />
-        {{ isConnecting ? 'Connecting…' : 'Add account' }}
+      <Button class="gap-2" @click="connectDialogOpen = true">
+        <Icon name="lucide:plus" class="size-4" />
+        Add account
       </Button>
     </div>
 
     <!-- Empty state -->
-    <div v-if="!hasAccounts && !isConnecting" class="border border-dashed bg-card/40 p-10 text-center">
+    <div v-if="!hasAccounts" class="border border-dashed bg-card/40 p-10 text-center">
       <div class="mx-auto flex max-w-md flex-col items-center gap-4">
         <div class="flex size-12 items-center justify-center rounded-full border bg-background">
           <Icon name="lucide:message-circle" class="size-5 text-muted-foreground" />
         </div>
         <div class="space-y-2">
           <p class="text-base font-medium">No WhatsApp account yet</p>
-          <p class="text-sm text-muted-foreground">Connect a WhatsApp Business number via Meta to start messaging guests.</p>
+          <p class="text-sm text-muted-foreground">Enter your Meta WhatsApp Cloud API credentials to connect.</p>
         </div>
-        <Button class="gap-2" @click="startOAuthFlow">
+        <Button class="gap-2" @click="connectDialogOpen = true">
           <Icon name="lucide:message-circle" class="size-4" />
           Connect with Meta
         </Button>
       </div>
     </div>
 
-    <Tabs v-model="activeTab" class="space-y-4">
+    <Tabs v-if="hasAccounts" v-model="activeTab" class="space-y-4">
       <TabsList>
         <TabsTrigger value="connected">Connected</TabsTrigger>
         <TabsTrigger value="unassigned" class="gap-2">
@@ -263,9 +296,12 @@ function handleTestSend(account: WhatsAppAccount) {
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ account.businessName }}</p>
-              <p class="mt-0.5 text-xs text-muted-foreground">{{ account.phoneNumber }}</p>
+              <p class="mt-0.5 text-xs text-muted-foreground">{{ account.displayPhoneNumber }}</p>
               <p class="text-xs text-muted-foreground">Connected {{ account.connectedAt }} · {{ account.listingIds.length }} listing{{ account.listingIds.length !== 1 ? 's' : '' }}</p>
-              <div class="mt-3 flex gap-2">
+              <p class="mt-1 text-[11px] text-muted-foreground/60">
+                WABA: {{ account.wabaId }} · Phone ID: {{ account.phoneNumberId }}
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openEditDialog(account)">
                   <Icon name="lucide:pencil" class="size-3.5" />
                   Assign Listings
@@ -273,6 +309,10 @@ function handleTestSend(account: WhatsAppAccount) {
                 <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="handleTestSend(account)">
                   <Icon name="lucide:send" class="size-3.5" />
                   Test Send
+                </Button>
+                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openWebhookDialog(account)">
+                  <Icon name="lucide:webhook" class="size-3.5" />
+                  Webhook
                 </Button>
                 <Button size="sm" variant="outline" class="h-8 gap-1.5 text-destructive hover:text-destructive" @click="askDelete(account)">
                   <Icon name="lucide:trash-2" class="size-3.5" />
@@ -282,7 +322,7 @@ function handleTestSend(account: WhatsAppAccount) {
             </div>
             <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700">
               <span class="h-1.5 w-1.5 rounded-full bg-green-500" />
-              {{ account.status === 'connected' ? 'Connected' : account.status }}
+              Connected
             </span>
           </div>
         </div>
@@ -327,9 +367,6 @@ function handleTestSend(account: WhatsAppAccount) {
                     <Checkbox :model-value="selectedUnassignedTags.includes(tag)" class="size-3.5" @update:model-value="() => toggleUnassignedTag(tag)" />
                     <span>{{ tag }}</span>
                   </button>
-                  <p v-if="!unassignedTags.filter(t => t.toLowerCase().includes(unassignedTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
-                    No tags found.
-                  </p>
                 </div>
               </div>
             </PopoverContent>
@@ -386,20 +423,159 @@ function handleTestSend(account: WhatsAppAccount) {
       </TabsContent>
     </Tabs>
 
-    <!-- Assign Listings Dialog (opens after OAuth, or via Edit) -->
+    <!-- Add Account Dialog — Manual Credential Form -->
+    <Dialog v-model:open="connectDialogOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Connect WhatsApp Business</DialogTitle>
+          <DialogDescription>
+            Enter your Meta WhatsApp Cloud API credentials. These can be found in your
+            <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:text-foreground">Meta Developer Portal</a>
+            under <strong>WhatsApp &rarr; API Setup</strong>.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form class="space-y-4" @submit.prevent="handleConnect">
+          <div class="space-y-2">
+            <Label for="access-token">Access Token</Label>
+            <Input
+              id="access-token"
+              v-model="formAccessToken"
+              type="password"
+              placeholder="EAAT4cB..."
+              class="w-full font-mono text-sm"
+            />
+            <p class="text-[11px] text-muted-foreground">Permanent access token from Meta App &rarr; WhatsApp &rarr; API Setup.</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="waba-id">WABA ID</Label>
+              <Input
+                id="waba-id"
+                v-model="formWabaId"
+                placeholder="123456789"
+                class="w-full font-mono text-sm"
+              />
+              <p class="text-[11px] text-muted-foreground">WhatsApp Business Account ID</p>
+            </div>
+            <div class="space-y-2">
+              <Label for="phone-id">Phone Number ID</Label>
+              <Input
+                id="phone-id"
+                v-model="formPhoneNumberId"
+                placeholder="987654321"
+                class="w-full font-mono text-sm"
+              />
+              <p class="text-[11px] text-muted-foreground">Phone Number ID from WABA</p>
+            </div>
+          </div>
+
+          <div v-if="formError" class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <div class="flex items-start gap-2">
+              <Icon name="lucide:alert-circle" class="mt-0.5 size-4 shrink-0" />
+              <span>{{ formError }}</span>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
+            <div class="flex items-start gap-2">
+              <Icon name="lucide:info" class="mt-0.5 size-3.5 shrink-0" />
+              <div>
+                <p class="font-medium">What happens after connecting?</p>
+                <ul class="mt-1 list-inside list-disc space-y-0.5">
+                  <li>We validate your credentials via Meta Graph API</li>
+                  <li>We auto-generate a webhook verification token for incoming messages</li>
+                  <li>Credentials are saved locally on this browser</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" type="button" :disabled="isConnecting" @click="connectDialogOpen = false; resetConnectForm()">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="isConnecting" class="gap-2">
+              <Icon v-if="isConnecting" name="lucide:loader-circle" class="size-4 animate-spin" />
+              {{ isConnecting ? 'Validating…' : 'Connect' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Webhook Info Dialog -->
+    <Dialog v-model:open="webhookDialogOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Webhook Configuration</DialogTitle>
+          <DialogDescription>
+            Set up webhooks to receive incoming WhatsApp messages in real time.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div v-if="webhookAccount" class="space-y-5">
+          <div class="rounded-lg border bg-muted/30 p-3 text-sm">
+            <p class="font-medium">{{ webhookAccount.businessName }}</p>
+            <p class="text-xs text-muted-foreground">{{ webhookAccount.displayPhoneNumber }}</p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <Label class="mb-1.5 block text-xs font-medium">Callback URL</Label>
+              <div class="flex gap-2">
+                <Input :model-value="`https://api.elev8suite.com/webhooks/whatsapp/${webhookAccount.wabaId}`" readonly class="flex-1 font-mono text-xs" />
+                <Button variant="outline" size="sm" class="shrink-0" @click="copyCallbackUrl(`https://api.elev8suite.com/webhooks/whatsapp/${webhookAccount.wabaId}`)">
+                  <Icon name="lucide:copy" class="size-3.5" />
+                </Button>
+              </div>
+              <p class="mt-1 text-[11px] text-muted-foreground">Enter this URL in Meta Developer Portal &rarr; WhatsApp &rarr; Webhook.</p>
+            </div>
+
+            <div>
+              <Label class="mb-1.5 block text-xs font-medium">Verification Token</Label>
+              <div class="flex gap-2">
+                <Input :model-value="webhookAccount.webhookToken" readonly class="flex-1 font-mono text-xs" />
+                <Button variant="outline" size="sm" class="shrink-0" @click="copyWebhookToken(webhookAccount.webhookToken)">
+                  <Icon name="lucide:copy" class="size-3.5" />
+                </Button>
+              </div>
+              <p class="mt-1 text-[11px] text-muted-foreground">Paste this as the Verify Token in Meta Developer Portal.</p>
+            </div>
+          </div>
+
+          <div class="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+            <p class="mb-1 font-medium text-foreground">Steps to complete setup:</p>
+            <ol class="list-inside list-decimal space-y-1">
+              <li>Go to your Meta App &rarr; WhatsApp &rarr; Configuration</li>
+              <li>Paste the <strong>Callback URL</strong> and <strong>Verification Token</strong> above</li>
+              <li>Click <strong>Verify and save</strong></li>
+              <li>Subscribe to the <code>messages</code> webhook field</li>
+            </ol>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button @click="closeWebhookDialog">Done</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Assign Listings Dialog -->
     <Dialog v-model:open="dialogOpen">
       <DialogContent class="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Assign Listings</DialogTitle>
           <DialogDescription v-if="editingAccount">
-            Choose which listings use <strong>{{ editingAccount.businessName }}</strong> ({{ editingAccount.phoneNumber }}).
+            Choose which listings use <strong>{{ editingAccount.businessName }}</strong> ({{ editingAccount.displayPhoneNumber }}).
           </DialogDescription>
         </DialogHeader>
 
         <div v-if="editingAccount" class="space-y-4">
           <div class="rounded-lg border bg-muted/30 p-3 text-sm">
             <p class="font-medium">{{ editingAccount.businessName }}</p>
-            <p class="text-xs text-muted-foreground">{{ editingAccount.phoneNumber }} · Connected {{ editingAccount.connectedAt }}</p>
+            <p class="text-xs text-muted-foreground">{{ editingAccount.displayPhoneNumber }} · Connected {{ editingAccount.connectedAt }}</p>
           </div>
 
           <div class="space-y-3">
@@ -472,7 +648,7 @@ function handleTestSend(account: WhatsAppAccount) {
       </DialogContent>
     </Dialog>
 
-    <!-- Delete confirmation -->
+    <!-- Disconnect confirmation -->
     <Dialog v-model:open="deleteDialogOpen">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
@@ -481,7 +657,7 @@ function handleTestSend(account: WhatsAppAccount) {
         </DialogHeader>
         <div class="rounded-lg border bg-muted/20 p-4 text-sm">
           <p class="font-medium">{{ accountToDelete?.businessName }}</p>
-          <p class="mt-1 text-muted-foreground">{{ accountToDelete?.phoneNumber }}</p>
+          <p class="mt-1 text-muted-foreground">{{ accountToDelete?.displayPhoneNumber }}</p>
         </div>
         <ul class="space-y-1.5 text-sm text-muted-foreground">
           <li class="flex gap-2"><span>•</span> Stop all automated WhatsApp messages for assigned listings</li>
