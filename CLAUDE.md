@@ -179,10 +179,11 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 #### Settings → Integrations (`app/pages/settings/integrations.vue`)
 - Route added to `SettingsSidebarNav.vue` + `constants/menus.ts`
 - Shows only `SettingsWhatsAppIntegration`
-- **`SettingsWhatsAppIntegration.vue`** — multi-account WhatsApp management: Connected tab (account cards with business name, phone, listing count, Edit/Test Send/Disconnect) + Unassigned tab (bulk assign listings to accounts). OAuth flow (simulated Meta Embedded Signup popup) — no manual form fields. Add account triggers OAuth → auto-creates account → opens Assign Listings dialog. Listing assignment: one account per listing enforced.
+- **`SettingsWhatsAppIntegration.vue`** — multi-account WhatsApp management: Connected tab (account cards with business name, phone,listing count, Edit/Test Send/Webhook/Disconnect) + Unassigned tab (bulk assign listings to accounts). **Manual credential form** (not OAuth) — user enters Access Token, WABA ID, Phone Number ID. On success: auto-opens Webhook info dialog (Callback URL + auto-generated Verification Token), then Assign Listings dialog. Tabs hidden when no accounts connected.
+- **`WhatsAppRoutingRules.vue`** — Routing rules (not currently used in UI)
 
 #### Composables
-- **`useWhatsApp.ts`** — `useState('whatsapp-accounts')`; multi-account `WhatsAppAccount[]` with `listingIds: string[]`. Key exports: `whatsappAccounts`, `isConnected`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `connect()`, `disconnect()`. Backward compat: `isConnected` checks if any account is connected. Shared with inbox.
+- **`useWhatsApp.ts`** — `useState('whatsapp-accounts')`; multi-account `WhatsAppAccount[]` with `accessToken`, `wabaId`, `phoneNumberId`, `webhookToken` fields and `listingIds: string[]`. Key exports: `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. `validateAndConnect` calls Meta Graph API mock (returns random mock business) + auto-generates webhook token. Backward compat: `isConnected` checks if any account is connected. Shared with inbox.
 - **`useWhatsAppRules.ts`** — `useState('whatsapp-rules')`; `RoutingRule` type, `conditionTypeLabels`, `routeToLabels`, `ruleConditionText()`, `saveRule()`, `deleteRule()`, `toggleRule()` (component not currently used in UI)
 - **`useWhatsAppTemplates.ts`** — `waTemplates` (booking_confirmation, checkin_instructions, upsell_early_checkin, review_request) + `renderTemplate()`
 
@@ -862,7 +863,7 @@ const table = useVueTable({
 | `useUpsellServices` | `app/composables/useUpsellServices.ts` | Upsells Catalog state + CRUD | `services`, filters, `addService()`, `updateService()`, `deleteService()` |
 | `useUpsellOrders` | `app/composables/useUpsellOrders.ts` | Upsell Orders state + CRUD | `orders`, `filteredOrders`, `statusCounts`, `totalRevenue`, `updateStatus()`, `addOrder()`, `cancelOrder()` |
 | `useUpsellNotifications` | `app/composables/useUpsellNotifications.ts` | Upsell Notifications state | `notifications`, `unreadCount`, `createNotification()`, `markAsRead()` |
-| `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `connection`, `isConnected`, `connect()`, `disconnect()` |
+| `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. |
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
 
