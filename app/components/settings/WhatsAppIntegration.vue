@@ -278,7 +278,7 @@ function handleTestSend(account: WhatsAppAccount) {
         <h3 class="text-lg font-medium">WhatsApp Business</h3>
         <p class="text-sm text-muted-foreground">Connect WhatsApp Business numbers via Meta Cloud API to send and receive guest messages.</p>
       </div>
-      <Button class="gap-2" @click="connectDialogOpen = true">
+      <Button v-if="hasAccounts" class="gap-2" @click="connectDialogOpen = true">
         <Icon name="lucide:plus" class="size-4" />
         Add account
       </Button>
