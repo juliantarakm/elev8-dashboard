@@ -7,6 +7,7 @@ import type { WhatsAppAccount } from '~/composables/useWhatsApp'
 const {
   whatsappAccounts,
   validateAndConnect,
+  updateAccount,
   removeAccount,
   assignListings,
   bulkAssign,
@@ -22,15 +23,25 @@ const formWabaId = ref('')
 const formPhoneNumberId = ref('')
 const formError = ref('')
 
-// --- Webhook display ---
-const webhookDialogOpen = ref(false)
-const webhookAccount = ref<WhatsAppAccount | null>(null)
-const pendingAssignAfterWebhook = ref(false)
+// --- Manage dialog (unified: credentials + listings + webhook) ---
+const manageDialogOpen = ref(false)
+const manageAccount = ref<WhatsAppAccount | null>(null)
+const manageTab = ref<'credentials' | 'listings'>('credentials')
+const manageStepMode = ref(false)
+const manageStep = ref(1)
 
-// --- Edit / Assign listings ---
-const editAccountId = ref('')
-const selectedListings = ref<string[]>([])
-const dialogOpen = ref(false)
+// Manage: credentials form
+const manageAccessToken = ref('')
+const manageWabaId = ref('')
+const managePhoneNumberId = ref('')
+const manageCredsError = ref('')
+const manageSavingCreds = ref(false)
+
+// Manage: listings form
+const manageSelectedListings = ref<string[]>([])
+const manageListingSearch = ref('')
+const manageListingTagSearch = ref('')
+const manageListingTagPopoverOpen = ref(false)
 
 // --- Delete ---
 const deleteDialogOpen = ref(false)
@@ -44,22 +55,13 @@ const selectedUnassignedListings = ref<string[]>([])
 const selectedBulkAccountId = ref('')
 const unassignedTagPopoverOpen = ref(false)
 
-// --- Assign dialog ---
-const assignSearch = ref('')
-const assignTagSearch = ref('')
-const assignTagPopoverOpen = ref(false)
-
-const editingAccount = computed(() =>
-  whatsappAccounts.value.find(a => a.id === editAccountId.value) ?? null,
-)
-
 const listingOptions = computed(() =>
   listings.value.map(listing => ({ id: listing.id, name: listing.name, location: listing.location })),
 )
 
-const assignableListings = computed(() => {
-  const query = assignSearch.value.trim().toLowerCase()
-  const tag = assignTagSearch.value.trim().toLowerCase()
+const manageAssignableListings = computed(() => {
+  const query = manageListingSearch.value.trim().toLowerCase()
+  const tag = manageListingTagSearch.value.trim().toLowerCase()
   return listingOptions.value.filter((listing) => {
     const source = listings.value.find(item => item.id === listing.id)
     const haystack = `${listing.name} ${listing.location} ${(source?.tags ?? []).join(' ')}`.toLowerCase()
@@ -71,7 +73,7 @@ const assignableListings = computed(() => {
   })
 })
 
-const assignTags = computed(() =>
+const manageAssignTags = computed(() =>
   Array.from(new Set(listings.value.flatMap(listing => listing.tags))).sort(),
 )
 
@@ -133,11 +135,11 @@ async function handleConnect() {
     resetConnectForm()
     isConnecting.value = false
 
-    // Step 1: show webhook info
+    // Step 1: webhook info
     const newAccount = whatsappAccounts.value[whatsappAccounts.value.length - 1]
-    webhookAccount.value = newAccount
-    pendingAssignAfterWebhook.value = true
-    webhookDialogOpen.value = true
+    if (!newAccount) return
+    // Open step-by-step flow: Webhook → Assign Listings
+    openManageDialog(newAccount, true)
   }
   else {
     formError.value = result.error
@@ -145,44 +147,85 @@ async function handleConnect() {
   }
 }
 
-function openWebhookDialog(account: WhatsAppAccount) {
-  webhookAccount.value = account
-  webhookDialogOpen.value = true
+function openManageDialog(account: WhatsAppAccount, stepMode = false) {
+  manageAccount.value = account
+  manageStepMode.value = stepMode
+  manageStep.value = 1
+  manageTab.value = 'credentials'
+
+  // Populate credentials form
+  manageAccessToken.value = account.accessToken
+  manageWabaId.value = account.wabaId
+  managePhoneNumberId.value = account.phoneNumberId
+  manageCredsError.value = ''
+
+  // Populate listings form
+  manageSelectedListings.value = [...account.listingIds]
+  manageListingSearch.value = ''
+  manageListingTagSearch.value = ''
+
+  manageDialogOpen.value = true
 }
 
-function closeWebhookDialog() {
-  webhookDialogOpen.value = false
-  if (pendingAssignAfterWebhook.value && webhookAccount.value) {
-    pendingAssignAfterWebhook.value = false
-    // Step 2: assign listings
-    openEditDialog(webhookAccount.value)
-  }
-  webhookAccount.value = null
+function closeManageDialog() {
+  manageDialogOpen.value = false
+  manageAccount.value = null
 }
 
-function copyWebhookToken(token: string) {
-  navigator.clipboard.writeText(token)
-  toast.success('Webhook verification token copied.')
-}
-
-function copyCallbackUrl(url: string) {
+function copyCallbackUrl() {
+  if (!manageAccount.value) return
+  const url = `https://api.elev8suite.com/webhooks/whatsapp/${manageAccount.value.wabaId}`
   navigator.clipboard.writeText(url)
   toast.success('Callback URL copied.')
 }
 
-function openEditDialog(account: WhatsAppAccount) {
-  editAccountId.value = account.id
-  selectedListings.value = [...account.listingIds]
-  assignSearch.value = ''
-  assignTagSearch.value = ''
-  dialogOpen.value = true
+function copyWebhookToken() {
+  if (!manageAccount.value) return
+  navigator.clipboard.writeText(manageAccount.value.webhookToken)
+  toast.success('Webhook verification token copied.')
 }
 
-function saveAssignments() {
-  if (!editAccountId.value) return
-  assignListings(editAccountId.value, [...selectedListings.value])
+async function saveManageCredentials() {
+  if (!manageAccount.value) return
+  if (!manageAccessToken.value.trim() || !manageWabaId.value.trim() || !managePhoneNumberId.value.trim()) {
+    manageCredsError.value = 'All fields are required.'
+    return
+  }
+
+  manageSavingCreds.value = true
+  manageCredsError.value = ''
+  await new Promise(resolve => setTimeout(resolve, 600))
+
+  updateAccount(manageAccount.value.id, {
+    accessToken: manageAccessToken.value.trim(),
+    wabaId: manageWabaId.value.trim(),
+    phoneNumberId: managePhoneNumberId.value.trim(),
+  })
+
+  toast.success('Credentials updated.')
+  manageSavingCreds.value = false
+}
+
+function saveManageListings() {
+  if (!manageAccount.value) return
+  assignListings(manageAccount.value.id, [...manageSelectedListings.value])
   toast.success('Listing assignments saved.')
-  dialogOpen.value = false
+}
+
+function toggleManageListing(listingId: string) {
+  manageSelectedListings.value = manageSelectedListings.value.includes(listingId)
+    ? manageSelectedListings.value.filter(id => id !== listingId)
+    : [...manageSelectedListings.value, listingId]
+}
+
+function toggleManageListingTag(tag: string) {
+  manageListingTagSearch.value = manageListingTagSearch.value === tag ? '' : tag
+}
+
+function toggleUnassignedListing(listingId: string) {
+  selectedUnassignedListings.value = selectedUnassignedListings.value.includes(listingId)
+    ? selectedUnassignedListings.value.filter(id => id !== listingId)
+    : [...selectedUnassignedListings.value, listingId]
 }
 
 function askDelete(account: WhatsAppAccount) {
@@ -196,22 +239,6 @@ function confirmDelete() {
   toast.info(`${accountToDelete.value.businessName} disconnected.`)
   deleteDialogOpen.value = false
   accountToDelete.value = null
-}
-
-function toggleListing(listingId: string) {
-  selectedListings.value = selectedListings.value.includes(listingId)
-    ? selectedListings.value.filter(id => id !== listingId)
-    : [...selectedListings.value, listingId]
-}
-
-function toggleAssignTag(tag: string) {
-  assignTagSearch.value = assignTagSearch.value === tag ? '' : tag
-}
-
-function toggleUnassignedListing(listingId: string) {
-  selectedUnassignedListings.value = selectedUnassignedListings.value.includes(listingId)
-    ? selectedUnassignedListings.value.filter(id => id !== listingId)
-    : [...selectedUnassignedListings.value, listingId]
 }
 
 function toggleUnassignedTag(tag: string) {
@@ -302,17 +329,13 @@ function handleTestSend(account: WhatsAppAccount) {
                 WABA: {{ account.wabaId }} · Phone ID: {{ account.phoneNumberId }}
               </p>
               <div class="mt-3 flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openEditDialog(account)">
-                  <Icon name="lucide:pencil" class="size-3.5" />
-                  Assign Listings
+                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openManageDialog(account)">
+                  <Icon name="lucide:settings-2" class="size-3.5" />
+                  Manage
                 </Button>
                 <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="handleTestSend(account)">
                   <Icon name="lucide:send" class="size-3.5" />
                   Test Send
-                </Button>
-                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openWebhookDialog(account)">
-                  <Icon name="lucide:webhook" class="size-3.5" />
-                  Webhook
                 </Button>
                 <Button size="sm" variant="outline" class="h-8 gap-1.5 text-destructive hover:text-destructive" @click="askDelete(account)">
                   <Icon name="lucide:trash-2" class="size-3.5" />
@@ -478,20 +501,6 @@ function handleTestSend(account: WhatsAppAccount) {
             </div>
           </div>
 
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
-            <div class="flex items-start gap-2">
-              <Icon name="lucide:info" class="mt-0.5 size-3.5 shrink-0" />
-              <div>
-                <p class="font-medium">What happens after connecting?</p>
-                <ul class="mt-1 list-inside list-disc space-y-0.5">
-                  <li>We validate your credentials via Meta Graph API</li>
-                  <li>We auto-generate a webhook verification token for incoming messages</li>
-                  <li>Credentials are saved locally on this browser</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
           <DialogFooter>
             <Button variant="outline" type="button" :disabled="isConnecting" @click="connectDialogOpen = false; resetConnectForm()">
               Cancel
@@ -505,91 +514,88 @@ function handleTestSend(account: WhatsAppAccount) {
       </DialogContent>
     </Dialog>
 
-    <!-- Webhook Info Dialog -->
-    <Dialog v-model:open="webhookDialogOpen">
-      <DialogContent class="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Webhook Configuration</DialogTitle>
-          <DialogDescription>
-            Set up webhooks to receive incoming WhatsApp messages in real time.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div v-if="webhookAccount" class="space-y-5">
-          <div class="rounded-lg border bg-muted/30 p-3 text-sm">
-            <p class="font-medium">{{ webhookAccount.businessName }}</p>
-            <p class="text-xs text-muted-foreground">{{ webhookAccount.displayPhoneNumber }}</p>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <Label class="mb-1.5 block text-xs font-medium">Callback URL</Label>
-              <div class="flex gap-2">
-                <Input :model-value="`https://api.elev8suite.com/webhooks/whatsapp/${webhookAccount.wabaId}`" readonly class="flex-1 font-mono text-xs" />
-                <Button variant="outline" size="sm" class="shrink-0" @click="copyCallbackUrl(`https://api.elev8suite.com/webhooks/whatsapp/${webhookAccount.wabaId}`)">
-                  <Icon name="lucide:copy" class="size-3.5" />
-                </Button>
-              </div>
-              <p class="mt-1 text-[11px] text-muted-foreground">Enter this URL in Meta Developer Portal &rarr; WhatsApp &rarr; Webhook.</p>
-            </div>
-
-            <div>
-              <Label class="mb-1.5 block text-xs font-medium">Verification Token</Label>
-              <div class="flex gap-2">
-                <Input :model-value="webhookAccount.webhookToken" readonly class="flex-1 font-mono text-xs" />
-                <Button variant="outline" size="sm" class="shrink-0" @click="copyWebhookToken(webhookAccount.webhookToken)">
-                  <Icon name="lucide:copy" class="size-3.5" />
-                </Button>
-              </div>
-              <p class="mt-1 text-[11px] text-muted-foreground">Paste this as the Verify Token in Meta Developer Portal.</p>
-            </div>
-          </div>
-
-          <div class="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
-            <p class="mb-1 font-medium text-foreground">Steps to complete setup:</p>
-            <ol class="list-inside list-decimal space-y-1">
-              <li>Go to your Meta App &rarr; WhatsApp &rarr; Configuration</li>
-              <li>Paste the <strong>Callback URL</strong> and <strong>Verification Token</strong> above</li>
-              <li>Click <strong>Verify and save</strong></li>
-              <li>Subscribe to the <code>messages</code> webhook field</li>
-            </ol>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button @click="closeWebhookDialog">Done</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- Assign Listings Dialog -->
-    <Dialog v-model:open="dialogOpen">
+    <!-- Manage Dialog -->
+    <Dialog v-model:open="manageDialogOpen">
       <DialogContent class="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Assign Listings</DialogTitle>
-          <DialogDescription v-if="editingAccount">
-            Choose which listings use <strong>{{ editingAccount.businessName }}</strong> ({{ editingAccount.displayPhoneNumber }}).
+          <DialogTitle>{{ manageStepMode ? 'Connect WhatsApp' : 'Manage Account' }}</DialogTitle>
+          <DialogDescription v-if="manageAccount">
+            <strong>{{ manageAccount.businessName }}</strong> · {{ manageAccount.displayPhoneNumber }}
           </DialogDescription>
         </DialogHeader>
 
-        <div v-if="editingAccount" class="space-y-4">
-          <div class="rounded-lg border bg-muted/30 p-3 text-sm">
-            <p class="font-medium">{{ editingAccount.businessName }}</p>
-            <p class="text-xs text-muted-foreground">{{ editingAccount.displayPhoneNumber }} · Connected {{ editingAccount.connectedAt }}</p>
+        <!-- Step mode (post-connect) -->
+        <template v-if="manageStepMode && manageAccount">
+          <!-- Step indicator -->
+          <div class="flex items-center gap-2 border-b pb-3">
+            <div class="flex items-center gap-1.5">
+              <span class="flex size-6 items-center justify-center rounded-full text-xs font-medium"
+                :class="manageStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'">1</span>
+              <span class="text-xs" :class="manageStep >= 1 ? 'text-foreground font-medium' : 'text-muted-foreground'">Webhook</span>
+            </div>
+            <Icon name="lucide:chevron-right" class="size-4 text-muted-foreground" />
+            <div class="flex items-center gap-1.5">
+              <span class="flex size-6 items-center justify-center rounded-full text-xs font-medium"
+                :class="manageStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'">2</span>
+              <span class="text-xs" :class="manageStep >= 2 ? 'text-foreground font-medium' : 'text-muted-foreground'">Assign Listings</span>
+            </div>
           </div>
 
-          <div class="space-y-3">
+          <!-- Step 1: Webhook -->
+          <div v-if="manageStep === 1" class="space-y-5 pt-2">
+            <div class="space-y-4">
+              <div>
+                <Label class="mb-1.5 block text-xs font-medium">Callback URL</Label>
+                <div class="flex gap-2">
+                  <Input :model-value="`https://api.elev8suite.com/webhooks/whatsapp/${manageAccount.wabaId}`" readonly class="flex-1 font-mono text-xs" />
+                  <Button variant="outline" size="sm" class="shrink-0" @click="copyCallbackUrl()">
+                    <Icon name="lucide:copy" class="size-3.5" />
+                  </Button>
+                </div>
+                <p class="mt-1 text-[11px] text-muted-foreground">Enter this URL in Meta Developer Portal &rarr; WhatsApp &rarr; Webhook.</p>
+              </div>
+
+              <div>
+                <Label class="mb-1.5 block text-xs font-medium">Verification Token</Label>
+                <div class="flex gap-2">
+                  <Input :model-value="manageAccount.webhookToken" readonly class="flex-1 font-mono text-xs" />
+                  <Button variant="outline" size="sm" class="shrink-0" @click="copyWebhookToken()">
+                    <Icon name="lucide:copy" class="size-3.5" />
+                  </Button>
+                </div>
+                <p class="mt-1 text-[11px] text-muted-foreground">Paste this as the Verify Token in Meta Developer Portal.</p>
+              </div>
+            </div>
+
+            <div class="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+              <p class="mb-1 font-medium text-foreground">Steps to complete setup:</p>
+              <ol class="list-inside list-decimal space-y-1">
+                <li>Go to your Meta App &rarr; WhatsApp &rarr; Configuration</li>
+                <li>Paste the <strong>Callback URL</strong> and <strong>Verification Token</strong> above</li>
+                <li>Click <strong>Verify and save</strong></li>
+                <li>Subscribe to the <code>messages</code> webhook field</li>
+              </ol>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <Button variant="outline" @click="closeManageDialog">Skip</Button>
+              <Button @click="manageStep = 2">Next</Button>
+            </div>
+          </div>
+
+          <!-- Step 2: Assign Listings -->
+          <div v-if="manageStep === 2" class="space-y-4 pt-2">
             <div class="flex items-center justify-between">
-              <Label>Listings</Label>
-              <Badge variant="secondary" class="text-[10px]">{{ selectedListings.length }} selected</Badge>
+              <Label>Assign Listings</Label>
+              <Badge variant="secondary" class="text-[10px]">{{ manageSelectedListings.length }} selected</Badge>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
               <div class="relative min-w-[200px] flex-1">
                 <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input v-model="assignSearch" placeholder="Search listing or location" class="h-9 pl-9 text-xs" />
+                <Input v-model="manageListingSearch" placeholder="Search listing or location" class="h-9 pl-9 text-xs" />
               </div>
-              <Popover v-model:open="assignTagPopoverOpen">
+              <Popover v-model:open="manageListingTagPopoverOpen">
                 <PopoverTrigger as-child>
                   <Button variant="outline" size="sm" class="gap-1.5">
                     <Icon name="lucide:tags" class="size-3.5" />
@@ -598,53 +604,189 @@ function handleTestSend(account: WhatsAppAccount) {
                 </PopoverTrigger>
                 <PopoverContent class="w-72 p-0" align="start" :side-offset="4">
                   <div class="space-y-2 p-2">
-                    <Input v-model="assignTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
+                    <Input v-model="manageListingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
                     <div class="max-h-56 space-y-1 overflow-auto">
                       <button
-                        v-for="tag in assignTags.filter(t => t.toLowerCase().includes(assignTagSearch.trim().toLowerCase()))"
+                        v-for="tag in manageAssignTags.filter(t => t.toLowerCase().includes(manageListingTagSearch.trim().toLowerCase()))"
                         :key="tag"
                         type="button"
                         class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted"
-                        @click="toggleAssignTag(tag)"
+                        @click="toggleManageListingTag(tag)"
                       >
-                        <Checkbox :model-value="assignTagSearch === tag" class="size-3.5" @update:model-value="() => toggleAssignTag(tag)" />
+                        <Checkbox :model-value="manageListingTagSearch === tag" class="size-3.5" @update:model-value="() => toggleManageListingTag(tag)" />
                         <span>{{ tag }}</span>
                       </button>
-                      <p v-if="!assignTags.filter(t => t.toLowerCase().includes(assignTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
+                      <p v-if="!manageAssignTags.filter(t => t.toLowerCase().includes(manageListingTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">
                         No tags found.
                       </p>
                     </div>
                   </div>
                 </PopoverContent>
               </Popover>
-              <Button v-if="assignSearch || assignTagSearch" variant="ghost" size="sm" class="size-9 p-0" @click="assignSearch = ''; assignTagSearch = ''">
+              <Button v-if="manageListingSearch || manageListingTagSearch" variant="ghost" size="sm" class="size-9 p-0" @click="manageListingSearch = ''; manageListingTagSearch = ''">
                 <Icon name="lucide:x" class="size-3.5" />
               </Button>
             </div>
 
-            <div class="max-h-[280px] space-y-1.5 overflow-auto rounded-lg border p-1.5">
+            <div class="max-h-[300px] space-y-1.5 overflow-auto rounded-lg border p-1.5">
               <label
-                v-for="listing in assignableListings"
+                v-for="listing in manageAssignableListings"
                 :key="listing.id"
                 class="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2 text-sm hover:bg-muted/50"
               >
-                <Checkbox :model-value="selectedListings.includes(listing.id)" @update:model-value="() => toggleListing(listing.id)" />
+                <Checkbox :model-value="manageSelectedListings.includes(listing.id)" @update:model-value="() => toggleManageListing(listing.id)" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-xs font-medium">{{ listing.name }}</p>
                   <p class="text-[11px] text-muted-foreground">{{ listing.location }}</p>
                 </div>
               </label>
-              <p v-if="!assignableListings.length" class="py-4 text-center text-xs text-muted-foreground">
+              <p v-if="!manageAssignableListings.length" class="py-4 text-center text-xs text-muted-foreground">
                 No listings found.
               </p>
             </div>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" @click="dialogOpen = false">Cancel</Button>
-          <Button @click="saveAssignments">Save Assignments</Button>
-        </DialogFooter>
+            <div class="flex justify-end gap-2">
+              <Button variant="outline" @click="manageStep = 1">Back</Button>
+              <Button @click="saveManageListings; closeManageDialog()">Done</Button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Tab mode (Manage existing account) -->
+        <template v-if="!manageStepMode && manageAccount">
+          <Tabs v-model="manageTab" class="space-y-4">
+            <TabsList class="w-full justify-start">
+              <TabsTrigger value="credentials" class="gap-2">
+                <Icon name="lucide:key-round" class="size-3.5" />
+                Credentials
+              </TabsTrigger>
+              <TabsTrigger value="listings" class="gap-2">
+                <Icon name="lucide:building-2" class="size-3.5" />
+                Listings
+              </TabsTrigger>
+            </TabsList>
+
+            <!-- Credentials tab -->
+            <TabsContent value="credentials" class="space-y-4">
+              <form @submit.prevent="saveManageCredentials">
+                <div class="space-y-4">
+                  <div class="space-y-2">
+                    <Label for="manage-access-token">Access Token</Label>
+                    <Input id="manage-access-token" v-model="manageAccessToken" type="password" class="w-full font-mono text-sm" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <Label for="manage-waba-id">WABA ID</Label>
+                      <Input id="manage-waba-id" v-model="manageWabaId" class="w-full font-mono text-sm" />
+                    </div>
+                    <div class="space-y-2">
+                      <Label for="manage-phone-id">Phone Number ID</Label>
+                      <Input id="manage-phone-id" v-model="managePhoneNumberId" class="w-full font-mono text-sm" />
+                    </div>
+                  </div>
+                  <p v-if="manageCredsError" class="text-sm text-destructive">{{ manageCredsError }}</p>
+                </div>
+                <DialogFooter class="mt-6">
+                  <Button variant="outline" @click="closeManageDialog">Cancel</Button>
+                  <Button type="submit" :disabled="manageSavingCreds" class="gap-2">
+                    <Icon v-if="manageSavingCreds" name="lucide:loader-circle" class="size-4 animate-spin" />
+                    {{ manageSavingCreds ? 'Saving…' : 'Save Credentials' }}
+                  </Button>
+                </DialogFooter>
+              </form>
+
+              <!-- Webhook fields -->
+              <Separator />
+              <div class="space-y-1">
+                <h4 class="text-sm font-medium">Webhook Configuration</h4>
+                <p class="text-xs text-muted-foreground">Incoming message setup for this account.</p>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <Label class="mb-1.5 block text-xs font-medium">Callback URL</Label>
+                  <div class="flex gap-2">
+                    <Input :model-value="`https://api.elev8suite.com/webhooks/whatsapp/${manageAccount.wabaId}`" readonly class="flex-1 font-mono text-xs" />
+                    <Button variant="outline" size="sm" class="shrink-0" @click="copyCallbackUrl()">
+                      <Icon name="lucide:copy" class="size-3.5" />
+                    </Button>
+                  </div>
+                  <p class="mt-1 text-[11px] text-muted-foreground">Enter this URL in Meta Developer Portal &rarr; WhatsApp &rarr; Webhook.</p>
+                </div>
+                <div>
+                  <Label class="mb-1.5 block text-xs font-medium">Verification Token</Label>
+                  <div class="flex gap-2">
+                    <Input :model-value="manageAccount.webhookToken" readonly class="flex-1 font-mono text-xs" />
+                    <Button variant="outline" size="sm" class="shrink-0" @click="copyWebhookToken()">
+                      <Icon name="lucide:copy" class="size-3.5" />
+                    </Button>
+                  </div>
+                  <p class="mt-1 text-[11px] text-muted-foreground">Paste this as the Verify Token in Meta Developer Portal.</p>
+                </div>
+              </div>
+              <div class="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+                <p class="mb-1 font-medium text-foreground">Steps to complete setup:</p>
+                <ol class="list-inside list-decimal space-y-1">
+                  <li>Go to your Meta App &rarr; WhatsApp &rarr; Configuration</li>
+                  <li>Paste the <strong>Callback URL</strong> and <strong>Verification Token</strong> above</li>
+                  <li>Click <strong>Verify and save</strong></li>
+                  <li>Subscribe to the <code>messages</code> webhook field</li>
+                </ol>
+              </div>
+            </TabsContent>
+
+            <!-- Listings tab -->
+            <TabsContent value="listings" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <Label>Assign Listings</Label>
+                <Badge variant="secondary" class="text-[10px]">{{ manageSelectedListings.length }} selected</Badge>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="relative min-w-[200px] flex-1">
+                  <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input v-model="manageListingSearch" placeholder="Search listing or location" class="h-9 pl-9 text-xs" />
+                </div>
+                <Popover v-model:open="manageListingTagPopoverOpen">
+                  <PopoverTrigger as-child>
+                    <Button variant="outline" size="sm" class="gap-1.5">
+                      <Icon name="lucide:tags" class="size-3.5" />
+                      Tags
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-72 p-0" align="start" :side-offset="4">
+                    <div class="space-y-2 p-2">
+                      <Input v-model="manageListingTagSearch" placeholder="Search tags..." class="h-8 text-xs" />
+                      <div class="max-h-56 space-y-1 overflow-auto">
+                        <button v-for="tag in manageAssignTags.filter(t => t.toLowerCase().includes(manageListingTagSearch.trim().toLowerCase()))" :key="tag" type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" @click="toggleManageListingTag(tag)">
+                          <Checkbox :model-value="manageListingTagSearch === tag" class="size-3.5" @update:model-value="() => toggleManageListingTag(tag)" />
+                          <span>{{ tag }}</span>
+                        </button>
+                        <p v-if="!manageAssignTags.filter(t => t.toLowerCase().includes(manageListingTagSearch.trim().toLowerCase())).length" class="px-2 py-3 text-sm text-muted-foreground">No tags found.</p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button v-if="manageListingSearch || manageListingTagSearch" variant="ghost" size="sm" class="size-9 p-0" @click="manageListingSearch = ''; manageListingTagSearch = ''">
+                  <Icon name="lucide:x" class="size-3.5" />
+                </Button>
+              </div>
+              <div class="max-h-[300px] space-y-1.5 overflow-auto rounded-lg border p-1.5">
+                <label v-for="listing in manageAssignableListings" :key="listing.id" class="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2 text-sm hover:bg-muted/50">
+                  <Checkbox :model-value="manageSelectedListings.includes(listing.id)" @update:model-value="() => toggleManageListing(listing.id)" />
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-medium">{{ listing.name }}</p>
+                    <p class="text-[11px] text-muted-foreground">{{ listing.location }}</p>
+                  </div>
+                </label>
+                <p v-if="!manageAssignableListings.length" class="py-4 text-center text-xs text-muted-foreground">No listings found.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" @click="closeManageDialog">Cancel</Button>
+                <Button @click="saveManageListings; closeManageDialog()">Save Assignments</Button>
+              </DialogFooter>
+            </TabsContent>
+
+          </Tabs>
+        </template>
       </DialogContent>
     </Dialog>
 
