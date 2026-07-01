@@ -288,14 +288,13 @@ function handleTestSend(account: WhatsAppAccount) {
     <div v-if="!hasAccounts" class="border border-dashed bg-card/40 p-10 text-center">
       <div class="mx-auto flex max-w-md flex-col items-center gap-4">
         <div class="flex size-12 items-center justify-center rounded-full border bg-background">
-          <Icon name="lucide:message-circle" class="size-5 text-muted-foreground" />
+          <Icon name="logos:whatsapp-icon" class="size-5" />
         </div>
         <div class="space-y-2">
           <p class="text-base font-medium">No WhatsApp account yet</p>
           <p class="text-sm text-muted-foreground">Enter your Meta WhatsApp Cloud API credentials to connect.</p>
         </div>
-        <Button class="gap-2" @click="connectDialogOpen = true">
-          <Icon name="lucide:message-circle" class="size-4" />
+        <Button @click="connectDialogOpen = true">
           Connect with Meta
         </Button>
       </div>
@@ -318,8 +317,8 @@ function handleTestSend(account: WhatsAppAccount) {
           class="rounded-lg border bg-card p-4"
         >
           <div class="flex items-start gap-3">
-            <div class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-green-50 dark:bg-green-950">
-              <Icon name="lucide:message-circle" class="size-5 text-green-600" />
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-md border bg-card">
+              <Icon name="logos:whatsapp-icon" class="size-5" />
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ account.businessName }}</p>
