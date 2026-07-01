@@ -14,18 +14,13 @@
 
 # workflow
 - Push to GitHub after completing each feature chunk. Confidence: 0.88
-- Update CLAUDE.md alongside pushes to keep project context current. Confidence: 0.88
+- Update CLAUDE.md alongside pushes to keep project context current. Confidence: 0.92
 - Commit first, then push (`git commit` → `git push`). Confidence: 0.70
 - Check git status (uncommitted/untracked) before pushing. Confidence: 0.65
 - Brainstorm and discuss design before implementation. Confidence: 0.75
 
 # ui-patterns
-- Show empty state first, then provide an add/create button to populate. Confidence: 0.80
-- Use sheet/drawer components for forms rather than full-page navigation. Confidence: 0.75
-- Reuse existing shadcn-vue components rather than building custom ones. Confidence: 0.75
-- SelectTrigger inside table cells must use `w-full` to fill the container instead of hugging content width. Confidence: 0.65
-- Use hatscripts.github.io/circle-flags for flag icons. Confidence: 0.65
-
+See [ui-patterns/taste.md](ui-patterns/taste.md)
 # vue-nuxt
 - Reka UI SwitchRoot ignores external `:checked` prop changes — use `:key` force re-mount as workaround. Confidence: 0.85
 - Reka UI CheckboxRoot `:key` force-remount workaround doesn't fix visual state — replace with plain `<span>` + Tailwind classes instead. Confidence: 0.85
@@ -37,6 +32,7 @@
 See [finance/taste.md](finance/taste.md)
 # workflow
 - Prefer `pnpm dev` over `pnpm build` during development to avoid browser crash from heavy builds. Confidence: 0.65
+- Use mock data for third-party API integrations during development before switching to real API calls. Confidence: 0.75
 
 # payment-requests
 - Use "cancel" terminology (not "delete") for cancelling payment links. Confidence: 0.75
