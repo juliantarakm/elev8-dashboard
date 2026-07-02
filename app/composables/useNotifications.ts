@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { alertRouteMap, getDescription as getAlertDescription, mockAlerts } from '~/components/notifications/data/alerts'
 
 export type SeverityFilter = 'all' | 'critical' | 'warning' | 'info'
-export type NotificationKindFilter = 'all' | 'system' | 'upsell' | 'cleaning' | 'calls'
+export type NotificationKindFilter = 'all' | 'system' | 'upsell' | 'cleaning' | 'calls' | 'reviews'
 
 function makeAlert(
   alert_id: string,
@@ -118,9 +118,19 @@ export function useNotifications() {
   const filteredAlerts = computed(() => {
     const cleaningTypes = new Set(['CLEANING_NOT_STARTED_IMMINENT', 'CLEANING_NOT_DONE_CHECKIN_PASSED', 'NO_HOUSEKEEPING_ASSIGNED'])
     const callTypes = new Set(['CALL_INCOMING', 'CALL_MISSED', 'CALL_COMPLETED'])
+    const reviewTypes = new Set(['AIRBNB_REVIEW_GENERATED', 'AIRBNB_REVIEW_POSTED', 'AIRBNB_REVIEW_FAILED'])
     return alerts.value.filter((a) => {
-      const severityMatch = selectedSeverity.value === 'all' || a.severity.toLowerCase() === selectedSeverity.value
-      const kind = cleaningTypes.has(a.type) ? 'cleaning' : callTypes.has(a.type) ? 'calls' : a.type.startsWith('UPSELL_') ? 'upsell' : 'system'
+      const severityMatch = selectedSeverity.value === 'all'
+        || a.severity.toLowerCase() === selectedSeverity.value
+      const kind = cleaningTypes.has(a.type)
+        ? 'cleaning'
+        : callTypes.has(a.type)
+          ? 'calls'
+          : reviewTypes.has(a.type)
+            ? 'reviews'
+            : a.type.startsWith('UPSELL_')
+              ? 'upsell'
+              : 'system'
       const kindMatch = selectedKind.value === 'all' || kind === selectedKind.value
       return severityMatch && kindMatch
     })

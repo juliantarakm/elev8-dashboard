@@ -60,6 +60,12 @@ export const navMenu: NavMenu[] = [
         link: '/listings',
         new: true,
       },
+      {
+        title: 'Reviews',
+        icon: 'i-lucide-star',
+        link: '/reviews',
+        new: true,
+      },
     ],
   },
   {

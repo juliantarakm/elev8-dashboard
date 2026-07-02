@@ -32,18 +32,27 @@ const tabs: { label: string, value: SeverityFilter }[] = [
 
 const cleaningTypes = new Set(['CLEANING_NOT_STARTED_IMMINENT', 'CLEANING_NOT_DONE_CHECKIN_PASSED', 'NO_HOUSEKEEPING_ASSIGNED'])
 const callTypes = new Set(['CALL_INCOMING', 'CALL_MISSED', 'CALL_COMPLETED'])
+const reviewTypes = new Set(['AIRBNB_REVIEW_GENERATED', 'AIRBNB_REVIEW_POSTED', 'AIRBNB_REVIEW_FAILED'])
 
 const kindTabs: { label: string, value: NotificationKindFilter }[] = [
   { label: 'All Types', value: 'all' },
   { label: 'System', value: 'system' },
   { label: 'Cleanings', value: 'cleaning' },
   { label: 'Calls', value: 'calls' },
+  { label: 'Reviews', value: 'reviews' },
   { label: 'Upsell', value: 'upsell' },
 ]
 
 function alertKind(alert: Alert) {
-  if (cleaningTypes.has(alert.type)) return 'Cleaning'
-  if (callTypes.has(alert.type)) return 'Call'
+  if (cleaningTypes.has(alert.type)) {
+    return 'Cleaning'
+  }
+  if (callTypes.has(alert.type)) {
+    return 'Call'
+  }
+  if (reviewTypes.has(alert.type)) {
+    return 'Review'
+  }
   return alert.type.startsWith('UPSELL_') ? 'Upsell' : 'System'
 }
 

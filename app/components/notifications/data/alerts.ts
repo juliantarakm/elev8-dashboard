@@ -28,6 +28,9 @@ export type AlertType
     | 'CALL_INCOMING'
     | 'CALL_MISSED'
     | 'CALL_COMPLETED'
+    | 'AIRBNB_REVIEW_GENERATED'
+    | 'AIRBNB_REVIEW_POSTED'
+    | 'AIRBNB_REVIEW_FAILED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
@@ -75,6 +78,9 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   CALL_INCOMING: 'Incoming Call',
   CALL_MISSED: 'Missed Call',
   CALL_COMPLETED: 'Call Completed',
+  AIRBNB_REVIEW_GENERATED: 'Airbnb Review - Generated',
+  AIRBNB_REVIEW_POSTED: 'Airbnb Review - Posted',
+  AIRBNB_REVIEW_FAILED: 'Airbnb Review - Failed',
 }
 
 export const alertIcons: Record<AlertType, string> = {
@@ -107,6 +113,9 @@ export const alertIcons: Record<AlertType, string> = {
   CALL_INCOMING: 'i-lucide-phone-incoming',
   CALL_MISSED: 'i-lucide-phone-missed',
   CALL_COMPLETED: 'i-lucide-phone',
+  AIRBNB_REVIEW_GENERATED: 'i-lucide-sparkles',
+  AIRBNB_REVIEW_POSTED: 'i-lucide-check-circle-2',
+  AIRBNB_REVIEW_FAILED: 'i-lucide-alert-circle',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -139,6 +148,9 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   CALL_INCOMING: '/inbox',
   CALL_MISSED: '/inbox',
   CALL_COMPLETED: '/inbox',
+  AIRBNB_REVIEW_GENERATED: '/reviews',
+  AIRBNB_REVIEW_POSTED: '/reviews',
+  AIRBNB_REVIEW_FAILED: '/reviews',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -197,6 +209,12 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
       return `${context.guestName || context.callerNumber || 'Unknown'}, ${context.listingName || context.listingId || 'Unknown listing'}`
     case 'CALL_COMPLETED':
       return `${context.guestName || context.callerNumber || 'Unknown'}, ${context.listingName || context.listingId || 'Unknown listing'}${context.duration ? `, ${context.duration}` : ''}${context.aiSummary ? ` - ${context.aiSummary}` : ''}`
+    case 'AIRBNB_REVIEW_GENERATED':
+      return `Review for ${context.guestName || 'guest'} at ${context.listingName || 'property'} is ready for approval.`
+    case 'AIRBNB_REVIEW_POSTED':
+      return `Review for ${context.guestName || 'guest'} at ${context.listingName || 'property'} posted to Airbnb.`
+    case 'AIRBNB_REVIEW_FAILED':
+      return `Failed to generate review for ${context.guestName || 'guest'} at ${context.listingName || 'property'}.`
     default:
       return ''
   }

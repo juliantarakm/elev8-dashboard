@@ -17,6 +17,7 @@
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
 - **Listings** — Property management with 6-tab detail page (Overview, Pricing, Calendar, Reviews, Maintenance, Settings) + compact hero with AI schedule Sheet (HostBuddy concept)
 - **Upsells** — Full request system: Catalog CRUD, Order tracking with lifecycle (pending→confirmed→completed/cancelled), Cancellation flow with refund policies, Staff/Guest notifications, Inbox integration (UpsellOrderCreator, UpsellOfferCard in chat, linked orders in ReservationPanel)
+- **Airbnb Reviews** — AI-powered guest review automation: tenant settings (language, tone, auto-post, delay), review queue with preview/edit/regenerate/post workflow, notification integration
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
 - **Tasks** — Data table with filtering (TanStack table)
@@ -452,6 +453,97 @@ Smart Flow section in `app/constants/menus.ts` — Journeys (`i-lucide-route`) +
 - Upsell offers embedded in chat via `UpsellOfferCard` component (not separate notification)
 - Order drawer reactivity: use computed lookup from `useUpsellOrders` state, not prop snapshot
 
+### Airbnb Reviews Module (`app/components/airbnb-reviews/`)
+
+AI-powered guest review automation for Airbnb. Generates fair, professional reviews based on communication history and housekeeping feedback.
+
+**New files:**
+```
+app/
+├── pages/reviews.vue
+├── components/airbnb-reviews/
+│   ├── PreviewDialog.vue          # Editable preview (text, ratings, checkboxes)
+│   └── data/reviews.ts            # Types, mock data, config defaults
+├── components/settings/
+│   └── AirbnbReviewConfig.vue     # Settings form in Integrations page
+└── composables/useAirbnbReviews.ts # State + CRUD + mock generation
+```
+
+**Data Model:**
+```ts
+interface AutoReview {
+  id: string
+  booking_id: string
+  property_id: string
+  guest_name: string
+  checkout_date: string
+  listing_name: string
+  listing_location: string
+  num_guests: number
+  nights: number
+  status: 'pending' | 'generating' | 'draft' | 'posted' | 'failed'
+  generated_at: string | null
+  ai_model: string
+  generation_cost: number | null
+  host_language: HostLanguage
+  strict_mode: boolean
+  tone_mode: ToneMode
+  public_review: string | null
+  private_feedback: string | null
+  ratings: ReviewRatings | null
+  recommend_guest: boolean | null
+  would_host_again: boolean | null
+  manually_edited: boolean
+  edited_at: string | null
+  airbnb_review_id: string | null
+  posted_to_airbnb_at: string | null
+}
+
+type ReviewStatus = 'pending' | 'generating' | 'draft' | 'posted' | 'failed'
+type ToneMode = 'balanced' | 'gentle' | 'data-driven'
+type HostLanguage = 'en' | 'de' | 'fr' | 'id' | 'es' | 'it' | 'pt'
+```
+
+**Settings (`ReviewAutomationConfig`):**
+- `enabled` — toggle (default: false)
+- `host_language` — 7 languages (en/de/fr/id/es/it/pt)
+- `tone_mode` — balanced/gentle/data-driven
+- `auto_post` — auto-post or save as draft
+- `review_delay_hours` — 1-168 hours (default: 24)
+- Persisted to localStorage (`elev8-airbnb-review-config`)
+
+**Settings Page:** `/settings/integrations` — renders `SettingsAirbnbReviewConfig` below WhatsApp integration section.
+
+**Dashboard Page:** `/reviews` — stats cards (pending/draft/posted/failed), filter bar (search, status, listing), table with actions.
+
+**Preview Dialog:** Single dialog for preview + edit. Draft reviews have editable Textareas, clickable star ratings, checkboxes, Regenerate/Save as Draft/Post to Airbnb buttons. Posted reviews are read-only.
+
+**Status Lifecycle:** `pending` → `generating` → `draft` → `posted` (or `failed` → retry)
+
+**Mock Generation:** `generateMockReview()` produces realistic reviews with positive/mixed variants. 1.5s simulated delay. `regenerateReview()` re-generates with different wording.
+
+**Auto-open Preview:** Clicking Generate in table auto-opens preview dialog after generation completes.
+
+**Composable (`useAirbnbReviews`):**
+- `reviews` — `useState<AutoReview[]>` with JSON.parse(JSON.stringify(mockReviews))
+- `config` — `useState<ReviewAutomationConfig>` with localStorage persistence
+- `filterStatus`, `filterListing`, `searchQuery` — filter refs
+- `filteredReviews` — computed from filters
+- `stats` — computed counts by status
+- `approveReview(id)` — sets status to posted
+- `saveDraft(id, data)` — saves edits, marks manually_edited
+- `generateReview(id)` — mock AI generation
+- `regenerateReview(id)` — re-generates review
+- `retryFailed(id)` — retries failed generation
+
+**Notification Integration:**
+- Alert types: `AIRBNB_REVIEW_GENERATED`, `AIRBNB_REVIEW_POSTED`, `AIRBNB_REVIEW_FAILED`
+- Added to `alertDisplayLabels`, `alertIcons`, `alertRouteMap`, `getDescription()`
+- `useNotifications` filter kind: `'reviews'`
+- NotificationCenter kind tabs includes "Reviews" tab
+
+**Sidebar:** Added under General section (`i-lucide-star` icon, marked `new: true`)
+
 ### Payment Request Module (`app/components/payment-request/`)
 
 **Full UI spec** → `docs/superpowers/specs/2026-06-18-payment-request-design.md`
@@ -863,6 +955,7 @@ const table = useVueTable({
 | `useUpsellServices` | `app/composables/useUpsellServices.ts` | Upsells Catalog state + CRUD | `services`, filters, `addService()`, `updateService()`, `deleteService()` |
 | `useUpsellOrders` | `app/composables/useUpsellOrders.ts` | Upsell Orders state + CRUD | `orders`, `filteredOrders`, `statusCounts`, `totalRevenue`, `updateStatus()`, `addOrder()`, `cancelOrder()` |
 | `useUpsellNotifications` | `app/composables/useUpsellNotifications.ts` | Upsell Notifications state | `notifications`, `unreadCount`, `createNotification()`, `markAsRead()` |
+| `useAirbnbReviews` | `app/composables/useAirbnbReviews.ts` | Airbnb Review Automation state | `reviews`, `config`, `filteredReviews`, `stats`, `approveReview()`, `saveDraft()`, `generateReview()`, `regenerateReview()`, `retryFailed()`. Config persisted to localStorage. |
 | `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. |
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
@@ -904,6 +997,10 @@ app/
 ├── components/
 │   ├── ui/                    ← shadcn-vue components (338 files)
 │   ├── AppSettings.vue
+│   ├── airbnb-reviews/           ← Airbnb Review Automation
+│   │   ├── PreviewDialog.vue        # Editable preview with ratings, text, regenerate
+│   │   └── data/
+│   │       └── reviews.ts           # Types, mock data, config
 │   ├── DarkToggle.vue
 │   ├── PasswordInput.vue
 │   ├── Search.vue
@@ -1029,7 +1126,8 @@ app/
 │   │   ├── ProfileForm.vue
 │   │   ├── SidebarNav.vue
 │   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
-│   │   └── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
+│   │   ├── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
+│   │   └── AirbnbReviewConfig.vue   ← Review automation settings (language, tone, auto-post)
 │   └── tasks/
 │       ├── components/
 │       │   ├── columns.ts
@@ -1060,6 +1158,7 @@ app/
 │   ├── useUpsellServices.ts       ← Catalog CRUD
 │   ├── useUpsellOrders.ts         ← Orders CRUD + cancelOrder()
 │   ├── useUpsellNotifications.ts  ← Notification state + createNotification()
+│   ├── useAirbnbReviews.ts        ← Airbnb Review state + config + generation
 │   ├── useWhatsApp.ts             ← WhatsApp connection state (connect/disconnect)
 │   ├── useWhatsAppRules.ts        ← Routing rules CRUD
 │   └── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
@@ -1099,11 +1198,12 @@ app/
     ├── listings/
     │   ├── index.vue           # Listings table (TanStack Table + search/tag/AI filters)
     │   └── [id].vue            # Listing detail page (HeroCompact + Overview/Pricing/Calendar/Reviews/Maintenance/Settings tabs)
+    ├── reviews.vue             # Airbnb Reviews dashboard (queue, filters, generate/preview/edit)
     ├── settings/
     │   ├── account.vue
     │   ├── appearance.vue
     │   ├── display.vue
-    │   ├── integrations.vue        ← WhatsApp connection + routing rules
+    │   ├── integrations.vue        ← WhatsApp connection + Airbnb review automation settings
     │   ├── notifications.vue
     │   └── profile.vue
     └── tasks.vue
