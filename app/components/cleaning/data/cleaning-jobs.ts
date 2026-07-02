@@ -6,6 +6,15 @@ export type CleaningJobPriority = 'low' | 'normal' | 'high' | 'urgent'
 export type CleaningJobSource = 'manual' | 'checkout'
 export type CleaningRecurrenceFrequency = 'weekly' | 'monthly'
 
+export interface CleaningFeedback {
+  cleanlinessRating: number // 1-5
+  conditionNotes: string
+  damages: string[]
+  itemsLeft: string[]
+  cleaningDurationMinutes: number
+  housekeeperNotes: string
+}
+
 export interface CleaningJobRecurrence {
   enabled: boolean
   frequency: CleaningRecurrenceFrequency
@@ -27,22 +36,7 @@ export interface CleaningJob {
   source: CleaningJobSource
   reservationId?: string | null
   recurrence?: CleaningJobRecurrence | null
-}
-
-export interface CleaningJobInput {
-  listingId: string
-  listingName: string
-  scheduledAt: string
-  cleanerId: string | null
-  cleanerName: string | null
-  teamName: string | null
-  status: CleaningJobStatus
-  priority: CleaningJobPriority
-  durationMinutes: number
-  notes: string
-  source: CleaningJobSource
-  reservationId?: string | null
-  recurrence?: CleaningJobRecurrence | null
+  feedback?: CleaningFeedback | null
 }
 
 export interface CleaningFilters {
@@ -116,6 +110,14 @@ export const cleaningJobs = ref<CleaningJob[]>([
     source: 'manual',
     reservationId: null,
     recurrence: null,
+    feedback: {
+      cleanlinessRating: 5,
+      conditionNotes: 'Property left very clean. Kitchen spotless, beds made, towels folded. Minor sand on the floor near the entrance.',
+      damages: [],
+      itemsLeft: ['Sunglasses on nightstand - placed in lost & found'],
+      cleaningDurationMinutes: 120,
+      housekeeperNotes: 'Guests were very tidy. Easy clean.',
+    },
   },
   {
     id: 'cln-5',
@@ -132,6 +134,14 @@ export const cleaningJobs = ref<CleaningJob[]>([
     source: 'manual',
     reservationId: null,
     recurrence: null,
+    feedback: {
+      cleanlinessRating: 4,
+      conditionNotes: 'Overall clean. Kitchen had some unwashed dishes in the sink. Towels left on the bathroom floor.',
+      damages: [],
+      itemsLeft: [],
+      cleaningDurationMinutes: 90,
+      housekeeperNotes: 'Slightly messier than usual but nothing concerning.',
+    },
   },
   {
     id: 'cln-12',
@@ -148,6 +158,14 @@ export const cleaningJobs = ref<CleaningJob[]>([
     source: 'manual',
     reservationId: null,
     recurrence: null,
+    feedback: {
+      cleanlinessRating: 3,
+      conditionNotes: 'Sand throughout the living room. Dishes piled in the sink. Bathroom had water on the floor. Pool towels left outside overnight.',
+      damages: ['Small scratch on the glass coffee table'],
+      itemsLeft: ['Phone charger (USB-C) - returned to guest via Airbnb message'],
+      cleaningDurationMinutes: 150,
+      housekeeperNotes: 'Guests used the property heavily. Extra effort needed for kitchen and bathroom.',
+    },
   },
   {
     id: 'cln-24',

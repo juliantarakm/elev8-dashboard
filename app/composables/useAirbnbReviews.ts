@@ -1,6 +1,7 @@
 import type { AutoReview, ReviewAutomationConfig, ReviewRatings, ReviewStatus } from '~/components/airbnb-reviews/data/reviews'
 import { computed, ref } from 'vue'
 import { defaultConfig, mockReviews } from '~/components/airbnb-reviews/data/reviews'
+import { cleaningJobs } from '~/components/cleaning/data/cleaning-jobs'
 
 const CONFIG_STORAGE_KEY = 'elev8-airbnb-review-config'
 
@@ -162,7 +163,15 @@ export function useAirbnbReviews() {
 
 function generateMockReview(review: AutoReview, variant = false) {
   const firstName = review.guest_name.split(' ')[0]
-  const isPositive = Math.random() > 0.2
+
+  // Look up cleaning feedback if linked
+  const cleaningJob = review.cleaning_job_id
+    ? cleaningJobs.value.find(j => j.id === review.cleaning_job_id)
+    : null
+  const feedback = cleaningJob?.feedback
+  const cleanlinessFromFeedback = feedback?.cleanlinessRating
+
+  const isPositive = cleanlinessFromFeedback ? cleanlinessFromFeedback >= 4 : Math.random() > 0.2
 
   const positiveReviews = [
     `${firstName} was a wonderful guest! Communicated clearly throughout the stay and left the property in excellent condition. The housekeeping team confirmed everything was well-maintained. Highly recommend to other hosts!`,
@@ -191,25 +200,39 @@ function generateMockReview(review: AutoReview, variant = false) {
     'Left a few personal items behind. Returned without issue. Minor cleaning extra needed in the kitchen area.',
   ]
 
-  const goodRatings: ReviewRatings = {
-    cleanliness: 4 + (Math.random() > 0.5 ? 1 : 0),
-    communication: 4 + (Math.random() > 0.3 ? 1 : 0),
-    house_rules: 4 + (Math.random() > 0.4 ? 1 : 0),
-  }
-
-  const mixedRatings: ReviewRatings = {
-    cleanliness: 3 + (Math.random() > 0.5 ? 1 : 0),
-    communication: 4 + (Math.random() > 0.5 ? 1 : 0),
-    house_rules: 3 + (Math.random() > 0.5 ? 1 : 0),
-  }
-
   const pickRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+  // Use cleanliness from housekeeping feedback if available
+  const cleanlinessRating = cleanlinessFromFeedback ?? (isPositive
+    ? 4 + (Math.random() > 0.5 ? 1 : 0)
+    : 3 + (Math.random() > 0.5 ? 1 : 0))
+
+  const communicationRating = isPositive
+    ? 4 + (Math.random() > 0.3 ? 1 : 0)
+    : 4 + (Math.random() > 0.5 ? 1 : 0)
+
+  const houseRulesRating = isPositive
+    ? 4 + (Math.random() > 0.4 ? 1 : 0)
+    : 3 + (Math.random() > 0.5 ? 1 : 0)
+
+  const ratings: ReviewRatings = {
+    cleanliness: cleanlinessRating,
+    communication: communicationRating,
+    house_rules: houseRulesRating,
+  }
+
+  // Use housekeeper notes in private feedback if available
+  const privateFeedback = feedback?.housekeeperNotes
+    ? `${feedback.housekeeperNotes}${feedback.damages.length ? ` Damages: ${feedback.damages.join(', ')}.` : ''}${feedback.itemsLeft.length ? ` Items left: ${feedback.itemsLeft.join(', ')}.` : ''}`
+    : isPositive
+      ? pickRandom(positivePrivate)
+      : pickRandom(mixedPrivate)
 
   if (isPositive) {
     return {
       public_review: pickRandom(variant ? positiveReviews.slice().reverse() : positiveReviews),
-      private_feedback: pickRandom(positivePrivate),
-      ratings: goodRatings,
+      private_feedback: privateFeedback,
+      ratings,
       recommend_guest: true,
       would_host_again: true,
     }
@@ -217,8 +240,8 @@ function generateMockReview(review: AutoReview, variant = false) {
 
   return {
     public_review: pickRandom(variant ? mixedReviews.slice().reverse() : mixedReviews),
-    private_feedback: pickRandom(mixedPrivate),
-    ratings: mixedRatings,
+    private_feedback: privateFeedback,
+    ratings,
     recommend_guest: Math.random() > 0.3,
     would_host_again: Math.random() > 0.3,
   }
