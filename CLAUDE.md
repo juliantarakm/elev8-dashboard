@@ -567,7 +567,7 @@ app/
 │       ├── types.ts                 # ReviewRecord, StayOperationalRecord, ReviewFeedItem
 │       ├── mock-review-records.ts   # 10 mock records
 │       └── mock-sor.ts              # 10 mock SOR records
-├── components/shared/AiIcon.vue     # Shared sparkle AI icon (ElevAI gold)
+├── components/shared/AiIcon.vue     # Shared sparkle AI icon (4-point, currentColor)
 ├── composables/useReviewHub.ts      # State + filters + mock AI generators
 └── components/settings/AirbnbReviewConfig.vue  # Per-channel auto-post + review settings
 ```
@@ -632,7 +632,7 @@ interface ReviewFeedItem {
 - `isExpired` → expired message
 - `!sorAvailable && !isGenerated` → "Write Manually" button (manual entry)
 - `isSubmitted && hasGeneratedData` → read-only "Review Submitted" view
-- `!isGenerated && isGenerating` → **full loading state** (gold gradient + spinner + skeleton placeholders)
+- `!isGenerated && isGenerating` → **full loading state** (primary gradient + spinner + skeleton placeholders)
 - `!isGenerated` → "Generate Host Review" button
 - `isGenerated` → editable form (public review, private feedback if !publicOnly, ratings) + Regenerate / Submit Review buttons
 
@@ -648,11 +648,11 @@ interface ReviewFeedItem {
 - If `isGenerated && isSubmitted` and user re-opens, shows read-only view; if user clicks Generate again, resets and re-generates
 
 **Filters (Filters.vue):**
-- Search (guest name, listing)
+- Search (guest name, listing) — fixed width `w-[280px]` (medium)
 - Status: All / Needs Reply / Replied (segmented buttons)
 - Channel: All / Airbnb / Booking.com / Direct (segmented buttons)
-- Rating: All / 5+ / 4+ / 3+ / 2+ / 1+ (segmented buttons)
 - Property: `<SharedPropertyPicker>` (multi-select, search, tags filter)
+- Rating filter removed — all reviews shown regardless of rating
 
 **Stay Report (SOR) MiniBadges (table column):**
 - Cleaning: `X/5` with lucide:spray-can icon
@@ -682,11 +682,15 @@ interface ReviewFeedItem {
 - Two states: `'off'` (master toggle off) and `'autopost_off'` (master on, no channels enabled)
 - States: `null` (dismissed or configured) hides banner
 - Dismiss button sets `bannerDismissed = true` for the session
-- Gold gradient: `from-[#C8A84B]/10 via-[#C8A84B]/5 to-transparent`, border `border-[#C8A84B]/30`
-- Sparkle icon in gold circle (`#C8A84B`)
+- **Primary theme colors** (per project taste: gold reserved for ElevAI branding, primary for general UI):
+  - Gradient bg: `from-primary/10 via-primary/5 to-transparent`
+  - Border: `border-primary/30`
+  - Icon circle bg: `bg-primary/15`
+  - Sparkle icon: `<SharedAiIcon>` (4-point sparkle) in `text-primary`
+  - "New" badge: `bg-primary/15 text-primary`
+  - CTA button: shadcn-vue default (primary variant) — no custom override
 - Headlines: "Turn on ElevAI review automation" or "Let ElevAI auto-post your guest reviews"
 - CTAs: "Enable automation" or "Enable auto-post" — both open the Settings sheet
-- Per project taste: ElevAI gold (`#C8A84B`) only for ElevAI branding; `bg-warning` for other AI contexts
 
 **Composable (`useReviewHub`):**
 - `reviewRecords` — `useState<ReviewRecord[]>` (key: 'review-hub-records')
