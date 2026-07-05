@@ -20,7 +20,6 @@ export function useReviewHub() {
   const filterStatus = ref<HubFilterStatus>('all')
   const filterChannel = ref<HubFilterChannel>('all')
   const filterListing = ref<string[]>([])
-  const filterRating = ref<number | null>(null)
 
   // Unique listings from review records
   const uniqueListings = computed(() => {
@@ -54,11 +53,6 @@ export function useReviewHub() {
         return false
       if (filterListing.value.length > 0 && !filterListing.value.includes('All Properties') && !filterListing.value.includes(r.listing_name))
         return false
-      if (filterRating.value !== null && r.guest_rating_overall !== null) {
-        const normalizedRating = r.guest_rating_max === 10 ? r.guest_rating_overall / 2 : r.guest_rating_overall
-        if (normalizedRating < filterRating.value)
-          return false
-      }
       if (searchQuery.value.trim()) {
         const q = searchQuery.value.toLowerCase()
         if (!r.guest_name.toLowerCase().includes(q) && !r.listing_name.toLowerCase().includes(q))
@@ -238,7 +232,6 @@ export function useReviewHub() {
     filterStatus.value = 'all'
     filterChannel.value = 'all'
     filterListing.value = []
-    filterRating.value = null
   }
 
   // Get SOR for a reservation
@@ -266,7 +259,6 @@ export function useReviewHub() {
     filterStatus,
     filterChannel,
     filterListing,
-    filterRating,
     uniqueListings,
     updateReviewRecord,
     generateReplyDraft,

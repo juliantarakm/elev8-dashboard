@@ -10,7 +10,6 @@ const {
   filterStatus,
   filterChannel,
   filterListing,
-  filterRating,
   uniqueListings,
   clearFilters,
 } = useReviewHub()
@@ -75,10 +74,10 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
     <!-- ElevAI Promo Banner -->
     <div
       v-if="bannerState"
-      class="relative flex items-start gap-4 overflow-hidden rounded-lg border border-[#C8A84B]/30 bg-gradient-to-r from-[#C8A84B]/10 via-[#C8A84B]/5 to-transparent p-4"
+      class="relative flex items-start gap-4 overflow-hidden rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4"
     >
-      <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#C8A84B]/15">
-        <Icon name="lucide:sparkles" class="size-5 text-[#C8A84B]" />
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15">
+        <SharedAiIcon custom-class="size-5 text-primary" />
       </div>
       <div class="flex-1 space-y-1">
         <div class="flex items-center gap-2">
@@ -90,7 +89,7 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
               Let ElevAI auto-post your guest reviews
             </template>
           </p>
-          <span class="rounded-full bg-[#C8A84B]/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#C8A84B]">
+          <span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
             New
           </span>
         </div>
@@ -106,7 +105,6 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
       <div class="flex shrink-0 items-center gap-2">
         <Button
           size="sm"
-          class="bg-[#C8A84B] text-white hover:bg-[#C8A84B]/90"
           @click="settingsOpen = true"
         >
           <template v-if="bannerState === 'off'">
@@ -133,7 +131,6 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
       v-model:filter-status="filterStatus"
       v-model:filter-channel="filterChannel"
       v-model:filter-listing="filterListing"
-      v-model:filter-rating="filterRating"
       :unique-listings="uniqueListings"
       @clear="clearFilters"
     />

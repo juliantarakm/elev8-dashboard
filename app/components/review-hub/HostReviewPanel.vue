@@ -89,7 +89,7 @@ defineExpose({ autoGenerate })
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <SharedAiIcon custom-class="size-4 text-[#C8A84B]" />
+        <SharedAiIcon custom-class="size-4 text-primary" />
         <span class="text-sm font-medium">AI Host Review of Guest</span>
       </div>
       <Badge v-if="!isExpired && channelSupportsReview" variant="outline" class="gap-1 text-xs">
@@ -180,9 +180,9 @@ defineExpose({ autoGenerate })
       <template v-else>
         <template v-if="!isGenerated">
           <div v-if="isGenerating" class="space-y-4">
-            <div class="flex flex-col items-center justify-center gap-3 rounded-lg border bg-gradient-to-b from-[#C8A84B]/5 to-transparent p-8 text-center">
-              <div class="flex size-10 items-center justify-center rounded-full bg-[#C8A84B]/15">
-                <Icon name="lucide:loader-circle" class="size-6 animate-spin text-[#C8A84B]" />
+            <div class="flex flex-col items-center justify-center gap-3 rounded-lg border bg-gradient-to-b from-primary/5 to-transparent p-8 text-center">
+              <div class="flex size-10 items-center justify-center rounded-full bg-primary/15">
+                <Icon name="lucide:loader-circle" class="size-6 animate-spin text-primary" />
               </div>
               <div class="space-y-1">
                 <p class="text-sm font-medium">

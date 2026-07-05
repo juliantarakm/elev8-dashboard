@@ -71,7 +71,7 @@ function handleCopy() {
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <SharedAiIcon custom-class="size-4 text-[#C8A84B]" />
+        <SharedAiIcon custom-class="size-4 text-primary" />
         <span class="text-sm font-medium">AI Reply to Guest Review</span>
       </div>
       <span class="text-xs text-muted-foreground">{{ channelNote }}</span>

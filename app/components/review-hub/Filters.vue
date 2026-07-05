@@ -14,18 +14,17 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
 const filterStatus = defineModel<HubFilterStatus>('filterStatus', { default: 'all' })
 const filterChannel = defineModel<HubFilterChannel>('filterChannel', { default: 'all' })
 const filterListing = defineModel<string[]>('filterListing', { default: () => [] })
-const filterRating = defineModel<number | null>('filterRating', { default: null })
 
 const hasActiveFilters = computed(() => {
   const hasListing = filterListing.value.length > 0 && !filterListing.value.includes('All Properties')
-  return filterStatus.value !== 'all' || filterChannel.value !== 'all' || hasListing || filterRating.value !== null || searchQuery.value.trim() !== ''
+  return filterStatus.value !== 'all' || filterChannel.value !== 'all' || hasListing || searchQuery.value.trim() !== ''
 })
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
     <!-- Search -->
-    <div class="relative min-w-[240px] flex-1">
+    <div class="relative w-[280px]">
       <Icon name="lucide:search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input v-model="searchQuery" placeholder="Search guest or property..." class="h-10 pl-9" />
     </div>
@@ -62,28 +61,6 @@ const hasActiveFilters = computed(() => {
 
     <!-- Property Picker (multi-select with search + tags) -->
     <SharedPropertyPicker v-model="filterListing" />
-
-    <!-- Rating -->
-    <div class="inline-flex h-10 items-center rounded-md border bg-background">
-      <button
-        type="button"
-        class="h-full px-3 text-xs font-medium transition-colors"
-        :class="filterRating === null ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'"
-        @click="filterRating = null"
-      >
-        All
-      </button>
-      <button
-        v-for="r in [5, 4, 3, 2, 1]"
-        :key="r"
-        type="button"
-        class="h-full border-l px-3 text-xs font-medium transition-colors"
-        :class="filterRating === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'"
-        @click="filterRating = r"
-      >
-        {{ r }}+
-      </button>
-    </div>
 
     <!-- Clear -->
     <Button v-if="hasActiveFilters" variant="ghost" size="sm" class="h-10 gap-1.5" @click="emit('clear')">
