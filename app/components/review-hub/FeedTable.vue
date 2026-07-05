@@ -11,7 +11,17 @@ const emit = defineEmits<{
   generate: [item: ReviewFeedItem]
 }>()
 
-const { getHostReviewCountdown } = useReviewHub()
+const { getHostReviewCountdown, getUnitInfo, getListingStructure } = useReviewHub()
+
+function getPropertySubtext(item: ReviewFeedItem) {
+  const structure = getListingStructure(item.review_record.listing_id)
+  if (structure === 'multi') {
+    const unit = getUnitInfo(item.review_record.listing_id, item.review_record.unit_id)
+    if (unit) return `${unit.unitTypeName} · ${unit.unitName}`
+  }
+  if (structure === 'single') return 'Single unit'
+  return item.review_record.listing_location
+}
 
 const generatingIds = ref<Set<string>>(new Set())
 const isGenerating = (id: string) => generatingIds.value.has(id)
@@ -86,7 +96,7 @@ function isHostReviewExpired(item: ReviewFeedItem) {
                 {{ item.review_record.listing_name }}
               </p>
               <p class="text-xs text-muted-foreground">
-                {{ item.review_record.listing_location }}
+                {{ getPropertySubtext(item) }}
               </p>
             </div>
           </TableCell>

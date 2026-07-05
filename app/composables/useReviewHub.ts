@@ -2,6 +2,7 @@ import type { AutoReview } from '~/components/airbnb-reviews/data/reviews'
 import type { ReplyStatus, ReviewFeedItem, ReviewRecord, ReviewSource, StayOperationalRecord } from '~/components/review-hub/data/types'
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { listings as allListings, getUnitById, getUnitTypeForUnit } from '~/components/listings/data/listings'
 import { mockReviewRecords } from '~/components/review-hub/data/mock-review-records'
 import { mockSorRecords } from '~/components/review-hub/data/mock-sor'
 import { useAirbnbReviews } from '~/composables/useAirbnbReviews'
@@ -239,6 +240,30 @@ export function useReviewHub() {
     return sorRecords.value.find(s => s.reservation_id === reservationId) ?? null
   }
 
+  // Get unit info for a review record (returns null for single-unit listings or if no unit_id)
+  function getUnitInfo(listingId: string, unitId: string | null): { unitName: string, unitTypeName: string } | null {
+    if (!unitId) return null
+    const listing = allListings.value.find(l => l.id === listingId)
+    if (!listing) return null
+    const unit = getUnitById(listing, unitId)
+    if (!unit) return null
+    const unitType = getUnitTypeForUnit(listing, unitId)
+    if (!unitType) return null
+    return { unitName: unit.name, unitTypeName: unitType.name }
+  }
+
+  // Get listing structure info for the property column ('multi' | 'single' | 'unknown')
+  function getListingStructure(listingId: string): 'multi' | 'single' | 'unknown' {
+    const listing = allListings.value.find(l => l.id === listingId)
+    if (!listing) return 'unknown'
+    if (listing.unitType === 'multi') {
+      // Confirm there are actual unit types defined
+      const unitTypes = listing.unitTypes ?? []
+      if (unitTypes.length > 0) return 'multi'
+    }
+    return 'single'
+  }
+
   // Get countdown days for host review window (Airbnb 14d, Booking.com 365d, Direct N/A)
   function getHostReviewCountdown(checkoutDate: string, source?: ReviewSource): number {
     const checkout = new Date(checkoutDate)
@@ -267,6 +292,8 @@ export function useReviewHub() {
     submitHostReview,
     clearFilters,
     getSor,
+    getUnitInfo,
+    getListingStructure,
     getHostReviewCountdown,
   }
 }

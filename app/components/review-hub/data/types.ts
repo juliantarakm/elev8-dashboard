@@ -35,6 +35,7 @@ export interface ReviewRecord {
   listing_id: string
   listing_name: string
   listing_location: string
+  unit_id: string | null
   guest_name: string
   num_guests: number
   nights: number
