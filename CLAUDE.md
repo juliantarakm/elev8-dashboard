@@ -582,6 +582,7 @@ interface ReviewRecord {
   reservation_id: string
   source: ReviewSource
   listing_id, listing_name, listing_location
+  unit_id: string | null  // null for single-unit listings; required for multi-unit to show unit info
   guest_name, num_guests, nights
   guest_rating_overall: number | null
   guest_rating_max: number | null  // 5 for Airbnb, 10 for Booking.com
@@ -621,6 +622,17 @@ interface ReviewFeedItem {
 - **Airbnb**: 5-star scale, 14-day host review window, supports private feedback + category ratings
 - **Booking.com**: 10-point scale, 365-day host review window, **public-only** host reviews (no private feedback, no category ratings)
 - **Direct**: 5-star scale, no host review support ("Direct bookings do not support host reviews of guests")
+
+**Property Column (feed table):**
+- Display logic for subtext (below listing_name):
+  - **Multi-unit** (listing has `unitTypes[]` array with at least 1 unit type) + has `unit_id` → `"UnitType · UnitName"` (e.g., "Kingbed · Master Suite")
+  - **Single-unit** (no `unitTypes[]` data) → `"Single unit"`
+  - **Unknown** (listing_id not found) → falls back to `listing_location`
+- Helpers in `useReviewHub`:
+  - `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` by looking up via `getUnitById` + `getUnitTypeForUnit` from listings data
+  - `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on `listing.unitType` enum + actual `unitTypes[]` array presence
+- Mock data: lst-1 has 2 unit types (Kingbed, Single Bed) with 4 units (Master Suite, Garden Unit, Pool Unit, Loft Unit); 4 records have `unit_id` set; other listings are single-unit
+- Integrations: imports `listings as allListings`, `getUnitById`, `getUnitTypeForUnit` from `~/components/listings/data/listings`
 
 **Host Review Window:**
 - `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (negative = expired)
@@ -702,6 +714,8 @@ interface ReviewFeedItem {
 - `uniqueListings` — derived from review records
 - `clearFilters()` — resets all filters
 - `getSor(reservationId)` — returns SOR for a record
+- `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` for multi-unit listings
+- `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on listing's `unitType` enum + `unitTypes[]` array presence
 - `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (14d Airbnb, 365d Booking.com)
 - `generateReplyDraft(recordId)` — 1.5s mock; returns positive/mixed/negative based on rating
 - `generateHostReviewDraft(recordId)` — 1.5s mock; returns `{ text, privateFeedback, ratings }`; uses SOR cleaning_score + house_rule_flags
