@@ -11,6 +11,7 @@ export interface ReviewRatings {
 export interface AutoReview {
   id: string
   booking_id: string
+  reservation_id: string
   property_id: string
   tenant_id: string
   guest_name: string
@@ -57,8 +58,12 @@ export interface ReviewAutomationConfig {
   host_language: HostLanguage
   tone_mode: ToneMode
   strict_mode: boolean
-  auto_post: boolean
+  auto_post_channels: {
+    airbnb: boolean
+    booking_com: boolean
+  }
   review_delay_hours: number
+  auto_post_delay_days: number
 }
 
 export const defaultConfig: ReviewAutomationConfig = {
@@ -66,8 +71,12 @@ export const defaultConfig: ReviewAutomationConfig = {
   host_language: 'en',
   tone_mode: 'balanced',
   strict_mode: false,
-  auto_post: false,
+  auto_post_channels: {
+    airbnb: false,
+    booking_com: false,
+  },
   review_delay_hours: 24,
+  auto_post_delay_days: 3,
 }
 
 export const hostLanguageOptions: { value: HostLanguage, label: string, flag: string }[] = [
@@ -108,12 +117,14 @@ export const statusIcons: Record<ReviewStatus, string> = {
   draft: 'lucide:file-edit',
   posted: 'lucide:check-circle-2',
   failed: 'lucide:alert-circle',
+  host_review_due: 'lucide:pen-line',
 }
 
 export const mockReviews: AutoReview[] = [
   {
     id: 'rev-001',
     booking_id: 'res-001',
+    reservation_id: 'res-001',
     property_id: 'lst-1',
     tenant_id: 'tenant-1',
     guest_name: 'Sarah Chen',
@@ -145,6 +156,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-002',
     booking_id: 'res-002',
+    reservation_id: 'res-002',
     property_id: 'lst-5',
     tenant_id: 'tenant-1',
     guest_name: 'Thomas Mueller',
@@ -176,6 +188,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-003',
     booking_id: 'res-003',
+    reservation_id: 'res-003',
     property_id: 'lst-12',
     tenant_id: 'tenant-1',
     guest_name: 'Lisa Wang',
@@ -207,6 +220,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-004',
     booking_id: 'res-004',
+    reservation_id: 'res-004',
     property_id: 'lst-1',
     tenant_id: 'tenant-1',
     guest_name: 'James Richardson',
@@ -238,6 +252,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-005',
     booking_id: 'res-005',
+    reservation_id: 'res-005',
     property_id: 'lst-5',
     tenant_id: 'tenant-1',
     guest_name: 'Elena Kowalski',
@@ -247,28 +262,29 @@ export const mockReviews: AutoReview[] = [
     num_guests: 1,
     nights: 4,
     cleaning_job_id: 'cln-5',
-    status: 'pending',
-    generated_at: null,
+    status: 'posted',
+    generated_at: '2026-06-23T09:00:00Z',
     ai_model: 'gpt-4-turbo',
-    generation_cost: null,
+    generation_cost: 0.0028,
     host_language: 'en',
     strict_mode: false,
     tone_mode: 'balanced',
-    public_review: null,
-    private_feedback: null,
-    ratings: null,
-    recommend_guest: null,
-    would_host_again: null,
+    public_review: 'Elena was a wonderful guest! She communicated clearly before and during her stay, left the property in pristine condition, and was a pleasure to host. The housekeeping team confirmed everything was spotless after checkout. Highly recommend to other hosts!',
+    private_feedback: 'No concerns. Excellent guest in every aspect.',
+    ratings: { cleanliness: 5, communication: 5, house_rules: 5 },
+    recommend_guest: true,
+    would_host_again: true,
     manually_edited: false,
     edited_at: null,
     airbnb_review_id: null,
-    posted_to_airbnb_at: null,
+    posted_to_airbnb_at: '2026-06-23T09:00:00Z',
     created_at: '2026-06-22T14:00:00Z',
-    updated_at: '2026-06-22T14:00:00Z',
+    updated_at: '2026-06-23T09:00:00Z',
   },
   {
     id: 'rev-006',
     booking_id: 'res-006',
+    reservation_id: 'res-006',
     property_id: 'lst-12',
     tenant_id: 'tenant-1',
     guest_name: 'Marco Rossi',
@@ -300,6 +316,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-007',
     booking_id: 'res-007',
+    reservation_id: 'res-007',
     property_id: 'lst-1',
     tenant_id: 'tenant-1',
     guest_name: 'Anna Schmidt',
@@ -331,6 +348,7 @@ export const mockReviews: AutoReview[] = [
   {
     id: 'rev-008',
     booking_id: 'res-008',
+    reservation_id: 'res-008',
     property_id: 'lst-1',
     tenant_id: 'tenant-1',
     guest_name: 'David Park',
