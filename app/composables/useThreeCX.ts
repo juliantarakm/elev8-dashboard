@@ -75,14 +75,6 @@ export function useThreeCX() {
     return activeAccount.value?.extensionMappings.find(m => m.extensionNumber === extensionNumber)?.staffId
   }
 
-  async function startOAuthFlow(fqdn: string): Promise<{ redirectUrl: string }> {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    const state = crypto.randomUUID()
-    const redirectUri = `${window.location.origin}/settings/integrations/3cx/callback`
-    const redirectUrl = `https://${fqdn}/connect/authorize?response_type=code&client_id=elev8-suite&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
-    return { redirectUrl }
-  }
-
   async function completeOAuthCallback(code: string, fqdn: string): Promise<{ success: true, account: ThreeCxAccount } | { success: false, error: string }> {
     await new Promise(resolve => setTimeout(resolve, 600))
 
@@ -165,7 +157,6 @@ export function useThreeCX() {
     unmatchedCalls,
     getExtensionForStaff,
     getStaffForExtension,
-    startOAuthFlow,
     completeOAuthCallback,
     assignExtension,
     unassignExtension,

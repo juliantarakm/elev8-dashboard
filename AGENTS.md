@@ -215,8 +215,7 @@ This file provides context for AI agents working on this project.
 - **Connection & extension mapping**: `app/composables/useThreeCX.ts`
   - `accounts` uses `useState<ThreeCxAccount[]>` persisted to `localStorage` key `elev8-threecx-accounts`
   - `activeAccount` / `isConnected` computeds
-  - `startOAuthFlow(fqdn)` — generates 3CX OAuth2 `authorization_code` redirect URL (FQDN-validated, stored in `sessionStorage` while user authorizes)
-  - `completeOAuthCallback(code, fqdn)` — handles `/settings/integrations/3cx/callback` exchange, mints access/refresh tokens, registers webhook subscriptions (`call.ringing`, `call.answered`, `call.ended`, `call.missed`, `call.voicemail`)
+  - `completeOAuthCallback(code, fqdn)` — mock OAuth exchange: FQDN-validated, mints access/refresh tokens, registers webhook subscriptions (`call.ringing`, `call.answered`, `call.ended`, `call.missed`, `call.voicemail`). V1 skips the 3CX authorization redirect and goes straight to connected state (gated on PRD Open Question #1)
   - `assignExtension(staffId, ext)` / `unassignExtension(staffId)` — maps staff to 3CX extension
   - `getExtensionForStaff(staffId)` / `getStaffForExtension(ext)` — bidirectional lookup
   - `disconnect()` — clears account but preserves call history (matches WhatsApp disconnect pattern)
@@ -238,9 +237,8 @@ This file provides context for AI agents working on this project.
   - `retryTranscription(conversationId, callId)` re-runs the job
 
 - **Components**:
-  - `SettingsThreeCxIntegration.vue` (`app/components/settings/ThreeCxIntegration.vue`) — OAuth connect dialog (FQDN input + validation), connected card (status, webhook URL copy, disconnect), extension mapping table (search + per-staff extension input, unassign)
+  - `SettingsThreeCxIntegration.vue` (`app/components/settings/ThreeCxIntegration.vue`) — Connect dialog (FQDN input + validation, goes straight to connected — no OAuth redirect in V1), connected card (status, webhook URL copy, disconnect), extension mapping table (search + per-staff extension input, unassign)
   - `pages/settings/integrations.vue` — registers 3CX card alongside WhatsApp
-  - `pages/settings/integrations/3cx/callback.vue` — OAuth callback exchange page (pending/success/error states)
   - `CallsView.vue` (`app/components/inbox/CallsView.vue`) — flat, filterable Call Log view (status, staff, listing, date range with `last-7-days` default); unmatched calls section with Match/Dismiss actions; match dialog opens a searchable conversation picker
   - `CallScreenPop.vue` (`app/components/inbox/CallScreenPop.vue`) — bottom-right toast that appears on matched inbound calls; "Open conversation" jumps to it, "Dismiss" closes; auto-targeted to extension's assigned staff
   - `Layout.vue` — adds Conversations/Calls view toggle in inbox header, renders 3CX card in Integrations sheet, mounts `<InboxCallScreenPop />`

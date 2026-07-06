@@ -39,7 +39,6 @@ interface PhoneCall {
 - `app/components/settings/ThreeCxIntegration.vue` — connect card + extension mapping table
 - `app/components/inbox/CallsView.vue` — flat filterable call log
 - `app/components/inbox/CallScreenPop.vue` — incoming-call toast
-- `app/pages/settings/integrations/3cx/callback.vue` — OAuth callback page
 
 ### Layout integration
 
@@ -52,8 +51,8 @@ interface PhoneCall {
 
 1. Admin opens Settings > Integrations, clicks "Connect with 3CX"
 2. Enters PBX FQDN (`elevate.3cx.asia` format) — validated against a hostname regex
-3. OAuth redirect URL generated → real OAuth handshake is gated on PRD Open Question #1 (PBX version), so V1 simulates the redirect and goes straight to callback
-4. Callback page mints mock access/refresh tokens, registers webhook subscriptions (`call.ringing`, `call.answered`, `call.ended`, `call.missed`, `call.voicemail`)
+3. V1 skips the 3CX authorization redirect and goes straight to connected state (gated on PRD Open Question #1 — PBX version determines whether the real OAuth handshake is even needed)
+4. `completeOAuthCallback` mints mock access/refresh tokens, registers webhook subscriptions (`call.ringing`, `call.answered`, `call.ended`, `call.missed`, `call.voicemail`)
 5. Admin can then map each `StaffMember` to a 3CX extension in a search-filterable table
 
 ## Call event pipeline (mocked)

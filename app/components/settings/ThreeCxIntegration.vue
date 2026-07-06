@@ -57,14 +57,19 @@ async function handleConnect() {
   connectError.value = ''
 
   try {
-    const { redirectUrl } = await threeCX.startOAuthFlow(fqdn)
-    if (import.meta.client) {
-      sessionStorage.setItem('threecx-oauth-pending', fqdn)
-      window.location.href = redirectUrl
+    const result = await threeCX.completeOAuthCallback(`mock-code-${Date.now()}`, fqdn)
+    if (!result.success) {
+      connectError.value = result.error
+      isConnecting.value = false
+      return
     }
+    toast.success(`Connected to ${fqdn}.`)
+    connectDialogOpen.value = false
+    resetConnect()
+    isConnecting.value = false
   }
   catch (e: any) {
-    connectError.value = e?.message ?? 'Failed to start OAuth flow.'
+    connectError.value = e?.message ?? 'Failed to connect 3CX.'
     isConnecting.value = false
   }
 }
@@ -208,7 +213,7 @@ function assignExtensionLocal(staffId: string, value: string) {
         <DialogHeader>
           <DialogTitle>Connect 3CX</DialogTitle>
           <DialogDescription>
-            Enter your 3CX PBX FQDN. You'll be redirected to 3CX to authorize Elev8 to receive call events.
+            Enter your 3CX PBX FQDN to connect.
           </DialogDescription>
         </DialogHeader>
         <form class="space-y-4" @submit.prevent="handleConnect">
@@ -235,8 +240,7 @@ function assignExtensionLocal(staffId: string, value: string) {
             </Button>
             <Button type="submit" :disabled="isConnecting" class="gap-2">
               <Icon v-if="isConnecting" name="lucide:loader-circle" class="size-4 animate-spin" />
-              {{ isConnecting ? 'Redirecting…' : 'Continue to 3CX' }}
-              <Icon v-if="!isConnecting" name="lucide:external-link" class="size-3.5" />
+              {{ isConnecting ? 'Connecting…' : 'Connect' }}
             </Button>
           </DialogFooter>
         </form>
