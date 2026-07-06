@@ -21,6 +21,7 @@ const isConnecting = ref(false)
 const formAccessToken = ref('')
 const formWabaId = ref('')
 const formPhoneNumberId = ref('')
+const formAccountName = ref('')
 const formError = ref('')
 
 // --- Manage dialog (unified: credentials + listings + webhook) ---
@@ -34,6 +35,7 @@ const manageStep = ref(1)
 const manageAccessToken = ref('')
 const manageWabaId = ref('')
 const managePhoneNumberId = ref('')
+const manageAccountName = ref('')
 const manageCredsError = ref('')
 const manageSavingCreds = ref(false)
 
@@ -42,6 +44,39 @@ const manageSelectedListings = ref<string[]>([])
 const manageListingSearch = ref('')
 const manageListingTagSearch = ref('')
 const manageListingTagPopoverOpen = ref(false)
+
+// --- Test Send dialog ---
+const testSendDialogOpen = ref(false)
+const testSendAccount = ref<WhatsAppAccount | null>(null)
+const testSendPhone = ref('')
+const testSendTemplateId = ref('welcome')
+const testSendVars = ref<Record<string, string>>({ guest_name: 'John Doe', check_in_date: '2026-07-15', check_out_date: '2026-07-20', property_name: 'Villa Kastila' })
+const testSending = ref(false)
+
+const testTemplates = [
+  { id: 'welcome', name: 'Welcome Message', icon: 'lucide:hand-heart', body: 'Hi {{guest_name}}, welcome to {{property_name}}! We\'re excited to host you starting {{check_in_date}}. Let us know if you need anything.' },
+  { id: 'checkin', name: 'Check-in Instructions', icon: 'lucide:door-open', body: 'Hi {{guest_name}}, your check-in at {{property_name}} is on {{check_in_date}}. Door code will be sent 2 hours before arrival. Safe travels!' },
+  { id: 'checkout', name: 'Check-out Reminder', icon: 'lucide:log-out', body: 'Hi {{guest_name}}, just a reminder that check-out from {{property_name}} is on {{check_out_date}} at 11:00 AM. Hope you had a wonderful stay!' },
+  { id: 'house_rules', name: 'House Rules', icon: 'lucide:scroll-text', body: 'Hi {{guest_name}}, welcome to {{property_name}}! A few quick reminders: no smoking indoors, quiet hours after 10 PM, and please lock the door when heading out. Enjoy your stay!' },
+  { id: 'custom', name: 'Custom Message', icon: 'lucide:message-square', body: '' },
+]
+
+const testTemplate = computed(() => testTemplates.find(t => t.id === testSendTemplateId.value) ?? testTemplates[0])
+
+const testRenderedBody = computed(() => {
+  if (testSendTemplateId.value === 'custom') return testSendVars.value.custom_body ?? ''
+  let body = testTemplate.value.body
+  for (const [key, value] of Object.entries(testSendVars.value)) {
+    body = body.replaceAll(`{{${key}}}`, value || `{{${key}}}`)
+  }
+  return body
+})
+
+const testTemplateVarKeys = computed(() => {
+  if (testSendTemplateId.value === 'custom') return ['custom_body']
+  const matches = testTemplate.value.body.match(/\{\{(\w+)\}\}/g) ?? []
+  return Array.from(new Set(matches.map(m => m.replace(/[{}]/g, ''))))
+})
 
 // --- Delete ---
 const deleteDialogOpen = ref(false)
@@ -108,6 +143,7 @@ function resetConnectForm() {
   formAccessToken.value = ''
   formWabaId.value = ''
   formPhoneNumberId.value = ''
+  formAccountName.value = ''
   formError.value = ''
 }
 
@@ -115,7 +151,7 @@ async function handleConnect() {
   if (isConnecting.value) return
 
   // Validate fields not empty
-  if (!formAccessToken.value.trim() || !formWabaId.value.trim() || !formPhoneNumberId.value.trim()) {
+  if (!formAccessToken.value.trim() || !formWabaId.value.trim() || !formPhoneNumberId.value.trim() || !formAccountName.value.trim()) {
     formError.value = 'All fields are required.'
     return
   }
@@ -127,6 +163,7 @@ async function handleConnect() {
     formAccessToken.value.trim(),
     formWabaId.value.trim(),
     formPhoneNumberId.value.trim(),
+    formAccountName.value.trim(),
   )
 
   if (result.success) {
@@ -157,6 +194,7 @@ function openManageDialog(account: WhatsAppAccount, stepMode = false) {
   manageAccessToken.value = account.accessToken
   manageWabaId.value = account.wabaId
   managePhoneNumberId.value = account.phoneNumberId
+  manageAccountName.value = account.businessName
   manageCredsError.value = ''
 
   // Populate listings form
@@ -187,7 +225,7 @@ function copyWebhookToken() {
 
 async function saveManageCredentials() {
   if (!manageAccount.value) return
-  if (!manageAccessToken.value.trim() || !manageWabaId.value.trim() || !managePhoneNumberId.value.trim()) {
+  if (!manageAccessToken.value.trim() || !manageWabaId.value.trim() || !managePhoneNumberId.value.trim() || !manageAccountName.value.trim()) {
     manageCredsError.value = 'All fields are required.'
     return
   }
@@ -200,6 +238,7 @@ async function saveManageCredentials() {
     accessToken: manageAccessToken.value.trim(),
     wabaId: manageWabaId.value.trim(),
     phoneNumberId: managePhoneNumberId.value.trim(),
+    businessName: manageAccountName.value.trim(),
   })
 
   toast.success('Credentials updated.')
@@ -266,8 +305,26 @@ function bulkAssignSelected() {
   selectedUnassignedListings.value = []
 }
 
-function handleTestSend(account: WhatsAppAccount) {
-  toast.success(`Test message sent to ${account.displayPhoneNumber}.`)
+function openTestSendDialog(account: WhatsAppAccount) {
+  testSendAccount.value = account
+  testSendPhone.value = ''
+  testSendTemplateId.value = 'welcome'
+  testSendVars.value = { guest_name: 'John Doe', check_in_date: '2026-07-15', check_out_date: '2026-07-20', property_name: 'Villa Kastila' }
+  testSendDialogOpen.value = true
+}
+
+function closeTestSendDialog() {
+  testSendDialogOpen.value = false
+  testSendAccount.value = null
+  testSending.value = false
+}
+
+async function sendTestMessage() {
+  if (!testSendAccount.value || !testSendPhone.value.trim() || !testRenderedBody.value.trim()) return
+  testSending.value = true
+  await new Promise(resolve => setTimeout(resolve, 700))
+  toast.success(`Test message sent to ${testSendPhone.value}.`)
+  closeTestSendDialog()
 }
 </script>
 
@@ -322,7 +379,6 @@ function handleTestSend(account: WhatsAppAccount) {
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ account.businessName }}</p>
-              <p class="mt-0.5 text-xs text-muted-foreground">{{ account.displayPhoneNumber }}</p>
               <p class="text-xs text-muted-foreground">Connected {{ account.connectedAt }} · {{ account.listingIds.length }} listing{{ account.listingIds.length !== 1 ? 's' : '' }}</p>
               <p class="mt-1 text-[11px] text-muted-foreground/60">
                 WABA: {{ account.wabaId }} · Phone ID: {{ account.phoneNumberId }}
@@ -332,7 +388,7 @@ function handleTestSend(account: WhatsAppAccount) {
                   <Icon name="lucide:settings-2" class="size-3.5" />
                   Manage
                 </Button>
-                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="handleTestSend(account)">
+                <Button size="sm" variant="outline" class="h-8 gap-1.5" @click="openTestSendDialog(account)">
                   <Icon name="lucide:send" class="size-3.5" />
                   Test Send
                 </Button>
@@ -459,6 +515,17 @@ function handleTestSend(account: WhatsAppAccount) {
 
         <form class="space-y-4" @submit.prevent="handleConnect">
           <div class="space-y-2">
+            <Label for="account-name">Account name</Label>
+            <Input
+              id="account-name"
+              v-model="formAccountName"
+              placeholder="e.g. Elev8 Bali Office"
+              class="w-full"
+            />
+            <p class="text-[11px] text-muted-foreground">A friendly label to identify this WhatsApp account in your dashboard.</p>
+          </div>
+
+          <div class="space-y-2">
             <Label for="access-token">Access Token</Label>
             <Input
               id="access-token"
@@ -519,7 +586,7 @@ function handleTestSend(account: WhatsAppAccount) {
         <DialogHeader>
           <DialogTitle>{{ manageStepMode ? 'Connect WhatsApp' : 'Manage Account' }}</DialogTitle>
           <DialogDescription v-if="manageAccount">
-            <strong>{{ manageAccount.businessName }}</strong> · {{ manageAccount.displayPhoneNumber }}
+            <strong>{{ manageAccount.businessName }}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -670,6 +737,11 @@ function handleTestSend(account: WhatsAppAccount) {
               <form @submit.prevent="saveManageCredentials">
                 <div class="space-y-4">
                   <div class="space-y-2">
+                    <Label for="manage-account-name">Account name</Label>
+                    <Input id="manage-account-name" v-model="manageAccountName" class="w-full" />
+                  </div>
+
+                  <div class="space-y-2">
                     <Label for="manage-access-token">Access Token</Label>
                     <Input id="manage-access-token" v-model="manageAccessToken" type="password" class="w-full font-mono text-sm" />
                   </div>
@@ -786,6 +858,92 @@ function handleTestSend(account: WhatsAppAccount) {
 
           </Tabs>
         </template>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Test Send Dialog -->
+    <Dialog v-model:open="testSendDialogOpen">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Send Test Message</DialogTitle>
+          <DialogDescription v-if="testSendAccount">
+            From <strong>{{ testSendAccount.businessName }}</strong>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <Label for="test-phone">Recipient phone number</Label>
+            <Input
+              id="test-phone"
+              v-model="testSendPhone"
+              type="tel"
+              placeholder="+62 812 3456 7890"
+              class="w-full font-mono text-sm"
+            />
+            <p class="text-[11px] text-muted-foreground">Include country code. Pre-filled with this account's number.</p>
+          </div>
+
+          <div class="space-y-2">
+            <Label>Template</Label>
+            <div class="grid grid-cols-1 gap-1.5">
+              <button
+                v-for="tpl in testTemplates"
+                :key="tpl.id"
+                type="button"
+                class="flex items-center gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50"
+                :class="testSendTemplateId === tpl.id ? 'border-primary bg-primary/5' : 'border-border'"
+                @click="testSendTemplateId = tpl.id"
+              >
+                <Icon :name="tpl.icon" class="size-4 shrink-0 text-muted-foreground" />
+                <span class="font-medium">{{ tpl.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="testTemplateVarKeys.length" class="space-y-3 rounded-lg border bg-muted/20 p-3">
+            <p class="text-xs font-medium">Variables</p>
+            <div v-if="testSendTemplateId === 'custom'" class="space-y-2">
+              <Label for="custom-body" class="text-xs">Message body</Label>
+              <textarea
+                id="custom-body"
+                v-model="testSendVars.custom_body"
+                rows="4"
+                placeholder="Type your custom message..."
+                class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+            <div v-else class="grid grid-cols-2 gap-2">
+              <div v-for="key in testTemplateVarKeys" :key="key" class="space-y-1">
+                <Label :for="`var-${key}`" class="text-xs">{{ key }}</Label>
+                <Input
+                  :id="`var-${key}`"
+                  v-model="testSendVars[key]"
+                  class="h-8 text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <Label class="text-xs">Preview</Label>
+            <div class="min-h-[80px] rounded-lg border bg-[#ECE5DD] p-3">
+              <div class="ml-auto max-w-[85%] rounded-lg rounded-tr-sm bg-[#DCF8C6] p-2.5 text-sm shadow-sm">
+                <p class="whitespace-pre-wrap text-foreground">{{ testRenderedBody || 'Message preview will appear here...' }}</p>
+                <p class="mt-1 text-right text-[10px] text-muted-foreground">{{ new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" :disabled="testSending" @click="closeTestSendDialog">Cancel</Button>
+          <Button :disabled="testSending || !testSendPhone.trim() || !testRenderedBody.trim()" class="gap-2" @click="sendTestMessage">
+            <Icon v-if="testSending" name="lucide:loader-circle" class="size-4 animate-spin" />
+            <Icon v-else name="lucide:send" class="size-4" />
+            {{ testSending ? 'Sending…' : 'Send Test' }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
 

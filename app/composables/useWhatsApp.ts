@@ -62,6 +62,7 @@ export function useWhatsApp() {
     _accessToken: string,
     _wabaId: string,
     _phoneNumberId: string,
+    _accountName: string,
   ): Promise<{ success: true; businessName: string; displayPhoneNumber: string } | { success: false; error: string }> {
     // Simulate connection delay
     await new Promise(resolve => setTimeout(resolve, 800))
@@ -71,7 +72,7 @@ export function useWhatsApp() {
 
     const newAccount: WhatsAppAccount = {
       id: `wa-${Date.now()}`,
-      businessName: mock.businessName,
+      businessName: _accountName,
       displayPhoneNumber: mock.displayPhoneNumber,
       phoneNumberId: _phoneNumberId,
       wabaId: _wabaId,
@@ -83,7 +84,7 @@ export function useWhatsApp() {
     }
 
     addAccount(newAccount)
-    return { success: true, businessName: mock.businessName, displayPhoneNumber: mock.displayPhoneNumber }
+    return { success: true, businessName: _accountName, displayPhoneNumber: mock.displayPhoneNumber }
   }
 
   function addAccount(account: WhatsAppAccount) {
