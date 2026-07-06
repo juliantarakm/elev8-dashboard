@@ -22,6 +22,12 @@ useHead({
   bodyAttrs: {
     class: computed(() => `color-${theme.value?.color || 'default'} theme-${theme.value?.type || 'default'}`),
   },
+  script: [
+    {
+      innerHTML: `if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(rs){for(var i=0;i<rs.length;i++)rs[i].unregister()}); if ('caches' in window) { caches.keys().then(function(keys){for(var i=0;i<keys.length;i++)caches.delete(keys[i])}); } }`,
+      tagPosition: 'head',
+    },
+  ],
 })
 
 const title = 'Nuxt Shadcn-Vue TailwindCSS 4 - Dashboard Template'
@@ -41,15 +47,6 @@ useSeoMeta({
 })
 
 const router = useRouter()
-
-onMounted(() => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations)
-        registration.unregister()
-    })
-  }
-})
 
 defineShortcuts({
   'G-H': () => router.push('/'),
