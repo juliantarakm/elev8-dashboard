@@ -92,6 +92,10 @@ function openSheet(type: 'integrations' | 'ai') {
     integrationsOpen.value = true
   else aiSettingsOpen.value = true
 }
+
+function setInboxView(view: 'conversations' | 'calls') {
+  inboxView.value = view
+}
 </script>
 
 <template>
@@ -125,7 +129,7 @@ function openSheet(type: 'integrations' | 'ai') {
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                 :class="inboxView === 'conversations' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
-                @click="inboxView = 'conversations'"
+                @click="setInboxView('conversations')"
               >
                 <Icon name="lucide:message-square" class="size-3.5" />
                 Conversations
@@ -134,7 +138,7 @@ function openSheet(type: 'integrations' | 'ai') {
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                 :class="inboxView === 'calls' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
-                @click="inboxView = 'calls'"
+                @click="setInboxView('calls')"
               >
                 <Icon name="lucide:phone" class="size-3.5" />
                 Calls
