@@ -74,8 +74,14 @@ const testRenderedBody = computed(() => {
 })
 
 function formatPhoneInput(value: string): string {
-  // AsYouType with no default country auto-detects based on the leading digits
-  return new AsYouType().input(value)
+  // Strip everything that isn't a digit or leading +
+  const cleaned = value.replace(/[^\d+]/g, '')
+  // Force a single leading + only at the start
+  const hasPlus = cleaned.startsWith('+')
+  const digits = cleaned.replace(/\+/g, '')
+  const withPlus = hasPlus ? `+${digits}` : `+${digits}`
+  // AsYouType formats as the user types based on the leading + and digits
+  return new AsYouType().input(withPlus)
 }
 
 const testTemplateVarKeys = computed(() => {
