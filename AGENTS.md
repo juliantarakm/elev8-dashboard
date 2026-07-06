@@ -204,6 +204,55 @@ This file provides context for AI agents working on this project.
   - `NotificationItem.vue` — Notification card with category icon (opacity 50%), severity-colored left border, display label, description, time ago, AI summary badge for calls
   - No X dismiss button — notifications stay visible after read with white background
 
+### 3CX Telephony Module (`app/composables/useThreeCX.ts`, `app/composables/useThreeCxCalls.ts`)
+
+- **Data + types**:
+  - `ThreeCxAccount` — `id`, `fqdn`, `displayName`, `pbxVersion`, `accessToken`, `refreshToken`, `status: 'connected' | 'disconnected' | 'pending' | 'error'`, `connectedAt`, `extensionMappings: { staffId, extensionNumber }[]`, `webhookSubscriptions: string[]`
+  - `UnmatchedCall` — `id`, `fromNumber`, `toExtension`, `timestamp`, `status`, `duration`, optional `recording_url`
+  - `PhoneCall` extended with `transcriptionState: 'idle' | 'processing' | 'done' | 'failed'`, `transcriptionError?`, `extensionNumber?`, `staffId?` (in `app/components/inbox/data/conversations.ts`)
+  - Mock data: starts from existing seed `phoneCalls`; live calls append on top, all persisted to `localStorage` key `elev8-threecx-phone-calls`
+
+- **Connection & extension mapping**: `app/composables/useThreeCX.ts`
+  - `accounts` uses `useState<ThreeCxAccount[]>` persisted to `localStorage` key `elev8-threecx-accounts`
+  - `activeAccount` / `isConnected` computeds
+  - `startOAuthFlow(fqdn)` — generates 3CX OAuth2 `authorization_code` redirect URL (FQDN-validated, stored in `sessionStorage` while user authorizes)
+  - `completeOAuthCallback(code, fqdn)` — handles `/settings/integrations/3cx/callback` exchange, mints access/refresh tokens, registers webhook subscriptions (`call.ringing`, `call.answered`, `call.ended`, `call.missed`, `call.voicemail`)
+  - `assignExtension(staffId, ext)` / `unassignExtension(staffId)` — maps staff to 3CX extension
+  - `getExtensionForStaff(staffId)` / `getStaffForExtension(ext)` — bidirectional lookup
+  - `disconnect()` — clears account but preserves call history (matches WhatsApp disconnect pattern)
+  - `unmatchedCalls` state with `addUnmatchedCall`, `dismissUnmatchedCall`, `matchUnmatchedCall`
+
+- **Call event pipeline (mock)**: `app/composables/useThreeCxCalls.ts`
+  - **Mock ingestion** (deferred real webhook receiver — depends on PBX version, see PRD Open Question #1): `simulateInboundCall({ fromNumber, toExtension, outcome })` and `simulateOutboundCall({ fromExtension, toNumber, staffId, conversationId })`
+  - Caller-number matching: `findConversationByPhone` compares last 9 digits of caller against `reservations[id].guestDetails.phone` — falls back to `unmatchedCalls` queue if no match
+  - Missed/voicemail outcomes auto-flip `Conversation.status = 'action_needed'` and increment `unreadCount`
+  - Matched inbound `completed` call triggers `startScreenPop` — push notification to assigned staff (`getStaffForExtension(call.to)`) or broadcasts to default team if no extension owner
+  - `phoneCalls.value: Record<conversationId, PhoneCall[]>` — `upsertCall`, `getCallById`, `getCallsForConversation`, `allCalls` (flat sorted list)
+  - `screenPops.value: ScreenPopNotification[]` — `dismissScreenPop(id)`, `getActiveScreenPopForCurrentUser()` (filters by current staff `staff-2`)
+
+- **Async transcription job**:
+  - `runTranscriptionJob(conversationId, callId, hasRecording)` — sets `transcriptionState: 'processing'`, schedules a `setTimeout` (target = `min(duration * 2s, 10min)`, minimum 1.5s)
+  - 8% random failure rate — `transcriptionState: 'failed'` + `transcriptionError`; record keeps duration/recording, never blocks UI
+  - On success: writes canned `transcript` and `summary` (from `MOCK_TRANSCRIPT_SAMPLES` / `MOCK_SUMMARY_SAMPLES`), `transcriptionState: 'done'`
+  - No recording → job does not run; `transcript`/`summary` stay empty (no stuck "Processing" state)
+  - `retryTranscription(conversationId, callId)` re-runs the job
+
+- **Components**:
+  - `SettingsThreeCxIntegration.vue` (`app/components/settings/ThreeCxIntegration.vue`) — OAuth connect dialog (FQDN input + validation), connected card (status, webhook URL copy, disconnect), extension mapping table (search + per-staff extension input, unassign)
+  - `pages/settings/integrations.vue` — registers 3CX card alongside WhatsApp
+  - `pages/settings/integrations/3cx/callback.vue` — OAuth callback exchange page (pending/success/error states)
+  - `CallsView.vue` (`app/components/inbox/CallsView.vue`) — flat, filterable Call Log view (status, staff, listing, date range with `last-7-days` default); unmatched calls section with Match/Dismiss actions; match dialog opens a searchable conversation picker
+  - `CallScreenPop.vue` (`app/components/inbox/CallScreenPop.vue`) — bottom-right toast that appears on matched inbound calls; "Open conversation" jumps to it, "Dismiss" closes; auto-targeted to extension's assigned staff
+  - `Layout.vue` — adds Conversations/Calls view toggle in inbox header, renders 3CX card in Integrations sheet, mounts `<InboxCallScreenPop />`
+  - `Thread.vue` Calls tab — added Processing/Failed transcript state UI + Retry button on failure
+  - `ReservationGuest.vue` — click-to-call icon button next to phone number (disabled when 3CX not connected)
+  - `ReservationPanel.vue` — switches from `phoneCalls` seed to `useThreeCxCalls.getCallsForConversation` so live calls flow into the activity feed
+
+- **Mock integration** (V1, deprecation strategy):
+  - All ingestion is mocked client-side via `setTimeout`. Real 3CX webhook receiver requires PBX version confirmation (V20+ uses native REST + webhook subscriptions; older versions need a Call Flow App HTTP forwarder) — gated by PRD Open Questions #1 and #3
+  - Recording URLs are placeholder `https://example.com/recordings/...` strings
+  - Transcription is a canned-text picker, not a real STT call — provider selection gated by PRD Open Question #6
+
 ### CI/CD
 
 - **GitHub Actions**: Two workflows — `CI` (lint + build check) and `Deploy to GitHub Pages`

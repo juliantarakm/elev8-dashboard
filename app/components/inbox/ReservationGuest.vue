@@ -37,6 +37,32 @@ const sentimentConfig: Record<string, { emoji: string, label: string, class: str
 const sentimentCfg = computed(() => sentimentConfig[props.sentiment] ?? sentimentConfig.neutral!)
 
 const { assignTo, getAssignedStaff, isElevaiEnabled, getElevaiState, enableElevai, pauseElevai, disableElevai } = useInbox()
+const threeCX = useThreeCX()
+const threeCXCalls = useThreeCxCalls()
+const isInitiatingCall = ref(false)
+
+async function handleClickToCall() {
+  if (!props.guest.phone || isInitiatingCall.value)
+    return
+  const me = 'staff-2'
+  const myExtension = threeCX.getExtensionForStaff(me) ?? '1001'
+  isInitiatingCall.value = true
+  try {
+    await threeCXCalls.simulateOutboundCall({
+      fromExtension: myExtension,
+      toNumber: props.guest.phone,
+      staffId: me,
+      conversationId: props.conversation.id,
+    })
+    toast.success('Call initiated.')
+  }
+  catch {
+    toast.error('Could not start the call. Please try again.')
+  }
+  finally {
+    isInitiatingCall.value = false
+  }
+}
 
 const initials = computed(() =>
   props.guest.name.split(' ').map(n => n[0]).join(''),
@@ -248,7 +274,18 @@ function handleElevaiDisable() {
         </div>
         <div class="flex items-center gap-2.5">
           <Icon name="lucide:phone" class="size-3.5 shrink-0 text-muted-foreground" />
-          <span class="text-xs">{{ guest.phone }}</span>
+          <span class="text-xs flex-1 truncate">{{ guest.phone }}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-6"
+            :disabled="isInitiatingCall || !threeCX.isConnected.value"
+            :title="threeCX.isConnected.value ? 'Call guest' : 'Connect 3CX in Settings to enable calls'"
+            @click="handleClickToCall"
+          >
+            <Icon v-if="isInitiatingCall" name="lucide:loader-circle" class="size-3 animate-spin" />
+            <Icon v-else name="lucide:phone-call" class="size-3" />
+          </Button>
         </div>
       </div>
     </div>

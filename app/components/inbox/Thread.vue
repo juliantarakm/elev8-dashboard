@@ -4,6 +4,8 @@ import { differenceInDays, format, isToday, isYesterday } from 'date-fns'
 import { toast } from 'vue-sonner'
 
 const { selectedConversation, selectedMessages, selectedReservation, markAsHandled, markAsUnread, isElevaiEnabled, useSuggestion, getNotes, addNote, editNote, deleteNote, getPhoneCalls, rightPanelCollapsed, toggleRightPanel, autoTranslate, matchUnmatched, createFromUnmatched, dismissUnmatched, conversations } = useInbox()
+const threeCX = useThreeCX()
+const threeCXCalls = useThreeCxCalls()
 
 const activeThreadTab = ref<'messages' | 'notes' | 'phone'>('messages')
 const editingNoteId = ref<string | null>(null)
@@ -56,8 +58,34 @@ const conversationNotes = computed(() => {
 const conversationPhoneCalls = computed(() => {
   if (!selectedConversation.value)
     return []
-  return getPhoneCalls(selectedConversation.value.id)
+  return threeCXCalls.getCallsForConversation(selectedConversation.value.id)
 })
+
+const isInitiatingCall = ref(false)
+
+async function handleClickToCall() {
+  if (!selectedConversation.value || !selectedReservation.value?.guestDetails?.phone)
+    return
+  const me = 'staff-2'
+  const myExtension = threeCX.getExtensionForStaff(me) ?? '1001'
+  isInitiatingCall.value = true
+  try {
+    await threeCXCalls.simulateOutboundCall({
+      fromExtension: myExtension,
+      toNumber: selectedReservation.value.guestDetails.phone,
+      staffId: me,
+      conversationId: selectedConversation.value.id,
+    })
+    toast.success('Call initiated.')
+    activeThreadTab.value = 'phone'
+  }
+  catch {
+    toast.error('Could not start the call. Please try again.')
+  }
+  finally {
+    isInitiatingCall.value = false
+  }
+}
 
 const expandedTranscripts = ref(new Set<string>())
 
@@ -669,10 +697,29 @@ function formatCallDate(timestamp: string): string {
                   Guest phone number
                 </div>
               </div>
-              <Button size="sm" class="gap-1.5">
-                <Icon name="lucide:phone" class="size-3.5" />
-                Call
+              <Button
+                size="sm"
+                class="gap-1.5"
+                :disabled="isInitiatingCall || !threeCX.isConnected.value"
+                @click="handleClickToCall"
+              >
+                <Icon v-if="isInitiatingCall" name="lucide:loader-circle" class="size-3.5 animate-spin" />
+                <Icon v-else name="lucide:phone" class="size-3.5" />
+                {{ isInitiatingCall ? 'Calling…' : 'Call' }}
               </Button>
+            </div>
+
+            <div v-if="selectedReservation?.guestDetails?.phone && !threeCX.isConnected.value" class="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+              <div class="flex items-start gap-2">
+                <Icon name="lucide:info" class="size-3.5 mt-0.5 shrink-0" />
+                <div>
+                  Connect your 3CX account in
+                  <NuxtLink to="/settings/integrations" class="underline underline-offset-2 hover:text-foreground">
+                    Settings &rarr; Integrations
+                  </NuxtLink>
+                  to enable click-to-call.
+                </div>
+              </div>
             </div>
 
             <!-- Call history -->
@@ -721,7 +768,27 @@ function formatCallDate(timestamp: string): string {
                     <div v-if="call.note" class="mt-1.5 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
                       {{ call.note }}
                     </div>
-                    <div v-if="call.summary" class="mt-1.5 text-xs leading-relaxed bg-[#FBC800]/5 border border-[#FBC800]/20 rounded px-2 py-1.5">
+                    <div v-if="call.transcriptionState === 'processing'" class="mt-1.5 text-xs leading-relaxed bg-muted/40 border border-dashed rounded px-2 py-1.5">
+                      <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Icon name="lucide:loader-circle" class="size-3 animate-spin" />
+                        <span>Processing transcript &amp; summary</span>
+                      </div>
+                    </div>
+                    <div v-else-if="call.transcriptionState === 'failed'" class="mt-1.5 text-xs leading-relaxed bg-destructive/5 border border-destructive/20 rounded px-2 py-1.5">
+                      <div class="flex items-center gap-1.5 text-[10px] text-destructive">
+                        <Icon name="lucide:alert-circle" class="size-3" />
+                        <span>{{ call.transcriptionError ?? 'Transcription failed' }}</span>
+                        <button
+                          type="button"
+                          class="ml-auto inline-flex items-center gap-1 text-destructive hover:text-destructive/80 font-medium"
+                          @click="threeCXCalls.retryTranscription(selectedConversation!.id, call.id)"
+                        >
+                          <Icon name="lucide:refresh-cw" class="size-3" />
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else-if="call.summary" class="mt-1.5 text-xs leading-relaxed bg-[#FBC800]/5 border border-[#FBC800]/20 rounded px-2 py-1.5">
                       <div class="flex items-center gap-1 mb-0.5 text-[10px] text-[#FBC800]">
                         <Icon name="lucide:sparkles" class="size-2.5" />
                         <span class="font-medium">AI Summary</span>

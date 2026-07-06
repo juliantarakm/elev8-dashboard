@@ -111,11 +111,14 @@ export interface SmartAction {
   detectedBy: 'elevai' | 'system'
 }
 
+export type PhoneCallStatus = 'completed' | 'missed' | 'voicemail'
+export type TranscriptionState = 'idle' | 'processing' | 'done' | 'failed'
+
 export interface PhoneCall {
   id: string
   conversationId: string
   direction: 'inbound' | 'outbound'
-  status: 'completed' | 'missed' | 'voicemail'
+  status: PhoneCallStatus
   duration: number // seconds
   timestamp: string
   from: string
@@ -124,6 +127,10 @@ export interface PhoneCall {
   transcript?: string
   summary?: string
   recording_url?: string
+  transcriptionState?: TranscriptionState
+  transcriptionError?: string
+  extensionNumber?: string
+  staffId?: string
 }
 
 export interface GuestDetails {

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { Conversation, PhoneCall, Reservation } from '~/components/inbox/data/conversations'
-import { phoneCalls as phoneCallsData } from '~/components/inbox/data/conversations'
 
 interface ReservationPanelProps {
   conversation: Conversation
@@ -10,9 +9,10 @@ interface ReservationPanelProps {
 const props = defineProps<ReservationPanelProps>()
 
 const waModalOpen = ref(false)
+const threeCXCalls = useThreeCxCalls()
 
 const conversationPhoneCalls = computed((): PhoneCall[] =>
-  phoneCallsData[props.conversation.id] ?? [],
+  threeCXCalls.getCallsForConversation(props.conversation.id),
 )
 </script>
 

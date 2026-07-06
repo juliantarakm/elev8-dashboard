@@ -26,6 +26,7 @@ const {
   selectedReservation,
   conversations,
   rightPanelCollapsed,
+  inboxView,
 } = useInbox()
 
 const sortOptions = [
@@ -111,15 +112,35 @@ function openSheet(type: 'integrations' | 'ai') {
         @expand="onExpand"
         @collapse="onCollapse"
       >
-        <div :class="cn('flex h-[56px] items-center px-4', isCollapsed && 'justify-center px-2')">
+        <div :class="cn('flex h-[56px] items-center px-4 gap-1', isCollapsed && 'justify-center px-2')">
           <template v-if="isCollapsed">
             <Icon name="lucide:inbox" class="size-5 text-muted-foreground" />
           </template>
           <template v-else>
-            <h1 class="text-xl font-bold flex-1">
+            <h1 class="text-xl font-bold mr-3">
               Inbox
             </h1>
-            <Popover v-model:open="settingsPopoverOpen">
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
+                :class="inboxView === 'conversations' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+                @click="inboxView = 'conversations'"
+              >
+                <Icon name="lucide:message-square" class="size-3.5" />
+                Conversations
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
+                :class="inboxView === 'calls' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+                @click="inboxView = 'calls'"
+              >
+                <Icon name="lucide:phone" class="size-3.5" />
+                Calls
+              </button>
+            </div>
+            <Popover v-model:open="settingsPopoverOpen" class="ml-auto">
               <PopoverTrigger as-child>
                 <Button variant="ghost" size="icon" class="size-8">
                   <Icon name="lucide:settings-2" class="size-4" />
@@ -140,19 +161,31 @@ function openSheet(type: 'integrations' | 'ai') {
         <InboxNav :is-collapsed="isCollapsed" />
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
-      <ResizablePanel id="inbox-list-panel" :default-size="defaultLayout[1]" :min-size="20" class="flex flex-col overflow-hidden">
+      <ResizablePanel
+        v-if="inboxView === 'conversations'"
+        id="inbox-list-panel"
+        :default-size="defaultLayout[1]"
+        :min-size="20"
+        class="flex flex-col overflow-hidden"
+      >
         <InboxList
           v-model:selected-conversation-id="selectedConversationId"
           :items="filteredConversations"
         />
       </ResizablePanel>
-      <ResizableHandle id="inbox-handle-2" with-handle />
-      <ResizablePanel id="inbox-thread-panel" :default-size="defaultLayout[2]" :min-size="30" class="flex flex-col overflow-hidden">
-        <InboxThread />
-      </ResizablePanel>
-      <ResizableHandle id="inbox-handle-3" with-handle />
+      <ResizableHandle v-if="inboxView === 'conversations'" id="inbox-handle-2" with-handle />
       <ResizablePanel
-        v-if="!rightPanelCollapsed"
+        id="inbox-thread-panel"
+        :default-size="defaultLayout[2]"
+        :min-size="30"
+        class="flex flex-col overflow-hidden"
+      >
+        <InboxCallsView v-if="inboxView === 'calls'" />
+        <InboxThread v-else />
+      </ResizablePanel>
+      <ResizableHandle v-if="inboxView === 'conversations' && !rightPanelCollapsed" id="inbox-handle-3" with-handle />
+      <ResizablePanel
+        v-if="inboxView === 'conversations' && !rightPanelCollapsed"
         id="inbox-reservation-panel"
         :default-size="defaultLayout[3]"
         :min-size="20"
@@ -177,18 +210,23 @@ function openSheet(type: 'integrations' | 'ai') {
 
     <!-- Integrations Sheet -->
     <Sheet v-model:open="integrationsOpen">
-      <SheetContent class="w-[480px] sm:max-w-[480px] flex flex-col p-0 gap-0">
+      <SheetContent class="w-[560px] sm:max-w-[560px] flex flex-col p-0 gap-0">
         <SheetHeader class="px-6 pt-5 pb-4 border-b shrink-0">
           <SheetTitle>Integrations</SheetTitle>
-          <SheetDescription>Connect external channels to send and receive guest messages.</SheetDescription>
+          <SheetDescription>Connect external channels to send and receive guest messages and calls.</SheetDescription>
         </SheetHeader>
-        <div class="flex-1 overflow-y-auto p-6">
+        <div class="flex-1 overflow-y-auto p-6 space-y-8">
           <SettingsWhatsAppIntegration />
+          <Separator />
+          <SettingsThreeCxIntegration />
         </div>
       </SheetContent>
     </Sheet>
 
     <!-- AI Conversation Settings Sheet -->
     <InboxAiSettings v-model:open="aiSettingsOpen" />
+
+    <!-- 3CX screen-pop -->
+    <InboxCallScreenPop />
   </TooltipProvider>
 </template>
