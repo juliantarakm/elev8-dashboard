@@ -140,21 +140,23 @@ function openSheet(type: 'integrations' | 'ai') {
                 Calls
               </button>
             </div>
-            <Popover v-model:open="settingsPopoverOpen" class="ml-auto">
-              <PopoverTrigger as-child>
-                <Button variant="ghost" size="icon" class="size-8">
-                  <Icon name="lucide:settings-2" class="size-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-52 p-1.5 text-left" align="end" :side-offset="4">
-                <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('integrations')">
-                  <Icon name="lucide:plug" class="size-4 shrink-0 text-muted-foreground" /><span>Integrations</span>
-                </button>
-                <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('ai')">
-                  <Icon name="lucide:sparkles" class="size-4 shrink-0 text-muted-foreground" /><span>AI Conversation Settings</span>
-                </button>
-              </PopoverContent>
-            </Popover>
+            <div class="ml-auto">
+              <Popover v-model:open="settingsPopoverOpen">
+                <PopoverTrigger as-child>
+                  <Button variant="ghost" size="icon" class="size-8">
+                    <Icon name="lucide:settings-2" class="size-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-52 p-1.5 text-left" align="end" :side-offset="4">
+                  <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('integrations')">
+                    <Icon name="lucide:plug" class="size-4 shrink-0 text-muted-foreground" /><span>Integrations</span>
+                  </button>
+                  <button type="button" class="flex w-full flex-row items-center justify-start gap-2.5 rounded-md px-3 py-2 text-sm hover:bg-muted transition-colors text-left" @click="openSheet('ai')">
+                    <Icon name="lucide:sparkles" class="size-4 shrink-0 text-muted-foreground" /><span>AI Conversation Settings</span>
+                  </button>
+                </PopoverContent>
+              </Popover>
+            </div>
           </template>
         </div>
         <Separator />
@@ -162,7 +164,6 @@ function openSheet(type: 'integrations' | 'ai') {
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-1" with-handle />
       <ResizablePanel
-        v-if="inboxView === 'conversations'"
         id="inbox-list-panel"
         :default-size="defaultLayout[1]"
         :min-size="20"
@@ -173,7 +174,7 @@ function openSheet(type: 'integrations' | 'ai') {
           :items="filteredConversations"
         />
       </ResizablePanel>
-      <ResizableHandle v-if="inboxView === 'conversations'" id="inbox-handle-2" with-handle />
+      <ResizableHandle id="inbox-handle-2" with-handle />
       <ResizablePanel
         id="inbox-thread-panel"
         :default-size="defaultLayout[2]"
@@ -183,9 +184,9 @@ function openSheet(type: 'integrations' | 'ai') {
         <InboxCallsView v-if="inboxView === 'calls'" />
         <InboxThread v-else />
       </ResizablePanel>
-      <ResizableHandle v-if="inboxView === 'conversations' && !rightPanelCollapsed" id="inbox-handle-3" with-handle />
+      <ResizableHandle v-if="!rightPanelCollapsed" id="inbox-handle-3" with-handle />
       <ResizablePanel
-        v-if="inboxView === 'conversations' && !rightPanelCollapsed"
+        v-if="!rightPanelCollapsed"
         id="inbox-reservation-panel"
         :default-size="defaultLayout[3]"
         :min-size="20"
