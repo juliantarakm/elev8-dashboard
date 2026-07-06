@@ -74,8 +74,8 @@ const testRenderedBody = computed(() => {
 })
 
 function formatPhoneInput(value: string): string {
-  // AsYouType formats as the user types using the current default country
-  return new AsYouType('ID').input(value)
+  // AsYouType with no default country auto-detects based on the leading digits
+  return new AsYouType().input(value)
 }
 
 const testTemplateVarKeys = computed(() => {
@@ -889,7 +889,6 @@ async function sendTestMessage() {
               class="w-full font-mono text-sm"
               @update:model-value="testSendPhone = formatPhoneInput($event)"
             />
-            <p class="text-[11px] text-muted-foreground">Include country code (e.g. +62 for Indonesia).</p>
           </div>
 
           <div class="space-y-2">
