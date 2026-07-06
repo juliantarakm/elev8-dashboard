@@ -27,11 +27,43 @@ export interface UnmatchedCall {
   timestamp: string
   status: 'completed' | 'missed' | 'voicemail'
   duration: number
+  staffId?: string
   recording_url?: string
 }
 
 const STORAGE_KEY = 'elev8-threecx-accounts'
 const UNMATCHED_KEY = 'elev8-threecx-unmatched-calls'
+
+const MOCK_UNMATCHED_CALLS: UnmatchedCall[] = [
+  {
+    id: 'unmatched-1',
+    fromNumber: '+44 20 7946 0958',
+    toExtension: '101',
+    timestamp: '2026-07-05T09:23:00Z',
+    status: 'missed',
+    duration: 0,
+    staffId: 'staff-2',
+  },
+  {
+    id: 'unmatched-2',
+    fromNumber: '+61 2 9876 5432',
+    toExtension: '102',
+    timestamp: '2026-07-04T16:45:00Z',
+    status: 'voicemail',
+    duration: 0,
+    staffId: 'staff-3',
+    recording_url: 'https://example.com/recordings/unmatched-2.mp3',
+  },
+  {
+    id: 'unmatched-3',
+    fromNumber: '+1 415 555 0199',
+    toExtension: '101',
+    timestamp: '2026-07-03T11:08:00Z',
+    status: 'completed',
+    duration: 47,
+    staffId: 'staff-4',
+  },
+]
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (import.meta.client) {
@@ -54,7 +86,7 @@ function saveToStorage<T>(key: string, value: T) {
 
 export function useThreeCX() {
   const accounts = useState<ThreeCxAccount[]>('threecx-accounts', () => loadFromStorage<ThreeCxAccount[]>(STORAGE_KEY, []))
-  const unmatchedCalls = useState<UnmatchedCall[]>('threecx-unmatched-calls', () => loadFromStorage<UnmatchedCall[]>(UNMATCHED_KEY, []))
+  const unmatchedCalls = useState<UnmatchedCall[]>('threecx-unmatched-calls', () => loadFromStorage<UnmatchedCall[]>(UNMATCHED_KEY, MOCK_UNMATCHED_CALLS))
 
   watch(accounts, (val) => {
     saveToStorage(STORAGE_KEY, val)

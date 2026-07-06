@@ -103,6 +103,20 @@ export function useThreeCxCalls() {
       if (found)
         return found
     }
+    const unmatched = threeCX.unmatchedCalls.value.find(c => c.id === callId)
+    if (unmatched) {
+      return {
+        id: unmatched.id,
+        conversationId: '',
+        direction: 'inbound',
+        status: unmatched.status,
+        duration: unmatched.duration,
+        timestamp: unmatched.timestamp,
+        from: unmatched.fromNumber,
+        to: `Ext ${unmatched.toExtension}`,
+        recording_url: unmatched.recording_url,
+      }
+    }
     return undefined
   }
 

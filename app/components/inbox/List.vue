@@ -55,6 +55,13 @@ const activeFilterCount = computed(() => {
     count++
   return count
 })
+
+function onSelectConversation(id: string) {
+  selectedConversationId.value = id
+  const { inboxView } = useInbox()
+  if (inboxView.value !== 'conversations')
+    inboxView.value = 'conversations'
+}
 </script>
 
 <template>
@@ -289,7 +296,7 @@ const activeFilterCount = computed(() => {
             :key="item.id"
             :conversation="item"
             :is-selected="selectedConversationId === item.id"
-            @select="selectedConversationId = item.id"
+            @select="onSelectConversation(item.id)"
           />
         </TransitionGroup>
       </div>

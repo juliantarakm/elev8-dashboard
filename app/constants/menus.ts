@@ -61,8 +61,8 @@ export const navMenu: NavMenu[] = [
         new: true,
       },
       {
-        title: 'Reviews',
-        icon: 'i-lucide-star',
+        title: 'Review Hub',
+        icon: 'i-lucide-message-square-text',
         link: '/reviews',
         new: true,
       },

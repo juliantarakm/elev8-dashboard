@@ -2,21 +2,22 @@
 import { computed } from 'vue'
 
 const threeCX = useThreeCX()
+const threeCxCalls = useThreeCxCalls()
 const inbox = useInbox()
 
-const activePop = computed(() => threeCX.getActiveScreenPopForCurrentUser())
+const activePop = computed(() => threeCxCalls.getActiveScreenPopForCurrentUser())
 
 function open() {
   if (!activePop.value)
     return
   inbox.selectedConversationId.value = activePop.value.conversationId
-  threeCX.dismissScreenPop(activePop.value.id)
+  threeCxCalls.dismissScreenPop(activePop.value.id)
 }
 
 function dismiss() {
   if (!activePop.value)
     return
-  threeCX.dismissScreenPop(activePop.value.id)
+  threeCxCalls.dismissScreenPop(activePop.value.id)
 }
 </script>
 

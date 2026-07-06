@@ -6,3 +6,5 @@
 - Use hatscripts.github.io/circle-flags for flag icons. Confidence: 0.65
 - Use multi-select components with tags/chips for listing or filter dropdowns where multiple selections are possible. Confidence: 0.60
 - Consolidate all table filters (listing search with inline tags button, date range) into a single Filters popover button rather than separate filter buttons. Confidence: 0.65
+- Prefer modals (Dialog) over sheets/drawers (Sheet) for item detail/viewer panels; reserve sheets for forms and multi-step workflows. Confidence: 0.80
+- Keep modal/detail popups open after submitting a form instead of auto-closing them on submit. Confidence: 0.65

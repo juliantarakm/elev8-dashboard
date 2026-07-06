@@ -31,6 +31,8 @@ export type AlertType
     | 'AIRBNB_REVIEW_GENERATED'
     | 'AIRBNB_REVIEW_POSTED'
     | 'AIRBNB_REVIEW_FAILED'
+    | 'REVIEW_GUEST_LEFT'
+    | 'REVIEW_HOST_DUE'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
@@ -81,6 +83,8 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   AIRBNB_REVIEW_GENERATED: 'Airbnb Review - Generated',
   AIRBNB_REVIEW_POSTED: 'Airbnb Review - Posted',
   AIRBNB_REVIEW_FAILED: 'Airbnb Review - Failed',
+  REVIEW_GUEST_LEFT: 'Guest Left a Review',
+  REVIEW_HOST_DUE: 'Host Review Due Soon',
 }
 
 export const alertIcons: Record<AlertType, string> = {
@@ -116,6 +120,8 @@ export const alertIcons: Record<AlertType, string> = {
   AIRBNB_REVIEW_GENERATED: 'i-lucide-sparkles',
   AIRBNB_REVIEW_POSTED: 'i-lucide-check-circle-2',
   AIRBNB_REVIEW_FAILED: 'i-lucide-alert-circle',
+  REVIEW_GUEST_LEFT: 'i-lucide-star',
+  REVIEW_HOST_DUE: 'i-lucide-clock',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -151,6 +157,8 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   AIRBNB_REVIEW_GENERATED: '/reviews',
   AIRBNB_REVIEW_POSTED: '/reviews',
   AIRBNB_REVIEW_FAILED: '/reviews',
+  REVIEW_GUEST_LEFT: '/reviews',
+  REVIEW_HOST_DUE: '/reviews',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -215,6 +223,10 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
       return `Review for ${context.guestName || 'guest'} at ${context.listingName || 'property'} posted to Airbnb.`
     case 'AIRBNB_REVIEW_FAILED':
       return `Failed to generate review for ${context.guestName || 'guest'} at ${context.listingName || 'property'}.`
+    case 'REVIEW_GUEST_LEFT':
+      return `${context.guestName || 'Guest'} left a ${context.rating ? context.rating + '-star ' : ''}review for ${context.listingName || 'property'}.`
+    case 'REVIEW_HOST_DUE':
+      return `Host review for ${context.guestName || 'guest'} at ${context.listingName || 'property'} is due in ${context.daysRemaining || '?'} days.`
     default:
       return ''
   }

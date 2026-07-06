@@ -32,6 +32,9 @@ See [ui-patterns/taste.md](ui-patterns/taste.md)
 See [finance/taste.md](finance/taste.md)
 # workflow
 - Prefer `pnpm dev` over `pnpm build` during development to avoid browser crash from heavy builds. Confidence: 0.65
+
+# 3cx
+- For mock 3CX integration: skip the OAuth redirect page/callback flow and go directly to "connected" state. Confidence: 0.65
 - Use mock data for third-party API integrations during development before switching to real API calls. Confidence: 0.75
 
 # payment-requests
@@ -39,6 +42,8 @@ See [finance/taste.md](finance/taste.md)
 
 # whatsapp
 - WhatsApp connection must use OAuth flow, not manual form fields. Confidence: 0.70
+- Phone input formatting: use AsYouType without a default country (country-agnostic auto-detection) for international number support. Confidence: 0.70
+- Phone input must auto-prepend "+" and restrict input to digits and "+" only (no text characters allowed). Confidence: 0.65
 
 # data
 - Prefer real data from Elev8 Suite OS MCP over mock data when available. Confidence: 0.70
@@ -46,6 +51,15 @@ See [finance/taste.md](finance/taste.md)
 
 # data
 - Within a unit type, guest capacity settings (max adults, max children, max infants) must be uniform across all units — no per-unit capacity overrides. Confidence: 0.65
+
+# review-hub
+- Booking.com host reviews should only include public review text (no private feedback), unlike Airbnb which includes both public and private feedback. Confidence: 0.70
+- Display review ratings as numbers (not stars) for all sources, including converting Airbnb 5-star to a 10-point numeric scale. Confidence: 0.70
+- Use consistent numeric scoring format (X/5) across all related badges/metrics — avoid mixing count-based display with score-based display. Confidence: 0.65
+- In FeedTable Property column: show unit info (e.g., "Kingbed · Master Suite") for multi-unit records, but display "single unit" text (not location) for single-unit records. Confidence: 0.70
+
+# icons
+- Use the sparkle AI SVG icon (flaticon #17653301) for AI-related iconography instead of custom brush/pen designs. Confidence: 0.75
 
 # notifications
 - Marking a notification as read should NOT remove/dismiss it from the list. Confidence: 0.75

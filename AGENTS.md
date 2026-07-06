@@ -204,7 +204,7 @@ This file provides context for AI agents working on this project.
   - `NotificationItem.vue` — Notification card with category icon (opacity 50%), severity-colored left border, display label, description, time ago, AI summary badge for calls
   - No X dismiss button — notifications stay visible after read with white background
 
-### 3CX Telephony Module (`app/composables/useThreeCX.ts`, `app/composables/useThreeCxCalls.ts`)
+### 3CX Telephony Module (`app/composables/useThreeCX.ts`, `app/composables/useThreeCxCalls.ts`, `app/composables/useCallsFilters.ts`)
 
 - **Data + types**:
   - `ThreeCxAccount` — `id`, `fqdn`, `displayName`, `pbxVersion`, `accessToken`, `refreshToken`, `status: 'connected' | 'disconnected' | 'pending' | 'error'`, `connectedAt`, `extensionMappings: { staffId, extensionNumber }[]`, `webhookSubscriptions: string[]`
@@ -239,9 +239,12 @@ This file provides context for AI agents working on this project.
 - **Components**:
   - `SettingsThreeCxIntegration.vue` (`app/components/settings/ThreeCxIntegration.vue`) — Connect dialog (FQDN input + validation, goes straight to connected — no OAuth redirect in V1), connected card (status, webhook URL copy, disconnect), extension mapping table (search + per-staff extension input, unassign)
   - `pages/settings/integrations.vue` — registers 3CX card alongside WhatsApp
-  - `CallsView.vue` (`app/components/inbox/CallsView.vue`) — flat, filterable Call Log view (status, staff, listing, date range with `last-7-days` default); unmatched calls section with Match/Dismiss actions; match dialog opens a searchable conversation picker
+  - `CallsList.vue` (`app/components/inbox/CallsList.vue`) — list panel for calls view (replaces `InboxList` when `inboxView === 'calls'`); header with search input + filter popover (status, staff, date range), calls list (matched + unmatched sections), click-to-select, match dialog. Source: `useCallsFilters`
+  - `CallsDetail.vue` (`app/components/inbox/CallsDetail.vue`) — call detail panel (replaces `InboxThread` when `inboxView === 'calls'`); header with caller info, "Open conversation" button (matched only) or "Unmatched" badge, body sections: Answered by card (avatar + name + role + extension), AI Summary, Recording (ai-elements `AiElementsAudioPlayer`), Transcript (Processing/Failed/Empty states). Empty state when no call selected
+  - `ListingFilterSection.vue` (`app/components/inbox/ListingFilterSection.vue`) — reusable listing filter section (search input + Tags popover + selected chips + listing checkboxes); used by `Nav.vue` for both Conversations and Calls views
   - `CallScreenPop.vue` (`app/components/inbox/CallScreenPop.vue`) — bottom-right toast that appears on matched inbound calls; "Open conversation" jumps to it, "Dismiss" closes; auto-targeted to extension's assigned staff
-  - `Layout.vue` — adds Conversations/Calls view toggle in inbox header, renders 3CX card in Integrations sheet, mounts `<InboxCallScreenPop />`
+  - `useCallsFilters.ts` (`app/composables/useCallsFilters.ts`) — shared filter state for calls view (`activeCallsFilter`, `activeListingFilter`, `activeTagFilters`, `staffFilter`, `dateRange`, `searchQuery`); computed `filteredMatched`/`filteredUnmatched`/`listingOptions`/`listingTags`/`callsCountByStatus`; uses `useThreeCX` for `unmatchedCalls` and `useThreeCxCalls` for `allCalls`/`getCallById`
+  - `Layout.vue` — adds Conversations/Calls view toggle in inbox header, swaps list panel (`InboxList` ↔ `InboxCallsList`) and thread panel (`InboxThread` ↔ `InboxCallsDetail`); renders 3CX card in Integrations sheet, mounts `<InboxCallScreenPop />`
   - `Thread.vue` Calls tab — added Processing/Failed transcript state UI + Retry button on failure
   - `ReservationGuest.vue` — click-to-call icon button next to phone number (disabled when 3CX not connected)
   - `ReservationPanel.vue` — switches from `phoneCalls` seed to `useThreeCxCalls.getCallsForConversation` so live calls flow into the activity feed

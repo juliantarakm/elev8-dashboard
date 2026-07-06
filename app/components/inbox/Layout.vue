@@ -110,8 +110,8 @@ function setInboxView(view: 'conversations' | 'calls') {
         :default-size="defaultLayout[0]"
         :collapsed-size="navCollapsedSize"
         collapsible
-        :min-size="12"
-        :max-size="20"
+        :min-size="18"
+        :max-size="22"
         :class="cn(isCollapsed && 'min-w-[50px] transition-all duration-300 ease-in-out')"
         @expand="onExpand"
         @collapse="onCollapse"
@@ -121,13 +121,10 @@ function setInboxView(view: 'conversations' | 'calls') {
             <Icon name="lucide:inbox" class="size-5 text-muted-foreground" />
           </template>
           <template v-else>
-            <h1 class="text-xl font-bold mr-3">
-              Inbox
-            </h1>
-            <div class="flex items-center gap-1">
+            <div class="flex flex-1 items-center gap-1 min-w-0">
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
+                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors shrink-0"
                 :class="inboxView === 'conversations' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
                 @click="setInboxView('conversations')"
               >
@@ -136,7 +133,7 @@ function setInboxView(view: 'conversations' | 'calls') {
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
+                class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors shrink-0"
                 :class="inboxView === 'calls' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
                 @click="setInboxView('calls')"
               >
@@ -144,7 +141,7 @@ function setInboxView(view: 'conversations' | 'calls') {
                 Calls
               </button>
             </div>
-            <div class="ml-auto">
+            <div class="shrink-0">
               <Popover v-model:open="settingsPopoverOpen">
                 <PopoverTrigger as-child>
                   <Button variant="ghost" size="icon" class="size-8">
@@ -174,9 +171,11 @@ function setInboxView(view: 'conversations' | 'calls') {
         class="flex flex-col overflow-hidden"
       >
         <InboxList
+          v-if="inboxView === 'conversations'"
           v-model:selected-conversation-id="selectedConversationId"
           :items="filteredConversations"
         />
+        <InboxCallsList v-else />
       </ResizablePanel>
       <ResizableHandle id="inbox-handle-2" with-handle />
       <ResizablePanel
@@ -185,7 +184,7 @@ function setInboxView(view: 'conversations' | 'calls') {
         :min-size="30"
         class="flex flex-col overflow-hidden"
       >
-        <InboxCallsView v-if="inboxView === 'calls'" />
+        <InboxCallsDetail v-if="inboxView === 'calls'" />
         <InboxThread v-else />
       </ResizablePanel>
       <ResizableHandle v-if="!rightPanelCollapsed" id="inbox-handle-3" with-handle />
