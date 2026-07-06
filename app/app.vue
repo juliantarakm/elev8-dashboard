@@ -42,6 +42,15 @@ useSeoMeta({
 
 const router = useRouter()
 
+onMounted(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations)
+        registration.unregister()
+    })
+  }
+})
+
 defineShortcuts({
   'G-H': () => router.push('/'),
   'G-E': () => router.push('/email'),
