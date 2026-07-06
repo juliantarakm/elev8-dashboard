@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
+import { AsYouType } from 'libphonenumber-js'
 import { listings } from '~/components/listings/data/listings'
 import type { WhatsAppAccount } from '~/composables/useWhatsApp'
 
@@ -71,6 +72,11 @@ const testRenderedBody = computed(() => {
   }
   return body
 })
+
+function formatPhoneInput(value: string): string {
+  // AsYouType formats as the user types using the current default country
+  return new AsYouType('ID').input(value)
+}
 
 const testTemplateVarKeys = computed(() => {
   if (testSendTemplateId.value === 'custom') return ['custom_body']
@@ -876,12 +882,14 @@ async function sendTestMessage() {
             <Label for="test-phone">Recipient phone number</Label>
             <Input
               id="test-phone"
-              v-model="testSendPhone"
+              :model-value="testSendPhone"
               type="tel"
+              inputmode="tel"
               placeholder="+62 812 3456 7890"
               class="w-full font-mono text-sm"
+              @update:model-value="testSendPhone = formatPhoneInput($event)"
             />
-            <p class="text-[11px] text-muted-foreground">Include country code. Pre-filled with this account's number.</p>
+            <p class="text-[11px] text-muted-foreground">Include country code (e.g. +62 for Indonesia).</p>
           </div>
 
           <div class="space-y-2">
