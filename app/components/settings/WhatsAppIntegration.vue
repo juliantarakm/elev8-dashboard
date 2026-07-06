@@ -74,14 +74,25 @@ const testRenderedBody = computed(() => {
 })
 
 function formatPhoneInput(value: string): string {
-  // Strip everything that isn't a digit or leading +
-  const cleaned = value.replace(/[^\d+]/g, '')
-  // Force a single leading + only at the start
-  const hasPlus = cleaned.startsWith('+')
-  const digits = cleaned.replace(/\+/g, '')
-  const withPlus = hasPlus ? `+${digits}` : `+${digits}`
-  // AsYouType formats as the user types based on the leading + and digits
-  return new AsYouType().input(withPlus)
+  // Strip everything that isn't a digit
+  const digits = value.replace(/\D/g, '')
+  // AsYouType formats as the user types, always with a leading +
+  return new AsYouType().input(`+${digits}`)
+}
+
+function onPhoneKeydown(event: KeyboardEvent) {
+  // Allow: backspace, delete, tab, escape, enter, arrow keys, home, end
+  if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+    return
+  }
+  // Allow: Ctrl/Cmd + A/C/V/X (select all, copy, paste, cut)
+  if ((event.ctrlKey || event.metaKey) && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase())) {
+    return
+  }
+  // Block anything that isn't a digit
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault()
+  }
 }
 
 const testTemplateVarKeys = computed(() => {
@@ -890,10 +901,11 @@ async function sendTestMessage() {
               id="test-phone"
               :model-value="testSendPhone"
               type="tel"
-              inputmode="tel"
+              inputmode="numeric"
               placeholder="+62 812 3456 7890"
               class="w-full font-mono text-sm"
               @update:model-value="testSendPhone = formatPhoneInput($event)"
+              @keydown="onPhoneKeydown"
             />
           </div>
 
