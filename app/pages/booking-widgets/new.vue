@@ -12,7 +12,6 @@ const listingSearch = ref('')
 const activeTags = ref<string[]>([])
 const tagPanelOpen = ref(false)
 const tagSearch = ref('')
-const paymentMethodOpen = ref(false)
 const embedPreviewOpen = ref(false)
 const showCustomColor = ref(false)
 
@@ -21,9 +20,6 @@ const presetColors = ['#F6BB11', '#C8A84B', '#1E293B', '#0EA5E9', '#10B981']
 const form = reactive({
   name: '',
   selectedListingIds: [] as string[],
-  currency: 'USD',
-  paymentMethods: [] as string[],
-  defaultPaymentOption: '',
   contactFields: {
     firstName: 'required' as 'required' | 'optional' | 'hidden',
     lastName: 'required' as 'required' | 'optional' | 'hidden',
@@ -35,80 +31,7 @@ const form = reactive({
     arrivalTime: 'optional' as 'required' | 'optional' | 'hidden',
   },
   accentColor: '#F6BB11',
-  allowedDomains: [''],
 })
-
-const currencyOptions = [
-  { value: 'USD', label: 'USD — US Dollar ($)' },
-  { value: 'EUR', label: 'EUR — Euro (€)' },
-  { value: 'GBP', label: 'GBP — British Pound (£)' },
-  { value: 'JPY', label: 'JPY — Japanese Yen (¥)' },
-  { value: 'AUD', label: 'AUD — Australian Dollar (A$)' },
-  { value: 'CAD', label: 'CAD — Canadian Dollar (C$)' },
-  { value: 'CHF', label: 'CHF — Swiss Franc (Fr)' },
-  { value: 'CNY', label: 'CNY — Chinese Yuan (¥)' },
-  { value: 'HKD', label: 'HKD — Hong Kong Dollar (HK$)' },
-  { value: 'SGD', label: 'SGD — Singapore Dollar (S$)' },
-  { value: 'SEK', label: 'SEK — Swedish Krona (kr)' },
-  { value: 'NOK', label: 'NOK — Norwegian Krone (kr)' },
-  { value: 'DKK', label: 'DKK — Danish Krone (kr)' },
-  { value: 'NZD', label: 'NZD — New Zealand Dollar (NZ$)' },
-  { value: 'KRW', label: 'KRW — South Korean Won (₩)' },
-  { value: 'INR', label: 'INR — Indian Rupee (₹)' },
-  { value: 'IDR', label: 'IDR — Indonesian Rupiah (Rp)' },
-  { value: 'THB', label: 'THB — Thai Baht (฿)' },
-  { value: 'MYR', label: 'MYR — Malaysian Ringgit (RM)' },
-  { value: 'PHP', label: 'PHP — Philippine Peso (₱)' },
-  { value: 'VND', label: 'VND — Vietnamese Dong (₫)' },
-  { value: 'TWD', label: 'TWD — Taiwanese Dollar (NT$)' },
-  { value: 'AED', label: 'AED — UAE Dirham (د.إ)' },
-  { value: 'SAR', label: 'SAR — Saudi Riyal (﷼)' },
-  { value: 'TRY', label: 'TRY — Turkish Lira (₺)' },
-  { value: 'BRL', label: 'BRL — Brazilian Real (R$)' },
-  { value: 'MXN', label: 'MXN — Mexican Peso (Mex$)' },
-  { value: 'ZAR', label: 'ZAR — South African Rand (R)' },
-  { value: 'RUB', label: 'RUB — Russian Ruble (₽)' },
-  { value: 'PLN', label: 'PLN — Polish Zloty (zł)' },
-  { value: 'ILS', label: 'ILS — Israeli Shekel (₪)' },
-  { value: 'CZK', label: 'CZK — Czech Koruna (Kč)' },
-  { value: 'HUF', label: 'HUF — Hungarian Forint (Ft)' },
-  { value: 'EGP', label: 'EGP — Egyptian Pound (E£)' },
-  { value: 'COP', label: 'COP — Colombian Peso (Col$)' },
-  { value: 'CLP', label: 'CLP — Chilean Peso (CLP$)' },
-  { value: 'PKR', label: 'PKR — Pakistani Rupee (₨)' },
-  { value: 'BDT', label: 'BDT — Bangladeshi Taka (৳)' },
-  { value: 'NGN', label: 'NGN — Nigerian Naira (₦)' },
-  { value: 'KES', label: 'KES — Kenyan Shilling (Sh)' },
-  { value: 'ARS', label: 'ARS — Argentine Peso (AR$)' },
-  { value: 'PEN', label: 'PEN — Peruvian Sol (S/.)' },
-  { value: 'UAH', label: 'UAH — Ukrainian Hryvnia (₴)' },
-  { value: 'QAR', label: 'QAR — Qatari Riyal (﷼)' },
-  { value: 'KWD', label: 'KWD — Kuwaiti Dinar (KD)' },
-  { value: 'BHD', label: 'BHD — Bahraini Dinar (BD)' },
-  { value: 'OMR', label: 'OMR — Omani Rial (﷼)' },
-  { value: 'MAD', label: 'MAD — Moroccan Dirham (DH)' },
-  { value: 'LKR', label: 'LKR — Sri Lankan Rupee (Rs)' },
-  { value: 'MMK', label: 'MMK — Myanmar Kyat (K)' },
-  { value: 'KHR', label: 'KHR — Cambodian Riel (៛)' },
-  { value: 'LAK', label: 'LAK — Lao Kip (₭)' },
-  { value: 'MOP', label: 'MOP — Macanese Pataca (MOP$)' },
-  { value: 'NPR', label: 'NPR — Nepalese Rupee (Rs)' },
-  { value: 'MVR', label: 'MVR — Maldivian Rufiyaa (Rf)' },
-  { value: 'XOF', label: 'XOF — West African CFA Franc (Fr)' },
-  { value: 'XAF', label: 'XAF — Central African CFA Franc (Fr)' },
-]
-
-const paymentMethodOptions = [
-  'Invoice (Bank Transfer)',
-  'PayPal',
-  'Pay upon arrival',
-  'Stripe Connect (Credit Card)',
-  'iDEAL (Stripe Connect)',
-  'SEPA Direct Debit (Stripe Connect)',
-  'Apple Pay',
-  'Klarna (Stripe Connect)',
-  'Alipay (Stripe Connect)',
-]
 
 const contactFieldDefinitions = [
   { key: 'firstName', label: 'First Name' },
@@ -126,39 +49,6 @@ const fieldSettingOptions = [
   { value: 'optional', label: 'Optional' },
   { value: 'hidden', label: "Don't show" },
 ]
-
-const paymentMethodSummary = computed(() => {
-  if (form.paymentMethods.length === 0)
-    return 'Please select'
-  if (form.paymentMethods.length <= 2)
-    return form.paymentMethods.join(', ')
-  return `${form.paymentMethods.length} selected`
-})
-
-const defaultPaymentMethodOptions = computed(() => form.paymentMethods)
-
-watch(() => form.paymentMethods, (methods) => {
-  if (!methods.includes(form.defaultPaymentOption))
-    form.defaultPaymentOption = methods[0] || ''
-}, { deep: true })
-
-function isPaymentMethodSelected(method: string) {
-  return form.paymentMethods.includes(method)
-}
-
-function togglePaymentMethod(method: string, checked: boolean) {
-  form.paymentMethods = checked
-    ? [...form.paymentMethods, method]
-    : form.paymentMethods.filter(item => item !== method)
-
-  if (!form.paymentMethods.includes(form.defaultPaymentOption))
-    form.defaultPaymentOption = form.paymentMethods[0] || ''
-}
-
-function clearPaymentMethods() {
-  form.paymentMethods = []
-  form.defaultPaymentOption = ''
-}
 
 const eligibleListings = computed(() => listings.value.map((listing) => {
   const eligible = Boolean(listing.photos.length > 0 && listing.resources.basics.description?.trim() && listing.status !== 'inactive')
@@ -178,7 +68,6 @@ const eligibleListings = computed(() => listings.value.map((listing) => {
 }))
 
 const selectedListings = computed(() => eligibleListings.value.filter(listing => form.selectedListingIds.includes(listing.id)))
-const widgetCurrency = computed(() => selectedListings.value[0]?.currency ?? 'USD')
 
 const embedPreviewWidget = computed(() => buildEmbedPreview({
   id: 'preview',
@@ -186,9 +75,6 @@ const embedPreviewWidget = computed(() => buildEmbedPreview({
   mode: form.selectedListingIds.length === 1 ? 'single' : 'multi',
   listingIds: [...form.selectedListingIds],
   primaryListingId: form.selectedListingIds[0] || null,
-  currency: form.currency,
-  paymentMethods: form.paymentMethods,
-  defaultPaymentOption: form.defaultPaymentOption || null,
   requestNumberOfPersons: null,
   contactFields: { ...form.contactFields },
   contactCopy: 'Contact',
@@ -208,7 +94,7 @@ const embedPreviewWidget = computed(() => buildEmbedPreview({
   extraChildPerNight: { mode: 'currency', value: 0 },
   seasonalConditions: [],
   lengthOfStayDiscounts: [],
-  allowedDomains: form.allowedDomains.filter(Boolean),
+  allowedDomains: [],
   promoCodes: [],
   embedVersion: 'v1',
 }))
@@ -219,9 +105,6 @@ const embedSnippet = computed(() => getSnippetForForm({
   mode: form.selectedListingIds.length === 1 ? 'single' : 'multi',
   listingIds: [...form.selectedListingIds],
   primaryListingId: form.selectedListingIds[0] || null,
-  currency: form.currency,
-  paymentMethods: form.paymentMethods,
-  defaultPaymentOption: form.defaultPaymentOption || null,
   requestNumberOfPersons: null,
   contactFields: { ...form.contactFields },
   contactCopy: 'Contact',
@@ -241,7 +124,7 @@ const embedSnippet = computed(() => getSnippetForForm({
   extraChildPerNight: { mode: 'currency', value: 0 },
   seasonalConditions: [],
   lengthOfStayDiscounts: [],
-  allowedDomains: form.allowedDomains.filter(Boolean),
+  allowedDomains: [],
   promoCodes: [],
   embedVersion: 'v1',
 }))
@@ -295,10 +178,6 @@ function toggleListing(listingId: string) {
     : [...form.selectedListingIds, listingId]
 }
 
-function addDomain() {
-  form.allowedDomains = [...form.allowedDomains, '']
-}
-
 function saveWidget() {
   bookingWidgets.value.unshift({
     id: `bk-widget-${Date.now()}`,
@@ -318,11 +197,8 @@ function saveWidget() {
     extraChildPerNight: { mode: 'currency', value: 0 },
     seasonalConditions: [],
     lengthOfStayDiscounts: [],
-    allowedDomains: form.allowedDomains.filter(Boolean),
+    allowedDomains: [],
     promoCodes: [],
-    currency: form.currency,
-    paymentMethods: form.paymentMethods,
-    defaultPaymentOption: form.defaultPaymentOption || null,
     requestNumberOfPersons: null,
     contactCopy: 'Contact',
     legalRequirementsCopy: 'Legal requirements',
@@ -490,91 +366,9 @@ function saveWidget() {
     <Card>
       <CardHeader>
         <CardTitle class="text-base">Booking System</CardTitle>
-        <CardDescription>Define currency, payment methods, and contact fields.</CardDescription>
+        <CardDescription>Configure which contact fields guests must fill in.</CardDescription>
       </CardHeader>
       <CardContent class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="space-y-2">
-            <Label>Currency</Label>
-            <Select v-model="form.currency">
-              <SelectTrigger>
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="opt in currencyOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div class="space-y-2">
-            <Label>Payment Methods</Label>
-            <Popover v-model:open="paymentMethodOpen">
-              <PopoverTrigger as-child>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  :aria-expanded="paymentMethodOpen"
-                  class="h-9 w-full justify-between text-left font-normal"
-                >
-                  <span class="flex min-w-0 items-center gap-2 truncate">
-                    <Icon name="lucide:credit-card" class="size-3.5 shrink-0" />
-                    <span class="truncate">{{ paymentMethodSummary }}</span>
-                  </span>
-                  <Badge v-if="form.paymentMethods.length > 0" variant="secondary" class="ml-2 h-4 min-w-4 rounded-full px-1 text-[9px]">
-                    {{ form.paymentMethods.length }}
-                  </Badge>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-[420px] p-0" align="start" :side-offset="4">
-                <Command>
-                  <CommandInput placeholder="Search payment methods..." />
-                  <CommandEmpty>No payment methods found.</CommandEmpty>
-                  <CommandList>
-                    <CommandGroup>
-                      <CommandItem
-                        v-for="method in paymentMethodOptions"
-                        :key="method"
-                        :value="method"
-                        @select="() => togglePaymentMethod(method, !isPaymentMethodSelected(method))"
-                      >
-                        <Checkbox :checked="isPaymentMethodSelected(method)" class="mr-2" />
-                        <span class="flex-1 truncate">{{ method }}</span>
-                        <Icon
-                          name="radix-icons:check"
-                          :class="cn('ml-auto size-4', isPaymentMethodSelected(method) ? 'opacity-100' : 'opacity-0')"
-                        />
-                      </CommandItem>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-                <div class="flex items-center justify-between gap-2 border-t p-2">
-                  <Button variant="ghost" size="sm" class="h-7 text-xs text-muted-foreground" @click="clearPaymentMethods">
-                    Clear all
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <Label>Default payment option</Label>
-          <Select v-model="form.defaultPaymentOption">
-            <SelectTrigger>
-              <SelectValue placeholder="Please select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="method in defaultPaymentMethodOptions" :key="method" :value="method">
-                {{ method }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Separator />
-
         <div class="space-y-3">
           <Label class="text-sm font-semibold">Contact Fields</Label>
           <p class="text-xs text-muted-foreground">
@@ -602,7 +396,7 @@ function saveWidget() {
     <Card>
       <CardHeader>
         <CardTitle class="text-base">Embed in Website</CardTitle>
-        <CardDescription>Configure allowed domains, embed snippet, and preview.</CardDescription>
+        <CardDescription>Configure embed snippet and preview.</CardDescription>
       </CardHeader>
       <CardContent class="space-y-6">
         <div class="space-y-3">
@@ -637,17 +431,6 @@ function saveWidget() {
               >
             </div>
           </div>
-        </div>
-
-        <div class="space-y-2">
-          <Label>Allowed domains</Label>
-          <div v-for="(domain, index) in form.allowedDomains" :key="index" class="flex items-center gap-2">
-            <Input v-model="form.allowedDomains[index]" placeholder="partner-bali.com" />
-          </div>
-          <Button variant="outline" size="sm" @click="addDomain">
-            <Icon name="i-lucide-plus" class="size-4 mr-2" />
-            Add domain
-          </Button>
         </div>
 
         <div class="space-y-2">
