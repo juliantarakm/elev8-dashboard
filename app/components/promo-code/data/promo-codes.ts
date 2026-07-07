@@ -18,6 +18,9 @@ export interface PromoCode {
   redemptionCount: number
   createdAt: string
   updatedAt: string
+  // Present when this promo code backs a Platform Console pricing override.
+  // Joins the code to its PricingOverride record.
+  internalOverrideId?: string
 }
 
 // Analytics scaffold — per-usage-site counter.
