@@ -547,3 +547,20 @@ export const navMenuBottom: NavMenuItems = [
     link: '',
   },
 ]
+
+export const platformConsoleNavMenu: NavMenu[] = [
+  {
+    heading: 'Platform Console',
+    items: [
+      { title: 'Tenants', icon: 'i-lucide-building-2', link: '/platform-console/tenants' },
+      { title: 'Broadcasts', icon: 'i-lucide-megaphone', link: '/platform-console/broadcasts' },
+      { title: 'Approvals', icon: 'i-lucide-check-circle', link: '/platform-console/approvals' },
+      { title: 'Audit log', icon: 'i-lucide-file-clock', link: '/platform-console/audit' },
+      { title: 'Settings', icon: 'i-lucide-settings', link: '/platform-console/settings' },
+    ],
+  },
+]
+
+export const platformConsoleNavMenuBottom: NavMenuItems = [
+  { title: 'Back to tenant dashboard', icon: 'i-lucide-arrow-left', link: '/' },
+]

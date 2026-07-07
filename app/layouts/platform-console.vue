@@ -1,14 +1,19 @@
+<script setup lang="ts">
+import { platformConsoleNavMenu, platformConsoleNavMenuBottom } from '~/constants/menus'
+</script>
+
 <template>
   <SidebarProvider :default-open="false">
-    <LayoutAppSidebar />
+    <LayoutAppSidebar
+      :menu="platformConsoleNavMenu"
+      :menu-bottom="platformConsoleNavMenuBottom"
+      :show-search="false"
+      :show-teams="false"
+    />
     <SidebarInset class="overflow-hidden">
       <LayoutHeader />
       <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <div class="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
-          <div class="flex items-center gap-2 text-sm">
-            <Icon name="lucide:layers" class="size-4 text-primary" />
-            <span class="font-medium">Platform Console</span>
-          </div>
+        <div class="flex items-center justify-end border-b bg-muted/30 px-4 py-2">
           <PlatformConsoleRoleSwitcher />
         </div>
         <PlatformConsoleBannerSlot />
