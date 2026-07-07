@@ -185,7 +185,7 @@ const formatRelative = (iso: string) => {
                 </div>
               </TableCell>
               <TableCell>
-                <TenantPlanBadge :plan="t.plan" :tier="t.packageTier" :has-channel-manager="t.hasChannelManager" />
+                <PlatformConsoleTenantPlanBadge :plan="t.plan" :tier="t.packageTier" :has-channel-manager="t.hasChannelManager" />
               </TableCell>
               <TableCell>
                 <span v-if="t.isInternal" class="text-muted-foreground">—</span>
@@ -197,7 +197,7 @@ const formatRelative = (iso: string) => {
               </TableCell>
               <TableCell class="text-right text-sm">{{ t.activeUnits }}</TableCell>
               <TableCell>
-                <TenantStatusBadge :status="t.status" :switching-to-plan="t.switchingToPlan" />
+                <PlatformConsoleTenantStatusBadge :status="t.status" :switching-to-plan="t.switchingToPlan" />
               </TableCell>
               <TableCell class="text-sm text-muted-foreground">{{ formatRelative(t.lastLoginAt) }}</TableCell>
               <TableCell>

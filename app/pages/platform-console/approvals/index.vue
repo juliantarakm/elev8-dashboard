@@ -68,7 +68,7 @@ function staffName(id: string) {
         </CardContent>
       </Card>
 
-      <OverrideApprovalCard :override="selected" v-model:open="sheetOpen" />
+      <PlatformConsoleOverrideApprovalCard :override="selected" v-model:open="sheetOpen" />
     </template>
   </div>
 </template>

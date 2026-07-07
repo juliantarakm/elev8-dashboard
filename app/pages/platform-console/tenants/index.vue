@@ -17,6 +17,6 @@ function openTenant(id: string) {
         <p class="text-sm text-muted-foreground">All property managers using Elev8</p>
       </div>
     </div>
-    <TenantDirectoryTable :tenants="tenants" @row-click="openTenant" />
+    <PlatformConsoleTenantDirectoryTable :tenants="tenants" @row-click="openTenant" />
   </div>
 </template>

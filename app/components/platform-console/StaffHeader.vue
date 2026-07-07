@@ -9,9 +9,9 @@ import { Button } from '~/components/ui/button'
       <h1 class="text-sm font-semibold">Elev8 · Platform Console</h1>
     </div>
     <div class="flex items-center gap-2">
-      <RoleSwitcher />
+      <PlatformConsoleRoleSwitcher />
       <Button variant="ghost" size="icon" aria-label="Notifications">
-        <Icon icon="lucide:bell" class="size-4" />
+        <Icon name="lucide:bell" class="size-4" />
       </Button>
     </div>
   </header>

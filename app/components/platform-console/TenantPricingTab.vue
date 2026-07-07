@@ -76,12 +76,12 @@ const sheetOpen = computed({
             Proposed by {{ active.proposedByStaffId }}
             <template v-if="active.approvedByStaffId"> · Approved by {{ active.approvedByStaffId }}</template>
           </div>
-          <RoleGate action="revoke_override">
+          <PlatformConsoleRoleGate action="revoke_override">
             <Button variant="destructive" size="sm" @click="revokeConfirmId = active!.id">
               <Icon name="lucide:ban" class="mr-1.5 size-3.5" />
               Revoke
             </Button>
-          </RoleGate>
+          </PlatformConsoleRoleGate>
           <span v-if="!can('revoke_override')" class="text-xs text-muted-foreground">
             Admin can revoke this override.
           </span>
@@ -91,7 +91,7 @@ const sheetOpen = computed({
 
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-semibold">History</h3>
-      <RoleGate action="propose_override">
+      <PlatformConsoleRoleGate action="propose_override">
         <Button
           v-if="!hasActive(tenant.id) && tenant.status === 'active'"
           @click="applyOpen = true"
@@ -115,7 +115,7 @@ const sheetOpen = computed({
         >
           Apply Custom Pricing
         </Button>
-      </RoleGate>
+      </PlatformConsoleRoleGate>
     </div>
 
     <Card>
@@ -140,7 +140,7 @@ const sheetOpen = computed({
       </CardContent>
     </Card>
 
-    <ApplyOverrideDialog v-if="applyOpen" :tenant="tenant" v-model:open="applyOpen" />
+    <PlatformConsoleApplyOverrideDialog v-if="applyOpen" :tenant="tenant" v-model:open="applyOpen" />
 
     <Sheet v-model:open="sheetOpen">
       <SheetContent v-if="selected" class="w-[480px]">

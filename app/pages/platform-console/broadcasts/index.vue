@@ -93,12 +93,12 @@ function dup(b: typeof banners.value[number]) {
         <h2 class="text-2xl font-semibold">Broadcasts</h2>
         <p class="text-sm text-muted-foreground">In-app banners delivered to tenant dashboards</p>
       </div>
-      <RoleGate action="compose_banner">
+      <PlatformConsoleRoleGate action="compose_banner">
         <Button @click="router.push('/platform-console/broadcasts/new')">
           <Icon name="lucide:plus" class="mr-1.5 size-4" />
           New banner
         </Button>
-      </RoleGate>
+      </PlatformConsoleRoleGate>
     </div>
 
     <div class="grid grid-cols-3 gap-4">
@@ -152,11 +152,11 @@ function dup(b: typeof banners.value[number]) {
                 <DropdownMenuItem @click="dup(b)">
                   <Icon name="lucide:copy" class="mr-2 size-4" />Duplicate
                 </DropdownMenuItem>
-                <RoleGate action="retract_banner">
+                <PlatformConsoleRoleGate action="retract_banner">
                   <DropdownMenuItem v-if="['live','scheduled'].includes(b.status)" @click="retract(b)" class="text-destructive">
                     <Icon name="lucide:ban" class="mr-2 size-4" />Retract
                   </DropdownMenuItem>
-                </RoleGate>
+                </PlatformConsoleRoleGate>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -170,7 +170,7 @@ function dup(b: typeof banners.value[number]) {
           <SheetTitle>Banner detail</SheetTitle>
         </SheetHeader>
         <div class="space-y-3 p-4 text-sm">
-          <BannerCard :banner="selected" />
+          <PlatformConsoleBannerCard :banner="selected" />
           <div class="flex justify-between"><span class="text-muted-foreground">Status</span><Badge>{{ BANNER_STATUS_LABEL[selected.status] }}</Badge></div>
           <div class="flex justify-between"><span class="text-muted-foreground">Severity</span><span class="font-medium">{{ SEVERITY_LABEL[selected.severity] }}</span></div>
           <div class="flex justify-between"><span class="text-muted-foreground">Recipients</span>{{ resolveRecipients(selected).length }} tenants</div>

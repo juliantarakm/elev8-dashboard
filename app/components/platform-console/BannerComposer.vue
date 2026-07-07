@@ -168,7 +168,7 @@ function back() {
 
     <div v-if="step === 2" class="space-y-4">
       <h3 class="text-lg font-semibold">Who will see this banner</h3>
-      <BannerTargetingControl v-model="targetFilter" v-model:visible-roles="visibleRoles" />
+      <PlatformConsoleBannerTargetingControl v-model="targetFilter" v-model:visible-roles="visibleRoles" />
     </div>
 
     <div v-if="step === 3" class="space-y-4">
@@ -192,7 +192,7 @@ function back() {
           <option v-for="t in matchedTenants" :key="t.id" :value="t.id">{{ t.name }}</option>
         </select>
       </div>
-      <BannerCard v-if="previewTenant" :banner="previewBanner" />
+      <PlatformConsoleBannerCard v-if="previewTenant" :banner="previewBanner" />
       <div class="rounded-md border bg-muted/30 p-3 text-sm">
         <p><strong>Visible to roles:</strong> {{ visibleRoles.join(', ') || '— none —' }}</p>
         <p><strong>Delivered to:</strong> {{ previewTenant?.name }}{{ matchedTenants.length > 1 ? ` + ${matchedTenants.length - 1} other${matchedTenants.length - 1 === 1 ? '' : 's'}` : '' }}</p>

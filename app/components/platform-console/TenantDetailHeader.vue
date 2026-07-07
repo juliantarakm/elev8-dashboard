@@ -41,7 +41,7 @@ const formatRelative = (iso: string) => {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <TenantStatusBadge :status="tenant.status" :switching-to-plan="tenant.switchingToPlan" />
+        <PlatformConsoleTenantStatusBadge :status="tenant.status" :switching-to-plan="tenant.switchingToPlan" />
         <Button variant="outline" size="sm" disabled>
           <Icon name="lucide:external-link" class="mr-1.5 size-3.5" />
           View in tenant dashboard

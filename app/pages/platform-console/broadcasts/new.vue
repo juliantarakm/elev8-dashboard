@@ -14,6 +14,6 @@ const router = useRouter()
         ← Back to list
       </Button>
     </div>
-    <BannerComposer @published="router.push('/platform-console/broadcasts')" />
+    <PlatformConsoleBannerComposer @published="router.push('/platform-console/broadcasts')" />
   </div>
 </template>

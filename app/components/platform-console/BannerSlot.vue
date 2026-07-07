@@ -17,7 +17,7 @@ function dismissBanner(id: string) {
 
 <template>
   <div v-if="banners.length" class="space-y-2 px-6 pt-4">
-    <BannerCard
+    <PlatformConsoleBannerCard
       v-for="b in banners"
       :key="b.id"
       :banner="b"

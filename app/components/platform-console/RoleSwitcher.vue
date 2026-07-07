@@ -21,9 +21,9 @@ function pick(role: StaffRole) {
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
       <Button variant="ghost" size="sm" class="gap-2">
-        <Icon icon="lucide:shield" class="size-4 text-primary" />
+        <Icon name="lucide:shield" class="size-4 text-primary" />
         <span class="text-sm font-medium">{{ STAFF_ROLE_LABELS[currentRole] }}</span>
-        <Icon icon="lucide:chevron-down" class="size-3.5 text-muted-foreground" />
+        <Icon name="lucide:chevron-down" class="size-3.5 text-muted-foreground" />
       </Button>
     </PopoverTrigger>
     <PopoverContent align="end" class="w-56 p-1">

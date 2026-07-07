@@ -16,34 +16,34 @@ if (!tenant.value) {
 
 <template>
   <div v-if="tenant">
-    <TenantDetailHeader :tenant="tenant" />
+    <PlatformConsoleTenantDetailHeader :tenant="tenant" />
     <div class="p-6">
       <Tabs default-value="billing" class="w-full">
         <TabsList>
-          <RoleGate action="view_billing">
+          <PlatformConsoleRoleGate action="view_billing">
             <TabsTrigger value="billing">Billing</TabsTrigger>
-          </RoleGate>
-          <RoleGate action="view_pricing">
+          </PlatformConsoleRoleGate>
+          <PlatformConsoleRoleGate action="view_pricing">
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          </RoleGate>
+          </PlatformConsoleRoleGate>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
-        <RoleGate action="view_billing">
+        <PlatformConsoleRoleGate action="view_billing">
           <TabsContent value="billing" class="mt-4">
-            <TenantBillingTab :tenant="tenant" />
+            <PlatformConsoleTenantBillingTab :tenant="tenant" />
           </TabsContent>
-        </RoleGate>
-        <RoleGate action="view_pricing">
+        </PlatformConsoleRoleGate>
+        <PlatformConsoleRoleGate action="view_pricing">
           <TabsContent value="pricing" class="mt-4">
-            <TenantPricingTab :tenant="tenant" />
+            <PlatformConsoleTenantPricingTab :tenant="tenant" />
           </TabsContent>
-        </RoleGate>
+        </PlatformConsoleRoleGate>
         <TabsContent value="users" class="mt-4">
-          <TenantUsersTab :tenant="tenant" />
+          <PlatformConsoleTenantUsersTab :tenant="tenant" />
         </TabsContent>
         <TabsContent value="activity" class="mt-4">
-          <TenantActivityTab :tenant="tenant" />
+          <PlatformConsoleTenantActivityTab :tenant="tenant" />
         </TabsContent>
       </Tabs>
     </div>

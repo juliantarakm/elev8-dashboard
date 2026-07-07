@@ -30,7 +30,7 @@ const reversed = computed(() => auditLog.value.slice().reverse())
           </div>
         </div>
       </div>
-      <AuditLogTable :entries="reversed" />
+      <PlatformConsoleAuditLogTable :entries="reversed" />
     </template>
   </div>
 </template>
