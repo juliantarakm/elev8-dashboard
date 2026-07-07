@@ -365,7 +365,7 @@ function saveWidget() {
 
     <Card>
       <CardHeader>
-        <CardTitle class="text-base">Booking System</CardTitle>
+        <CardTitle class="text-base">Contact Fields</CardTitle>
         <CardDescription>Configure which contact fields guests must fill in.</CardDescription>
       </CardHeader>
       <CardContent class="space-y-6">
