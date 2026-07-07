@@ -2,11 +2,14 @@
 import { toast } from 'vue-sonner'
 import { bookingWidgets, useBookingWidgets } from '~/components/booking-widget/data/widgets'
 import { listings } from '~/components/listings/data/listings'
+import { usePromoCodes } from '~/composables/usePromoCodes'
+import PromoCodePicker from '~/components/promo-code/PromoCodePicker.vue'
 
 definePageMeta({ layout: 'default' })
 
 const router = useRouter()
 const { buildEmbedPreview, getSnippetForForm } = useBookingWidgets()
+const { setLinksForWidget } = usePromoCodes()
 const listingDialogOpen = ref(false)
 const listingSearch = ref('')
 const activeTags = ref<string[]>([])
@@ -31,6 +34,7 @@ const form = reactive({
     arrivalTime: 'optional' as 'required' | 'optional' | 'hidden',
   },
   accentColor: '#F6BB11',
+  promoCodeIds: [] as string[],
 })
 
 const contactFieldDefinitions = [
@@ -95,7 +99,7 @@ const embedPreviewWidget = computed(() => buildEmbedPreview({
   seasonalConditions: [],
   lengthOfStayDiscounts: [],
   allowedDomains: [],
-  promoCodes: [],
+  promoCodeIds: [...form.promoCodeIds],
   embedVersion: 'v1',
 }))
 
@@ -125,7 +129,7 @@ const embedSnippet = computed(() => getSnippetForForm({
   seasonalConditions: [],
   lengthOfStayDiscounts: [],
   allowedDomains: [],
-  promoCodes: [],
+  promoCodeIds: [...form.promoCodeIds],
   embedVersion: 'v1',
 }))
 
@@ -179,8 +183,9 @@ function toggleListing(listingId: string) {
 }
 
 function saveWidget() {
+  const id = `bk-widget-${Date.now()}`
   bookingWidgets.value.unshift({
-    id: `bk-widget-${Date.now()}`,
+    id,
     name: form.name || 'Untitled Widget',
     mode: form.selectedListingIds.length === 1 ? 'single' : 'multi',
     listingIds: [...form.selectedListingIds],
@@ -198,7 +203,7 @@ function saveWidget() {
     seasonalConditions: [],
     lengthOfStayDiscounts: [],
     allowedDomains: [],
-    promoCodes: [],
+    promoCodeIds: [...form.promoCodeIds],
     requestNumberOfPersons: null,
     contactCopy: 'Contact',
     legalRequirementsCopy: 'Legal requirements',
@@ -207,6 +212,8 @@ function saveWidget() {
     customStyleCopy: 'Custom style',
     embedVersion: 'v1',
   })
+
+  setLinksForWidget(id, form.promoCodeIds)
 
   toast.success('Booking widget created')
   router.push('/booking-widgets')
@@ -437,6 +444,22 @@ function saveWidget() {
           </div>
           <pre class="overflow-x-auto rounded-md border bg-muted/40 p-4 text-xs leading-6"><code>{{ embedSnippet }}</code></pre>
         </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle class="text-base">Promo codes</CardTitle>
+        <CardDescription>Link codes managed in the Promo Codes page to this widget.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <PromoCodePicker v-model="form.promoCodeIds" />
+        <p class="text-xs text-muted-foreground mt-2">
+          <NuxtLink to="/promo-codes" class="text-primary hover:underline">
+            Manage codes →
+          </NuxtLink>
+          Add new codes from the Promo Codes page.
+        </p>
       </CardContent>
     </Card>
 

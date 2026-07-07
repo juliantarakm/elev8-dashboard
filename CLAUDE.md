@@ -25,6 +25,7 @@
 - **Auth** — Login, register, OTP, forgot password
 - **Mail** — Email interface (demo)
 - **Changelog** — Timeline-style release history page (version, date, badges, change categories)
+- **Promo Codes** — Standalone promo code library (`/promo-codes`) reusable by booking widgets (and later the website builder) with per-source analytics scaffold
 - **Components Gallery** — All shadcn-vue component demos
 
 ---
@@ -838,6 +839,56 @@ Time-based view of guest stays, cleaning jobs, and tasks. Week/day views with hi
   - `OperationsCalendarEventChip.vue` — Individual event chip in grid cells
   - `OperationsCalendarCreateDialog.vue` — New cleaning job / task creation
 - **Key fix**: Reka UI `CheckboxRoot` ignores external `:checked` prop changes after initial render. Filter checkboxes use native `<button @click>` for toggle logic + plain `<span>` with reactive Tailwind classes for visual — no Reka UI checkbox component to avoid desync.
+
+### Promo Codes Module (`app/components/promo-code/`, `app/composables/usePromoCodes.ts`, `app/pages/promo-codes/`)
+
+Standalone global library of promo codes, referenced by ID from booking widgets (and designed to be referenced by the website builder later). Replaces the previous inline-per-widget `BookingWidgetPromoCode[]` shape so the same code can be reused across multiple surfaces.
+
+- **Data + Types** (`app/components/promo-code/data/promo-codes.ts`)
+  - `PromoCode` — id, code (uppercased), description, `discountType: '%' | 'fixed'`, value, currency (`null` for %), active, `validFrom?`/`validUntil?`, `usageLimit?`, `redemptionCount`, `createdAt`, `updatedAt`
+  - `WidgetPromoCodeLink` — `{ promoCodeId, source: 'widget' | 'website', sourceId, usageCount, addedAt }` — join table for **per-usage-site analytics** (scaffolded now; event ingestion is deferred)
+  - `PromoCodeStatus` — `'active' | 'inactive' | 'expired'` (computed from `active` + `validFrom`/`validUntil`)
+  - `promoCodes` — `ref<PromoCode[]>` reactive store (seed: `promo-welcome10` "WELCOME10" 10% with 3 redemptions)
+  - `widgetPromoCodeLinks` — `ref<WidgetPromoCodeLink[]>` (seeded with the WELCOME10 → `bk-widget-1` link)
+  - Helpers: `getPromoCodeStatus`, `isPromoCodeExpired`, `isPromoCodeStarted`, `formatPromoDiscount`, `generatePromoId`
+
+- **Composable** (`app/composables/usePromoCodes.ts`)
+  - `useState<PromoCode[]>('promo-codes', ...)` + `useState<WidgetPromoCodeLink[]>('widget-promo-code-links', ...)` (survives across components)
+  - **Filters**: `search`, `status` (`'all' | 'active' | 'inactive' | 'expired'`), `sortBy` (`'recent' | 'code' | 'redemptions'`)
+  - **KPIs (computed)**: `activeCount`, `expiredCount`, `inactiveCount`, `totalRedemptions`
+  - **CRUD**: `createPromoCode`, `updatePromoCode`, `deletePromoCode`, `duplicatePromoCode`, `toggleActive`, `isCodeTaken`
+  - **Join helpers**: `setLinksForWidget(widgetId, codeIds)`, `getUsagesByCode(codeId)`, `getLinksForWidget(widgetId)` — `setLinksForWidget` is called from widget `saveWidget()` and is the only thing that keeps the analytics scaffold up to date
+  - `clearFilters()`
+
+- **Page** (`app/pages/promo-codes/index.vue`) — list page with header, KPI cards (active/expired/total redemptions), filter bar (search + status + sort), `<PromoCodeTable>`, create/edit/detail dialogs, empty state
+
+- **Components** (in `app/components/promo-code/`)
+  - `PromoCodeTable.vue` — pure presentational table; props `{ codes }`; emits `view / edit / delete / duplicate / toggleActive`; columns: code (mono), discount, type, valid period, redemptions, status badge, active switch, dropdown actions
+  - `PromoCodeCreateDialog.vue` — create modal; auto-uppercased code, unique-code validation against store
+  - `PromoCodeEditDialog.vue` — edit modal (same form shape as create)
+  - `PromoCodeDetailDialog.vue` — view modal with all fields + "Used in" list (widgets referencing the code with per-widget redemption counts); footer: Delete / Duplicate / Edit
+  - `PromoCodePicker.vue` — reusable multi-select for use in widgets: Popover with search + active-only toggle + Command checkbox list + "Done" footer + selected Badges below the trigger; `v-model:modelValue="string[]"`
+
+- **Booking widget integration**
+  - `BookingWidgetConfig.promoCodes: BookingWidgetPromoCode[]` → `promoCodeIds: string[]` (reference by ID)
+  - `BookingWidgetPromoCode` interface **removed** from `app/components/booking-widget/data/widgets.ts`
+  - `resolveWidgetPromoCodes(widget)` — returns `PromoCode[]` resolved from the shared store (sorted by `promoCodeIds` order)
+  - `buildEmbedPreview` (in `useBookingWidgets()`) calls `resolveWidgetPromoCodes` so the embed payload still has `promoCodes: PromoCode[]` (runtime contract preserved)
+  - `BookingWidgetEmbedPreview` — explicit type for the embed preview shape (was implicit); covers both the resolved codes and the `name`/`mode`/`listingIds`/`primaryListingId` fields the preview reads
+  - **v1 widget** (`app/pages/booking-widgets/v1/new.vue`): the old 6-field inline editor is replaced with `<PromoCodePicker>` in a new "Promo codes" card. `saveWidget()` writes `promoCodeIds` and calls `setLinksForWidget(id, form.promoCodeIds)`.
+  - **v2 widget** (`app/pages/booking-widgets/new.vue`): new "Promo codes" card with `<PromoCodePicker>`. Same save wiring.
+  - **`BookingWidgetPreview.vue`**: promo codes row now shows count + up to 3 truncated code chips + `+N` overflow (was count only). Preview prop type changed to `BookingWidgetEmbedPreview`.
+
+- **Sidebar entry**: Apps section, above "Booking Widgets" — `{ title: 'Promo Codes', icon: 'i-lucide-ticket-percent', link: '/promo-codes', new: true }`
+
+- **Migration**: `bk-widget-1.promoCodes: [{ code: 'WELCOME10', ... }]` → `bk-widget-1.promoCodeIds: ['promo-welcome10']` + matching entry in `promoCodes` seed (with `redemptionCount: 3` preserved) + matching `WidgetPromoCodeLink`. The "Used in" section shows the link from day one.
+
+- **Deferred (intentionally out of scope)**
+  - **Website builder integration** — `source: 'website'` is reserved in `WidgetPromoCodeLink`; builder gets its own picker call site later
+  - **Per-usage event ingestion** — `WidgetPromoCodeLink.usageCount` is scaffolded; no events wired up yet
+  - **Per-listing scope** — codes are global; linking is at widget/site level
+  - **Auto-expiration** — `validFrom` / `validUntil` stored, no background job. "Expired" filter computes at read time
+  - **`/promo-codes/[id]` sub-page** — detail dialog covers current needs; per-code usage history page is a future addition
 
 ### Auth (`app/components/auth/`)
 - **SignIn.vue**, **SignUp.vue**, **OTPForm.vue**, **OTPForm1.vue**, **OTPForm2.vue**, **ForgotPassword.vue**

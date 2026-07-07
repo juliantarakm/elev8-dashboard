@@ -5,11 +5,14 @@ import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalize
 import { toast } from 'vue-sonner'
 import { bookingWidgets, useBookingWidgets } from '~/components/booking-widget/data/widgets'
 import { listings } from '~/components/listings/data/listings'
+import { usePromoCodes } from '~/composables/usePromoCodes'
+import PromoCodePicker from '~/components/promo-code/PromoCodePicker.vue'
 
 definePageMeta({ layout: 'default' })
 
 const router = useRouter()
 const { buildEmbedPreview, getSnippetForForm } = useBookingWidgets()
+const { setLinksForWidget } = usePromoCodes()
 const activeTab = ref<'accommodation' | 'system' | 'embed'>('accommodation')
 const listingDialogOpen = ref(false)
 const listingSearch = ref('')
@@ -79,7 +82,7 @@ const form = reactive({
   cornerRadius: 12,
   depositPct: 30,
   allowedDomains: [''],
-  promoCodes: [] as Array<{ id: string, code: string, discountType: '%' | 'fixed', value: number, currency: string | null, active: boolean, redemptionCount: number, validFrom: string, validUntil: string }>,
+  promoCodeIds: [] as string[],
 })
 
 const weekdayOptions = [
@@ -228,12 +231,7 @@ const embedPreviewWidget = computed(() => buildEmbedPreview({
   seasonalConditions: form.seasonalConditions.map(c => ({ ...c, arrivalDays: [...c.arrivalDays], departureDays: [...c.departureDays] })),
   lengthOfStayDiscounts: form.lengthOfStayDiscounts.map(d => ({ ...d })),
   allowedDomains: form.allowedDomains.filter(Boolean),
-  promoCodes: form.promoCodes.map(promo => ({
-    ...promo,
-    currency: promo.discountType === 'fixed' ? widgetCurrency.value : null,
-    validFrom: promo.validFrom || null,
-    validUntil: promo.validUntil || null,
-  })),
+  promoCodeIds: [...form.promoCodeIds],
   embedVersion: 'v1',
 }))
 
@@ -266,12 +264,7 @@ const embedSnippet = computed(() => getSnippetForForm({
   seasonalConditions: form.seasonalConditions.map(c => ({ ...c, arrivalDays: [...c.arrivalDays], departureDays: [...c.departureDays] })),
   lengthOfStayDiscounts: form.lengthOfStayDiscounts.map(d => ({ ...d })),
   allowedDomains: form.allowedDomains.filter(Boolean),
-  promoCodes: form.promoCodes.map(promo => ({
-    ...promo,
-    currency: promo.discountType === 'fixed' ? widgetCurrency.value : null,
-    validFrom: promo.validFrom || null,
-    validUntil: promo.validUntil || null,
-  })),
+  promoCodeIds: [...form.promoCodeIds],
   embedVersion: 'v1',
 }))
 
@@ -407,17 +400,10 @@ function addDomain() {
   form.allowedDomains = [...form.allowedDomains, '']
 }
 
-function addPromoCode() {
-  form.promoCodes = [...form.promoCodes, { id: `promo-${Date.now()}-${form.promoCodes.length}`, code: '', discountType: '%', value: 10, currency: widgetCurrency.value, active: true, redemptionCount: 0, validFrom: '', validUntil: '' }]
-}
-
-function removePromoCode(index: number) {
-  form.promoCodes = form.promoCodes.filter((_, i) => i !== index)
-}
-
 function saveWidget() {
+  const id = `bk-widget-${Date.now()}`
   bookingWidgets.value.unshift({
-    id: `bk-widget-${Date.now()}`,
+    id,
     name: form.name || 'Untitled Widget',
     mode: form.selectedListingIds.length === 1 ? 'single' : 'multi',
     listingIds: [...form.selectedListingIds],
@@ -435,12 +421,7 @@ function saveWidget() {
     seasonalConditions: form.seasonalConditions.map(c => ({ ...c, arrivalDays: [...c.arrivalDays], departureDays: [...c.departureDays] })),
     lengthOfStayDiscounts: form.lengthOfStayDiscounts.map(d => ({ ...d })),
     allowedDomains: form.allowedDomains.filter(Boolean),
-    promoCodes: form.promoCodes.map(promo => ({
-      ...promo,
-      currency: promo.discountType === 'fixed' ? widgetCurrency.value : null,
-      validFrom: promo.validFrom || null,
-      validUntil: promo.validUntil || null,
-    })),
+    promoCodeIds: [...form.promoCodeIds],
     currency: form.currency,
     paymentMethods: form.paymentMethods,
     defaultPaymentOption: form.defaultPaymentOption || null,
@@ -452,6 +433,8 @@ function saveWidget() {
     customStyleCopy: form.customStyleCopy,
     embedVersion: 'v1',
   })
+
+  setLinksForWidget(id, form.promoCodeIds)
 
   toast.success('Booking widget created')
   router.push('/booking-widgets/v1')
@@ -886,72 +869,20 @@ function saveWidget() {
             <Separator />
 
             <div class="space-y-2">
-              <Label>Promo codes</Label>
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <p class="text-xs text-muted-foreground">
-                    Add booking-specific promo codes for this widget.
+                  <p class="text-sm font-semibold">
+                    Promo codes
                   </p>
                   <p class="text-xs text-muted-foreground">
-                    Fixed amounts use {{ widgetCurrency }}.
+                    Link codes managed in the Promo Codes page to this widget.
                   </p>
                 </div>
-                <Button variant="outline" size="sm" @click="addPromoCode">
-                  <Icon name="i-lucide-plus" class="size-4 mr-2" />
-                  Add code
-                </Button>
+                <NuxtLink to="/promo-codes" class="text-xs text-primary hover:underline">
+                  Manage codes →
+                </NuxtLink>
               </div>
-
-              <div v-if="form.promoCodes.length > 0" class="space-y-3">
-                <div v-for="(promo, index) in form.promoCodes" :key="promo.id" class="grid gap-3 rounded-lg border p-3 md:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_auto] md:items-end">
-                  <div class="space-y-2">
-                    <Label>Code</Label>
-                    <Input v-model="form.promoCodes[index].code" placeholder="WELCOME10" class="uppercase" />
-                  </div>
-                  <div class="space-y-2">
-                    <Label>Type</Label>
-                    <Select v-model="form.promoCodes[index].discountType">
-                      <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="%">
-                          Percentage
-                        </SelectItem>
-                        <SelectItem value="fixed">
-                          Fixed amount
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div class="space-y-2">
-                    <Label>Value</Label>
-                    <div class="flex items-center gap-2">
-                      <span v-if="form.promoCodes[index].discountType === 'fixed'" class="rounded-md border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{{ widgetCurrency }}</span>
-                      <Input v-model.number="form.promoCodes[index].value" type="number" min="1" />
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <Label>Valid from</Label>
-                    <Input v-model="form.promoCodes[index].validFrom" type="date" />
-                  </div>
-                  <div class="space-y-2">
-                    <Label>Valid until</Label>
-                    <Input v-model="form.promoCodes[index].validUntil" type="date" />
-                  </div>
-                  <Button variant="ghost" size="icon-sm" type="button" class="justify-self-end" @click="removePromoCode(index)">
-                    <Icon name="i-lucide-x" class="size-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <Empty v-else class="rounded-lg border py-8">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <Icon name="i-lucide-ticket-percent" class="size-5" />
-                  </EmptyMedia>
-                  <EmptyTitle>No discount codes yet</EmptyTitle>
-                  <EmptyDescription>Add a code to run widget-specific campaigns.</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <PromoCodePicker v-model="form.promoCodeIds" />
             </div>
           </CardContent>
         </Card>

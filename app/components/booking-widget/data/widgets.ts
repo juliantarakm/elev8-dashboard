@@ -1,3 +1,5 @@
+import { promoCodes as globalPromoCodes, type PromoCode } from '~/components/promo-code/data/promo-codes'
+
 export type BookingWidgetMode = 'single' | 'multi'
 
 export interface ToggleableAmount {
@@ -33,17 +35,6 @@ export interface ContactFields {
   arrivalTime: ContactFieldSetting
 }
 
-export interface BookingWidgetPromoCode {
-  code: string
-  discountType: '%' | 'fixed'
-  value: number
-  currency?: string | null
-  active: boolean
-  redemptionCount: number
-  validFrom?: string | null
-  validUntil?: string | null
-}
-
 export interface BookingWidgetConfig {
   id: string
   name: string
@@ -75,7 +66,7 @@ export interface BookingWidgetConfig {
   seasonalConditions?: SeasonalCondition[]
   lengthOfStayDiscounts?: LengthOfStayDiscountTier[]
   allowedDomains: string[]
-  promoCodes: BookingWidgetPromoCode[]
+  promoCodeIds: string[]
   status?: 'active' | 'inactive'
   embedVersion: 'v1'
   utmSource?: string | null
@@ -119,9 +110,7 @@ export const bookingWidgets = ref<BookingWidgetConfig[]>([
       arrivalTime: 'optional',
     },
     allowedDomains: ['partner-bali.com', '*.agency.com'],
-    promoCodes: [
-      { code: 'WELCOME10', discountType: '%', value: 10, active: true, redemptionCount: 3 },
-    ],
+    promoCodeIds: ['promo-welcome10'],
     status: 'active',
     embedVersion: 'v1',
     utmSource: 'partner-bali',
@@ -130,18 +119,73 @@ export const bookingWidgets = ref<BookingWidgetConfig[]>([
   },
 ])
 
+export function resolveWidgetPromoCodes(widget: BookingWidgetConfig): PromoCode[] {
+  if (!widget.promoCodeIds?.length)
+    return []
+  return globalPromoCodes.value.filter(p => widget.promoCodeIds.includes(p.id))
+}
+
+// Shape consumed by <BookingWidgetPreview>. The embed preview builder
+// returns this shape; raw BookingWidgetConfig is also accepted (with
+// promoCodeIds resolved into promoCodes via resolveWidgetPromoCodes).
+export interface BookingWidgetEmbedPreview {
+  id: string
+  name: string
+  title: string
+  mode: BookingWidgetMode
+  listingIds: string[]
+  primaryListingId: string | null
+  listingLabel: string
+  currency: string
+  paymentMethods: string[]
+  defaultPaymentOption: string | null
+  requestNumberOfPersons: string | null
+  contactFields: any
+  contactCopy: string | null
+  legalRequirementsCopy: string | null
+  detailsCopy: string | null
+  successfullyBookedCopy: string | null
+  customStyleCopy: string | null
+  accentColor: string
+  cornerRadius: number
+  depositPct: number
+  minDaysBeforeArrival: number
+  cleaningFee: any
+  prepayment: any
+  extraGuestPerNight: any
+  extraGuestStartAt: number | null
+  maxGuests: number | null
+  extraChildPerNight: any
+  arrivalDays: number[] | null
+  departureDays: number[] | null
+  seasonalConditions: any
+  lengthOfStayDiscounts: any
+  allowedDomains: string[]
+  promoCodes: PromoCode[]
+  status: string | null
+  embedVersion: string
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+}
+
 export function useBookingWidgets() {
   function getWidgetById(id: string) {
     return bookingWidgets.value.find(widget => widget.id === id) ?? null
   }
 
-  function buildEmbedPreview(widget: BookingWidgetConfig) {
+  function buildEmbedPreview(widget: BookingWidgetConfig): BookingWidgetEmbedPreview {
     const listingLabel = widget.mode === 'single'
       ? `Listing ${widget.primaryListingId ?? widget.listingIds[0] ?? 'none'}`
       : `${widget.listingIds.length} listings`
 
     return {
+      id: widget.id,
+      name: widget.name,
       title: widget.name,
+      mode: widget.mode,
+      listingIds: [...widget.listingIds],
+      primaryListingId: widget.primaryListingId ?? null,
       listingLabel,
       currency: widget.currency ?? 'EUR',
       paymentMethods: widget.paymentMethods ?? [],
@@ -168,7 +212,7 @@ export function useBookingWidgets() {
       seasonalConditions: widget.seasonalConditions ?? null,
       lengthOfStayDiscounts: widget.lengthOfStayDiscounts ?? null,
       allowedDomains: widget.allowedDomains,
-      promoCodes: widget.promoCodes,
+      promoCodes: resolveWidgetPromoCodes(widget),
       status: widget.status ?? null,
       embedVersion: widget.embedVersion,
       utmSource: widget.utmSource ?? null,
@@ -196,7 +240,7 @@ export function useBookingWidgets() {
     return copyEmbedSnippet({
       ...widget,
       allowedDomains: widget.allowedDomains ?? [],
-      promoCodes: widget.promoCodes ?? [],
+      promoCodeIds: widget.promoCodeIds ?? [],
       paymentMethods: widget.paymentMethods ?? [],
     })
   }

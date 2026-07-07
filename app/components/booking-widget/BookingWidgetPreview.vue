@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { BookingWidgetConfig } from '~/components/booking-widget/data/widgets'
+import type { BookingWidgetEmbedPreview } from '~/components/booking-widget/data/widgets'
 
 const props = defineProps<{
-  widget: BookingWidgetConfig
+  widget: BookingWidgetEmbedPreview
   listings: Array<{
     id: string
     name: string
@@ -130,9 +130,19 @@ function formatMoney(amount: number, currency = 'USD') {
             <span class="text-muted-foreground">Allowed domains</span>
             <span class="font-medium">{{ widget.allowedDomains.length }}</span>
           </div>
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-muted-foreground">Promo codes</span>
-            <span class="font-medium">{{ widget.promoCodes.length }}</span>
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-muted-foreground">Promo codes</span>
+              <span class="font-medium">{{ widget.promoCodes.length }}</span>
+            </div>
+            <div v-if="widget.promoCodes.length" class="flex flex-wrap gap-1">
+              <Badge v-for="p in widget.promoCodes.slice(0, 3)" :key="p.id" variant="secondary" class="text-[10px] font-mono">
+                {{ p.code }}
+              </Badge>
+              <Badge v-if="widget.promoCodes.length > 3" variant="outline" class="text-[10px]">
+                +{{ widget.promoCodes.length - 3 }}
+              </Badge>
+            </div>
           </div>
           <div class="flex items-center justify-between gap-3">
             <span class="text-muted-foreground">Accent color</span>

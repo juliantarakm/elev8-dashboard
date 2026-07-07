@@ -112,6 +112,12 @@ export const navMenu: NavMenu[] = [
         new: true,
       },
       {
+        title: 'Promo Codes',
+        icon: 'i-lucide-ticket-percent',
+        link: '/promo-codes',
+        new: true,
+      },
+      {
         title: 'Booking Widgets',
         icon: 'i-lucide-code-2',
         children: [
