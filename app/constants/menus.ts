@@ -100,6 +100,12 @@ export const navMenu: NavMenu[] = [
     heading: 'Apps',
     items: [
       {
+        title: 'Platform Console',
+        icon: 'i-lucide-layers',
+        link: '/platform-console',
+        new: true,
+      },
+      {
         title: 'Kanban Board',
         icon: 'i-lucide-kanban',
         link: '/kanban',
