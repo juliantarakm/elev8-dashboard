@@ -369,25 +369,19 @@ function saveWidget() {
         <CardDescription>Configure which contact fields guests must fill in.</CardDescription>
       </CardHeader>
       <CardContent class="space-y-6">
-        <div class="space-y-3">
-          <Label class="text-sm font-semibold">Contact Fields</Label>
-          <p class="text-xs text-muted-foreground">
-            Configure which contact fields guests must fill in.
-          </p>
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div v-for="field in contactFieldDefinitions" :key="field.key" class="space-y-1.5">
-              <Label class="text-xs">{{ field.label }}</Label>
-              <Select v-model="form.contactFields[field.key]">
-                <SelectTrigger class="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="opt in fieldSettingOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div v-for="field in contactFieldDefinitions" :key="field.key" class="space-y-1.5">
+            <Label class="text-xs">{{ field.label }}</Label>
+            <Select v-model="form.contactFields[field.key]">
+              <SelectTrigger class="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="opt in fieldSettingOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
