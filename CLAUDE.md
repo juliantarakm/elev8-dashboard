@@ -70,6 +70,11 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
   - `OverrideAudience` = `'future' | 'current' | 'inquiry'`
   - `alwaysOn()` factory builds a 24/7 default schedule
 - `ListingStats`, `ListingPricing` (nightlyRate/fees/discounts/seasonalRates), `Booking`, `Review`, `MaintenanceTask`, `ListingMaintenance`
+- `Unit` — `{ id, name, identifier?, status?, otaConnected? }` (no longer carries `aiStatus` — moved to `UnitType`)
+- `UnitType` — `{ id, name, identifier?, description?, quantity, maxAdults/Children/Infants, bedrooms, bathrooms, beds[], photos[], pricing: UnitTypePricing, aiStatus?: 'active' | 'paused' | 'not_set', units: Unit[] }` — AI status lives at the room-type level so toggling it applies to every physical room of that type
+- `UnitTypePricing` — `{ currency, ratePlans: RatePlan[], offerings: RatePlanOffering[], lengthOfStayDiscounts: LengthOfStayDiscount[], fees: Fee[] }` — supports **multiple rate plans per room type** (e.g., Standard, Weekly, Monthly)
+- `RatePlan` — `{ id, name, pricePerNight, pricePerAdditionalGuest, isBase }` — exactly one plan per `UnitType` has `isBase: true` and cannot be deleted
+- `RatePlanOffering` — derived from base (fixed/percent adjustment); not the same as a RatePlan
 - `ListingDocument`, `ListingResources` (documents, basics, listingDetails, sops, topicsToAvoid, propertyUpsells, fieldConfig)
 - `FieldConfig` = `{ stages: ReservationStage[] }` — per-field config stored in `listing.resources.fieldConfig[fieldKey]`
 - `ReservationStage` = `'future' | 'inquiry_past' | 'current'`
@@ -92,9 +97,11 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
 - **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
 - **`ListingFloatingMenu.vue`** — Fixed floating pill bar at bottom of page: Listing Setup · Test AI · AI Schedule
-- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Unit toggle** + two-panel layout + **footer with Save Changes**). Toggle allows switching between property-level info and unit-specific info for multi-unit listings. Unit button is a **dropdown menu** when multiple units exist, allowing selection of which unit to edit. Footer includes **"Copy to Other Units"** button (unit view only) and **"Save Changes"** button with toast confirmation.
-- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). **Supports Property/Unit view modes** — Property view shows property-level fields (name, location, check-in/out), Unit view shows unit-specific fields (unit name, capacity). Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
-- **`ListingSetupResourcePanel.vue`** — Right panel (300px): Property Documents (upload PDF/DOCX/TXT, download, delete), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
+- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Rooms toggle** + two-panel layout + **footer with Save Changes**). For multi-unit listings the toggle is just Property ↔ Rooms (a single combined tab — unit types and individual units are managed inside `RoomsPanel`). Footer includes **"Copy to Other Units"** button (rooms view only) and **"Save Changes"** button with toast confirmation.
+- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). **Supports Property/Unit view modes** — Property view shows property-level fields (name, location, check-in/out); Unit view shows unit-specific fields (unit name) and is embedded in `RoomsPanel` for the selected room. Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
+- **`RoomsPanel.vue`** — Used inside the Listing Setup overlay for the **Rooms** view. 2-column layout: 240px sidebar (rooms grouped by collapsible type, with hover-revealed trash button per room, "+ Add Room" and "⚙ Manage Room Types" footer buttons) + main area (reuses `ListingSetupFieldPanel` in unit view for the selected room). Sidebar has its own `Add Room` Dialog (type selector + name input) and **Manage Room Types** Dialog (wraps `UnitTypeManager`).
+- **`ListingSetupResourcePanel.vue`** — Right panel (300px, **`flex-1 min-h-0`** on inner ScrollArea — required, see Patterns): Property Documents (upload PDF/DOCX/TXT, download, delete, **"Generate with AI"** button → Dialog with prompt textarea, 6 example prompt chips, 1.5s mock generation, read-only preview, "Save Document" creates a `.txt` from the generated content and adds it to the documents list), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
+- **`UnitTypeManager.vue`** — Used inside the Listing Setup overlay's Rooms view (and inside the "Manage Room Types" Dialog). Per-type editable card with **Details** + **Pricing** tabs. Pricing tab now supports **multiple rate plans** (one is marked `Base`, others can be added/removed) plus Offerings, Length-of-Stay Discounts, and Advanced Pricing (Fees).
 - **`FieldConfigDialog.vue`** — Per-field config: Property Type info, Reservation Stages (Future/Inquiry Past/Current), Copy to Other Properties
 - **`ListingTestAIDialog.vue`** — Guest chat simulation dialog with mock AI responses based on listing data (check-in time, amenities, etc.)
 
@@ -115,13 +122,15 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 
 #### Listing Status System
 - `Listing.status?: 'active' | 'inactive'` — listing-level status
+- `Listing.aiStatus: 'active' | 'paused' | 'not_set'` — listing-level AI status (used for single-unit + as a derived aggregate for multi-unit)
 - `Unit.status?: 'active' | 'inactive'` — per-unit status
-- `Unit.aiStatus?: 'active' | 'paused' | 'not_set'` — per-unit AI override
 - `Unit.otaConnected?: string[]` — per-unit OTA override (falls back to listing OTA)
+- `UnitType.aiStatus?: 'active' | 'paused' | 'not_set'` — **AI is now controlled at the room-type level**, not per physical room. Toggling it applies to every unit of that type.
 - **Multi-unit logic**: property status derived from units — all inactive = property inactive
-- **Deactivate cascade**: turning off listing/unit also pauses AI
-- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; per-unit toggle with AI badge (click to toggle AI) + OTA icons + Switch; shows `toast.info/success` on property-level and per-unit toggle
-- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic; shows `toast.info/success` on activate/deactivate
+- **AI aggregation** (multi-unit only): for the table's AI Status column, `ListingAiStatusCell` aggregates from `unitTypes[]` — any unit type active → "Active", all unit types paused → "Paused", otherwise falls back to `listing.aiStatus`
+- **Deactivate cascade**: turning off listing/unit pauses AI at the unit-type level (and updates the listing-level `aiStatus` derived aggregate)
+- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; **per-unit-type AI On/Off badge** (in the unit type header, not per-unit row) + per-unit Switch + OTA icons; shows `toast.info/success` on each toggle
+- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic; for multi-unit it writes `unitType.aiStatus` (not per-unit); shows `toast.info/success` on activate/deactivate
 - **`ListingRowActions.vue`** — "Activate/Deactivate Listing" in dropdown; implemented with spread mutation
 
 ### Inbox Module (`app/components/inbox/`)
@@ -941,6 +950,25 @@ Standalone global library of promo codes, referenced by ID from booking widgets 
   ```
 - **Tag/multi-select filter pattern** (match Listings index): Popover + inner search `Input` + `ScrollArea` of custom-checkbox rows + "Clear all" footer. Selected items use AND logic (`every`), not OR.
 
+### Scrollable Flex Children (⚠️ min-h-0 rule)
+
+When a flex child should scroll (e.g. `<ScrollArea>` inside `flex flex-col h-full`), you **must** add `min-h-0`. Flex children have an implicit `min-height: auto`, which prevents them from shrinking below their content size — so the scroll never kicks in and the parent grows instead.
+
+```vue
+<!-- ✅ Works — scrolls when content overflows -->
+<div class="flex flex-col h-full">
+  <div class="flex-shrink-0">header</div>
+  <ScrollArea class="flex-1 min-h-0">
+    ...long content...
+  </ScrollArea>
+</div>
+
+<!-- ❌ Bug — content overflows the panel, no scroll -->
+<ScrollArea class="flex-1">...</ScrollArea>
+```
+
+The same `min-h-0` is needed on any flex child that should be allowed to shrink (e.g. the body of `ListingSetupResourcePanel` after many documents are uploaded). The Listings Setup Resource Panel previously had this bug — `flex-1` without `min-h-0` — so uploading 20 documents made the panel unable to scroll.
+
 ### Date Range Picker
 - `app/components/base/DateRangePicker.vue`
 - Used for filtering reservations by date range
@@ -1259,7 +1287,7 @@ app/
 │   │   └── TotalVisitors.vue
 │   ├── listings/
 │   │   ├── data/
-│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance, resources), AiSchedule, Unit, ListingResources, FieldConfig, ReservationStage, ref<Listing[]>, allTags/allLocations/allProperties/allOtas
+│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance, resources), AiSchedule, Unit, UnitType (with aiStatus), RatePlan, RatePlanOffering, LengthOfStayDiscount, Fee, ListingResources, FieldConfig, ReservationStage, ref<Listing[]>, allTags/allLocations/allProperties/allOtas
 │   │   ├── ListingHeroCompact.vue ← Compact hero: photo manager, unit switcher, editable name+tags, AI schedule Sheet, accepts openSchedule prop
 │   │   ├── ListingOverviewTab.vue ← Stats cards + upcoming bookings + recent reviews
 │   │   ├── ListingPricingTab.vue  ← Base pricing, discounts, seasonal rates
@@ -1268,11 +1296,17 @@ app/
 │   │   ├── ListingMaintenanceTab.vue ← Cleaning schedule + tasks + add-task dialog
 │   │   ├── ListingSettingsTab.vue ← Property details form + amenities + distribution channels
 │   │   ├── ListingFloatingMenu.vue ← Fixed floating pill bar (Listing Setup / Test AI / AI Schedule)
-│   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (centered header + two-panel)
+│   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (Property/Rooms tabs + two-panel)
 │   │   ├── ListingSetupFieldPanel.vue ← Left panel: 6 tabs + pencil config icons per field
-│   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents + Elev8 AI + auto-fill + copy
+│   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents (incl. AI Generate) + Elev8 AI + auto-fill + copy
+│   │   ├── RoomsPanel.vue         ← Rooms tab: sidebar of rooms grouped by type + room editor (reuses FieldPanel)
+│   │   ├── UnitTypeManager.vue    ← Room type card with Details + Pricing tabs (multi-rate-plan supported)
 │   │   ├── FieldConfigDialog.vue  ← Per-field: reservation stages + copy to properties
 │   │   ├── ListingTestAIDialog.vue ← Guest chat simulation
+│   │   ├── ListingAiStatusCell.vue ← AI Status table cell; aggregates from unitTypes for multi-unit
+│   │   ├── ListingOtaCell.vue     ← OTA logos table cell
+│   │   ├── ListingExpandRow.vue   ← Multi-unit expand panel: per-unit-type AI toggle + per-unit Switch
+│   │   ├── ListingSingleToggle.vue ← Per-row status Switch (single + multi-unit logic)
 │   │   └── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
 │   ├── finance/
 │   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
