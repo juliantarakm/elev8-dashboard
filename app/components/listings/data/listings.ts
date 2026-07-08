@@ -120,7 +120,6 @@ export interface Unit {
   name: string
   identifier?: string
   status?: 'active' | 'inactive'
-  aiStatus?: 'active' | 'paused' | 'not_set'
   otaConnected?: string[]
 }
 
@@ -182,6 +181,7 @@ export interface UnitType {
   beds: Bed[]
   photos: string[]
   pricing: UnitTypePricing
+  aiStatus?: 'active' | 'paused' | 'not_set'
   units: Unit[]
 }
 
@@ -274,6 +274,7 @@ export const listings = ref<Listing[]>([
             { id: 'fee-3', name: 'Late Check-out Fee', enabled: false, amount: 25, type: 'late_checkout' },
           ],
         },
+        aiStatus: 'active',
         units: [
           { id: 'un-1', name: 'Master Suite', identifier: 'K1' },
           { id: 'un-2', name: 'Garden Unit', identifier: 'K2' },
@@ -307,6 +308,7 @@ export const listings = ref<Listing[]>([
             { id: 'fee-6', name: 'Late Check-out Fee', enabled: false, amount: 20, type: 'late_checkout' },
           ],
         },
+        aiStatus: 'active',
         units: [
           { id: 'un-3', name: 'Pool Unit', identifier: 'S1' },
           { id: 'un-4', name: 'Loft Unit', identifier: 'S2' },

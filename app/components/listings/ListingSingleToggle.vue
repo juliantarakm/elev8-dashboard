@@ -18,11 +18,8 @@ function toggle() {
     const newUnitStatus = isOn ? 'inactive' : 'active'
     const unitTypes = currentListing.unitTypes?.map(ut => ({
       ...ut,
-      units: ut.units.map(u => ({
-        ...u,
-        status: newUnitStatus as 'active' | 'inactive',
-        aiStatus: newUnitStatus === 'inactive' ? 'paused' : ('active' as 'active' | 'paused'),
-      })),
+      units: ut.units.map(u => ({ ...u, status: newUnitStatus as 'active' | 'inactive' })),
+      aiStatus: (newUnitStatus === 'inactive' ? 'paused' : 'active') as 'paused' | 'active',
     }))
     listings.value[idx] = { ...currentListing, status: newUnitStatus, aiStatus: newUnitStatus === 'inactive' ? 'paused' : 'active', unitTypes }
     toast[newUnitStatus === 'inactive' ? 'info' : 'success'](`Listing ${newUnitStatus === 'inactive' ? 'deactivated' : 'activated'}`)
