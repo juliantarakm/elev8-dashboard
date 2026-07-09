@@ -24,7 +24,7 @@ const filteredGuides = computed(() => {
 })
 
 function handleCreate() {
-  toast.info('Template gallery opens in Phase 2')
+  navigateTo('/guest-guides/new')
 }
 
 function handleEdit(id: string) {
