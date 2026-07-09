@@ -51,6 +51,7 @@ export interface AccessCode {
   endsAt: string
   guestName?: string
   reservationId?: string
+  purpose?: string
   status: 'active' | 'expired' | 'revoked'
   providerCodeId: string
 }
@@ -285,6 +286,15 @@ export function useSmartLock() {
     return { success: true, lock: updated }
   }
 
+  async function unlockLock(lockId: string): Promise<{ success: boolean, error?: string }> {
+    const lock = locks.value.find(l => l.id === lockId)
+    if (!lock) return { success: false, error: 'Lock not found.' }
+    if (!lock.online) return { success: false, error: 'Lock is offline. Try again when it reconnects.' }
+    // Mock network delay
+    await new Promise(r => setTimeout(r, 600))
+    return { success: true }
+  }
+
   // --- Access codes ---
 
   function getCodesForLock(lockId: string): AccessCode[] {
@@ -302,6 +312,7 @@ export function useSmartLock() {
     guestName?: string
     reservationId?: string
     code?: string
+    purpose?: string
   }): Promise<{ success: boolean, error?: string, code?: AccessCode }> {
     // Mock network delay so loading states are visible in the UI
     await new Promise(r => setTimeout(r, 700))
@@ -324,6 +335,7 @@ export function useSmartLock() {
       endsAt,
       guestName: opts.guestName,
       reservationId: opts.reservationId,
+      purpose: opts.purpose,
       status: 'active',
       providerCodeId: `code-${Math.random().toString(36).slice(2, 10)}`,
     }
@@ -401,6 +413,7 @@ export function useSmartLock() {
     setMainLock,
     renameLock,
     swapDevice,
+    unlockLock,
     getCodesForLock,
     getActiveCodeForLock,
     generateAccessCode,

@@ -119,6 +119,8 @@ const roomPairDeviceId = ref('')
 const roomPairName = ref('')
 const roomPairIsMain = ref(false)
 const roomPairGenerateHousekeepingCode = ref(false)
+const roomPairExtraPurpose = ref<string>('Housekeeping')
+const roomPairCustomPurpose = ref('')
 const showRoomPairForm = ref(false)
 
 function openRoomLockDialog(unitId: string, unitName: string) {
@@ -128,6 +130,8 @@ function openRoomLockDialog(unitId: string, unitName: string) {
   roomPairName.value = ''
   roomPairIsMain.value = false
   roomPairGenerateHousekeepingCode.value = false
+  roomPairExtraPurpose.value = 'Housekeeping'
+  roomPairCustomPurpose.value = ''
   showRoomPairForm.value = false
   showRoomLockDialog.value = true
 }
@@ -175,13 +179,19 @@ async function handleRoomPair() {
     }
   }
 
-  // Optional housekeeping code (per-lock)
+  // Optional extra code for a custom purpose (per-lock)
   if (roomPairGenerateHousekeepingCode.value) {
-    const r = await smartLock.generateAccessCode({
-      lockId: result.lock!.id,
-      guestName: 'Housekeeping',
-    })
-    if (r.code) generatedSummaries.push(`Housekeeping: ${r.code.code}`)
+    const purpose = roomPairExtraPurpose.value === 'custom'
+      ? roomPairCustomPurpose.value.trim() || 'Custom'
+      : roomPairExtraPurpose.value
+    if (purpose) {
+      const r = await smartLock.generateAccessCode({
+        lockId: result.lock!.id,
+        guestName: purpose,
+        purpose,
+      })
+      if (r.code) generatedSummaries.push(`${purpose}: ${r.code.code}`)
+    }
   }
 
   if (generatedSummaries.length > 0) {
@@ -206,6 +216,14 @@ function handleRoomUnpair(lockId: string, name: string) {
 function handleRoomSetMain(lockId: string) {
   smartLock.setMainLock(lockId)
   toast.success('Main lock updated.')
+}
+
+function getRoomLockProvider(lockId: string): { name: string, model: string } | null {
+  const lock = smartLock.locks.value.find(l => l.id === lockId)
+  if (!lock) return null
+  const device = smartLock.allDevices.value.find(d => d.deviceId === lock.providerDeviceId)
+  if (!device) return null
+  return { name: device.provider.charAt(0).toUpperCase() + device.provider.slice(1), model: device.model }
 }
 
 const roomSwapLockId = ref<string | null>(null)
@@ -510,6 +528,13 @@ const availableDevices = computed(() => smartLock.availableDevices.value)
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1">
                   <p class="truncate text-sm font-medium">{{ lock.name }}</p>
+                  <span
+                    v-if="getRoomLockProvider(lock.id)"
+                    class="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    :title="getRoomLockProvider(lock.id)?.model"
+                  >
+                    {{ getRoomLockProvider(lock.id)?.name }}
+                  </span>
                   <Badge v-if="lock.isMain" variant="default" class="text-[9px] px-1 py-0">Main</Badge>
                 </div>
                 <p class="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -617,9 +642,33 @@ const availableDevices = computed(() => smartLock.availableDevices.value)
                   type="checkbox"
                   class="size-3.5 rounded border-input accent-primary"
                 >
-                <Icon name="lucide:broom" class="size-3 text-muted-foreground" />
-                <span class="text-xs">Also generate for housekeeping</span>
+                <Icon name="lucide:key" class="size-3 text-muted-foreground" />
+                <span class="text-xs">Also generate for:</span>
               </label>
+              <div v-if="roomPairGenerateHousekeepingCode" class="flex flex-col gap-1.5 pl-5">
+                <Select
+                  :model-value="roomPairExtraPurpose"
+                  @update:model-value="(v) => roomPairExtraPurpose = String(v)"
+                >
+                  <SelectTrigger class="h-7 text-xs">
+                    <SelectValue placeholder="Select purpose" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Housekeeping">Housekeeping</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Vendor">Vendor</SelectItem>
+                    <SelectItem value="Owner">Owner</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="custom">Custom…</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  v-if="roomPairExtraPurpose === 'custom'"
+                  v-model="roomPairCustomPurpose"
+                  placeholder="e.g., Photographer, Inspector"
+                  class="h-7 text-xs"
+                />
+              </div>
             </div>
 
             <Button
