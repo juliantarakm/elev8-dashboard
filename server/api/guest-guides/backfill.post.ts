@@ -1,6 +1,7 @@
 import type { GuestGuideLink } from '~/components/guest-guides/data/types'
 import { conversations, reservations } from '~/components/inbox/data/conversations'
 import { generateLinkId, generateToken } from '~/utils/guest-guide-token'
+import { getAllLinks, saveLink } from '../../utils/guest-guide-store'
 
 interface BackfillBody {
   guideId: string
@@ -24,10 +25,9 @@ export default defineEventHandler(async (event) => {
     return checkIn > now && checkIn < windowEnd
   })
 
-  const links = useState<GuestGuideLink[]>('guest-guide-links', () => [])
-
+  const existingLinks = getAllLinks()
   // Skip reservations that already have a link.
-  const existingIds = new Set(links.value.map(l => l.reservationId))
+  const existingIds = new Set(existingLinks.map(l => l.reservationId))
   const targets = upcoming.filter(c => !existingIds.has(c.reservationId))
 
   const generated: GuestGuideLink[] = targets.map((c) => {
@@ -54,8 +54,10 @@ export default defineEventHandler(async (event) => {
     return link
   })
 
-  if (!body.dryRun && generated.length > 0) {
-    links.value = [...links.value, ...generated]
+  if (!body.dryRun) {
+    for (const link of generated) {
+      saveLink(link)
+    }
   }
 
   return {

@@ -14,6 +14,10 @@ export function saveLink(link: GuestGuideLink): void {
   links.set(link.id, link)
 }
 
+export function getAllLinks(): GuestGuideLink[] {
+  return Array.from(links.values())
+}
+
 export function findLinkByToken(token: string): GuestGuideLink | undefined {
   for (const link of links.values()) {
     if (link.token === token) return link
