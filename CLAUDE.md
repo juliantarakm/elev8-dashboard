@@ -70,6 +70,11 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
   - `OverrideAudience` = `'future' | 'current' | 'inquiry'`
   - `alwaysOn()` factory builds a 24/7 default schedule
 - `ListingStats`, `ListingPricing` (nightlyRate/fees/discounts/seasonalRates), `Booking`, `Review`, `MaintenanceTask`, `ListingMaintenance`
+- `Unit` — `{ id, name, identifier?, status?, otaConnected? }` (no longer carries `aiStatus` — moved to `UnitType`)
+- `UnitType` — `{ id, name, identifier?, description?, quantity, maxAdults/Children/Infants, bedrooms, bathrooms, beds[], photos[], pricing: UnitTypePricing, aiStatus?: 'active' | 'paused' | 'not_set', units: Unit[] }` — AI status lives at the room-type level so toggling it applies to every physical room of that type
+- `UnitTypePricing` — `{ currency, ratePlans: RatePlan[], offerings: RatePlanOffering[], lengthOfStayDiscounts: LengthOfStayDiscount[], fees: Fee[] }` — supports **multiple rate plans per room type** (e.g., Standard, Weekly, Monthly)
+- `RatePlan` — `{ id, name, pricePerNight, pricePerAdditionalGuest, isBase }` — exactly one plan per `UnitType` has `isBase: true` and cannot be deleted
+- `RatePlanOffering` — derived from base (fixed/percent adjustment); not the same as a RatePlan
 - `ListingDocument`, `ListingResources` (documents, basics, listingDetails, sops, topicsToAvoid, propertyUpsells, fieldConfig)
 - `FieldConfig` = `{ stages: ReservationStage[] }` — per-field config stored in `listing.resources.fieldConfig[fieldKey]`
 - `ReservationStage` = `'future' | 'inquiry_past' | 'current'`
@@ -89,12 +94,14 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **`ListingCalendarTab.vue`** — Bookings list + blocked dates
 - **`ListingReviewsTab.vue`** — Rating summary (category Progress bars) + filter + review cards with host reply
 - **`ListingMaintenanceTab.vue`** — Cleaning schedule + tasks + add-task dialog
-- **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
+- **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels + Smart Locks card with Property/Rooms tabs, compact per-lock cards in 1/2/3-col grid, per-lock Codes Dialog with 3-state time-status badge and add-code form (Ongoing / Start-end times) (AI schedule moved to hero Sheet)
 - **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
 - **`ListingFloatingMenu.vue`** — Fixed floating pill bar at bottom of page: Listing Setup · Test AI · AI Schedule
-- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Unit toggle** + two-panel layout + **footer with Save Changes**). Toggle allows switching between property-level info and unit-specific info for multi-unit listings. Unit button is a **dropdown menu** when multiple units exist, allowing selection of which unit to edit. Footer includes **"Copy to Other Units"** button (unit view only) and **"Save Changes"** button with toast confirmation.
-- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). **Supports Property/Unit view modes** — Property view shows property-level fields (name, location, check-in/out), Unit view shows unit-specific fields (unit name, capacity). Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
-- **`ListingSetupResourcePanel.vue`** — Right panel (300px): Property Documents (upload PDF/DOCX/TXT, download, delete), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
+- **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Rooms toggle** + two-panel layout + **footer with Save Changes**). For multi-unit listings the toggle is just Property ↔ Rooms (a single combined tab — unit types and individual units are managed inside `RoomsPanel`). Footer includes **"Copy to Other Units"** button (rooms view only) and **"Save Changes"** button with toast confirmation.
+- **`ListingSetupFieldPanel.vue`** — Left panel: 6 tabs (Basics, Listing Details, Amenities, SOPs, Topics to Avoid, Property Upsells). **Supports Property/Unit view modes** — Property view shows property-level fields (name, location, check-in/out); Unit view shows unit-specific fields (unit name) and is embedded in `RoomsPanel` for the selected room. Each field has a pencil icon → opens `FieldConfigDialog`. Dot indicator on pencil when config saved.
+- **`RoomsPanel.vue`** — Used inside the Listing Setup overlay for the **Rooms** view. 2-column layout: 240px sidebar (rooms grouped by collapsible type, with hover-revealed trash button per room, "+ Add Room" and "⚙ Manage Room Types" footer buttons) + main area (reuses `ListingSetupFieldPanel` in unit view for the selected room). Sidebar has its own `Add Room` Dialog (type selector + name input) and **Manage Room Types** Dialog (wraps `UnitTypeManager`).
+- **`ListingSetupResourcePanel.vue`** — Right panel (300px, **`flex-1 min-h-0`** on inner ScrollArea — required, see Patterns): Property Documents (upload PDF/DOCX/TXT, download, delete, **"Generate with AI"** button → Dialog with prompt textarea, 6 example prompt chips, 1.5s mock generation, read-only preview, "Save Document" creates a `.txt` from the generated content and adds it to the documents list), Elev8 AI integration checklist, Auto-Fill (1.5s mock), Copy from Property
+- **`UnitTypeManager.vue`** — Used inside the Listing Setup overlay's Rooms view (and inside the "Manage Room Types" Dialog). Per-type editable card with **Details** + **Pricing** tabs. Pricing tab now supports **multiple rate plans** (one is marked `Base`, others can be added/removed) plus Offerings, Length-of-Stay Discounts, and Advanced Pricing (Fees).
 - **`FieldConfigDialog.vue`** — Per-field config: Property Type info, Reservation Stages (Future/Inquiry Past/Current), Copy to Other Properties
 - **`ListingTestAIDialog.vue`** — Guest chat simulation dialog with mock AI responses based on listing data (check-in time, amenities, etc.)
 
@@ -115,13 +122,15 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 
 #### Listing Status System
 - `Listing.status?: 'active' | 'inactive'` — listing-level status
+- `Listing.aiStatus: 'active' | 'paused' | 'not_set'` — listing-level AI status (used for single-unit + as a derived aggregate for multi-unit)
 - `Unit.status?: 'active' | 'inactive'` — per-unit status
-- `Unit.aiStatus?: 'active' | 'paused' | 'not_set'` — per-unit AI override
 - `Unit.otaConnected?: string[]` — per-unit OTA override (falls back to listing OTA)
+- `UnitType.aiStatus?: 'active' | 'paused' | 'not_set'` — **AI is now controlled at the room-type level**, not per physical room. Toggling it applies to every unit of that type.
 - **Multi-unit logic**: property status derived from units — all inactive = property inactive
-- **Deactivate cascade**: turning off listing/unit also pauses AI
-- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; per-unit toggle with AI badge (click to toggle AI) + OTA icons + Switch; shows `toast.info/success` on property-level and per-unit toggle
-- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic; shows `toast.info/success` on activate/deactivate
+- **AI aggregation** (multi-unit only): for the table's AI Status column, `ListingAiStatusCell` aggregates from `unitTypes[]` — any unit type active → "Active", all unit types paused → "Paused", otherwise falls back to `listing.aiStatus`
+- **Deactivate cascade**: turning off listing/unit pauses AI at the unit-type level (and updates the listing-level `aiStatus` derived aggregate)
+- **`ListingExpandRow.vue`** — reactive expand panel; property toggle cascades to all units; **per-unit-type AI On/Off badge** (in the unit type header, not per-unit row) + per-unit Switch + OTA icons; shows `toast.info/success` on each toggle
+- **`ListingSingleToggle.vue`** — handles both single and multi-unit toggle logic; for multi-unit it writes `unitType.aiStatus` (not per-unit); shows `toast.info/success` on activate/deactivate
 - **`ListingRowActions.vue`** — "Activate/Deactivate Listing" in dropdown; implemented with spread mutation
 
 ### Inbox Module (`app/components/inbox/`)
@@ -203,6 +212,116 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 #### Inbox SSR note
 - `app/pages/inbox.vue` wraps `<InboxLayout>` in `<ClientOnly>` to avoid Reka UI `ScrollArea` hydration mismatches. `useInbox` merges fresh seed conversations/messages into `useState` so newly added seed data always appears.
 
+#### Inbox reservation ID fix
+- `app/components/inbox/Layout.vue` synthesizes `effectiveReservation` (passed to `ReservationPanel`) with `id: c.reservationId` — the **conversation's reservation ID** (`res-1`, `res-7`, etc.), NOT the conversation's own `id` (`conv-1`).
+- This matters because any code that filters by `reservation.id === code.reservationId` (e.g. the Smart Lock tab) needs the synthesized id to match the code's `reservationId`. Using `c.id` here would cause the Smart Lock tab to always show "No active codes".
+
+### SmartLock Integration (`app/components/settings/` + `app/composables/useSmartLock.ts`)
+
+Single-connection (one API key per tenant), multi-lock assignment (many locks per listing or per room). Mock/demo only — no real provider API calls. The integration is provider-agnostic; only the connection sheet references the underlying provider name.
+
+#### Architecture (hybrid)
+- **Global connection** — `Settings → Integrations` tile (amber `lucide:key-round` icon, next to WhatsApp / 3CX / Payout)
+- **Per-listing pairing** — Smart Locks card in `ListingSettingsTab.vue` (Settings tab of each listing)
+- **Per-room pairing** — Clickable amber lock count badge in the `RoomsPanel.vue` sidebar → opens per-room lock management Dialog (list of paired locks + inline pair form)
+
+#### Data model
+- **`SmartLockConnection`** — `{ id, apiKey, workspaceName, status, webhookToken, webhookUrl, deviceCount, connectedAt, lastSyncAt }` — one per tenant, keyed by `'smartlock-connection'` in `useState`
+- **`SmartLockDevice`** — `{ deviceId, name, deviceType, provider, model, batteryLevel, online, paired }` — **10 mock devices seeded** (brand-grouped for sharing demo):
+  - **August** (3): Front Door, Garage Door, Side Gate
+  - **Yale** (2): Pool Gate, Office Door
+  - **Schlage** (2): Safe, Wine Cellar
+  - **Nuki** (2): Side Door, Boathouse (8% battery, offline — used for alert demo)
+  - **igloohome** (1): Back Gate
+- **`SmartLock`** — `{ id, providerDeviceId, name, assignment: 'property' | 'room', listingId, unitId?, isMain, batteryLevel, online, lastSeen, status, createdAt }` — `isMain` is per-scope (one main per listing for property-level, one main per unit for room-level); `setMainLock()` auto-demotes existing main in scope
+- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, purpose?, scheduleType?: 'ongoing' | 'range', status: 'active' | 'expired' | 'revoked', providerCodeId }` — `generateAccessCode` is **async** (700ms mock delay for visible loading states) and auto-revokes any prior active code on the **same lockId + reservationId** combo (so different guests can each have their own active code on the same lock). `scheduleType` reflects the host's explicit scheduling choice: `'ongoing'` = always active (`endsAt = '2099-12-31'`), `'range'` = host-supplied `startsAt`/`endsAt`, `undefined` = auto-generated 24h default window. `purpose` is the user-given "code name" label (free text).
+
+#### Composable (`useSmartLock.ts`)
+- State: `connection` (`SmartLockConnection | null`), `locks` (`SmartLock[]`), `codes` (`AccessCode[]`) — all `useState` + localStorage persisted (same pattern as `useThreeCX`)
+- Query helpers: `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock(listingId, unitId?)`
+- CRUD: `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `swapDevice(lockId, newProviderDeviceId)`, `generateAccessCode` (async), `revokeAccessCode`
+- Brand sharing: `findActiveBrandCode(reservationId, provider)` returns the existing code value for a (reservation, brand) combo so multiple locks of the same brand share the same code value for each guest
+- Connection: `validateAndConnect(apiKey, workspaceName)` — 1.5s mock, validates key prefix, `disconnect()` (wipes connection + locks + codes)
+- Mock webhook sync: `syncDevices()` (nudges battery/online state), `emitMockAlerts()` — creates `SMART_LOCK_*` notifications via `useNotifications.createAlert`
+
+#### Components
+- **`SettingsSmartLockIntegration.vue`** — Sheet content (not a separate page). Connection card form (API key + workspace name), connected state showing device count + last sync, webhook URL with copy button, all-devices preview (Paired/Available pills), Sync Devices button (triggers `emitMockAlerts` → shows battery/offline alerts in Notification Center)
+- **`SettingsIntegrationsOverview.vue`** — added 4th tile "Smart Lock" with amber icon and "Connected · N locks" pill
+- **`InboxReservationSmartLocks.vue`** (NEW) — Smart Lock tab content for the Inbox reservation panel. Shows paired locks for the reservation's listing, active codes (filtered by `reservationId` + `status: 'active'`), each code in large monospace with Copy + Revoke actions. "Generate code" button per lock with per-lock loading state (spinner + "Generating…"). Empty states: not connected, listing not found, no locks paired, no codes.
+
+#### Per-listing flow (`ListingSettingsTab.vue`)
+- New "Smart Locks" card after Distribution Channels
+- Card header holds `+ Add Lock` button (top-right) — click routes to `handleCardHeaderAdd` which opens the Pair Lock Dialog pre-scoped to the currently active tab (Property / first room of the Rooms tab)
+- Not-connected state shows link to `/settings/integrations`
+- **Tabs** (`<Tabs>` / `<TabsList>` / `<TabsTrigger>` / `<TabsContent>`): `🏢 Property [N]` and `🚪 Rooms [N]` with live count badges from `propertyLocks.length` / `totalRoomLocks`
+- Inside each tab, locks render as **compact square cards** in a responsive 1 / 2 / 3-column grid (Tailwind `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3`):
+  - Header: lock icon + name (inline rename) + brand pill (e.g. `August`) + `Main` badge or set-main star
+  - Meta row: battery % (amber when ≤20%) + online/offline dot + scope label
+  - Actions row: **Unlock** (primary, 800ms mock spinner, disabled when offline) / **Codes N** (opens Dialog) / **Rename** / **Swap device** / **Unpair**
+- **Per-lock Codes Dialog** (`<Dialog v-model:open="codesDialogOpen">`, scoped to one lock at a time via `codesDialogLockId` ref):
+  - **Codes list** — each row: purpose (the free-form name the host gave), 6-digit code in monospace with letter-spacing, **time-status badge**, and schedule footer:
+    - Schedule footer: `∞ Ongoing` / `🕒 2026-07-09 14:30 → 2026-07-10 11:00` / `⚡ Auto · 23h 42m left`, plus `· Revoked` suffix when applicable
+    - Trash button to revoke active codes (sets `status: 'revoked'`)
+  - **Add-code form** (bordered bottom section):
+    - **Code name** input → stored as `purpose`
+    - **Code** input (6 digits, `inputmode="numeric"`) + **Generate** button (refresh icon) → fills a fresh random 6-digit number on click
+    - **Schedule** segmented control — `∞ Ongoing` / `🕒 Start/end times`:
+      - **Ongoing** → helper "Always active. Revoke manually to disable."; `scheduleType = 'ongoing'` → `endsAt = 2099-12-31`
+      - **Start/end times** → 2-column `datetime-local` pickers (Start, End); `scheduleType = 'range'` → uses provided startsAt/endsAt; inline validation that end > start
+    - Inline error line in destructive red for validation failures (empty name, non-6-digit code, missing/invalid range)
+    - "Close" + "Create code" footer (Create shows spinner during the 700ms mock)
+- **Per-lock `lock` row is still inlined here (not via `LockRow.vue`)** — that reusable component exists for `RoomsPanel.vue` only; `ListingSettingsTab.vue` rolls its own card so the Codes Dialog opener can live next to the Unlock button without prop-tunnelling through `<LockRow>`
+- **3-state time-status badge** driven by `getCodeTimeStatus(code)`:
+  - `set` (green: `border-green-500/30 bg-green-500/10 text-green-700`) — explicit `scheduleType === 'ongoing'`, OR explicit `'range'` with `now >= startsAt && now < endsAt`
+  - `setting` (amber: `border-amber-500/30 bg-amber-500/10 text-amber-700`) — explicit `'range'` scheduled for the future (`startsAt > now`), OR no `scheduleType` set yet (auto-generated 24h window)
+  - `unset` (muted: `border-muted-foreground/30 bg-muted text-muted-foreground`) — `status === 'revoked'` OR `endsAt <= now` (expired)
+- **`LockRow.vue`** — reusable per-lock row component used in `RoomsPanel.vue` only (not in `ListingSettingsTab.vue`):
+  - Brand pill, lock name (inline rename), `Main` badge + set-main star, online/offline icon, battery %, assignment label
+  - Action buttons: **Rename** / **Swap device** / **Unlock** (loading spinner) / **Unpair**
+  - Emits `rename`, `unpair`, `set-main`, `swap`, `unlock`
+- **"Add Lock" Dialog** (Pair Lock) opens via either `handleCardHeaderAdd` (card header) or the per-room `+ Add another` button:
+  - **Assign to picker** (Property / Room segmented control) — Room mode shows a room Select dropdown
+  - Device picker (cards with battery/online/model) of `availableDevices`
+  - Name input (auto-fills from selected device name)
+  - "Set as main" checkbox (default-checked when no lock yet in selected scope)
+  - **Access codes** info card (minimal — single sentence "A code will be auto-generated for each current and future guest.")
+  - "Also generate code for housekeeping" checkbox (with `lucide:brush-cleaning` icon — **NOT `lucide:broom`** which is not in `@iconify-json/lucide`) — generates one housekeeping code via `generateAccessCode`
+  - Cancel / "Pair Lock" footer (disabled until device picked + room picked if Room scope)
+
+#### Per-room flow (`RoomsPanel.vue`)
+- Amber lock count badge (`🔒 N`) next to each room name in the sidebar — click to open per-room lock dialog
+- When no locks paired + connected: hover-revealed "Lock" button (`lucide:lock-keyhole`) on the row
+- Dialog contents: list of paired locks (with main star, battery, Rename / **Swap device** / Unpair actions), empty state, "Add Lock" button → inline pair form (device picker + name + "Set as main" + auto-generate info + housekeeping checkbox, scoped to that room)
+- **Swap device** dialog: shows current device in info bar, lists swappable devices (excludes current), each shows Paired/Available state, disabled when offline
+
+#### Brand sharing (auto-generate on Add Lock)
+- When a lock is paired, `ListingSettingsTab.handlePair` / `RoomsPanel.handleRoomPair` iterates **`relevantReservations`** (current + future guests for the listing) and calls `generateAccessCode` for each
+- For each (reservation, provider) combo: `findActiveBrandCode` is checked first; if a code exists for the same brand on a different lock, the new code reuses the same value (brand-shared)
+- Success toast shows per-guest code with `(new)` or `(shared)` tag, e.g. `"Front Door" paired to this property. Codes: Anna Schmidt: 482915 (shared), Yuki Tanaka: 716234 (new), ...`
+- Housekeeping code (if checked) is per-lock, not brand-shared
+
+#### Inbox Smart Lock tab
+- `app/components/inbox/ReservationPanel.vue` has a new `Smart Lock` tab (after Upsell, before History) with `lucide:key-round` icon
+- `app/components/inbox/ReservationSmartLocks.vue` renders: locks paired to the conversation's listing (looked up by `reservation.listingName`), active codes filtered by `reservation.id`, per-lock "Generate code" button with per-lock loading state
+- **Loading state**: each "Generate code" button has a `generatingLockId` ref; while loading, shows `lucide:loader-2` spinner + "Generating…" text + disabled. Prevents double-clicks via early-return guard
+- **Code display**: large monospace with letter-spacing (e.g. `4 8 2 9 1 5`), guest name + expiry timestamp below, Copy button (clipboard) + Revoke button (sets status to `revoked`)
+- ⚠️ **Required fix**: `app/components/inbox/Layout.vue` synthesizes `effectiveReservation` with `id: c.reservationId` (not `c.id` — the conversation ID). Without this, codes (keyed by `reservationId`) never match the synthesized reservation's `id`, and the tab shows "No active codes" even when codes exist
+
+#### Notifications wiring
+- `useNotifications.createAlert(type, severity, context)` — new **generic** alert creator (replaces the `createUpsellAlert`-only API)
+- 3 `SMART_LOCK_*` alert types now wired from `useSmartLock.emitMockAlerts`:
+  - `SMART_LOCK_BATTERY_CRITICAL` (≤5% battery) → `CRITICAL`
+  - `SMART_LOCK_BATTERY_LOW` (≤20% battery) → `WARNING`
+  - `SMART_LOCK_OFFLINE` (device offline) → `CRITICAL`
+  - `SMART_LOCK_DEAD` + `SMART_LOCK_CODE_FAILED` defined but not yet emitted (no triggering UX yet)
+- `SettingsIntegrationsOverview` "Sync Devices" button → `emitMockAlerts` → fires alerts into the bell icon dropdown
+
+#### NOT implemented (intentionally out of scope)
+- **Real provider API calls** — all API calls are 1.5s mocked; the `apiKey` is stored but never sent to a real endpoint
+- **Web server webhook receiver** — `/api/webhooks/smartlock` route does not exist; webhook events are simulated in-app via `emitMockAlerts`
+- **Auto-generate code on reservation create** — codes are auto-generated when pairing a lock, but not when a new reservation is created later
+- **Guest-facing code share** — codes are generated but not auto-messaged to the guest (future: via WhatsApp/inbox)
+
 ### Inbox Settings (gear icon in inbox header)
 
 A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`. Clicking it opens a **Popover** with two options:
@@ -231,6 +350,7 @@ A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`.
 - Computed: `activeAlerts`, `unreadCount`, `filteredAlerts` (by severity)
 - Actions: `markAsRead()`, `markAllAsRead()`, `dismiss()`, `navigateToAlert()`
 - Severity filter: `selectedSeverity` ref (`'all' | 'critical' | 'warning'`)
+- **Generic `createAlert(type, severity, context)`** — accepts any `AlertType` (used by `useSmartLock.emitMockAlerts` for `SMART_LOCK_BATTERY_CRITICAL`, `SMART_LOCK_BATTERY_LOW`, `SMART_LOCK_OFFLINE`). The older `createUpsellAlert` is now a thin wrapper that calls `createAlert` with the right severity for upsell types.
 
 #### Components
 - **NotificationCenter.vue** — Bell icon in Header with unread Badge, Popover dropdown with filter tabs (All/Critical/Warning), ScrollArea list
@@ -548,191 +668,129 @@ type HostLanguage = 'en' | 'de' | 'fr' | 'id' | 'es' | 'it' | 'pt'
 
 ### Review Hub Module (`app/components/review-hub/`)
 
-3-panel guest review aggregator (Airbnb + Booking.com + Direct). Combines guest review replies, AI-drafted host review-of-guest, and Stay Operational Record (SOR) signals.
+3-panel guest review aggregator (Airbnb + Booking.com + Direct), aligned with **Channex API**. Combines guest review replies, AI-drafted host review-of-guest, and Stay Operational Record (SOR) signals with tag enrichment.
 
 **New files:**
 ```
 app/
-├── pages/reviews.vue                # Page: feed table + settings sheet + auto-post banner
+├── pages/reviews.vue                   # Page: feed table + ScoreCards + settings sheet + banner
 ├── components/review-hub/
-│   ├── DetailDrawer.vue             # 3-panel drawer (guest review, SOR, host review)
-│   ├── DetailGuestPanel.vue         # Guest review + rating breakdown (numeric X/5 or X/10)
-│   ├── DetailSorPanel.vue           # Stay Report (cleaning, house rules, communication)
-│   ├── FeedTable.vue                # TanStack table with search/filter/generate button
-│   ├── Filters.vue                  # Status / channel / rating / property (PropertyPicker)
-│   ├── HostReviewPanel.vue          # AI host review of guest (with loading state)
-│   ├── MiniBadges.vue               # Numeric badges: cleaning/house rules/communication
-│   ├── ReplyPanel.vue               # AI reply to guest review (legacy, not in drawer yet)
-│   ├── SourceBadge.vue              # Channel badge (Airbnb / Booking.com / Direct)
-│   ├── StatusChip.vue               # Reply status chip
+│   ├── DetailDrawer.vue                # 3-panel drawer (guest review, SOR, reply, host review)
+│   ├── DetailGuestPanel.vue            # Guest review + rating breakdown + Channex tags chips
+│   ├── DetailSorPanel.vue              # Stay Report (cleaning, house rules, communication)
+│   ├── FeedTable.vue                   # TanStack table with contextual action buttons
+│   ├── Filters.vue                     # Status / channel / property (PropertyPicker)
+│   ├── HostReviewPanel.vue             # AI host review of guest (Airbnb-only) + rating + tags
+│   ├── MiniBadges.vue                  # Numeric badges: cleaning/house rules/communication
+│   ├── ReplyPanel.vue                  # AI reply to guest review (text-only, all channels)
+│   ├── ScoreCards.vue                  # Aggregate property scores above feed
+│   ├── SourceBadge.vue                 # Channel badge (Airbnb / Booking.com / Direct)
+│   ├── StatusChip.vue                  # Reply status chip (3 states)
 │   └── data/
-│       ├── types.ts                 # ReviewRecord, StayOperationalRecord, ReviewFeedItem
-│       ├── mock-review-records.ts   # 10 mock records
-│       └── mock-sor.ts              # 10 mock SOR records
-├── components/shared/AiIcon.vue     # Shared sparkle AI icon (4-point, currentColor)
-├── composables/useReviewHub.ts      # State + filters + mock AI generators
-└── components/settings/AirbnbReviewConfig.vue  # Per-channel auto-post + review settings
+│       ├── types.ts                    # Channex-aligned types + tag mappings + display helpers
+│       ├── mock-review-records.ts      # 10 mock records (Channex format, 0-10 scores)
+│       └── mock-sor.ts                 # 10 mock SOR records
+├── composables/useReviewHub.ts         # State + filters + computed status + tag enrichment
+└── components/settings/AirbnbReviewConfig.vue  # Host review + reply auto-post settings
 ```
 
-**Data Model:**
+**Data Model (Channex-Aligned):**
 ```ts
 type ReviewSource = 'airbnb' | 'booking_com' | 'direct'
-type ReplyStatus = 'needs_reply' | 'replied'  // removed guest_review_pending, host_review_due
+type ReplyStatus = 'host_review_pending' | 'needs_reply' | 'replied'
+
+interface ScoreCategory {
+  category: string  // Channex: "clean", "accuracy", "communication", "location", etc.
+  score: number     // 0-10 scale, all channels normalized
+}
 
 interface ReviewRecord {
   id: string
   reservation_id: string
   source: ReviewSource
   listing_id, listing_name, listing_location
-  unit_id: string | null  // null for single-unit listings; required for multi-unit to show unit info
+  unit_id: string | null
   guest_name, num_guests, nights
-  guest_rating_overall: number | null
-  guest_rating_max: number | null  // 5 for Airbnb, 10 for Booking.com
-  guest_rating_categories: Partial<GuestRatingCategories> | Partial<BookingComRatingCategories>
+  guest_rating_overall: number | null  // Channex: 0-10, all channels normalized
+  scores: ScoreCategory[]              // Channex: [{category: "clean", score: 9.5}, ...]
+  tags: string[]                       // Channex: ~80+ predefined tag codes (Airbnb only)
   guest_review_text: string | null
-  private_feedback: string | null  // for host review of guest (Airbnb only)
+  is_hidden: boolean                   // Channex: Airbnb double-blind flag
+  is_replied: boolean                  // Channex: host has replied
+  private_feedback: string | null
   review_received_at, language_detected
-  reply_status: ReplyStatus
+  reply_status: ReplyStatus            // Elev8 computed
   reply_text, reply_posted_at
-  host_review_id: string | null  // joins to AutoReview.id
+  host_review_id: string | null
+  host_review_text: string | null
+  host_review_ratings: { cleanliness, communication, respect_house_rules } | null  // Channex 1-5
+  is_reviewee_recommended: boolean | null  // Channex flag
+  host_review_tags: string[]           // Channex host review tags
   sor_id, checkout_date, created_at, updated_at
-}
-
-interface StayOperationalRecord {
-  id, reservation_id, listing_id
-  cleaning_score: number | null  // 0-5 (mock) or 0-10 (PRD)
-  cleaning_notes, cleaning_duration_delta
-  house_rule_flags: HouseRuleFlag[]
-  communication_score: number | null
-  communication_summary
-  computed_at
-}
-
-interface ReviewFeedItem {
-  id
-  review_record: ReviewRecord
-  sor: StayOperationalRecord | null
-  host_review: AutoReview | null  // joined from useAirbnbReviews by reservation_id
 }
 ```
 
-**Numeric Ratings Throughout:**
-- All ratings displayed as `X/5` or `X/10` (no star icons)
-- Booking.com 10-point normalized to 5 in filters: `r.guest_rating_max === 10 ? r.guest_rating_overall / 2 : r.guest_rating_overall`
+**Channex API Mapping:**
+- `GET /reviews` → `ReviewRecord` (scores[], tags[], is_hidden, is_replied)
+- `POST /reviews/:id/reply` → text-only reply (`{ reply: { reply: "text" } }`)
+- `POST /reviews/:id/guest_review` → **Airbnb only**: scores, public_review, private_review, `is_reviewee_recommended`, tags[]
+- Tags are Airbnb-only; Booking.com reviews have empty `tags[]`
+- All scores normalized to 0-10 by Channex; display helpers: `getDisplayScore()` (Airbnb ÷2, Booking.com as-is), `getDisplayMax()` (Airbnb 5, Booking.com 10)
 
-**Channels:**
-- **Airbnb**: 5-star scale, 14-day host review window, supports private feedback + category ratings
-- **Booking.com**: 10-point scale, 365-day host review window, **public-only** host reviews (no private feedback, no category ratings)
-- **Direct**: 5-star scale, no host review support ("Direct bookings do not support host reviews of guests")
+**Computed Status (getComputedStatus):**
+- `replied` — `is_replied === true`
+- `host_review_pending` — Airbnb: `!host_review_id && window > 0`; Booking.com: same + 365d window
+- `needs_reply` — guest review visible + has content + not replied
 
-**Property Column (feed table):**
-- Display logic for subtext (below listing_name):
-  - **Multi-unit** (listing has `unitTypes[]` array with at least 1 unit type) + has `unit_id` → `"UnitType · UnitName"` (e.g., "Kingbed · Master Suite")
-  - **Single-unit** (no `unitTypes[]` data) → `"Single unit"`
-  - **Unknown** (listing_id not found) → falls back to `listing_location`
-- Helpers in `useReviewHub`:
-  - `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` by looking up via `getUnitById` + `getUnitTypeForUnit` from listings data
-  - `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on `listing.unitType` enum + actual `unitTypes[]` array presence
-- Mock data: lst-1 has 2 unit types (Kingbed, Single Bed) with 4 units (Master Suite, Garden Unit, Pool Unit, Loft Unit); 4 records have `unit_id` set; other listings are single-unit
-- Integrations: imports `listings as allListings`, `getUnitById`, `getUnitTypeForUnit` from `~/components/listings/data/listings`
+**Airbnb Double-Blind (isGuestReviewHidden):**
+- Hidden when: `is_hidden === true` + `!host_review_id` + `< 14 days since checkout`
+- Auto-reveal: after 14d from checkout OR when host submits review (sets `is_hidden: false`)
+- Reply window: Airbnb ~44d from checkout (14d blind + 30d reply), Booking.com 30d
 
-**Host Review Window:**
-- `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (negative = expired)
-- Expired message: "The {14|365}-day review window has closed. Reviews can no longer be submitted."
-- After expiry, Generate button disabled everywhere (FeedTable + panel)
+**Host Review of Guest (Airbnb Only):**
+- Channex `POST /guest_review` is Airbnb only — Booking.com/Direct don't support it
+- HostReviewPanel rendered only when `showHostReviewPanel` computed is true:
+  - Already submitted (readonly view)
+  - Airbnb: guest review still hidden (double-blind active)
+- Panel includes: public review, private feedback, 3 ratings (cleanliness, communication, respect_house_rules), `is_reviewee_recommended` toggle, 22 host review tags selector
+- `generateHostReviewDraft()` returns tags[] derived from SOR signals (auto-selected on generate)
+- `submitHostReview(id, text, ratings, isRecommended, tags)` — sets `is_hidden: false`
 
-**Host Review Panel States:**
-- `!channelSupportsReview` (Direct) → "Direct bookings do not support host reviews" message
-- `isExpired` → expired message
-- `!sorAvailable && !isGenerated` → "Write Manually" button (manual entry)
-- `isSubmitted && hasGeneratedData` → read-only "Review Submitted" view
-- `!isGenerated && isGenerating` → **full loading state** (primary gradient + spinner + skeleton placeholders)
-- `!isGenerated` → "Generate Host Review" button
-- `isGenerated` → editable form (public review, private feedback if !publicOnly, ratings) + Regenerate / Submit Review buttons
+**Tag System:**
+- **Guest review tags** (~80+): `guest_review_host_positive_spotless_furniture_and_linens`, `negative_dirty_or_dusty`, etc. Displayed as green/red chips in DetailGuestPanel (expandable, 4 visible + "+N more")
+- **Host review tags** (22): 8 cleanliness, 7 house_rules, 7 communication — selectable chips in HostReviewPanel
+- **Tag enrichment** (`enrichSorFromTags`): derives cleaning_score/communication_score/house_rule_flags from Channex tags when SOR data is missing or sparse. Does not override existing SOR data.
 
-**Auto-Generate Behavior:**
-- Click Generate in FeedTable row → button shows "Generating..." + spinner → drawer opens → `autoGenerate()` runs
-- `autoGenerate()` early-returns if `isExpired || isSubmitted`; otherwise resets `isGenerated` and runs `handleGenerate()`
-- For Booking.com records: DetailDrawer watch auto-triggers `autoGenerate()` on open (if `reply_status === 'needs_reply'` and not expired)
-- `handleGenerate()` 1.5s mock delay → populates `draftText`, `privateFeedback`, ratings
+**ScoreCards:**
+- Aggregate scores computed from `filteredFeedItems`: overall average + top 3 category scores with counts
+- Rendered above feed table on `/reviews` page
 
-**State Hydration (defensive):**
-- `isGenerated` initialized from `!!hostReview?.public_review` (not just `!!hostReview`) — prevents showing edit view for records with pending/empty AutoReview
-- `isSubmitted` requires `reply_status === 'replied' && hasGeneratedData` — prevents showing "Review Submitted" without actual data
-- If `isGenerated && isSubmitted` and user re-opens, shows read-only view; if user clicks Generate again, resets and re-generates
-
-**Filters (Filters.vue):**
-- Search (guest name, listing) — fixed width `w-[280px]` (medium)
-- Status: All / Needs Reply / Replied (segmented buttons)
-- Channel: All / Airbnb / Booking.com / Direct (segmented buttons)
-- Property: `<SharedPropertyPicker>` (multi-select, search, tags filter)
-- Rating filter removed — all reviews shown regardless of rating
-
-**Stay Report (SOR) MiniBadges (table column):**
-- Cleaning: `X/5` with lucide:spray-can icon
-- House Rules: `5 - flagCount` numeric (1-5 scale) with lucide:shield-alert icon, tooltip lists flag types
-- Communication: `X/5` with lucide:message-circle icon
-- Color coded green/amber/red per `badgeLevelColors`
-
-**Settings (in /reviews page header Sheet):**
-- Moved from `/settings/integrations` to right-side Sheet on Review Hub page
-- 480px width with `flex flex-col p-0 gap-0` + `SheetHeader` border-b + `flex-1 overflow-y-auto p-6` (matches inbox/Layout.vue integrations pattern)
-- `SettingsAirbnbReviewConfig.vue` contents:
-  - Master "Enable Review Automation" toggle (native button switch, not Reka UI)
-  - Review Language (7 options with flags)
-  - Review Tone (3 cards: balanced/gentle/data-driven)
-  - **Auto-Post Channels** (per-channel toggles):
-    - **Airbnb** card (logos:airbnb icon) — "14-day review window after checkout"
-    - **Booking.com** card (simple-icons:bookingdotcom icon) — "365-day review window after checkout"
-  - Auto-Post Delay (0-13 days, NumberField) — only shown if at least one channel enabled
-  - Review Delay (1-168 hours, NumberField) — delay before generation
-
-**Auto-Post Config Schema:**
-- `ReviewAutomationConfig.auto_post` (boolean, legacy) → replaced with `auto_post_channels: { airbnb: boolean, booking_com: boolean }`
-- Default: both `false`
-- Backwards compat: localStorage spread `{ ...defaultConfig, ...persisted }` auto-applies new shape
-
-**ElevAI Promo Banner (on /reviews page):**
-- Two states: `'off'` (master toggle off) and `'autopost_off'` (master on, no channels enabled)
-- States: `null` (dismissed or configured) hides banner
-- Dismiss button sets `bannerDismissed = true` for the session
-- **Primary theme colors** (per project taste: gold reserved for ElevAI branding, primary for general UI):
-  - Gradient bg: `from-primary/10 via-primary/5 to-transparent`
-  - Border: `border-primary/30`
-  - Icon circle bg: `bg-primary/15`
-  - Sparkle icon: `<SharedAiIcon>` (4-point sparkle) in `text-primary`
-  - "New" badge: `bg-primary/15 text-primary`
-  - CTA button: shadcn-vue default (primary variant) — no custom override
-- Headlines: "Turn on ElevAI review automation" or "Let ElevAI auto-post your guest reviews"
-- CTAs: "Enable automation" or "Enable auto-post" — both open the Settings sheet
+**Settings (AirbnbReviewConfig.vue):**
+- Two separate sections with distinct icons:
+  - **Host Review of Guest** (icon: user-check): Airbnb auto-post toggle, submission delay (1-13d), auto-select tags toggle
+  - **Reply to Guest Review** (icon: message-circle): Airbnb + Booking.com per-channel auto-post toggles, reply delay (0-30d)
+- Shared: master toggle, language (7 options), tone (balanced/gentle/data-driven), generation delay (1-168h)
+- Config fields: `auto_post_host_review`, `host_review_delay_days`, `auto_select_tags`, `auto_post_replies: { airbnb, booking_com }`, `reply_delay_days`
 
 **Composable (`useReviewHub`):**
-- `reviewRecords` — `useState<ReviewRecord[]>` (key: 'review-hub-records')
-- `sorRecords` — `useState<StayOperationalRecord[]>` (key: 'review-hub-sor')
-- `filteredFeedItems` — computed: filter by status/channel/rating/property + search
-- `feedItems` — computed: joins `hostReview` from `useAirbnbReviews.reviews` by `reservation_id`
-- `hubStats` — computed counts (kept for potential reuse)
-- `searchQuery`, `filterStatus`, `filterChannel`, `filterListing` (string[]), `filterRating`
-- `uniqueListings` — derived from review records
-- `clearFilters()` — resets all filters
-- `getSor(reservationId)` — returns SOR for a record
-- `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` for multi-unit listings
-- `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on listing's `unitType` enum + `unitTypes[]` array presence
-- `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (14d Airbnb, 365d Booking.com)
-- `generateReplyDraft(recordId)` — 1.5s mock; returns positive/mixed/negative based on rating
-- `generateHostReviewDraft(recordId)` — 1.5s mock; returns `{ text, privateFeedback, ratings }`; uses SOR cleaning_score + house_rule_flags
-- `submitHostReview(recordId, text, ratings | null)` — sets `reply_status: 'replied'`, `host_review_id`, `private_feedback`; for Booking.com, passes `null` ratings
+- `reviewRecords`, `sorRecords` — `useState<>()` with deep-cloned mock data
+- `filteredFeedItems` — computed: filter by status (computed)/channel/property + search, sorted by checkout desc
+- `feedItems` — computed: merges ReviewRecord + enriched SOR + hostReview from `useAirbnbReviews`
+- `getComputedStatus(record)` — derives ReplyStatus from is_hidden/is_replied/host_review_id/countdown
+- `isGuestReviewHidden(record)` — double-blind check (is_hidden + 14d)
+- `isGuestReviewVisible(record)` — inverse
+- `getHostReviewCountdown(checkout, source)` — 14d Airbnb / 365d Booking.com
+- `getReplyCountdown(checkout, source)` — 44d Airbnb / 30d Booking.com
+- `enrichSorFromTags(record, sor)` — tag-derived SOR signals
+- `generateReplyDraft(recordId)` — 1.5s mock, positive/mixed/negative based on overall score (≥8 positive)
+- `generateHostReviewDraft(recordId)` — 1.5s mock, returns `{ text, privateFeedback, ratings, tags }`
+- `approveReply(recordId, text)` — sets is_replied + reply_status
+- `submitHostReview(recordId, text, ratings, isRecommended, tags)` — sets host_review_id + is_hidden: false
 
-**Mock Data (10 records, 8 have joined hostReview):**
-- Sources: 4 Airbnb, 3 Booking.com, 3 Direct
-- 8 `needs_reply`, 2 `replied` (Elena Kowalski Booking.com, Anna Schmidt Direct)
+**Mock Data (10 records):**
+- 3 Airbnb (1 double-blind hidden, 2 visible), 3 Booking.com (1 replied, 2 host_review_pending), 2 Direct (1 replied, 1 no review), 2 past Airbnb (>14d, auto-revealed)
+- All scores in 0-10 Channex format, realistic tags on Airbnb records
 - 10 SOR records with cleaning_score 2-5, house_rule_flags 0-3, communication_score 3-5
-
-**Roadmap / Known Gaps:**
-- AI generation is fully mocked (1.5s timeout, no real SOR grounding beyond rule-flag appending)
-- `ReplyPanel.vue` exists but is not rendered in `DetailDrawer` yet (only HostReviewPanel is shown)
-- Reply panel is wired to `generateReplyDraft` + `approveReply` composable functions
-- Future: add reply panel to drawer, real LLM integration, Booking.com native API for host reviews (currently only Airbnb via Channex)
 
 ### Payment Request Module (`app/components/payment-request/`)
 
@@ -940,6 +998,25 @@ Standalone global library of promo codes, referenced by ID from booking widgets 
   </div>
   ```
 - **Tag/multi-select filter pattern** (match Listings index): Popover + inner search `Input` + `ScrollArea` of custom-checkbox rows + "Clear all" footer. Selected items use AND logic (`every`), not OR.
+
+### Scrollable Flex Children (⚠️ min-h-0 rule)
+
+When a flex child should scroll (e.g. `<ScrollArea>` inside `flex flex-col h-full`), you **must** add `min-h-0`. Flex children have an implicit `min-height: auto`, which prevents them from shrinking below their content size — so the scroll never kicks in and the parent grows instead.
+
+```vue
+<!-- ✅ Works — scrolls when content overflows -->
+<div class="flex flex-col h-full">
+  <div class="flex-shrink-0">header</div>
+  <ScrollArea class="flex-1 min-h-0">
+    ...long content...
+  </ScrollArea>
+</div>
+
+<!-- ❌ Bug — content overflows the panel, no scroll -->
+<ScrollArea class="flex-1">...</ScrollArea>
+```
+
+The same `min-h-0` is needed on any flex child that should be allowed to shrink (e.g. the body of `ListingSetupResourcePanel` after many documents are uploaded). The Listings Setup Resource Panel previously had this bug — `flex-1` without `min-h-0` — so uploading 20 documents made the panel unable to scroll.
 
 ### Date Range Picker
 - `app/components/base/DateRangePicker.vue`
@@ -1199,6 +1276,7 @@ const table = useVueTable({
 | `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId, accountName)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. |
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
+| `useSmartLock` | `app/composables/useSmartLock.ts` | Smart lock connection + per-listing/room lock assignment + brand-shared access codes | `connection`, `isConnected`, `locks`, `codes`, `validateAndConnect(apiKey, workspaceName)`, `disconnect()`, `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `swapDevice(lockId, newProviderDeviceId)`, `generateAccessCode` (async, 700ms mock), `revokeAccessCode`, `findActiveBrandCode(reservationId, provider)`, `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock`, `syncDevices`, `emitMockAlerts`. Persisted to localStorage. |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -1259,7 +1337,7 @@ app/
 │   │   └── TotalVisitors.vue
 │   ├── listings/
 │   │   ├── data/
-│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance, resources), AiSchedule, Unit, ListingResources, FieldConfig, ReservationStage, ref<Listing[]>, allTags/allLocations/allProperties/allOtas
+│   │   │   └── listings.ts        ← Listing type (unitType, stats, pricing, bookings, reviews, maintenance, resources), AiSchedule, Unit, UnitType (with aiStatus), RatePlan, RatePlanOffering, LengthOfStayDiscount, Fee, ListingResources, FieldConfig, ReservationStage, ref<Listing[]>, allTags/allLocations/allProperties/allOtas
 │   │   ├── ListingHeroCompact.vue ← Compact hero: photo manager, unit switcher, editable name+tags, AI schedule Sheet, accepts openSchedule prop
 │   │   ├── ListingOverviewTab.vue ← Stats cards + upcoming bookings + recent reviews
 │   │   ├── ListingPricingTab.vue  ← Base pricing, discounts, seasonal rates
@@ -1268,11 +1346,18 @@ app/
 │   │   ├── ListingMaintenanceTab.vue ← Cleaning schedule + tasks + add-task dialog
 │   │   ├── ListingSettingsTab.vue ← Property details form + amenities + distribution channels
 │   │   ├── ListingFloatingMenu.vue ← Fixed floating pill bar (Listing Setup / Test AI / AI Schedule)
-│   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (centered header + two-panel)
+│   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (Property/Rooms tabs + two-panel)
 │   │   ├── ListingSetupFieldPanel.vue ← Left panel: 6 tabs + pencil config icons per field
-│   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents + Elev8 AI + auto-fill + copy
+│   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents (incl. AI Generate) + Elev8 AI + auto-fill + copy
+│   │   ├── LockRow.vue            ← Reusable per-lock row: brand pill, name (inline rename), battery, Unlock/Swap/Unpair actions
+│   │   ├── RoomsPanel.vue         ← Rooms tab: sidebar of rooms grouped by type + room editor (reuses FieldPanel)
+│   │   ├── UnitTypeManager.vue    ← Room type card with Details + Pricing tabs (multi-rate-plan supported)
 │   │   ├── FieldConfigDialog.vue  ← Per-field: reservation stages + copy to properties
 │   │   ├── ListingTestAIDialog.vue ← Guest chat simulation
+│   │   ├── ListingAiStatusCell.vue ← AI Status table cell; aggregates from unitTypes for multi-unit
+│   │   ├── ListingOtaCell.vue     ← OTA logos table cell
+│   │   ├── ListingExpandRow.vue   ← Multi-unit expand panel: per-unit-type AI toggle + per-unit Switch
+│   │   ├── ListingSingleToggle.vue ← Per-row status Switch (single + multi-unit logic)
 │   │   └── ListingRowActions.vue  ← Dropdown menu (View Detail, Deactivate, Toggle AI)
 │   ├── finance/
 │   │   ├── BexioIntegration.vue  ← Bexio mapping UI, locks Jurnal-mapped listings
@@ -1307,7 +1392,8 @@ app/
 │   │   ├── ReservationActivity.vue
 │   │   ├── ReservationGuest.vue
 │   │   ├── ReservationListing.vue
-│   │   ├── ReservationPanel.vue    ← Upsell tab shows linked orders
+│   │   ├── ReservationPanel.vue    ← Upsell + Smart Lock tabs
+│   │   ├── ReservationSmartLocks.vue ← Smart Lock tab: paired locks, active codes, generate/copy/revoke
 │   │   ├── ReservationSummary.vue
 │   │   ├── ReservationTasks.vue
 │   │   ├── ReservationUpsells.vue  ← Linked upsell orders from conversation
@@ -1367,6 +1453,10 @@ app/
 │   │   ├── SidebarNav.vue
 │   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
 │   │   ├── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
+│   │   ├── ThreeCxIntegration.vue   ← 3CX PBX connection + extension mapping
+│   │   ├── SmartLockIntegration.vue ← Smart lock connection + webhook URL + device preview
+│   │   ├── SettingsIntegrationsOverview.vue ← Integrations hub tile grid (WhatsApp / 3CX / Smart Lock / Payout)
+│   │   ├── PayoutGatewayPanel.vue   ← Payout gateway configuration
 │   │   └── AirbnbReviewConfig.vue   ← Review automation settings (language, tone, auto-post)
 │   └── tasks/
 │       ├── components/
@@ -1401,7 +1491,8 @@ app/
 │   ├── useAirbnbReviews.ts        ← Airbnb Review state + config + generation
 │   ├── useWhatsApp.ts             ← WhatsApp connection state (connect/disconnect)
 │   ├── useWhatsAppRules.ts        ← Routing rules CRUD
-│   └── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
+│   ├── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
+│   ├── useSmartLock.ts            ← Smart lock connection + per-listing/room lock assignment + access codes
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout

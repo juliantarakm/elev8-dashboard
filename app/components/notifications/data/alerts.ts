@@ -33,6 +33,9 @@ export type AlertType
     | 'AIRBNB_REVIEW_FAILED'
     | 'REVIEW_GUEST_LEFT'
     | 'REVIEW_HOST_DUE'
+    | 'GUEST_GUIDE_NOT_SENT'
+    | 'GUEST_GUIDE_OPENED'
+    | 'GUEST_GUIDE_SUBMITTED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
@@ -85,6 +88,9 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   AIRBNB_REVIEW_FAILED: 'Airbnb Review - Failed',
   REVIEW_GUEST_LEFT: 'Guest Left a Review',
   REVIEW_HOST_DUE: 'Host Review Due Soon',
+  GUEST_GUIDE_NOT_SENT: 'Guest Guide - Not Sent',
+  GUEST_GUIDE_OPENED: 'Guest Guide - Opened',
+  GUEST_GUIDE_SUBMITTED: 'Guest Guide - Form Submitted',
 }
 
 export const alertIcons: Record<AlertType, string> = {
@@ -122,6 +128,9 @@ export const alertIcons: Record<AlertType, string> = {
   AIRBNB_REVIEW_FAILED: 'i-lucide-alert-circle',
   REVIEW_GUEST_LEFT: 'i-lucide-star',
   REVIEW_HOST_DUE: 'i-lucide-clock',
+  GUEST_GUIDE_NOT_SENT: 'i-lucide-book-open',
+  GUEST_GUIDE_OPENED: 'i-lucide-book-open-check',
+  GUEST_GUIDE_SUBMITTED: 'i-lucide-book-open-check',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -159,6 +168,9 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   AIRBNB_REVIEW_FAILED: '/reviews',
   REVIEW_GUEST_LEFT: '/reviews',
   REVIEW_HOST_DUE: '/reviews',
+  GUEST_GUIDE_NOT_SENT: '/guest-guides',
+  GUEST_GUIDE_OPENED: '/guest-guides',
+  GUEST_GUIDE_SUBMITTED: '/guest-guides',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {

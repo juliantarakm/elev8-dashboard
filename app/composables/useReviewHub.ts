@@ -29,15 +29,110 @@ export function useReviewHub() {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
   })
 
-  // Merge into feed items
+  // Enrich SOR with tag-derived signals when SOR data is sparse or missing
+  function enrichSorFromTags(record: ReviewRecord, sor: StayOperationalRecord | null): StayOperationalRecord | null {
+    if (!record.tags || record.tags.length === 0) return sor
+
+    const negativeCleanTags = record.tags.filter(t =>
+      t.startsWith('guest_review_host_negative_') && (
+        t.includes('dirty') || t.includes('hair') || t.includes('stains') ||
+        t.includes('smell') || t.includes('trash') || t.includes('messy_kitchen') ||
+        t.includes('garbage')
+      ),
+    )
+
+    const positiveCleanTags = record.tags.filter(t =>
+      t.startsWith('guest_review_host_positive_') && (
+        t.includes('spotless') || t.includes('pristine') || t.includes('clean') ||
+        t.includes('free_of_clutter')
+      ),
+    )
+
+    const negativeCommsTags = record.tags.filter(t =>
+      t.startsWith('guest_review_host_negative_') && (
+        t.includes('slow_to_respond') || t.includes('not_helpful') || t.includes('inconsiderate') ||
+        t.includes('unresponsive_host')
+      ),
+    )
+
+    const positiveCommsTags = record.tags.filter(t =>
+      t.startsWith('guest_review_host_positive_') && (
+        t.includes('always_responsive') || t.includes('responsive_host') || t.includes('proactive') ||
+        t.includes('helpful_instructions') || t.includes('considerate')
+      ),
+    )
+
+    const noiseTags = record.tags.filter(t =>
+      t.includes('noisy') || t.includes('noise') || t.includes('quiet_hours'),
+    )
+
+    // Don't override existing SOR data, only enrich missing/null values
+    const score = sor?.cleaning_score
+    const commsScore = sor?.communication_score
+    const hasExistingFlags = sor && sor.house_rule_flags.length > 0
+
+    // Derive cleaning score from tags if missing
+    let derivedCleaning: number | null = null
+    if (negativeCleanTags.length > 0) derivedCleaning = negativeCleanTags.length >= 3 ? 2 : 3
+    else if (positiveCleanTags.length > 0) derivedCleaning = positiveCleanTags.length >= 2 ? 5 : 4
+
+    // Derive communication score from tags if missing
+    let derivedComms: number | null = null
+    if (negativeCommsTags.length > 0) derivedComms = negativeCommsTags.length >= 2 ? 2 : 3
+    else if (positiveCommsTags.length > 0) derivedComms = positiveCommsTags.length >= 2 ? 5 : 4
+
+    // Derive noise flag from tags
+    const derivedFlags = noiseTags.length > 0 && !hasExistingFlags
+      ? [{
+          id: `tag-${record.id}`,
+          reservation_id: record.reservation_id,
+          type: 'noise' as const,
+          severity: 'medium' as const,
+          evidence_url: null,
+          reported_by: 'guest_inbox' as const,
+          reported_at: record.review_received_at ?? new Date().toISOString(),
+          resolution_status: 'open' as const,
+        }]
+      : []
+
+    if (score || commsScore || hasExistingFlags) {
+      // Existing SOR exists — only fill gaps
+      return {
+        ...(sor!),
+        ...(score ? {} : { cleaning_score: derivedCleaning }),
+        ...(commsScore ? {} : { communication_score: derivedComms }),
+        house_rule_flags: hasExistingFlags ? sor!.house_rule_flags : derivedFlags,
+      }
+    }
+
+    // No SOR at all — create minimal enriched SOR
+    if (derivedCleaning || derivedComms || derivedFlags.length > 0) {
+      return {
+        id: `tag-sor-${record.id}`,
+        reservation_id: record.reservation_id,
+        listing_id: record.listing_id,
+        cleaning_score: score ?? derivedCleaning,
+        cleaning_notes: null,
+        cleaning_duration_delta: null,
+        house_rule_flags: hasExistingFlags ? sor!.house_rule_flags : derivedFlags,
+        communication_score: commsScore ?? derivedComms,
+        communication_summary: null,
+        computed_at: new Date().toISOString(),
+      }
+    }
+
+    return sor
+  }
+  // Merge into feed items with tag enrichment
   const feedItems = computed<ReviewFeedItem[]>(() => {
     return reviewRecords.value.map((record) => {
       const sor = sorRecords.value.find(s => s.reservation_id === record.reservation_id) ?? null
       const hostReview = hostReviews.value.find((r: AutoReview) => r.reservation_id === record.reservation_id) ?? null
+      const enrichedSor = enrichSorFromTags(record, sor)
       return {
         id: record.id,
         review_record: record,
-        sor,
+        sor: enrichedSor,
         host_review: hostReview,
       }
     })
@@ -48,7 +143,7 @@ export function useReviewHub() {
     return feedItems.value.filter((item) => {
       const r = item.review_record
 
-      if (filterStatus.value !== 'all' && r.reply_status !== filterStatus.value)
+      if (filterStatus.value !== 'all' && getComputedStatus(r) !== filterStatus.value)
         return false
       if (filterChannel.value !== 'all' && r.source !== filterChannel.value)
         return false
@@ -64,9 +159,28 @@ export function useReviewHub() {
   })
 
   // Stats
+  function getComputedStatus(record: ReviewRecord): ReplyStatus {
+    if (record.is_replied) return 'replied'
+
+    // Host review not yet submitted + window still open = host_review_pending (takes priority)
+    const hostReviewPending
+      = (record.source === 'airbnb' && !record.host_review_id && getHostReviewCountdown(record.checkout_date, record.source) > 0)
+      || (record.source === 'booking_com' && !record.host_review_id && getHostReviewCountdown(record.checkout_date, record.source) > 0)
+
+    if (hostReviewPending) return 'host_review_pending'
+
+    // Guest review visible and has content
+    if (isGuestReviewVisible(record) && (record.guest_review_text || record.guest_rating_overall)) {
+      return 'needs_reply'
+    }
+
+    return 'needs_reply'
+  }
+
   const hubStats = computed(() => ({
-    needs_reply: reviewRecords.value.filter(r => r.reply_status === 'needs_reply').length,
-    replied: reviewRecords.value.filter(r => r.reply_status === 'replied').length,
+    host_review_pending: reviewRecords.value.filter(r => getComputedStatus(r) === 'host_review_pending').length,
+    needs_reply: reviewRecords.value.filter(r => getComputedStatus(r) === 'needs_reply').length,
+    replied: reviewRecords.value.filter(r => getComputedStatus(r) === 'replied').length,
     total: reviewRecords.value.length,
   }))
 
@@ -108,9 +222,9 @@ export function useReviewHub() {
     }
 
     let draft: string
-    if (record.guest_rating_overall && record.guest_rating_overall >= 4) {
+    if (record.guest_rating_overall && record.guest_rating_overall >= 8) {
       draft = pickRandom(positiveReplies)
-    } else if (record.guest_rating_overall && record.guest_rating_overall >= 3) {
+    } else if (record.guest_rating_overall && record.guest_rating_overall >= 6) {
       draft = pickRandom(mixedReplies)
     } else {
       draft = pickRandom(negativeReplies)
@@ -125,14 +239,15 @@ export function useReviewHub() {
       reply_status: 'replied',
       reply_text: replyText,
       reply_posted_at: new Date().toISOString(),
+      is_replied: true,
     })
     toast.success('Reply posted successfully.')
   }
 
   // Generate AI host review of guest (mock)
-  async function generateHostReviewDraft(recordId: string): Promise<{ text: string, privateFeedback: string, ratings: { cleanliness: number, communication: number, house_rules: number } }> {
+  async function generateHostReviewDraft(recordId: string): Promise<{ text: string, privateFeedback: string, ratings: { cleanliness: number, communication: number, respect_house_rules: number }, tags: string[] }> {
     const record = reviewRecords.value.find(r => r.id === recordId)
-    if (!record) return { text: '', privateFeedback: '', ratings: { cleanliness: 5, communication: 5, house_rules: 5 } }
+    if (!record) return { text: '', privateFeedback: '', ratings: { cleanliness: 5, communication: 5, respect_house_rules: 5 }, tags: [] }
 
     await new Promise(resolve => setTimeout(resolve, 1500))
 
@@ -203,26 +318,61 @@ export function useReviewHub() {
       }
     }
 
+    // Derive host review tags from SOR
+    const tags: string[] = []
+    if (cleanliness >= 4 && !hasFlags) {
+      tags.push('host_review_guest_positive_neat_and_tidy')
+      tags.push('host_review_guest_positive_kept_in_good_condition')
+      tags.push('host_review_guest_positive_respectful')
+      tags.push('host_review_guest_positive_always_responded')
+    } else if (cleanliness >= 3) {
+      tags.push('host_review_guest_positive_neat_and_tidy')
+      tags.push('host_review_guest_positive_always_responded')
+      if (hasFlags) {
+        tags.push('host_review_guest_negative_ignored_checkout_directions')
+      }
+    } else {
+      if (cleanliness <= 2) {
+        tags.push('host_review_guest_negative_messy_kitchen')
+        tags.push('host_review_guest_negative_excessive_garbage')
+      }
+      if (hasFlags) {
+        const flagTypes = sor!.house_rule_flags.map(f => f.type)
+        if (flagTypes.includes('noise')) tags.push('host_review_guest_negative_did_not_respect_quiet_hours')
+        if (flagTypes.includes('smoking')) tags.push('host_review_guest_negative_smoking')
+        if (flagTypes.includes('damage')) tags.push('host_review_guest_negative_damage')
+        if (flagTypes.includes('extra_guest')) tags.push('host_review_guest_negative_unapproved_guests')
+      }
+      if (communication <= 2) {
+        tags.push('host_review_guest_negative_slow_responses')
+      }
+    }
+
     return {
       text,
       privateFeedback,
       ratings: {
         cleanliness: Math.min(5, Math.max(1, cleanliness)),
         communication: Math.min(5, Math.max(1, communication)),
-        house_rules: hasFlags ? Math.max(1, 5 - sor!.house_rule_flags.length) : 5,
+        respect_house_rules: hasFlags ? Math.max(1, 5 - sor!.house_rule_flags.length) : 5,
       },
+      tags,
     }
   }
 
   // Submit host review
-  function submitHostReview(recordId: string, reviewText: string, ratings: { cleanliness: number, communication: number, house_rules: number, privateFeedback: string } | null) {
+  function submitHostReview(recordId: string, reviewText: string, ratings: { cleanliness: number, communication: number, respect_house_rules: number, privateFeedback: string } | null, isRecommended: boolean, tags: string[]) {
     const record = reviewRecords.value.find(r => r.id === recordId)
     if (!record) return
     const isPublicOnly = record.source === 'booking_com'
     updateReviewRecord(recordId, {
-      reply_status: 'replied',
       private_feedback: ratings?.privateFeedback ?? null,
       host_review_id: `rev-${recordId.split('-')[1]}`,
+      host_review_text: reviewText,
+      host_review_ratings: ratings ? { cleanliness: ratings.cleanliness, communication: ratings.communication, respect_house_rules: ratings.respect_house_rules } : null,
+      is_reviewee_recommended: isRecommended,
+      host_review_tags: tags,
+      is_hidden: false,
     })
     toast.success(isPublicOnly ? 'Booking.com review submitted.' : 'Host review submitted successfully.')
   }
@@ -274,6 +424,35 @@ export function useReviewHub() {
     return Math.max(0, remaining)
   }
 
+  // Airbnb double-blind: Channex sets is_hidden=true until host submits their review
+  // OR 14 days have passed since checkout (auto-reveal). We also check daysSinceCheckout
+  // since Channex may not update is_hidden immediately after 14d auto-reveal.
+  function isGuestReviewHidden(record: ReviewRecord): boolean {
+    if (record.source !== 'airbnb') return false
+    if (record.host_review_id) return false
+    if (!record.is_hidden) return false
+    const daysSinceCheckout = Math.ceil((Date.now() - new Date(record.checkout_date).getTime()) / 86400000)
+    return daysSinceCheckout < 14
+  }
+
+  // Whether the guest review text/rating is currently visible (not double-blind hidden)
+  function isGuestReviewVisible(record: ReviewRecord): boolean {
+    return !isGuestReviewHidden(record)
+  }
+
+  // Reply window countdown: how many days left to reply to a visible guest review
+  // Airbnb: ~14d blind + 30d reply = 44d from checkout
+  // Booking.com: 30d from checkout
+  function getReplyCountdown(checkoutDate: string, source: ReviewSource): number {
+    const checkout = new Date(checkoutDate)
+    const windowDays = source === 'airbnb' ? 44 : source === 'booking_com' ? 30 : 0
+    if (windowDays === 0) return 0
+    const deadline = new Date(checkout.getTime() + windowDays * 86400000)
+    const now = new Date()
+    const remaining = Math.ceil((deadline.getTime() - now.getTime()) / 86400000)
+    return Math.max(0, remaining)
+  }
+
   return {
     reviewRecords,
     sorRecords,
@@ -295,5 +474,9 @@ export function useReviewHub() {
     getUnitInfo,
     getListingStructure,
     getHostReviewCountdown,
+    isGuestReviewHidden,
+    isGuestReviewVisible,
+    getReplyCountdown,
+    getComputedStatus,
   }
 }

@@ -42,7 +42,7 @@ const effectiveReservation = computed<Reservation | undefined>(() => {
     return undefined
   const c = selectedConversation.value
   return {
-    id: c.id,
+    id: c.reservationId,
     propertyName: c.propertyName,
     roomName: c.listingName,
     listingName: c.listingName,

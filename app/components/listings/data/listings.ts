@@ -120,7 +120,6 @@ export interface Unit {
   name: string
   identifier?: string
   status?: 'active' | 'inactive'
-  aiStatus?: 'active' | 'paused' | 'not_set'
   otaConnected?: string[]
 }
 
@@ -182,6 +181,7 @@ export interface UnitType {
   beds: Bed[]
   photos: string[]
   pricing: UnitTypePricing
+  aiStatus?: 'active' | 'paused' | 'not_set'
   units: Unit[]
 }
 
@@ -209,6 +209,12 @@ export interface Listing {
   reviews: Review[]
   maintenance: ListingMaintenance
   resources: ListingResources
+  // Guest guide fallback fields (top-level because they are property facts,
+  // not "resource documents")
+  wifiSsid?: string
+  wifiPassword?: string
+  checkInInstructions?: string
+  checkOutInstructions?: string
 }
 
 export function getUnits(listing: Listing): Unit[] {
@@ -274,6 +280,7 @@ export const listings = ref<Listing[]>([
             { id: 'fee-3', name: 'Late Check-out Fee', enabled: false, amount: 25, type: 'late_checkout' },
           ],
         },
+        aiStatus: 'active',
         units: [
           { id: 'un-1', name: 'Master Suite', identifier: 'K1' },
           { id: 'un-2', name: 'Garden Unit', identifier: 'K2' },
@@ -307,6 +314,7 @@ export const listings = ref<Listing[]>([
             { id: 'fee-6', name: 'Late Check-out Fee', enabled: false, amount: 20, type: 'late_checkout' },
           ],
         },
+        aiStatus: 'active',
         units: [
           { id: 'un-3', name: 'Pool Unit', identifier: 'S1' },
           { id: 'un-4', name: 'Loft Unit', identifier: 'S2' },
@@ -386,10 +394,15 @@ export const listings = ref<Listing[]>([
         description: 'A serene 5-bedroom villa with private pool near Canggu beach. Perfect for families and groups seeking a luxurious Bali experience with modern amenities and traditional Balinese architecture.',
         checkInTime: '14:00',
         checkOutTime: '11:00',
+        houseRules: 'No smoking inside\nNo parties or events\nQuiet hours after 10pm\nCheck-out by 11:00 AM',
       },
       topicsToAvoid: ['competitor pricing', 'refund disputes'],
       propertyUpsells: [],
     },
+    wifiSsid: 'VillaBali_5G',
+    wifiPassword: 'serenity2026',
+    checkInInstructions: 'Our staff will meet you at the gate. Look for the welcome sign with your name.',
+    checkOutInstructions: 'Leave the keys on the kitchen counter. Safe travels!',
   },
   {
     id: 'lst-2',

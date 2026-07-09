@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Bed, Fee, LengthOfStayDiscount, Listing, RatePlanOffering, UnitType } from '~/components/listings/data/listings'
+import type { Bed, Fee, LengthOfStayDiscount, Listing, RatePlan, RatePlanOffering, UnitType } from '~/components/listings/data/listings'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{ listing: Listing }>()
@@ -52,8 +52,6 @@ const currencySymbol = computed(() => {
   const code = form.value.pricing?.currency ?? 'USD'
   return currencies.find(c => c.code === code)?.symbol ?? '$'
 })
-
-const baseRatePlan = computed(() => form.value.pricing?.ratePlans.find(rp => rp.isBase))
 
 function onQuantityChange(newQuantity: number) {
   if (!form.value)
@@ -253,11 +251,39 @@ function removePhoto(index: number) {
 }
 
 // Pricing - Rate Plans
-function updateBaseRatePlan(field: string, value: any) {
+function addRatePlan() {
   if (!form.value.pricing)
     return
-  const plans = form.value.pricing.ratePlans.map(rp =>
-    rp.isBase ? { ...rp, [field]: value } : rp,
+  const newPlan: RatePlan = {
+    id: `rp-${Date.now()}`,
+    name: `Rate Plan ${(form.value.pricing.ratePlans.length ?? 0) + 1}`,
+    pricePerNight: form.value.pricing.ratePlans.find(rp => rp.isBase)?.pricePerNight ?? 0,
+    pricePerAdditionalGuest: 0,
+    isBase: false,
+  }
+  form.value.pricing = {
+    ...form.value.pricing,
+    ratePlans: [...form.value.pricing.ratePlans, newPlan],
+  }
+}
+
+function removeRatePlan(index: number) {
+  if (!form.value.pricing)
+    return
+  const plan = form.value.pricing.ratePlans[index]
+  if (!plan || plan.isBase)
+    return
+  form.value.pricing = {
+    ...form.value.pricing,
+    ratePlans: form.value.pricing.ratePlans.filter((_, i) => i !== index),
+  }
+}
+
+function updateRatePlan(index: number, field: string, value: any) {
+  if (!form.value.pricing)
+    return
+  const plans = form.value.pricing.ratePlans.map((rp, i) =>
+    i === index ? { ...rp, [field]: value } : rp,
   )
   form.value.pricing = { ...form.value.pricing, ratePlans: plans }
 }
@@ -623,51 +649,87 @@ const feeIcons: Record<string, string> = {
                 <p class="text-[10px] text-muted-foreground">Using your account currency</p>
               </div>
 
-              <!-- Standard Rate (Base) -->
+              <!-- Rate Plans -->
               <div class="flex flex-col gap-4">
-                <h4 class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Standard Rate (Base)
-                </h4>
-
-                <div class="border rounded-lg p-4 space-y-4">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-medium">Standard Rate</span>
-                    <Badge variant="secondary" class="text-[10px]">Base</Badge>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Rate Plans
+                    </h4>
+                    <p class="text-[10px] text-muted-foreground mt-0.5">
+                      Create multiple rate plans for this room type (e.g., Standard, Weekly, Monthly). The base rate plan cannot be deleted.
+                    </p>
                   </div>
+                  <Button variant="outline" size="sm" class="gap-1.5" @click="addRatePlan">
+                    <Icon name="lucide:plus" class="size-3.5" />
+                    Add Rate Plan
+                  </Button>
+                </div>
 
-                  <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1.5">
-                      <Label>Price per Night ({{ currencySymbol }})*</Label>
-                      <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{{ currencySymbol }}</span>
+                <div v-if="(form.pricing?.ratePlans?.length ?? 0) === 0" class="text-xs text-muted-foreground italic py-2">
+                  No rate plans yet. Add one to set nightly pricing.
+                </div>
+
+                <div v-else class="flex flex-col gap-3">
+                  <div
+                    v-for="(rp, idx) in form.pricing?.ratePlans"
+                    :key="rp.id"
+                    class="border rounded-lg p-4 space-y-4"
+                    :class="rp.isBase ? 'bg-muted/30' : ''"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 flex-1 min-w-0">
                         <Input
-                          type="number"
-                          :model-value="baseRatePlan?.pricePerNight ?? 0"
-                          class="pl-7"
-                          min="0"
-                          @update:model-value="(v) => updateBaseRatePlan('pricePerNight', Number(v) || 0)"
+                          :model-value="rp.name"
+                          placeholder="Rate plan name"
+                          class="max-w-[240px]"
+                          @update:model-value="(v) => updateRatePlan(idx, 'name', String(v))"
                         />
+                        <Badge v-if="rp.isBase" variant="secondary" class="text-[10px] shrink-0">
+                          Base
+                        </Badge>
+                      </div>
+                      <Button
+                        v-if="!rp.isBase"
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 w-7 p-0 shrink-0"
+                        @click="removeRatePlan(idx)"
+                      >
+                        <Icon name="lucide:trash-2" class="size-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1.5">
+                        <Label>Price per Night ({{ currencySymbol }})*</Label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{{ currencySymbol }}</span>
+                          <Input
+                            type="number"
+                            :model-value="rp.pricePerNight"
+                            class="pl-7"
+                            min="0"
+                            @update:model-value="(v) => updateRatePlan(idx, 'pricePerNight', Number(v) || 0)"
+                          />
+                        </div>
+                      </div>
+                      <div class="flex flex-col gap-1.5">
+                        <Label>Price per Additional Guest ({{ currencySymbol }})</Label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{{ currencySymbol }}</span>
+                          <Input
+                            type="number"
+                            :model-value="rp.pricePerAdditionalGuest"
+                            class="pl-7"
+                            min="0"
+                            @update:model-value="(v) => updateRatePlan(idx, 'pricePerAdditionalGuest', Number(v) || 0)"
+                          />
+                        </div>
+                        <p class="text-[10px] text-muted-foreground">Charged per night for each guest after the first.</p>
                       </div>
                     </div>
-                    <div class="flex flex-col gap-1.5">
-                      <Label>Price per Additional Guest ({{ currencySymbol }})*</Label>
-                      <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{{ currencySymbol }}</span>
-                        <Input
-                          type="number"
-                          :model-value="baseRatePlan?.pricePerAdditionalGuest ?? 0"
-                          class="pl-7"
-                          min="0"
-                          @update:model-value="(v) => updateBaseRatePlan('pricePerAdditionalGuest', Number(v) || 0)"
-                        />
-                      </div>
-                      <p class="text-[10px] text-muted-foreground">Charged per night for each guest after the first (optional).</p>
-                    </div>
                   </div>
-
-                  <p class="text-xs text-muted-foreground italic">
-                    This is your base rate plan. Additional rate plans will be copied from this configuration.
-                  </p>
                 </div>
               </div>
 

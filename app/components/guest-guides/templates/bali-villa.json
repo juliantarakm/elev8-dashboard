@@ -1,0 +1,24 @@
+{
+  "id": "tpl-bali-villa",
+  "name": "Bali Villa",
+  "description": "Tropical welcome pack with local tips",
+  "category": "tropical",
+  "iconName": "palm-tree",
+  "sections": [
+    { "type": "hero", "order": 0, "enabled": true, "data": { "photoUrl": "", "title": "Welcome to Bali", "subtitle": "Your tropical escape awaits" } },
+    { "type": "welcome", "order": 1, "enabled": true, "data": { "message": "Selamat datang! We're so excited to host you in our little slice of paradise. This guide has everything you need for a perfect stay." } },
+    { "type": "pre_arrival", "order": 2, "enabled": true, "data": { "fields": ["arrival_time", "guests", "mobile", "requests"] } },
+    { "type": "wifi", "order": 3, "enabled": true, "data": { "ssid": "", "password": "", "networkNotes": "5GHz available" } },
+    { "type": "house_rules", "order": 4, "enabled": true, "data": { "rules": ["No smoking indoors", "No parties or events", "Quiet hours 10pm-8am", "Take shoes off at entrance"] } },
+    { "type": "amenities", "order": 5, "enabled": true, "data": { "items": ["Pool", "WiFi", "Air conditioning", "Kitchen", "Washer", "Free parking", "TV"] } },
+    { "type": "checkin", "order": 6, "enabled": true, "data": { "time": "14:00", "instructions": "Our staff will meet you at the gate. Look for the welcome sign with your name." } },
+    { "type": "checkout", "order": 7, "enabled": true, "data": { "time": "11:00", "instructions": "Leave keys on the kitchen counter. Safe travels!" } },
+    { "type": "local_tips", "order": 8, "enabled": true, "data": { "tips": [
+      { "title": "Warung Bu Mi", "body": "Best nasi goreng in the area, 5 min walk", "icon": "utensils" },
+      { "title": "Batu Bolong Beach", "body": "Beautiful sunset spot, 10 min drive", "icon": "sun" },
+      { "title": "Kimia Farma Pharmacy", "body": "24h pharmacy, 8 min walk", "icon": "pill" }
+    ] } },
+    { "type": "upsells", "order": 9, "enabled": true, "data": { "serviceIds": [], "heading": "Enhance your stay", "subheading": "Add these popular services" } },
+    { "type": "smart_lock", "order": 10, "enabled": true, "data": { "lockIds": [], "heading": "Your door code", "codeWindowHours": 24 } }
+  ]
+}

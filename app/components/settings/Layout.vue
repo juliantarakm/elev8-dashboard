@@ -1,5 +1,5 @@
 <script setup lang="ts">
-
+withDefaults(defineProps<{ wide?: boolean }>(), { wide: false })
 </script>
 
 <template>
@@ -17,7 +17,7 @@
       <div class="w-full overflow-x-auto pb-2 lg:w-1/6 lg:pb-0">
         <SettingsSidebarNav />
       </div>
-      <div class="flex-1 lg:max-w-2xl">
+      <div class="flex-1" :class="wide ? 'lg:max-w-5xl' : 'lg:max-w-2xl'">
         <div class="space-y-6">
           <slot />
         </div>

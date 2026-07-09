@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AutoReview } from '~/components/airbnb-reviews/data/reviews'
 import type { ReviewRecord, StayOperationalRecord } from '~/components/review-hub/data/types'
+import { hostReviewTagOptions } from '~/components/review-hub/data/types'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{
@@ -21,19 +22,25 @@ const draftText = ref(props.hostReview?.public_review ?? '')
 const privateFeedback = ref(props.hostReview?.private_feedback ?? '')
 const cleanliness = ref(props.hostReview?.ratings?.cleanliness ?? 5)
 const communication = ref(props.hostReview?.ratings?.communication ?? 5)
-const houseRules = ref(props.hostReview?.ratings?.house_rules ?? 5)
+const respectHouseRules = ref(props.hostReview?.ratings?.respect_house_rules ?? 5)
+const isRevieweeRecommended = ref(props.review.is_reviewee_recommended ?? true)
+const selectedHostTags = ref<string[]>(props.review.host_review_tags ?? [])
 const isGenerating = ref(false)
 const isGenerated = ref(hasGeneratedData.value)
-const isSubmitted = ref(props.review.reply_status === 'replied' && hasGeneratedData.value)
+const isSubmitted = computed(() => props.review.host_review_id !== null)
+
+// Use saved review data from ReviewRecord for readonly view
+const savedReviewText = computed(() => props.review.host_review_text)
+const savedPrivateFeedback = computed(() => props.review.private_feedback)
+const savedRatings = computed(() => props.review.host_review_ratings)
 
 // Countdown (Airbnb 14d, Booking.com 365d)
 const countdown = computed(() => getHostReviewCountdown(props.review.checkout_date, props.review.source))
 const isExpired = computed(() => countdown.value <= 0)
 
-// Airbnb and Booking.com support host reviews of guests (Direct does not)
-const channelSupportsReview = computed(() => props.review.source === 'airbnb' || props.review.source === 'booking_com')
-// Booking.com host reviews are public-only (no private feedback, no category ratings)
-const isPublicOnly = computed(() => props.review.source === 'booking_com')
+// Only Airbnb supports host reviews of guests (Channex POST /guest_review is Airbnb-only)
+const channelSupportsReview = computed(() => props.review.source === 'airbnb')
+const isPublicOnly = computed(() => false)
 
 // SOR-based preview
 const sorAvailable = computed(() => props.sor !== null && (props.sor.cleaning_score !== null || props.sor.communication_score !== null))
@@ -42,12 +49,11 @@ async function handleGenerate() {
   isGenerating.value = true
   const result = await generateHostReviewDraft(props.review.id)
   draftText.value = result.text
-  if (!isPublicOnly.value) {
-    privateFeedback.value = result.privateFeedback
-    cleanliness.value = result.ratings.cleanliness
-    communication.value = result.ratings.communication
-    houseRules.value = result.ratings.house_rules
-  }
+  privateFeedback.value = result.privateFeedback
+  cleanliness.value = result.ratings.cleanliness
+  communication.value = result.ratings.communication
+  respectHouseRules.value = result.ratings.respect_house_rules
+  selectedHostTags.value = result.tags ?? []
   isGenerated.value = true
   isGenerating.value = false
 }
@@ -55,16 +61,22 @@ async function handleGenerate() {
 function handleSubmit() {
   if (!draftText.value.trim()) return
   if (isPublicOnly.value) {
-    submitHostReview(props.review.id, draftText.value, null)
+    submitHostReview(props.review.id, draftText.value, null, isRevieweeRecommended.value, [])
   } else {
     submitHostReview(props.review.id, draftText.value, {
       cleanliness: cleanliness.value,
       communication: communication.value,
-      house_rules: houseRules.value,
+      respect_house_rules: respectHouseRules.value,
       privateFeedback: privateFeedback.value,
-    })
+    }, isRevieweeRecommended.value, selectedHostTags.value)
   }
-  isSubmitted.value = true
+}
+
+function toggleHostTag(code: string) {
+  if (isSubmitted.value) return
+  const idx = selectedHostTags.value.indexOf(code)
+  if (idx >= 0) selectedHostTags.value.splice(idx, 1)
+  else selectedHostTags.value.push(code)
 }
 
 async function autoGenerate() {
@@ -74,12 +86,12 @@ async function autoGenerate() {
   await handleGenerate()
 }
 
-function setRating(field: 'cleanliness' | 'communication' | 'houseRules', value: number) {
+function setRating(field: 'cleanliness' | 'communication' | 'respectHouseRules', value: number) {
   if (isSubmitted.value) return
   const clamped = Math.max(1, Math.min(5, value))
   if (field === 'cleanliness') cleanliness.value = clamped
   else if (field === 'communication') communication.value = clamped
-  else houseRules.value = clamped
+  else respectHouseRules.value = clamped
 }
 
 defineExpose({ autoGenerate })
@@ -144,7 +156,7 @@ defineExpose({ autoGenerate })
         <div class="space-y-2">
           <Label class="text-sm font-medium">Public Review</Label>
           <p class="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed">
-            {{ draftText }}
+            {{ savedReviewText }}
           </p>
         </div>
 
@@ -155,22 +167,22 @@ defineExpose({ autoGenerate })
               <Badge variant="outline" class="text-[10px]">Host-Only</Badge>
             </div>
             <p class="rounded-lg border bg-amber-50 p-3 text-sm leading-relaxed">
-              {{ privateFeedback }}
+              {{ savedPrivateFeedback }}
             </p>
           </div>
 
           <div class="grid grid-cols-3 gap-3">
             <div class="rounded-lg border bg-card p-3 text-center">
               <p class="text-xs text-muted-foreground">Cleanliness</p>
-              <p class="mt-1 text-sm font-medium">{{ cleanliness }}<span class="text-xs text-muted-foreground">/5</span></p>
+              <p class="mt-1 text-sm font-medium">{{ savedRatings?.cleanliness ?? '-' }}<span class="text-xs text-muted-foreground">/5</span></p>
             </div>
             <div class="rounded-lg border bg-card p-3 text-center">
               <p class="text-xs text-muted-foreground">Communication</p>
-              <p class="mt-1 text-sm font-medium">{{ communication }}<span class="text-xs text-muted-foreground">/5</span></p>
+              <p class="mt-1 text-sm font-medium">{{ savedRatings?.communication ?? '-' }}<span class="text-xs text-muted-foreground">/5</span></p>
             </div>
             <div class="rounded-lg border bg-card p-3 text-center">
               <p class="text-xs text-muted-foreground">House Rules</p>
-              <p class="mt-1 text-sm font-medium">{{ houseRules }}<span class="text-xs text-muted-foreground">/5</span></p>
+              <p class="mt-1 text-sm font-medium">{{ savedRatings?.respect_house_rules ?? '-' }}<span class="text-xs text-muted-foreground">/5</span></p>
             </div>
           </div>
         </template>
@@ -298,22 +310,55 @@ defineExpose({ autoGenerate })
                     <button
                       type="button"
                       class="size-6 rounded border text-sm transition-colors hover:bg-muted"
-                      :disabled="isSubmitted || houseRules <= 1"
-                      @click="setRating('houseRules', houseRules - 1)"
+                      :disabled="isSubmitted || respectHouseRules <= 1"
+                      @click="setRating('respectHouseRules', respectHouseRules - 1)"
                     >
                       −
                     </button>
-                    <span class="min-w-[2.5rem] text-sm font-medium">{{ houseRules }}<span class="text-xs text-muted-foreground">/5</span></span>
+                    <span class="min-w-[2.5rem] text-sm font-medium">{{ respectHouseRules }}<span class="text-xs text-muted-foreground">/5</span></span>
                     <button
                       type="button"
                       class="size-6 rounded border text-sm transition-colors hover:bg-muted"
-                      :disabled="isSubmitted || houseRules >= 5"
-                      @click="setRating('houseRules', houseRules + 1)"
+                      :disabled="isSubmitted || respectHouseRules >= 5"
+                      @click="setRating('respectHouseRules', respectHouseRules + 1)"
                     >
                       +
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Recommend Guest -->
+            <div class="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <p class="text-sm font-medium">Recommend this guest?</p>
+                <p class="text-xs text-muted-foreground">Visible to other hosts on the platform</p>
+              </div>
+              <Switch
+                :model-value="isRevieweeRecommended"
+                :disabled="isSubmitted"
+                @update:model-value="isRevieweeRecommended = $event"
+              />
+            </div>
+
+            <!-- Host Review Tags -->
+            <div class="space-y-2">
+              <Label class="text-sm font-medium">Tags</Label>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="option in hostReviewTagOptions"
+                  :key="option.code"
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium border transition-colors"
+                  :class="selectedHostTags.includes(option.code)
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-muted/50 text-muted-foreground border-transparent hover:border-muted-foreground/30'"
+                  :disabled="isSubmitted"
+                  @click="toggleHostTag(option.code)"
+                >
+                  {{ option.label }}
+                </button>
               </div>
             </div>
           </template>

@@ -9,6 +9,9 @@ dist
 # Node dependencies
 node_modules
 
+# Node.js v22+ compile cache (auto-created at startup)
+node-compile-cache
+
 # Logs
 logs
 *.log
@@ -22,3 +25,4 @@ logs
 .env
 .env.*
 !.env.example
+public/uploads/

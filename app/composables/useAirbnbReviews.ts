@@ -218,7 +218,7 @@ function generateMockReview(review: AutoReview, variant = false) {
   const ratings: ReviewRatings = {
     cleanliness: cleanlinessRating,
     communication: communicationRating,
-    house_rules: houseRulesRating,
+    respect_house_rules: houseRulesRating,
   }
 
   // Use housekeeper notes in private feedback if available

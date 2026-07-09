@@ -1,58 +1,61 @@
 <script setup lang="ts">
 import type { ReviewRecord } from '~/components/review-hub/data/types'
 import { format } from 'date-fns'
-import { channelIcons, channelLabels } from '~/components/review-hub/data/types'
+import { channelIcons, channelLabels, getDisplayScore, getDisplayMax, getCategoryDisplayLabel, getTagLabel, getTagSentiment } from '~/components/review-hub/data/types'
 
 const props = defineProps<{
   review: ReviewRecord
 }>()
 
+const { isGuestReviewHidden } = useReviewHub()
+
 const ratingsExpanded = ref(false)
+const tagsExpanded = ref(false)
 
 const sourceIcon = computed(() => channelIcons[props.review.source])
 const sourceLabel = computed(() => channelLabels[props.review.source])
 
-// Airbnb double-blind: review hidden until host submits their review of the guest
-const isReviewHidden = computed(() => {
-  return props.review.source === 'airbnb' && !props.review.host_review_id
+const reviewHidden = computed(() => isGuestReviewHidden(props.review))
+
+const displayMax = computed(() => getDisplayMax(props.review.source))
+
+// Guest left a review?
+const hasGuestReview = computed(() => props.review.guest_rating_overall !== null || !!props.review.guest_review_text)
+
+// State label
+const stateLabel = computed(() => {
+  if (reviewHidden.value) return 'Review hidden (double-blind)'
+  if (!hasGuestReview.value) return 'Guest has not left a review yet'
+  return null
 })
 
-const ratingMax = computed(() => props.review.guest_rating_max ?? 5)
+const stateIcon = computed(() => {
+  if (reviewHidden.value) return 'lucide:eye-off'
+  if (!hasGuestReview.value) return 'lucide:message-square-dashed'
+  return 'lucide:eye-off' // fallback, won't render
+})
 
 function formatDate(date: string) {
   return format(new Date(date), 'MMM d, yyyy h:mm a')
 }
 
 const categoryEntries = computed(() => {
-  if (!props.review.guest_rating_categories) return []
-
-  if (props.review.source === 'booking_com') {
-    const labels: Record<string, string> = {
-      value: 'Value',
-      clean: 'Clean',
-      location: 'Location',
-      comfort: 'Comfort',
-      facilities: 'Facilities',
-      staff: 'Staff',
-      wifi: 'WiFi',
-    }
-    return Object.entries(props.review.guest_rating_categories)
-      .filter(([_, v]) => v !== undefined && v !== null)
-      .map(([k, v]) => ({ key: k, label: labels[k] ?? k, value: v as number | null }))
-  }
-
-  const labels: Record<string, string> = {
-    cleanliness: 'Cleanliness',
-    communication: 'Communication',
-    check_in: 'Check-in',
-    accuracy: 'Accuracy',
-    location: 'Location',
-    value: 'Value',
-  }
-  return Object.entries(props.review.guest_rating_categories)
-    .filter(([_, v]) => v !== undefined)
-    .map(([k, v]) => ({ key: k, label: labels[k] ?? k, value: v as number | null }))
+  if (!props.review.scores || props.review.scores.length === 0) return []
+  return props.review.scores.map(s => ({
+    key: s.category,
+    label: getCategoryDisplayLabel(s.category),
+    score: s.score,
+  }))
 })
+
+// Tags grouped by sentiment
+const positiveTags = computed(() => props.review.tags.filter(t => getTagSentiment(t) === 'positive'))
+const negativeTags = computed(() => props.review.tags.filter(t => getTagSentiment(t) === 'negative'))
+const hasTags = computed(() => props.review.tags.length > 0 && !reviewHidden.value)
+
+// Show max 6 tags, expandable
+const visibleTagCount = ref(4)
+const allTagsVisible = computed(() => visibleTagCount.value >= props.review.tags.length)
 </script>
 
 <template>
@@ -67,8 +70,14 @@ const categoryEntries = computed(() => {
       </span>
     </div>
 
-    <!-- Rating Accordion (hidden during Airbnb double-blind) -->
-    <template v-if="!isReviewHidden">
+    <!-- State indicator -->
+    <div v-if="stateLabel" class="flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2.5">
+      <Icon :name="stateIcon" class="size-4 text-muted-foreground shrink-0" />
+      <span class="text-sm text-muted-foreground">{{ stateLabel }}</span>
+    </div>
+
+    <!-- Rating Accordion -->
+    <template v-if="!reviewHidden && hasGuestReview">
       <button
         v-if="review.guest_rating_overall"
         type="button"
@@ -76,7 +85,7 @@ const categoryEntries = computed(() => {
         @click="ratingsExpanded = !ratingsExpanded"
       >
         <div class="flex items-center gap-3">
-          <span class="text-3xl font-bold">{{ review.guest_rating_overall }}<span class="text-base font-normal text-muted-foreground">/{{ ratingMax }}</span></span>
+          <span class="text-3xl font-bold">{{ getDisplayScore(review.guest_rating_overall, review.source) }}<span class="text-base font-normal text-muted-foreground">/{{ displayMax }}</span></span>
           <p class="text-xs text-muted-foreground">Overall Rating</p>
         </div>
         <Icon
@@ -85,9 +94,6 @@ const categoryEntries = computed(() => {
           :class="ratingsExpanded && 'rotate-180'"
         />
       </button>
-      <div v-else class="text-sm text-muted-foreground">
-        Guest hasn't left a review yet.
-      </div>
 
       <!-- Category Ratings -->
       <div v-if="categoryEntries.length > 0 && ratingsExpanded" class="grid grid-cols-3 gap-2">
@@ -96,25 +102,25 @@ const categoryEntries = computed(() => {
             {{ cat.label }}
           </p>
           <p class="mt-0.5 text-sm font-medium">
-            {{ cat.value !== null ? `${cat.value}/${ratingMax}` : 'N/A' }}
+            {{ getDisplayScore(cat.score, review.source) }}/{{ displayMax }}
           </p>
         </div>
       </div>
     </template>
 
-    <!-- Review Text (hidden during Airbnb double-blind) -->
-    <template v-if="isReviewHidden">
+    <!-- Review Text -->
+    <template v-if="reviewHidden">
       <div class="rounded-lg border border-dashed bg-muted/30 p-4 text-center">
         <Icon name="lucide:eye-off" class="mx-auto size-5 text-muted-foreground" />
         <p class="mt-2 text-sm text-muted-foreground">
-          The review is hidden until you provide feedback for the guest.
+          Submit your host review to reveal the guest's feedback.
         </p>
         <p class="mt-1 text-xs text-muted-foreground">
-          Submit your host review to reveal the guest's feedback.
+          Or it will auto-reveal 14 days after checkout.
         </p>
       </div>
     </template>
-    <template v-else>
+    <template v-else-if="hasGuestReview">
       <div v-if="review.guest_review_text" class="rounded-lg border bg-muted/30 p-4">
         <p class="text-sm leading-relaxed">
           "{{ review.guest_review_text }}"
@@ -124,5 +130,33 @@ const categoryEntries = computed(() => {
         </p>
       </div>
     </template>
+
+    <!-- Tags (Channex review tags) -->
+    <div v-if="hasTags" class="space-y-2">
+      <div class="flex flex-wrap gap-1.5">
+        <span
+          v-for="tag in [...positiveTags, ...negativeTags].slice(0, allTagsVisible ? 99 : visibleTagCount)"
+          :key="tag"
+          class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+          :class="getTagSentiment(tag) === 'positive'
+            ? 'bg-green-50 text-green-700 border border-green-200'
+            : 'bg-red-50 text-red-700 border border-red-200'"
+        >
+          <Icon
+            :name="getTagSentiment(tag) === 'positive' ? 'lucide:check' : 'lucide:alert-triangle'"
+            class="size-2.5"
+          />
+          {{ getTagLabel(tag) }}
+        </span>
+        <button
+          v-if="props.review.tags.length > visibleTagCount && !allTagsVisible"
+          type="button"
+          class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          @click="visibleTagCount = props.review.tags.length"
+        >
+          +{{ props.review.tags.length - visibleTagCount }} more
+        </button>
+      </div>
+    </div>
   </div>
 </template>

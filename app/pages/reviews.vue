@@ -20,6 +20,8 @@ const drawerOpen = ref(false)
 const selectedItem = ref<ReviewFeedItem | null>(null)
 const drawerRef = ref<InstanceType<typeof DetailDrawer> | null>(null)
 const settingsOpen = ref(false)
+const page = ref(1)
+const pageSize = 10
 
 type BannerState = 'off' | 'autopost_off' | null
 
@@ -32,7 +34,10 @@ const bannerState = computed<BannerState>(() => {
   if (!reviewConfig.value.enabled) {
     return 'off'
   }
-  if (!reviewConfig.value.auto_post_channels.airbnb && !reviewConfig.value.auto_post_channels.booking_com) {
+  const hasAutoPost = reviewConfig.value.auto_post_host_review
+    || reviewConfig.value.auto_post_replies.airbnb
+    || reviewConfig.value.auto_post_replies.booking_com
+  if (!hasAutoPost) {
     return 'autopost_off'
   }
   return null
@@ -76,8 +81,8 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
       v-if="bannerState"
       class="relative flex items-start gap-4 overflow-hidden rounded-lg border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4"
     >
-      <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15">
-        <SharedAiIcon custom-class="size-5 text-primary" />
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary">
+        <SharedAiIcon custom-class="size-5 text-primary-foreground" />
       </div>
       <div class="flex-1 space-y-1">
         <div class="flex items-center gap-2">
@@ -89,7 +94,7 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
               Let ElevAI auto-post your guest reviews
             </template>
           </p>
-          <span class="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+          <span class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary-foreground">
             New
           </span>
         </div>
@@ -138,8 +143,11 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
     <!-- Feed Table -->
     <ReviewHubFeedTable
       :items="filteredFeedItems"
+      :page="page"
+      :page-size="pageSize"
       @select="openDrawer"
       @generate="openDrawerAndGenerate"
+      @update:page="page = $event"
     />
 
     <!-- Detail Drawer -->

@@ -1,9 +1,5 @@
 <template>
-  <SettingsLayout>
-    <div class="space-y-10">
-      <SettingsWhatsAppIntegration />
-      <Separator />
-      <SettingsThreeCxIntegration />
-    </div>
+  <SettingsLayout wide>
+    <SettingsIntegrationsOverview />
   </SettingsLayout>
 </template>

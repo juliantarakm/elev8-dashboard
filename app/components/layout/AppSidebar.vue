@@ -1,6 +1,18 @@
 <script setup lang="ts">
-import type { NavGroup, NavLink, NavSectionTitle } from '~/types/nav'
-import { navMenu, navMenuBottom } from '~/constants/menus'
+import type { NavGroup, NavLink, NavSectionTitle, NavMenu, NavMenuItems } from '~/types/nav'
+import { navMenu as defaultNavMenu, navMenuBottom as defaultNavMenuBottom } from '~/constants/menus'
+
+const props = withDefaults(defineProps<{
+  menu?: NavMenu[]
+  menuBottom?: NavMenuItems
+  showSearch?: boolean
+  showTeams?: boolean
+}>(), {
+  menu: () => defaultNavMenu,
+  menuBottom: () => defaultNavMenuBottom,
+  showSearch: true,
+  showTeams: true,
+})
 
 function resolveNavItemComponent(item: NavLink | NavGroup | NavSectionTitle): any {
   if ('children' in item)
@@ -13,7 +25,7 @@ const teams: {
   name: string
   logo: string
   plan: string
-}[] = [
+}[] = props.showTeams ? [
   {
     name: 'Acme Inc',
     logo: 'i-lucide-gallery-vertical-end',
@@ -29,7 +41,7 @@ const teams: {
     logo: 'i-lucide-command',
     plan: 'Free',
   },
-]
+] : []
 
 const { sidebar } = useAppSettings()
 </script>
@@ -37,18 +49,18 @@ const { sidebar } = useAppSettings()
 <template>
   <Sidebar :collapsible="sidebar?.collapsible" :side="sidebar?.side" :variant="sidebar?.variant">
     <SidebarHeader>
-      <LayoutSidebarNavHeader :teams="teams" />
-      <Search />
+      <LayoutSidebarNavHeader v-if="showTeams" :teams="teams" />
+      <Search v-if="showSearch" />
     </SidebarHeader>
     <SidebarContent>
-      <SidebarGroup v-for="(nav, indexGroup) in navMenu" :key="indexGroup">
+      <SidebarGroup v-for="(nav, indexGroup) in menu" :key="indexGroup">
         <SidebarGroupLabel v-if="nav.heading">
           {{ nav.heading }}
         </SidebarGroupLabel>
         <component :is="resolveNavItemComponent(item)" v-for="(item, index) in nav.items" :key="index" :item="item" />
       </SidebarGroup>
       <SidebarGroup class="mt-auto">
-        <component :is="resolveNavItemComponent(item)" v-for="(item, index) in navMenuBottom" :key="index" :item="item" size="sm" />
+        <component :is="resolveNavItemComponent(item)" v-for="(item, index) in menuBottom" :key="index" :item="item" size="sm" />
       </SidebarGroup>
     </SidebarContent>
     <SidebarRail />

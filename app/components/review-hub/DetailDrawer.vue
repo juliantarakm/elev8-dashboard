@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReviewFeedItem } from '~/components/review-hub/data/types'
 import HostReviewPanel from '~/components/review-hub/HostReviewPanel.vue'
+import ReplyPanel from '~/components/review-hub/ReplyPanel.vue'
 
 const props = defineProps<{
   open: boolean
@@ -13,7 +14,7 @@ const emit = defineEmits<{
 
 const isOpen = useVModel(props, 'open', emit)
 
-const { reviewRecords, getSor, getHostReviewCountdown } = useReviewHub()
+const { reviewRecords, getSor, getHostReviewCountdown, isGuestReviewHidden, isGuestReviewVisible, getComputedStatus } = useReviewHub()
 
 // Always use live record from composable so state mutations are reflected
 const review = computed(() => {
@@ -27,6 +28,18 @@ const sor = computed(() => {
 
 const hostReview = computed(() => props.item?.host_review ?? null)
 
+// HostReviewPanel only shown when relevant:
+// - Already submitted (show readonly view)
+// - Airbnb: during double-blind (guest review still hidden)
+// - Booking.com: within 365-day window
+const showHostReviewPanel = computed(() => {
+  if (!review.value) return false
+  if (review.value.host_review_id) return true
+  if (review.value.source === 'airbnb') return isGuestReviewHidden(review.value)
+  if (review.value.source === 'booking_com') return getHostReviewCountdown(review.value.checkout_date, 'booking_com') > 0
+  return false
+})
+
 const hostReviewPanelRef = ref<InstanceType<typeof HostReviewPanel> | null>(null)
 
 function generateHostReview() {
@@ -36,16 +49,6 @@ function generateHostReview() {
 }
 
 defineExpose({ generateHostReview })
-
-// Auto-trigger host review generation when opening a Booking.com record that
-// needs a host review (not expired, not already generated/submitted).
-watch(() => props.open, (isOpen) => {
-  if (!isOpen || !review.value) return
-  if (review.value.source !== 'booking_com') return
-  if (review.value.reply_status !== 'needs_reply') return
-  if (getHostReviewCountdown(review.value.checkout_date, review.value.source) <= 0) return
-  generateHostReview()
-})
 </script>
 
 <template>
@@ -55,7 +58,7 @@ watch(() => props.open, (isOpen) => {
         <DialogTitle v-if="review" class="flex items-center gap-3">
           <span>{{ review.guest_name }}</span>
           <ReviewHubSourceBadge :source="review.source" />
-          <ReviewHubStatusChip :status="review.reply_status" />
+          <ReviewHubStatusChip :status="getComputedStatus(review)" />
         </DialogTitle>
         <DialogDescription v-if="review">
           {{ review.listing_name }} · Checkout {{ review.checkout_date }}
@@ -71,10 +74,17 @@ watch(() => props.open, (isOpen) => {
         <!-- SOR -->
         <ReviewHubDetailSorPanel :sor="sor" />
 
+        <!-- Reply to Guest (when guest has actually left a review and it's visible) -->
+        <template v-if="isGuestReviewVisible(review) && (review.guest_review_text || review.guest_rating_overall)">
+          <Separator />
+          <ReplyPanel :review="review" :sor="sor" @reply-posted="isOpen = false" />
+        </template>
+
         <Separator />
 
-        <!-- Host Review -->
+        <!-- Host Review (only during double-blind window, or if already submitted) -->
         <ReviewHubHostReviewPanel
+          v-if="showHostReviewPanel"
           ref="hostReviewPanelRef"
           :review="review"
           :sor="sor"

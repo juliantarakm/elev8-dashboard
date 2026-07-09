@@ -171,6 +171,18 @@ export function useNotifications() {
     return getAlertDescription(type, context)
   }
 
+  function createAlert(
+    type: Alert['type'],
+    severity: AlertSeverity,
+    context: Record<string, any>,
+  ) {
+    const id = `alert-${type.toLowerCase()}-${String(alerts.value.length + 1).padStart(3, '0')}`
+    alerts.value = [
+      makeAlert(id, type, severity, context, context.listing_id ?? null),
+      ...alerts.value,
+    ]
+  }
+
   function createUpsellAlert(
     type:
       | 'UPSELL_ORDER_REQUESTED'
@@ -181,13 +193,9 @@ export function useNotifications() {
       | 'UPSELL_FULFILLMENT_COMPLETED',
     context: Record<string, any>,
   ) {
-    const id = `alert-upsell-${String(alerts.value.length + 1).padStart(3, '0')}`
     const severity: AlertSeverity
       = type === 'UPSELL_ORDER_REQUESTED' || type === 'UPSELL_ORDER_DECLINED' ? 'WARNING' : 'INFO'
-    alerts.value = [
-      makeAlert(id, type, severity, context, context.listing_id ?? null),
-      ...alerts.value,
-    ]
+    createAlert(type, severity, context)
   }
 
   return {
@@ -203,6 +211,7 @@ export function useNotifications() {
     navigateToAlert,
     getTimeAgo,
     getDescription,
+    createAlert,
     createUpsellAlert,
   }
 }

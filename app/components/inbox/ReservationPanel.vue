@@ -52,6 +52,14 @@ const conversationPhoneCalls = computed((): PhoneCall[] =>
               {{ conversation.linkedUpsellOrderIds.length }}
             </Badge>
           </TabsTrigger>
+          <TabsTrigger value="smartlock" class="text-xs shrink-0">
+            <Icon name="lucide:key-round" class="mr-1 size-3" />
+            Smart Lock
+          </TabsTrigger>
+          <TabsTrigger value="guest-guide" class="text-xs shrink-0">
+            <Icon name="lucide:book-open" class="mr-1 size-3" />
+            Guest Guide
+          </TabsTrigger>
           <TabsTrigger value="history" class="text-xs shrink-0">
             History
             <Badge v-if="reservation.bookingHistory?.length" class="ml-1 h-4 min-w-4 rounded-full px-1 text-[9px]">
@@ -86,6 +94,18 @@ const conversationPhoneCalls = computed((): PhoneCall[] =>
         <TabsContent value="upsells">
           <div class="p-4">
             <InboxReservationUpsells :linked-order-ids="conversation.linkedUpsellOrderIds ?? []" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="smartlock">
+          <div class="p-4">
+            <InboxReservationSmartLocks :reservation="reservation" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="guest-guide">
+          <div class="p-4">
+            <InboxReservationGuestGuide :reservation-id="reservation.id" />
           </div>
         </TabsContent>
 

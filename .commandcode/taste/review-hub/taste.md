@@ -1,0 +1,12 @@
+# review-hub
+- Use "stay report" (not "SOR" or "Stay Operational Record") as the user-facing terminology in the Review Hub UI and PRD documentation. Confidence: 0.65
+- Booking.com does NOT support host reviews of guests at all — only Airbnb supports host reviews per Channex API. Confidence: 0.80
+- For Airbnb double-blind reviews: host submits review (public + optional private feedback + ratings) within 14 days which reveals the guest's review immediately; if guest hasn't reviewed, show "guest hasn't reviewed" message. After 14 days, if guest submitted a review, host can reply to it (30-day reply window). Confidence: 0.80
+- Host review submission and reply-to-guest are separate flows with distinct statuses — do not conflate them into a single "reply_status". Confidence: 0.70
+- Display review ratings as numbers (not stars) for all sources, including converting Airbnb 5-star to a 10-point numeric scale. Confidence: 0.70
+- Use consistent numeric scoring format (X/5) across all related badges/metrics — avoid mixing count-based display with score-based display. Confidence: 0.65
+- In FeedTable Property column: show unit info (e.g., "Kingbed · Master Suite") for multi-unit records, but display "single unit" text (not location) for single-unit records. Confidence: 0.70
+- All review scores are normalized to Channex 0-10 scale internally; use getDisplayScore() and getDisplayMax() to convert to channel-native display (Airbnb ÷2, Booking.com as-is). Confidence: 0.75
+- Use "respect_house_rules" (not "house_rules") as the field name for host review guest ratings, aligned with Channex API. Confidence: 0.80
+- Use scores: ScoreCategory[] (array of {category, score}) instead of per-channel rating objects for guest review categories, aligned with Channex data model. Confidence: 0.75
+- Channex reply-to-review endpoint (POST /reviews/:id/reply) only accepts plain text — tags are only available on the host-review-of-guest endpoint (POST /reviews/:id/guest_review). Confidence: 0.80

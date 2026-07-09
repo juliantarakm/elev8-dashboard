@@ -19,6 +19,7 @@ import type {
   WaitStep,
 } from './data/journeys'
 import { conditionMeta, defaultTriggerSettings, primaryConditionTypes, triggerMeta } from './data/journeys'
+import SendGuestGuideAction from './actions/SendGuestGuideAction.vue'
 
 const props = defineProps<{
   step: JourneyStep | null
@@ -1092,10 +1093,18 @@ const showAltTriggerPicker = ref(false)
               <SelectItem value="staff_alert">
                 Staff Alert
               </SelectItem>
+              <SelectItem value="send_guest_guide">
+                Send Guest Guide
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <SendGuestGuideAction
+          v-if="actionStep.actionType === 'send_guest_guide'"
+          :model-value="(actionStep as any).data ?? {}"
+          @update:model-value="patch({ data: $event } as any)"
+        />
+        <div v-else>
           <Label>Details</Label>
           <Textarea
             :model-value="actionStep.details"

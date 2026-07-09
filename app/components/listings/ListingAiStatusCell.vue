@@ -20,7 +20,24 @@ const aiStatusLabels: Record<string, string> = {
 }
 
 const live = computed(() => listings.value.find(l => l.id === props.listingId))
-const status = computed(() => live.value?.aiStatus ?? 'not_set')
+
+// For multi-unit listings, aggregate AI status from unit types (any active = active, all paused = paused).
+// For single-unit listings, use the listing-level aiStatus directly.
+const status = computed(() => {
+  if (!live.value)
+    return 'not_set'
+  if (live.value.unitType !== 'multi' || !live.value.unitTypes?.length)
+    return live.value.aiStatus
+  const types = live.value.unitTypes
+  const allPaused = types.every(ut => (ut.aiStatus ?? 'active') === 'paused')
+  if (allPaused)
+    return 'paused'
+  const anyActive = types.some(ut => (ut.aiStatus ?? 'active') === 'active')
+  if (anyActive)
+    return 'active'
+  return live.value.aiStatus
+})
+
 const inactive = computed(() => {
   if (!live.value)
     return false

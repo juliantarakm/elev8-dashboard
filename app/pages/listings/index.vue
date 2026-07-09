@@ -62,7 +62,10 @@ function otaIcon(ota: string) {
 const expandedRows = ref<Set<string>>(new Set())
 
 const listingsKey = computed(() =>
-  listings.value.map(l => `${l.id}:${l.status}:${l.aiStatus}:${getUnits(l).map(u => `${u.id}:${u.status}:${u.aiStatus}`).join(',')}`).join('|'),
+  listings.value.map(l => {
+    const unitTypes = l.unitTypes?.map(ut => `${ut.id}:${ut.aiStatus ?? '-'}:${ut.units.map(u => `${u.id}:${u.status}`).join(',')}`).join('|') ?? ''
+    return `${l.id}:${l.status}:${l.aiStatus}:${unitTypes}`
+  }).join('||'),
 )
 
 function toggleExpand(id: string) {

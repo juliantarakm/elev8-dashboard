@@ -20,7 +20,7 @@ const publicReview = ref('')
 const privateFeedback = ref('')
 const cleanliness = ref(5)
 const communication = ref(5)
-const houseRules = ref(5)
+const respectHouseRules = ref(5)
 const recommendGuest = ref(true)
 const wouldHostAgain = ref(true)
 const isRegenerating = ref(false)
@@ -31,7 +31,7 @@ watch(() => props.review, (r) => {
     privateFeedback.value = r.private_feedback || ''
     cleanliness.value = r.ratings?.cleanliness ?? 5
     communication.value = r.ratings?.communication ?? 5
-    houseRules.value = r.ratings?.house_rules ?? 5
+    respectHouseRules.value = r.ratings?.respect_house_rules ?? 5
     recommendGuest.value = r.recommend_guest ?? true
     wouldHostAgain.value = r.would_host_again ?? true
   }
@@ -45,7 +45,7 @@ function handleSave() {
   const ratings: ReviewRatings = {
     cleanliness: cleanliness.value,
     communication: communication.value,
-    house_rules: houseRules.value,
+    respect_house_rules: respectHouseRules.value,
   }
   saveDraft(props.review.id, {
     public_review: publicReview.value,
@@ -64,7 +64,7 @@ function handlePost() {
   const ratings: ReviewRatings = {
     cleanliness: cleanliness.value,
     communication: communication.value,
-    house_rules: houseRules.value,
+    respect_house_rules: respectHouseRules.value,
   }
   saveDraft(props.review.id, {
     public_review: publicReview.value,
@@ -87,13 +87,13 @@ async function handleRegenerate() {
   toast.success('Review regenerated.')
 }
 
-function setRating(field: 'cleanliness' | 'communication' | 'houseRules', value: number) {
+function setRating(field: 'cleanliness' | 'communication' | 'respectHouseRules', value: number) {
   const clamped = Math.max(1, Math.min(5, value))
   if (field === 'cleanliness')
     cleanliness.value = clamped
   else if (field === 'communication')
     communication.value = clamped
-  else houseRules.value = clamped
+  else respectHouseRules.value = clamped
 }
 
 function ratingStars(rating: number) {
@@ -259,22 +259,22 @@ function getToneLabel(code: string) {
                         :key="`rules-${n}`"
                         type="button"
                         class="text-lg transition-colors"
-                        :class="n <= houseRules ? 'text-yellow-500' : 'text-muted-foreground/30'"
-                        @click="setRating('houseRules', n)"
+                        :class="n <= respectHouseRules ? 'text-yellow-500' : 'text-muted-foreground/30'"
+                        @click="setRating('respectHouseRules', n)"
                       >
                         ★
                       </button>
                     </div>
                     <p class="mt-0.5 text-xs text-muted-foreground">
-                      {{ houseRules }}/5
+                      {{ respectHouseRules }}/5
                     </p>
                   </template>
                   <template v-else>
                     <p class="mt-1 text-lg text-yellow-500">
-                      {{ ratingStars(houseRules) }}
+                      {{ ratingStars(respectHouseRules) }}
                     </p>
                     <p class="text-xs text-muted-foreground">
-                      {{ houseRules }}/5
+                      {{ respectHouseRules }}/5
                     </p>
                   </template>
                 </div>

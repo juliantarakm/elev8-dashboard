@@ -28,6 +28,9 @@ function updateBasics(patch: Partial<typeof basics.value>) {
 function updateResources(patch: Partial<Listing['resources']>) {
   emit('update', { ...props.listing, resources: { ...props.listing.resources, ...patch } })
 }
+function updateListingField<K extends keyof Listing>(key: K, value: Listing[K]) {
+  emit('update', { ...props.listing, [key]: value })
+}
 
 const allAmenities = [
   'Pool',
@@ -166,6 +169,56 @@ const isFilled = (val?: string) => !!val?.trim()
                 </div>
                 <Input type="time" :model-value="basics.checkOutTime ?? '11:00'" @update:model-value="(v) => updateBasics({ checkOutTime: String(v) })" />
               </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5 pt-2">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Connectivity & Access
+              </h3>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <Label>Wi-Fi SSID</Label>
+                <Input
+                  :model-value="listing.wifiSsid ?? ''"
+                  placeholder="e.g. VillaBali_5G"
+                  @update:model-value="(v) => updateListingField('wifiSsid', String(v))"
+                />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <Label>Wi-Fi Password</Label>
+                <Input
+                  type="password"
+                  :model-value="listing.wifiPassword ?? ''"
+                  placeholder="Network password"
+                  @update:model-value="(v) => updateListingField('wifiPassword', String(v))"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5 pt-2">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Arrival & Departure
+              </h3>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <Label>Check-in Instructions</Label>
+              <Textarea
+                :model-value="listing.checkInInstructions ?? ''" rows="3"
+                placeholder="e.g. Our staff will meet you at the gate. Look for the welcome sign with your name."
+                @update:model-value="(v) => updateListingField('checkInInstructions', String(v))"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <Label>Check-out Instructions</Label>
+              <Textarea
+                :model-value="listing.checkOutInstructions ?? ''" rows="3"
+                placeholder="e.g. Leave the keys on the kitchen counter. Safe travels!"
+                @update:model-value="(v) => updateListingField('checkOutInstructions', String(v))"
+              />
             </div>
 
             <div class="flex flex-col gap-1.5">
