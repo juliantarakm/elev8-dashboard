@@ -926,7 +926,6 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
         name: 'Send Guest Guide',
         actionType: 'send_guest_guide',
         details: '',
-        data: { guideId: 'gg-mock-001', channel: 'whatsapp', expiryHours: 168 },
       },
       {
         id: 'mkt-gg1-s3',
