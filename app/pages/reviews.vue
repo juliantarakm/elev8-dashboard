@@ -32,7 +32,10 @@ const bannerState = computed<BannerState>(() => {
   if (!reviewConfig.value.enabled) {
     return 'off'
   }
-  if (!reviewConfig.value.auto_post_channels.airbnb && !reviewConfig.value.auto_post_channels.booking_com) {
+  const hasAutoPost = reviewConfig.value.auto_post_host_review
+    || reviewConfig.value.auto_post_replies.airbnb
+    || reviewConfig.value.auto_post_replies.booking_com
+  if (!hasAutoPost) {
     return 'autopost_off'
   }
   return null
@@ -134,6 +137,9 @@ function openDrawerAndGenerate(item: ReviewFeedItem) {
       :unique-listings="uniqueListings"
       @clear="clearFilters"
     />
+
+    <!-- Aggregate Scores -->
+    <ReviewHubScoreCards />
 
     <!-- Feed Table -->
     <ReviewHubFeedTable

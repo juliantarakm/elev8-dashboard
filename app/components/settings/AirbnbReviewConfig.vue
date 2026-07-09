@@ -10,43 +10,57 @@ function handleToggle(enabled: boolean) {
   toast.success(enabled ? 'Review automation enabled.' : 'Review automation disabled.')
 }
 
-function handleChannelToggle(channel: 'airbnb' | 'booking_com', enabled: boolean) {
-  updateConfig({ auto_post_channels: { ...config.value.auto_post_channels, [channel]: enabled } })
-  const labels = { airbnb: 'Airbnb', booking_com: 'Booking.com' }
-  toast.success(enabled
-    ? `Reviews will be auto-posted to ${labels[channel]}.`
-    : `Reviews for ${labels[channel]} will be saved as drafts.`)
-}
-
-function handleLanguageUpdate(value: string | number | null | undefined) {
+function handleLanguageUpdate(value: any) {
   if (value) {
     updateConfig({ host_language: value as HostLanguage })
     toast.success('Review language updated.')
   }
 }
 
-function handleToneUpdate(mode: ToneMode) {
-  updateConfig({ tone_mode: mode })
+function handleToneUpdate(value: any) {
+  updateConfig({ tone_mode: value as ToneMode })
   toast.success('Review tone updated.')
 }
 
-function handleDelayUpdate(val: string | number | null | undefined) {
-  const num = Number(val)
+function handleHostReviewAutoPost(enabled: boolean) {
+  updateConfig({ auto_post_host_review: enabled })
+  toast.success(enabled ? 'Host reviews will be auto-posted to Airbnb.' : 'Host reviews will be saved as draft.')
+}
+
+function handleAutoSelectTags(enabled: boolean) {
+  updateConfig({ auto_select_tags: enabled })
+  toast.success(enabled ? 'Tags will be auto-selected from SOR.' : 'Tags selection is manual.')
+}
+
+function handleReplyChannelToggle(channel: 'airbnb' | 'booking_com', enabled: boolean) {
+  updateConfig({ auto_post_replies: { ...config.value.auto_post_replies, [channel]: enabled } })
+  const labels = { airbnb: 'Airbnb', booking_com: 'Booking.com' }
+  toast.success(enabled
+    ? `Replies to ${labels[channel]} reviews will be auto-posted.`
+    : `Replies to ${labels[channel]} will be saved as drafts.`)
+}
+
+function handleDelayUpdate(value: any) {
+  const num = Number(value)
   if (!Number.isNaN(num) && num >= 1 && num <= 168) {
     updateConfig({ review_delay_hours: num })
   }
 }
 
-function handleAutoPostDelayUpdate(val: string | number | null | undefined) {
-  const num = Number(val)
-  if (!Number.isNaN(num) && num >= 0 && num <= 13) {
-    updateConfig({ auto_post_delay_days: num })
-    toast.success('Auto-post delay updated.')
+function handleHostReviewDelayUpdate(value: any) {
+  const num = Number(value)
+  if (!Number.isNaN(num) && num >= 1 && num <= 13) {
+    updateConfig({ host_review_delay_days: num })
+    toast.success('Host review delay updated.')
   }
 }
 
-function isAnyAutoPostEnabled() {
-  return config.value.auto_post_channels.airbnb || config.value.auto_post_channels.booking_com
+function handleReplyDelayUpdate(value: any) {
+  const num = Number(value)
+  if (!Number.isNaN(num) && num >= 0 && num <= 30) {
+    updateConfig({ reply_delay_days: num })
+    toast.success('Reply delay updated.')
+  }
 }
 </script>
 
@@ -66,7 +80,7 @@ function isAnyAutoPostEnabled() {
       <div class="space-y-1">
         <Label class="text-sm font-medium">Enable Review Automation</Label>
         <p class="text-xs text-muted-foreground">
-          Automatically generate and post guest reviews after checkout.
+          Automatically generate and post host reviews and guest replies.
         </p>
       </div>
       <button
@@ -92,7 +106,7 @@ function isAnyAutoPostEnabled() {
         <div class="space-y-1">
           <Label class="text-sm font-medium">Review Language</Label>
           <p class="text-xs text-muted-foreground">
-            Language for all generated reviews.
+            Language for all generated reviews and replies.
           </p>
         </div>
         <Select :model-value="config.host_language" @update:model-value="handleLanguageUpdate">
@@ -139,86 +153,182 @@ function isAnyAutoPostEnabled() {
 
       <Separator />
 
-      <!-- Auto-Post Channels -->
-      <div class="space-y-3">
-        <div class="space-y-1">
-          <Label class="text-sm font-medium">Auto-Post Channels</Label>
-          <p class="text-xs text-muted-foreground">
-            Choose which channels ElevAI should auto-post to. Off channels are saved as drafts.
-          </p>
+      <!-- ================================================================ -->
+      <!-- Section A: Host Review of Guest (Airbnb only) -->
+      <!-- ================================================================ -->
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <Icon name="lucide:user-check" class="size-4 text-primary" />
+          <h4 class="text-base font-medium">Host Review of Guest</h4>
         </div>
-
-        <!-- Airbnb -->
-        <div class="flex items-center justify-between rounded-lg border bg-card p-4">
-          <div class="flex items-center gap-3">
-            <Icon name="logos:airbnb" class="size-5" />
-            <div class="space-y-0.5">
-              <p class="text-sm font-medium">
-                Airbnb
-              </p>
-              <p class="text-xs text-muted-foreground">
-                14-day review window after checkout
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            :aria-checked="config.auto_post_channels.airbnb"
-            class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            :class="config.auto_post_channels.airbnb ? 'bg-primary' : 'bg-input'"
-            @click="handleChannelToggle('airbnb', !config.auto_post_channels.airbnb)"
-          >
-            <span
-              class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
-              :class="config.auto_post_channels.airbnb ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
-            />
-          </button>
-        </div>
-
-        <!-- Booking.com -->
-        <div class="flex items-center justify-between rounded-lg border bg-card p-4">
-          <div class="flex items-center gap-3">
-            <Icon name="simple-icons:bookingdotcom" class="size-5" />
-            <div class="space-y-0.5">
-              <p class="text-sm font-medium">
-                Booking.com
-              </p>
-              <p class="text-xs text-muted-foreground">
-                365-day review window after checkout
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            :aria-checked="config.auto_post_channels.booking_com"
-            class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
-            :class="config.auto_post_channels.booking_com ? 'bg-primary' : 'bg-input'"
-            @click="handleChannelToggle('booking_com', !config.auto_post_channels.booking_com)"
-          >
-            <span
-              class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
-              :class="config.auto_post_channels.booking_com ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
-            />
-          </button>
-        </div>
+        <p class="text-xs text-muted-foreground">
+          Review the guest based on SOR data. Airbnb-only — 14-day window after checkout.
+        </p>
       </div>
 
-      <div v-if="isAnyAutoPostEnabled()" class="space-y-3">
+      <!-- Auto-Post Host Review toggle -->
+      <div class="flex items-center justify-between rounded-lg border bg-card p-4">
+        <div class="flex items-center gap-3">
+          <Icon name="logos:airbnb" class="size-5" />
+          <div class="space-y-0.5">
+            <p class="text-sm font-medium">
+              Auto-Post to Airbnb
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Auto-generate and submit host reviews. Off = save as draft.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="config.auto_post_host_review"
+          class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+          :class="config.auto_post_host_review ? 'bg-primary' : 'bg-input'"
+          @click="handleHostReviewAutoPost(!config.auto_post_host_review)"
+        >
+          <span
+            class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
+            :class="config.auto_post_host_review ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
+          />
+        </button>
+      </div>
+
+      <!-- Host Review delay -->
+      <div v-if="config.auto_post_host_review" class="space-y-3">
         <div class="space-y-1">
-          <Label class="text-sm font-medium">Auto-Post Delay</Label>
+          <Label class="text-sm font-medium">Submission Delay</Label>
           <p class="text-xs text-muted-foreground">
-            Days to wait after review generation before posting automatically. Use 0 to post immediately. Keep ≤ 13 to leave a 1-day buffer for Airbnb's 14-day window.
+            Days after checkout before auto-submitting the host review. Keep ≤ 13 to stay within Airbnb's 14-day window.
           </p>
         </div>
         <div class="flex items-center gap-3">
           <NumberField
-            :model-value="config.auto_post_delay_days"
-            :min="0"
+            :model-value="config.host_review_delay_days"
+            :min="1"
             :max="13"
             class="w-[140px]"
-            @update:model-value="handleAutoPostDelayUpdate"
+            @update:model-value="handleHostReviewDelayUpdate"
+          >
+            <NumberFieldContent>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
+          <span class="text-sm text-muted-foreground">days</span>
+        </div>
+      </div>
+
+      <!-- Auto-select tags -->
+      <div class="flex items-center justify-between rounded-lg border bg-card p-4">
+        <div class="space-y-1">
+          <Label class="text-sm font-medium">Auto-Select Tags</Label>
+          <p class="text-xs text-muted-foreground">
+            Auto-populate host review tags from SOR signals. Tags can still be edited manually.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="config.auto_select_tags"
+          class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+          :class="config.auto_select_tags ? 'bg-primary' : 'bg-input'"
+          @click="handleAutoSelectTags(!config.auto_select_tags)"
+        >
+          <span
+            class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
+            :class="config.auto_select_tags ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
+          />
+        </button>
+      </div>
+
+      <Separator />
+
+      <!-- ================================================================ -->
+      <!-- Section B: Reply to Guest Review -->
+      <!-- ================================================================ -->
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <Icon name="lucide:message-circle" class="size-4 text-primary" />
+          <h4 class="text-base font-medium">Reply to Guest Review</h4>
+        </div>
+        <p class="text-xs text-muted-foreground">
+          Auto-generate and post public replies to guest reviews. Airbnb: 30d window. Booking.com: 30d window.
+        </p>
+      </div>
+
+      <!-- Airbnb reply -->
+      <div class="flex items-center justify-between rounded-lg border bg-card p-4">
+        <div class="flex items-center gap-3">
+          <Icon name="logos:airbnb" class="size-5" />
+          <div class="space-y-0.5">
+            <p class="text-sm font-medium">
+              Airbnb
+            </p>
+            <p class="text-xs text-muted-foreground">
+              30 days to reply after review goes live
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="config.auto_post_replies.airbnb"
+          class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+          :class="config.auto_post_replies.airbnb ? 'bg-primary' : 'bg-input'"
+          @click="handleReplyChannelToggle('airbnb', !config.auto_post_replies.airbnb)"
+        >
+          <span
+            class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
+            :class="config.auto_post_replies.airbnb ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
+          />
+        </button>
+      </div>
+
+      <!-- Booking.com reply -->
+      <div class="flex items-center justify-between rounded-lg border bg-card p-4">
+        <div class="flex items-center gap-3">
+          <Icon name="simple-icons:bookingdotcom" class="size-5" />
+          <div class="space-y-0.5">
+            <p class="text-sm font-medium">
+              Booking.com
+            </p>
+            <p class="text-xs text-muted-foreground">
+              30 days to reply via management response
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="config.auto_post_replies.booking_com"
+          class="peer inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
+          :class="config.auto_post_replies.booking_com ? 'bg-primary' : 'bg-input'"
+          @click="handleReplyChannelToggle('booking_com', !config.auto_post_replies.booking_com)"
+        >
+          <span
+            class="bg-background pointer-events-none block size-4 rounded-full ring-0 transition-transform"
+            :class="config.auto_post_replies.booking_com ? 'translate-x-[calc(100%-2px)]' : 'translate-x-0'"
+          />
+        </button>
+      </div>
+
+      <!-- Reply delay -->
+      <div v-if="config.auto_post_replies.airbnb || config.auto_post_replies.booking_com" class="space-y-3">
+        <div class="space-y-1">
+          <Label class="text-sm font-medium">Reply Delay</Label>
+          <p class="text-xs text-muted-foreground">
+            Days to wait after review is detected before auto-posting the reply. Use 0 for immediate.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <NumberField
+            :model-value="config.reply_delay_days"
+            :min="0"
+            :max="30"
+            class="w-[140px]"
+            @update:model-value="handleReplyDelayUpdate"
           >
             <NumberFieldContent>
               <NumberFieldDecrement />
@@ -232,12 +342,12 @@ function isAnyAutoPostEnabled() {
 
       <Separator />
 
-      <!-- Review Delay -->
+      <!-- Review Generation Delay (shared) -->
       <div class="space-y-3">
         <div class="space-y-1">
-          <Label class="text-sm font-medium">Review Delay</Label>
+          <Label class="text-sm font-medium">Generation Delay</Label>
           <p class="text-xs text-muted-foreground">
-            Hours after checkout before generating the review. Allows time for housekeeping feedback.
+            Hours after checkout before generating reviews. Allows time for housekeeping feedback.
           </p>
         </div>
         <div class="flex items-center gap-3">

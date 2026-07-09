@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReviewFeedItem } from '~/components/review-hub/data/types'
 import { format } from 'date-fns'
+import { getDisplayScore, getDisplayMax } from '~/components/review-hub/data/types'
 
 defineProps<{
   items: ReviewFeedItem[]
@@ -11,7 +12,7 @@ const emit = defineEmits<{
   generate: [item: ReviewFeedItem]
 }>()
 
-const { getHostReviewCountdown, getUnitInfo, getListingStructure } = useReviewHub()
+const { getHostReviewCountdown, getUnitInfo, getListingStructure, isGuestReviewHidden, getReplyCountdown, getComputedStatus } = useReviewHub()
 
 function getPropertySubtext(item: ReviewFeedItem) {
   const structure = getListingStructure(item.review_record.listing_id)
@@ -38,14 +39,14 @@ function formatDate(date: string) {
   return format(new Date(date), 'MMM d, yyyy')
 }
 
-// Airbnb double-blind: rating hidden until host submits their review
+// Airbnb double-blind: rating hidden until host submits OR 14 days pass
 function isRatingHidden(item: ReviewFeedItem) {
-  return item.review_record.source === 'airbnb' && !item.review_record.host_review_id
+  return isGuestReviewHidden(item.review_record)
 }
 
-function ratingDisplay(rating: number | null, max: number | null) {
+function ratingDisplay(rating: number | null, source: string) {
   if (rating === null) return '-'
-  return `${rating}/${max ?? 5}`
+  return `${getDisplayScore(rating, source as any)}/${getDisplayMax(source as any)}`
 }
 
 // Host review window expired (Airbnb 14d, Booking.com 365d) — only relevant for channels that support host reviews
@@ -53,6 +54,27 @@ function isHostReviewExpired(item: ReviewFeedItem) {
   const r = item.review_record
   if (r.source === 'direct') return true
   return getHostReviewCountdown(r.checkout_date, r.source) <= 0
+}
+
+function hasHostReviewWindowOpen(item: ReviewFeedItem) {
+  const r = item.review_record
+  if (r.source === 'direct') return false
+  if (r.host_review_id) return false
+  return !isHostReviewExpired(item)
+}
+
+function canReplyToGuest(item: ReviewFeedItem) {
+  const r = item.review_record
+  const status = getComputedStatus(r)
+  if (status === 'replied' || status === 'host_review_pending') return false
+  if (!r.guest_review_text && r.guest_rating_overall === null) return false
+  return true
+}
+
+function isReplyExpired(item: ReviewFeedItem) {
+  const r = item.review_record
+  if (r.source === 'direct') return false
+  return getReplyCountdown(r.checkout_date, r.source) <= 0
 }
 </script>
 
@@ -108,7 +130,7 @@ function isHostReviewExpired(item: ReviewFeedItem) {
           </TableCell>
           <TableCell>
             <div v-if="item.review_record.guest_rating_overall && !isRatingHidden(item)" class="flex items-center gap-1.5">
-              <span class="text-sm font-medium">{{ ratingDisplay(item.review_record.guest_rating_overall, item.review_record.guest_rating_max) }}</span>
+              <span class="text-sm font-medium">{{ ratingDisplay(item.review_record.guest_rating_overall, item.review_record.source) }}</span>
             </div>
             <div v-else-if="isRatingHidden(item)" class="flex items-center gap-1.5 text-muted-foreground">
               <Icon name="lucide:eye-off" class="size-3.5" />
@@ -120,20 +142,29 @@ function isHostReviewExpired(item: ReviewFeedItem) {
             <ReviewHubMiniBadges :sor="item.sor" />
           </TableCell>
           <TableCell>
-            <ReviewHubStatusChip :status="item.review_record.reply_status" />
+            <ReviewHubStatusChip :status="getComputedStatus(item.review_record)" />
           </TableCell>
           <TableCell class="text-right">
             <Button
-              v-if="item.review_record.reply_status === 'needs_reply'"
+              v-if="hasHostReviewWindowOpen(item)"
               size="sm"
               class="h-8 gap-1.5"
-              :disabled="isHostReviewExpired(item) || isGenerating(item.id)"
-              :title="isHostReviewExpired(item) ? `${item.review_record.source === 'booking_com' ? '365' : '14'}-day review window closed` : ''"
+              :disabled="isGenerating(item.id)"
               @click.stop="handleGenerate(item)"
             >
               <Icon v-if="isGenerating(item.id)" name="lucide:loader-circle" class="size-3.5 animate-spin" />
               <SharedAiIcon v-else custom-class="size-3.5" />
-              {{ isGenerating(item.id) ? 'Generating...' : 'Generate' }}
+              {{ isGenerating(item.id) ? 'Generating...' : 'Write Host Review' }}
+            </Button>
+            <Button
+              v-else-if="canReplyToGuest(item) && !isReplyExpired(item)"
+              size="sm"
+              :variant="item.review_record.reply_status === 'needs_reply' ? 'default' : 'outline'"
+              class="h-8 gap-1.5"
+              @click.stop="emit('select', item)"
+            >
+              <Icon name="lucide:message-circle" class="size-3.5" />
+              Reply
             </Button>
             <Button v-else size="sm" variant="outline" class="h-8 gap-1.5" @click.stop="emit('select', item)">
               <Icon name="lucide:eye" class="size-3.5" />

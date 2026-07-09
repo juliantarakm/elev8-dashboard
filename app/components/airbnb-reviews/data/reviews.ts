@@ -5,7 +5,7 @@ export type HostLanguage = 'en' | 'de' | 'fr' | 'id' | 'es' | 'it' | 'pt'
 export interface ReviewRatings {
   cleanliness: number
   communication: number
-  house_rules: number
+  respect_house_rules: number
 }
 
 export interface AutoReview {
@@ -58,12 +58,15 @@ export interface ReviewAutomationConfig {
   host_language: HostLanguage
   tone_mode: ToneMode
   strict_mode: boolean
-  auto_post_channels: {
+  auto_post_host_review: boolean
+  host_review_delay_days: number
+  auto_select_tags: boolean
+  auto_post_replies: {
     airbnb: boolean
     booking_com: boolean
   }
+  reply_delay_days: number
   review_delay_hours: number
-  auto_post_delay_days: number
 }
 
 export const defaultConfig: ReviewAutomationConfig = {
@@ -71,12 +74,15 @@ export const defaultConfig: ReviewAutomationConfig = {
   host_language: 'en',
   tone_mode: 'balanced',
   strict_mode: false,
-  auto_post_channels: {
+  auto_post_host_review: false,
+  host_review_delay_days: 3,
+  auto_select_tags: true,
+  auto_post_replies: {
     airbnb: false,
     booking_com: false,
   },
+  reply_delay_days: 1,
   review_delay_hours: 24,
-  auto_post_delay_days: 3,
 }
 
 export const hostLanguageOptions: { value: HostLanguage, label: string, flag: string }[] = [
@@ -143,7 +149,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'Sarah was a wonderful guest! She communicated clearly, arrived on time, and left the property in excellent condition. The housekeeping team noted how tidy everything was - a true pleasure to host. We\'d happily welcome Sarah back anytime!',
     private_feedback: 'No concerns. Excellent guest in all aspects. Minor note: sunglasses left on nightstand, placed in lost & found.',
-    ratings: { cleanliness: 5, communication: 5, house_rules: 5 },
+    ratings: { cleanliness: 5, communication: 5, respect_house_rules: 5 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
@@ -175,7 +181,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'Thomas and his group were respectful guests who enjoyed their stay. Communication was prompt and clear. The property was left in good condition overall. Housekeeping noted some unwashed dishes in the sink and towels left on the floor, but nothing major. We appreciate their stay!',
     private_feedback: 'Guests left some dishes in the sink and towels on the floor. Minor issues but worth noting for future hosts. Overall a positive experience.',
-    ratings: { cleanliness: 4, communication: 5, house_rules: 4 },
+    ratings: { cleanliness: 4, communication: 5, respect_house_rules: 4 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
@@ -207,7 +213,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'Lisa had a good stay at the Surf Shack. Communication was fine throughout. The housekeeping team noted the property needed extra cleaning - sand in the living room, dishes in the sink, and some water damage on the bathroom floor. There was a small scratch on the glass coffee table. A phone charger was left behind and returned. Would consider hosting again with some reservations.',
     private_feedback: 'Extra cleaning needed - sand throughout, dishes piled up, bathroom floor wet. Small scratch on coffee table noted. Phone charger left behind (returned via Airbnb). Guests used the property heavily. Worth noting for future hosts.',
-    ratings: { cleanliness: 3, communication: 4, house_rules: 3 },
+    ratings: { cleanliness: 3, communication: 4, respect_house_rules: 3 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
@@ -271,7 +277,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'Elena was a wonderful guest! She communicated clearly before and during her stay, left the property in pristine condition, and was a pleasure to host. The housekeeping team confirmed everything was spotless after checkout. Highly recommend to other hosts!',
     private_feedback: 'No concerns. Excellent guest in every aspect.',
-    ratings: { cleanliness: 5, communication: 5, house_rules: 5 },
+    ratings: { cleanliness: 5, communication: 5, respect_house_rules: 5 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
@@ -335,7 +341,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'Anna and her group were wonderful guests! They communicated clearly throughout their stay and left the property in excellent condition. The housekeeping team noted how tidy everything was. Highly recommend hosting Anna!',
     private_feedback: 'No concerns at all. Guests were very respectful of the property and neighbors. Easy to communicate with.',
-    ratings: { cleanliness: 5, communication: 5, house_rules: 5 },
+    ratings: { cleanliness: 5, communication: 5, respect_house_rules: 5 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
@@ -367,7 +373,7 @@ export const mockReviews: AutoReview[] = [
     tone_mode: 'balanced',
     public_review: 'David was a great guest! Communication was smooth, check-in/out was on time, and the property was left in good condition. The housekeeping team confirmed everything was well-maintained. Would happily host David again!',
     private_feedback: 'Minor note: requested late checkout which we accommodated. Otherwise excellent guest with no issues.',
-    ratings: { cleanliness: 5, communication: 5, house_rules: 5 },
+    ratings: { cleanliness: 5, communication: 5, respect_house_rules: 5 },
     recommend_guest: true,
     would_host_again: true,
     manually_edited: false,
