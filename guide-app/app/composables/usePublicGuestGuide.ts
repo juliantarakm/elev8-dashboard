@@ -4,6 +4,7 @@ import type { GuestGuide, GuestGuideLink } from '~/../app/components/guest-guide
 export interface PublicGuideResponse {
   link: GuestGuideLink
   guide: GuestGuide
+  listing?: any // Listing for fallback data (Wi-Fi, check-in/out, house rules, amenities)
 }
 
 export function usePublicGuestGuide() {
