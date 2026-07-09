@@ -1,15 +1,15 @@
 import { computed } from 'vue'
 import { useNotifications } from '~/composables/useNotifications'
 
-export type SeamProvider = 'seam' | 'igloohome' | 'august' | 'yale' | 'nuki' | 'schlage'
+export type SmartLockProvider = 'igloohome' | 'august' | 'yale' | 'nuki' | 'schlage'
 
-export type SeamConnectionStatus = 'connected' | 'disconnected' | 'pending' | 'error'
+export type SmartLockConnectionStatus = 'connected' | 'disconnected' | 'pending' | 'error'
 
-export interface SeamConnection {
+export interface SmartLockConnection {
   id: string
   apiKey: string
   workspaceName: string
-  status: SeamConnectionStatus
+  status: SmartLockConnectionStatus
   webhookToken: string
   webhookUrl: string
   deviceCount: number
@@ -17,11 +17,11 @@ export interface SeamConnection {
   lastSyncAt: string | null
 }
 
-export interface SeamDevice {
+export interface SmartLockDevice {
   deviceId: string
   name: string
   deviceType: string
-  provider: SeamProvider
+  provider: SmartLockProvider
   model: string
   batteryLevel: number
   online: boolean
@@ -30,7 +30,7 @@ export interface SeamDevice {
 
 export interface SmartLock {
   id: string
-  seamDeviceId: string
+  providerDeviceId: string
   name: string
   assignment: 'property' | 'room'
   listingId: string
@@ -52,19 +52,28 @@ export interface AccessCode {
   guestName?: string
   reservationId?: string
   status: 'active' | 'expired' | 'revoked'
-  seamCodeId: string
+  providerCodeId: string
 }
 
-const CONNECTION_KEY = 'elev8-seam-connection'
+const CONNECTION_KEY = 'elev8-smartlock-connection'
 const LOCKS_KEY = 'elev8-smart-locks'
 const CODES_KEY = 'elev8-smart-lock-codes'
 
-const MOCK_DEVICES: SeamDevice[] = [
-  { deviceId: 'seam-dev-001', name: 'Front Door', deviceType: 'lock', provider: 'august', model: 'August Wi-Fi Smart Lock (4th Gen)', batteryLevel: 87, online: true, paired: false },
-  { deviceId: 'seam-dev-002', name: 'Back Gate', deviceType: 'lock', provider: 'igloohome', model: 'igloohome Smart Deadbolt 2S', batteryLevel: 62, online: true, paired: false },
-  { deviceId: 'seam-dev-003', name: 'Pool Gate', deviceType: 'lock', provider: 'yale', model: 'Yale Assure Lock 2', batteryLevel: 12, online: false, paired: false },
-  { deviceId: 'seam-dev-004', name: 'Side Door', deviceType: 'lock', provider: 'nuki', model: 'Nuki Smart Lock 4.0', batteryLevel: 95, online: true, paired: false },
-  { deviceId: 'seam-dev-005', name: 'Safe', deviceType: 'lock', provider: 'schlage', model: 'Schlage Encode Plus', batteryLevel: 78, online: true, paired: false },
+const MOCK_DEVICES: SmartLockDevice[] = [
+  { deviceId: 'dev-001', name: 'Front Door', deviceType: 'lock', provider: 'august', model: 'August Wi-Fi Smart Lock (4th Gen)', batteryLevel: 87, online: true, paired: false },
+  { deviceId: 'dev-002', name: 'Back Gate', deviceType: 'lock', provider: 'igloohome', model: 'igloohome Smart Deadbolt 2S', batteryLevel: 62, online: true, paired: false },
+  { deviceId: 'dev-003', name: 'Pool Gate', deviceType: 'lock', provider: 'yale', model: 'Yale Assure Lock 2', batteryLevel: 12, online: false, paired: false },
+  { deviceId: 'dev-004', name: 'Side Door', deviceType: 'lock', provider: 'nuki', model: 'Nuki Smart Lock 4.0', batteryLevel: 95, online: true, paired: false },
+  { deviceId: 'dev-005', name: 'Safe', deviceType: 'lock', provider: 'schlage', model: 'Schlage Encode Plus', batteryLevel: 78, online: true, paired: false },
+  // Extra August devices — same brand, share codes with dev-001
+  { deviceId: 'dev-006', name: 'Garage Door', deviceType: 'lock', provider: 'august', model: 'August Smart Lock Pro (3rd Gen)', batteryLevel: 74, online: true, paired: false },
+  { deviceId: 'dev-007', name: 'Side Gate', deviceType: 'lock', provider: 'august', model: 'August Smart Lock (2nd Gen)', batteryLevel: 43, online: true, paired: false },
+  // Extra Yale device
+  { deviceId: 'dev-008', name: 'Office Door', deviceType: 'lock', provider: 'yale', model: 'Yale Assure Lock 2 Touch', batteryLevel: 81, online: true, paired: false },
+  // Extra Schlage device
+  { deviceId: 'dev-009', name: 'Wine Cellar', deviceType: 'lock', provider: 'schlage', model: 'Schlage Encode Deadbolt', batteryLevel: 56, online: true, paired: false },
+  // Extra Nuki device (low battery for alert demo)
+  { deviceId: 'dev-010', name: 'Boathouse', deviceType: 'lock', provider: 'nuki', model: 'Nuki Smart Lock Pro 4.0', batteryLevel: 8, online: false, paired: false },
 ]
 
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -97,7 +106,7 @@ function generateWebhookToken(): string {
 }
 
 export function useSmartLock() {
-  const connection = useState<SeamConnection | null>('seam-connection', () => loadFromStorage<SeamConnection | null>(CONNECTION_KEY, null))
+  const connection = useState<SmartLockConnection | null>('smartlock-connection', () => loadFromStorage<SmartLockConnection | null>(CONNECTION_KEY, null))
   const locks = useState<SmartLock[]>('smart-locks', () => loadFromStorage<SmartLock[]>(LOCKS_KEY, []))
   const codes = useState<AccessCode[]>('smart-lock-codes', () => loadFromStorage<AccessCode[]>(CODES_KEY, []))
 
@@ -111,10 +120,10 @@ export function useSmartLock() {
 
   const isConnected = computed(() => connection.value?.status === 'connected')
 
-  const allDevices = computed<SeamDevice[]>(() => {
+  const allDevices = computed<SmartLockDevice[]>(() => {
     if (!isConnected.value) return []
     return MOCK_DEVICES.map((d) => {
-      const paired = locks.value.some(l => l.seamDeviceId === d.deviceId)
+      const paired = locks.value.some(l => l.providerDeviceId === d.deviceId)
       return { ...d, paired }
     })
   })
@@ -127,16 +136,16 @@ export function useSmartLock() {
     await new Promise(r => setTimeout(r, 1500))
     if (!apiKey.trim()) return { success: false, error: 'API key is required.' }
     if (!apiKey.startsWith('seam_') && !apiKey.startsWith('sk_')) {
-      return { success: false, error: 'Invalid API key format. Seam API keys start with "seam_" or "sk_".' }
+      return { success: false, error: 'Invalid API key format. Keys start with "seam_" or "sk_".' }
     }
     const webhookToken = generateWebhookToken()
     connection.value = {
-      id: `seam-${Date.now()}`,
+      id: `smartlock-${Date.now()}`,
       apiKey,
       workspaceName: workspaceName.trim() || 'My Workspace',
       status: 'connected',
       webhookToken,
-      webhookUrl: `https://api.elev8.app/webhooks/seam/${webhookToken.slice(6)}`,
+      webhookUrl: `https://api.elev8.app/webhooks/smartlock/${webhookToken.slice(6)}`,
       deviceCount: MOCK_DEVICES.length,
       connectedAt: new Date().toISOString(),
       lastSyncAt: new Date().toISOString(),
@@ -192,16 +201,16 @@ export function useSmartLock() {
   }
 
   function pairLock(opts: {
-    seamDeviceId: string
+    providerDeviceId: string
     name: string
     assignment: 'property' | 'room'
     listingId: string
     unitId?: string
     isMain?: boolean
   }): { success: boolean, error?: string, lock?: SmartLock } {
-    const device = MOCK_DEVICES.find(d => d.deviceId === opts.seamDeviceId)
+    const device = MOCK_DEVICES.find(d => d.deviceId === opts.providerDeviceId)
     if (!device) return { success: false, error: 'Device not found.' }
-    if (locks.value.some(l => l.seamDeviceId === opts.seamDeviceId)) {
+    if (locks.value.some(l => l.providerDeviceId === opts.providerDeviceId)) {
       return { success: false, error: 'This lock is already paired.' }
     }
     if (opts.isMain) {
@@ -216,7 +225,7 @@ export function useSmartLock() {
     }
     const newLock: SmartLock = {
       id: `lock-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      seamDeviceId: device.deviceId,
+      providerDeviceId: device.deviceId,
       name: opts.name || device.name,
       assignment: opts.assignment,
       listingId: opts.listingId,
@@ -251,6 +260,31 @@ export function useSmartLock() {
     locks.value = locks.value.map(l => l.id === lockId ? { ...l, name } : l)
   }
 
+  function swapDevice(lockId: string, newProviderDeviceId: string): { success: boolean, error?: string, lock?: SmartLock } {
+    const target = locks.value.find(l => l.id === lockId)
+    if (!target) return { success: false, error: 'Lock not found.' }
+    if (target.providerDeviceId === newProviderDeviceId) {
+      return { success: false, error: 'This device is already paired to this lock.' }
+    }
+    const device = MOCK_DEVICES.find(d => d.deviceId === newProviderDeviceId)
+    if (!device) return { success: false, error: 'Device not found.' }
+    if (locks.value.some(l => l.id !== lockId && l.providerDeviceId === newProviderDeviceId)) {
+      return { success: false, error: 'This device is already paired to another lock in this workspace.' }
+    }
+    locks.value = locks.value.map((l) => {
+      if (l.id !== lockId) return l
+      return {
+        ...l,
+        providerDeviceId: device.deviceId,
+        batteryLevel: device.batteryLevel,
+        online: device.online,
+        lastSeen: new Date().toISOString(),
+      }
+    })
+    const updated = locks.value.find(l => l.id === lockId)
+    return { success: true, lock: updated }
+  }
+
   // --- Access codes ---
 
   function getCodesForLock(lockId: string): AccessCode[] {
@@ -261,35 +295,58 @@ export function useSmartLock() {
     return codes.value.find(c => c.lockId === lockId && c.status === 'active')
   }
 
-  function generateAccessCode(opts: {
+  async function generateAccessCode(opts: {
     lockId: string
     startsAt?: string
     endsAt?: string
     guestName?: string
     reservationId?: string
-  }): { success: boolean, error?: string, code?: AccessCode } {
+    code?: string
+  }): Promise<{ success: boolean, error?: string, code?: AccessCode }> {
+    // Mock network delay so loading states are visible in the UI
+    await new Promise(r => setTimeout(r, 700))
     const lock = locks.value.find(l => l.id === opts.lockId)
     if (!lock) return { success: false, error: 'Lock not found.' }
     const startsAt = opts.startsAt ?? new Date().toISOString()
     const endsAt = opts.endsAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    // Revoke any existing active code on this lock
-    codes.value = codes.value.map(c => c.lockId === opts.lockId && c.status === 'active'
-      ? { ...c, status: 'revoked' }
-      : c,
+    // Revoke any existing active code on this lock FOR THE SAME RESERVATION (so different guests
+    // can each have their own code on the same lock, and housekeeping codes don't conflict with guest codes)
+    codes.value = codes.value.map(c =>
+      c.lockId === opts.lockId && c.reservationId === opts.reservationId && c.status === 'active'
+        ? { ...c, status: 'revoked' }
+        : c,
     )
     const newCode: AccessCode = {
       id: `code-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       lockId: opts.lockId,
-      code: randomCode(),
+      code: opts.code ?? randomCode(),
       startsAt,
       endsAt,
       guestName: opts.guestName,
       reservationId: opts.reservationId,
       status: 'active',
-      seamCodeId: `seam-code-${Math.random().toString(36).slice(2, 10)}`,
+      providerCodeId: `code-${Math.random().toString(36).slice(2, 10)}`,
     }
     codes.value = [newCode, ...codes.value]
     return { success: true, code: newCode }
+  }
+
+  /**
+   * Find an existing active access code value for a given (reservationId, provider) combo.
+   * Returns the code value string if found, undefined otherwise.
+   * Used to share a single code value across multiple locks of the same brand for the same guest.
+   */
+  function findActiveBrandCode(reservationId: string, provider: SmartLockProvider): string | undefined {
+    const matchedCode = codes.value.find((c) => {
+      if (c.reservationId !== reservationId) return false
+      if (c.status !== 'active') return false
+      const matchedLock = locks.value.find(l => l.id === c.lockId)
+      if (!matchedLock) return false
+      const matchedDevice = MOCK_DEVICES.find(d => d.deviceId === matchedLock.providerDeviceId)
+      if (!matchedDevice) return false
+      return matchedDevice.provider === provider
+    })
+    return matchedCode?.code
   }
 
   function revokeAccessCode(codeId: string) {
@@ -343,10 +400,12 @@ export function useSmartLock() {
     unpairLock,
     setMainLock,
     renameLock,
+    swapDevice,
     getCodesForLock,
     getActiveCodeForLock,
     generateAccessCode,
     revokeAccessCode,
+    findActiveBrandCode,
     emitMockAlerts,
   }
 }
