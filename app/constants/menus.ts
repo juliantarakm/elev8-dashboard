@@ -145,6 +145,11 @@ export const navMenu: NavMenu[] = [
         link: '/guest-guides',
         new: true,
       },
+      {
+        title: 'Backfill Guides',
+        icon: 'i-lucide-database',
+        link: '/guest-guides/backfill',
+      },
     ],
   },
   {
