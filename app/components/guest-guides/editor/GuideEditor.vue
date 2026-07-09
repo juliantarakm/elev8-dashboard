@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import type { GuideSection, GuideSectionType } from '../data/types'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { Switch } from '~/components/ui/switch'
+import { Label } from '~/components/ui/label'
 import { toast } from 'vue-sonner'
 import SectionList from './SectionList.vue'
 import SectionEditor from './SectionEditor.vue'
@@ -76,6 +78,12 @@ function handlePublish() {
   updateGuide(guide.value.id, { status: 'active' })
   toast.success('Published — guide is now active')
 }
+
+function handleSmartOrderingToggle(value: boolean) {
+  if (!guide.value) return
+  updateGuide(guide.value.id, { smartOrdering: value })
+  dirty.value = true
+}
 </script>
 
 <template>
@@ -107,13 +115,22 @@ function handlePublish() {
       </div>
     </main>
 
-    <div class="border-t p-4 flex justify-end gap-2">
-      <Button variant="outline" @click="handleSave" :disabled="!dirty">
-        Save
-      </Button>
-      <Button @click="handlePublish">
-        Publish
-      </Button>
+    <div class="border-t p-4 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <Switch
+          :model-value="guide.smartOrdering ?? false"
+          @update:model-value="handleSmartOrderingToggle"
+        />
+        <Label class="text-sm">Smart section ordering (reorder by stay phase)</Label>
+      </div>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="handleSave" :disabled="!dirty">
+          Save
+        </Button>
+        <Button @click="handlePublish">
+          Publish
+        </Button>
+      </div>
     </div>
 
     <AddSectionDialog v-model:open="addDialogOpen" @select="handleAddSectionType" />

@@ -1,4 +1,5 @@
 import { findGuideByToken, findLinkByToken } from '../../../utils/guest-guide-store'
+import { conversations } from '../../../../app/components/inbox/data/conversations'
 
 export default defineEventHandler(async (event) => {
   const token = getRouterParam(event, 'token')
@@ -24,5 +25,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Guide content not found' })
   }
 
-  return { link, guide }
+  // Enrich with reservation dates from conversation data for smart section ordering
+  const conversation = conversations.find(c => c.reservationId === link.reservationId)
+  const checkIn = conversation?.checkIn ?? null
+  const checkOut = conversation?.checkOut ?? null
+
+  return { link, guide, checkIn, checkOut }
 })

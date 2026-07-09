@@ -47,6 +47,7 @@ export interface GuestGuide {
   createdBy: string
   createdAt: string
   updatedAt: string
+  smartOrdering?: boolean
 }
 
 export interface GuestGuideLink {

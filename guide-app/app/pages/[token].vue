@@ -45,6 +45,38 @@ const visibleSections = computed(() => {
     .sort((a: any, b: any) => a.order - b.order)
 })
 
+// Smart section ordering: reorder by stay phase
+// (pre = >24h before check-in, arrival = within 24h, stay = checked in)
+const PHASE_ORDERS: Record<string, Record<string, number>> = {
+  pre: { pre_arrival: 0, wifi: 1, house_rules: 2, amenities: 3, local_tips: 4, checkin: 5 },
+  arrival: { smart_lock: 0, checkin: 1, house_rules: 2, wifi: 3, amenities: 4 },
+  stay: { local_tips: 0, upsells: 1, documents: 2, checkout: 3 },
+}
+
+const phase = computed<'pre' | 'arrival' | 'stay'>(() => {
+  if (!data.value?.checkIn) return 'pre'
+  const checkIn = new Date(data.value.checkIn)
+  const now = new Date()
+  const hoursToCheckIn = (checkIn.getTime() - now.getTime()) / (1000 * 60 * 60)
+  if (hoursToCheckIn > 24) return 'pre'
+  if (hoursToCheckIn > -2) return 'arrival'
+  return 'stay'
+})
+
+const sortedSections = computed(() => {
+  if (!data.value?.guide?.sections) return []
+  const smartOrdering = (data.value.guide as any).smartOrdering === true
+  const sections = visibleSections.value
+  if (!smartOrdering) return sections
+  const phaseOrder = PHASE_ORDERS[phase.value]
+  return [...sections].sort((a: any, b: any) => {
+    const aOrder = phaseOrder[a.type] ?? 100
+    const bOrder = phaseOrder[b.type] ?? 100
+    if (aOrder === bOrder) return a.order - b.order
+    return aOrder - bOrder
+  })
+})
+
 const sectionComponentMap: Record<string, any> = {
   hero: HeroSection,
   welcome: WelcomeSection,
@@ -105,7 +137,7 @@ function handleUpsellAdd(serviceId: string) {
       </p>
 
       <div class="space-y-6">
-        <template v-for="section in visibleSections" :key="section.id">
+        <template v-for="section in sortedSections" :key="section.id">
           <!-- Pre-arrival section: render heading + inline form -->
           <div v-if="section.type === 'pre_arrival'" class="space-y-4">
             <PreArrivalSection :data="section.data" />
