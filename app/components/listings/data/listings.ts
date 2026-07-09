@@ -209,6 +209,12 @@ export interface Listing {
   reviews: Review[]
   maintenance: ListingMaintenance
   resources: ListingResources
+  // Guest guide fallback fields (top-level because they are property facts,
+  // not "resource documents")
+  wifiSsid?: string
+  wifiPassword?: string
+  checkInInstructions?: string
+  checkOutInstructions?: string
 }
 
 export function getUnits(listing: Listing): Unit[] {
@@ -388,10 +394,15 @@ export const listings = ref<Listing[]>([
         description: 'A serene 5-bedroom villa with private pool near Canggu beach. Perfect for families and groups seeking a luxurious Bali experience with modern amenities and traditional Balinese architecture.',
         checkInTime: '14:00',
         checkOutTime: '11:00',
+        houseRules: 'No smoking inside\nNo parties or events\nQuiet hours after 10pm\nCheck-out by 11:00 AM',
       },
       topicsToAvoid: ['competitor pricing', 'refund disputes'],
       propertyUpsells: [],
     },
+    wifiSsid: 'VillaBali_5G',
+    wifiPassword: 'serenity2026',
+    checkInInstructions: 'Our staff will meet you at the gate. Look for the welcome sign with your name.',
+    checkOutInstructions: 'Leave the keys on the kitchen counter. Safe travels!',
   },
   {
     id: 'lst-2',
