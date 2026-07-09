@@ -94,7 +94,7 @@ The logged-in user is **Komang Juliantara** (Guest Relations role), NOT "You" (A
 - **`ListingCalendarTab.vue`** — Bookings list + blocked dates
 - **`ListingReviewsTab.vue`** — Rating summary (category Progress bars) + filter + review cards with host reply
 - **`ListingMaintenanceTab.vue`** — Cleaning schedule + tasks + add-task dialog
-- **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels (AI schedule moved to hero Sheet)
+- **`ListingSettingsTab.vue`** — Property details form + amenities (Popover) + distribution channels + Smart Locks card with Property/Rooms tabs, compact per-lock cards in 1/2/3-col grid, per-lock Codes Dialog with 3-state time-status badge and add-code form (Ongoing / Start-end times) (AI schedule moved to hero Sheet)
 - **`ListingRowActions.vue`** — Dropdown menu (View Detail, Deactivate, Toggle AI)
 - **`ListingFloatingMenu.vue`** — Fixed floating pill bar at bottom of page: Listing Setup · Test AI · AI Schedule
 - **`ListingSetupOverlay.vue`** — Full-screen overlay shell for Listing Setup (header with **Property/Rooms toggle** + two-panel layout + **footer with Save Changes**). For multi-unit listings the toggle is just Property ↔ Rooms (a single combined tab — unit types and individual units are managed inside `RoomsPanel`). Footer includes **"Copy to Other Units"** button (rooms view only) and **"Save Changes"** button with toast confirmation.
@@ -234,7 +234,7 @@ Single-connection (one API key per tenant), multi-lock assignment (many locks pe
   - **Nuki** (2): Side Door, Boathouse (8% battery, offline — used for alert demo)
   - **igloohome** (1): Back Gate
 - **`SmartLock`** — `{ id, providerDeviceId, name, assignment: 'property' | 'room', listingId, unitId?, isMain, batteryLevel, online, lastSeen, status, createdAt }` — `isMain` is per-scope (one main per listing for property-level, one main per unit for room-level); `setMainLock()` auto-demotes existing main in scope
-- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, status: 'active' | 'expired' | 'revoked', providerCodeId }` — `generateAccessCode` is **async** (700ms mock delay for visible loading states) and auto-revokes any prior active code on the **same lockId + reservationId** combo (so different guests can each have their own active code on the same lock)
+- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, purpose?, scheduleType?: 'ongoing' | 'range', status: 'active' | 'expired' | 'revoked', providerCodeId }` — `generateAccessCode` is **async** (700ms mock delay for visible loading states) and auto-revokes any prior active code on the **same lockId + reservationId** combo (so different guests can each have their own active code on the same lock). `scheduleType` reflects the host's explicit scheduling choice: `'ongoing'` = always active (`endsAt = '2099-12-31'`), `'range'` = host-supplied `startsAt`/`endsAt`, `undefined` = auto-generated 24h default window. `purpose` is the user-given "code name" label (free text).
 
 #### Composable (`useSmartLock.ts`)
 - State: `connection` (`SmartLockConnection | null`), `locks` (`SmartLock[]`), `codes` (`AccessCode[]`) — all `useState` + localStorage persisted (same pattern as `useThreeCX`)
@@ -251,25 +251,42 @@ Single-connection (one API key per tenant), multi-lock assignment (many locks pe
 
 #### Per-listing flow (`ListingSettingsTab.vue`)
 - New "Smart Locks" card after Distribution Channels
+- Card header holds `+ Add Lock` button (top-right) — click routes to `handleCardHeaderAdd` which opens the Pair Lock Dialog pre-scoped to the currently active tab (Property / first room of the Rooms tab)
 - Not-connected state shows link to `/settings/integrations`
-- Empty state: "No locks paired to this property yet"
-- **Locks grouped by scope** — Property first, then per-room, in the order they appear in `unitTypes`:
-  - Each group has a header with scope name + lock count + **"+ Add another"** button (opens the Add Lock dialog pre-set to that scope)
-  - Each lock rendered via the **`LockRow`** component (see below)
-- **`LockRow.vue`** (NEW) — reusable per-lock row component used in both `ListingSettingsTab` and `RoomsPanel`:
-  - Brand pill (e.g. `August`, `Yale`, `Schlage`, `Nuki`, `igloohome`) derived from the device's `provider` field
-  - Lock name (inline rename on pencil click — Enter to save, Esc to cancel)
-  - `Main` badge for the main lock in scope, clickable star to promote a different one
-  - Online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X)
-  - Action buttons: **Rename** / **Swap device** / **Unlock** (with loading spinner) / **Unpair**
-  - Emits `rename(lockId, newName)`, `unpair(lockId, name)`, `set-main(lockId)`, `swap(lockId)`, `unlock(lockId)`
-- **"Add Lock" button** → Dialog with:
-  - **Assign to picker** (Property / Room segmented control) — Property for whole listing, Room for a specific room (shows room Select)
-  - Device picker (cards with battery/online/model)
-  - Name input
-  - "Set as main" checkbox (default-checked if first lock in scope)
-  - **Auto-generate codes info** (read-only): explains that codes are auto-generated for each current/future guest, same brand = shared code value
-  - "Also generate code for housekeeping" checkbox (per-lock, not brand-shared)
+- **Tabs** (`<Tabs>` / `<TabsList>` / `<TabsTrigger>` / `<TabsContent>`): `🏢 Property [N]` and `🚪 Rooms [N]` with live count badges from `propertyLocks.length` / `totalRoomLocks`
+- Inside each tab, locks render as **compact square cards** in a responsive 1 / 2 / 3-column grid (Tailwind `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3`):
+  - Header: lock icon + name (inline rename) + brand pill (e.g. `August`) + `Main` badge or set-main star
+  - Meta row: battery % (amber when ≤20%) + online/offline dot + scope label
+  - Actions row: **Unlock** (primary, 800ms mock spinner, disabled when offline) / **Codes N** (opens Dialog) / **Rename** / **Swap device** / **Unpair**
+- **Per-lock Codes Dialog** (`<Dialog v-model:open="codesDialogOpen">`, scoped to one lock at a time via `codesDialogLockId` ref):
+  - **Codes list** — each row: purpose (the free-form name the host gave), 6-digit code in monospace with letter-spacing, **time-status badge**, and schedule footer:
+    - Schedule footer: `∞ Ongoing` / `🕒 2026-07-09 14:30 → 2026-07-10 11:00` / `⚡ Auto · 23h 42m left`, plus `· Revoked` suffix when applicable
+    - Trash button to revoke active codes (sets `status: 'revoked'`)
+  - **Add-code form** (bordered bottom section):
+    - **Code name** input → stored as `purpose`
+    - **Code** input (6 digits, `inputmode="numeric"`) + **Generate** button (refresh icon) → fills a fresh random 6-digit number on click
+    - **Schedule** segmented control — `∞ Ongoing` / `🕒 Start/end times`:
+      - **Ongoing** → helper "Always active. Revoke manually to disable."; `scheduleType = 'ongoing'` → `endsAt = 2099-12-31`
+      - **Start/end times** → 2-column `datetime-local` pickers (Start, End); `scheduleType = 'range'` → uses provided startsAt/endsAt; inline validation that end > start
+    - Inline error line in destructive red for validation failures (empty name, non-6-digit code, missing/invalid range)
+    - "Close" + "Create code" footer (Create shows spinner during the 700ms mock)
+- **Per-lock `lock` row is still inlined here (not via `LockRow.vue`)** — that reusable component exists for `RoomsPanel.vue` only; `ListingSettingsTab.vue` rolls its own card so the Codes Dialog opener can live next to the Unlock button without prop-tunnelling through `<LockRow>`
+- **3-state time-status badge** driven by `getCodeTimeStatus(code)`:
+  - `set` (green: `border-green-500/30 bg-green-500/10 text-green-700`) — explicit `scheduleType === 'ongoing'`, OR explicit `'range'` with `now >= startsAt && now < endsAt`
+  - `setting` (amber: `border-amber-500/30 bg-amber-500/10 text-amber-700`) — explicit `'range'` scheduled for the future (`startsAt > now`), OR no `scheduleType` set yet (auto-generated 24h window)
+  - `unset` (muted: `border-muted-foreground/30 bg-muted text-muted-foreground`) — `status === 'revoked'` OR `endsAt <= now` (expired)
+- **`LockRow.vue`** — reusable per-lock row component used in `RoomsPanel.vue` only (not in `ListingSettingsTab.vue`):
+  - Brand pill, lock name (inline rename), `Main` badge + set-main star, online/offline icon, battery %, assignment label
+  - Action buttons: **Rename** / **Swap device** / **Unlock** (loading spinner) / **Unpair**
+  - Emits `rename`, `unpair`, `set-main`, `swap`, `unlock`
+- **"Add Lock" Dialog** (Pair Lock) opens via either `handleCardHeaderAdd` (card header) or the per-room `+ Add another` button:
+  - **Assign to picker** (Property / Room segmented control) — Room mode shows a room Select dropdown
+  - Device picker (cards with battery/online/model) of `availableDevices`
+  - Name input (auto-fills from selected device name)
+  - "Set as main" checkbox (default-checked when no lock yet in selected scope)
+  - **Access codes** info card (minimal — single sentence "A code will be auto-generated for each current and future guest.")
+  - "Also generate code for housekeeping" checkbox (with `lucide:brush-cleaning` icon — **NOT `lucide:broom`** which is not in `@iconify-json/lucide`) — generates one housekeeping code via `generateAccessCode`
+  - Cancel / "Pair Lock" footer (disabled until device picked + room picked if Room scope)
 
 #### Per-room flow (`RoomsPanel.vue`)
 - Amber lock count badge (`🔒 N`) next to each room name in the sidebar — click to open per-room lock dialog
