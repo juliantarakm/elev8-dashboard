@@ -140,7 +140,7 @@ function handleUpsellAdd(serviceId: string) {
         <template v-for="section in sortedSections" :key="section.id">
           <!-- Pre-arrival section: render heading + inline form -->
           <div v-if="section.type === 'pre_arrival'" class="space-y-4">
-            <PreArrivalSection :data="section.data" />
+            <PreArrivalSection :data="section.data" :listing="data.listing" />
             <div class="rounded-xl border bg-card p-6">
               <PreArrivalForm :token="token" :fields="section.data?.fields" />
             </div>
@@ -148,7 +148,7 @@ function handleUpsellAdd(serviceId: string) {
 
           <!-- Smart lock section: render heading + lock panel -->
           <div v-else-if="section.type === 'smart_lock'" class="space-y-4">
-            <SmartLockSection :data="section.data" :token="token" />
+            <SmartLockSection :data="section.data" :listing="data.listing" :token="token" />
             <SmartLockPanel :token="token" />
           </div>
 
@@ -156,6 +156,7 @@ function handleUpsellAdd(serviceId: string) {
           <UpsellsSection
             v-else-if="section.type === 'upsells'"
             :data="section.data"
+            :listing="data.listing"
             :token="token"
             @add="handleUpsellAdd"
           />
@@ -165,6 +166,7 @@ function handleUpsellAdd(serviceId: string) {
             :is="resolveSection(section.type)"
             v-else
             :data="section.data"
+            :listing="data.listing"
             :token="token"
           />
         </template>
