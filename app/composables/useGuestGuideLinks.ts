@@ -1,8 +1,9 @@
 import type { GuestGuideLink, LinkChannel } from '~/components/guest-guides/data/types'
+import { mockGuestGuideLinks } from '~/components/guest-guides/data/mock-guides'
 import { generateLinkId, generateToken } from '~/utils/guest-guide-token'
 
 export function useGuestGuideLinks() {
-  const links = useState<GuestGuideLink[]>('guest-guide-links', () => [])
+  const links = useState<GuestGuideLink[]>('guest-guide-links', () => [...mockGuestGuideLinks])
 
   function issueLink(input: {
     guideId: string

@@ -1,8 +1,9 @@
 import type { GuestGuide, GuideStatus } from '~/components/guest-guides/data/types'
+import { mockGuestGuides } from '~/components/guest-guides/data/mock-guides'
 import { generateGuideId } from '~/utils/guest-guide-token'
 
 export function useGuestGuides() {
-  const guides = useState<GuestGuide[]>('guest-guides', () => [])
+  const guides = useState<GuestGuide[]>('guest-guides', () => [...mockGuestGuides])
 
   function createGuide(input: {
     title: string
