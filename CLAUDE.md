@@ -651,191 +651,129 @@ type HostLanguage = 'en' | 'de' | 'fr' | 'id' | 'es' | 'it' | 'pt'
 
 ### Review Hub Module (`app/components/review-hub/`)
 
-3-panel guest review aggregator (Airbnb + Booking.com + Direct). Combines guest review replies, AI-drafted host review-of-guest, and Stay Operational Record (SOR) signals.
+3-panel guest review aggregator (Airbnb + Booking.com + Direct), aligned with **Channex API**. Combines guest review replies, AI-drafted host review-of-guest, and Stay Operational Record (SOR) signals with tag enrichment.
 
 **New files:**
 ```
 app/
-├── pages/reviews.vue                # Page: feed table + settings sheet + auto-post banner
+├── pages/reviews.vue                   # Page: feed table + ScoreCards + settings sheet + banner
 ├── components/review-hub/
-│   ├── DetailDrawer.vue             # 3-panel drawer (guest review, SOR, host review)
-│   ├── DetailGuestPanel.vue         # Guest review + rating breakdown (numeric X/5 or X/10)
-│   ├── DetailSorPanel.vue           # Stay Report (cleaning, house rules, communication)
-│   ├── FeedTable.vue                # TanStack table with search/filter/generate button
-│   ├── Filters.vue                  # Status / channel / rating / property (PropertyPicker)
-│   ├── HostReviewPanel.vue          # AI host review of guest (with loading state)
-│   ├── MiniBadges.vue               # Numeric badges: cleaning/house rules/communication
-│   ├── ReplyPanel.vue               # AI reply to guest review (legacy, not in drawer yet)
-│   ├── SourceBadge.vue              # Channel badge (Airbnb / Booking.com / Direct)
-│   ├── StatusChip.vue               # Reply status chip
+│   ├── DetailDrawer.vue                # 3-panel drawer (guest review, SOR, reply, host review)
+│   ├── DetailGuestPanel.vue            # Guest review + rating breakdown + Channex tags chips
+│   ├── DetailSorPanel.vue              # Stay Report (cleaning, house rules, communication)
+│   ├── FeedTable.vue                   # TanStack table with contextual action buttons
+│   ├── Filters.vue                     # Status / channel / property (PropertyPicker)
+│   ├── HostReviewPanel.vue             # AI host review of guest (Airbnb-only) + rating + tags
+│   ├── MiniBadges.vue                  # Numeric badges: cleaning/house rules/communication
+│   ├── ReplyPanel.vue                  # AI reply to guest review (text-only, all channels)
+│   ├── ScoreCards.vue                  # Aggregate property scores above feed
+│   ├── SourceBadge.vue                 # Channel badge (Airbnb / Booking.com / Direct)
+│   ├── StatusChip.vue                  # Reply status chip (3 states)
 │   └── data/
-│       ├── types.ts                 # ReviewRecord, StayOperationalRecord, ReviewFeedItem
-│       ├── mock-review-records.ts   # 10 mock records
-│       └── mock-sor.ts              # 10 mock SOR records
-├── components/shared/AiIcon.vue     # Shared sparkle AI icon (4-point, currentColor)
-├── composables/useReviewHub.ts      # State + filters + mock AI generators
-└── components/settings/AirbnbReviewConfig.vue  # Per-channel auto-post + review settings
+│       ├── types.ts                    # Channex-aligned types + tag mappings + display helpers
+│       ├── mock-review-records.ts      # 10 mock records (Channex format, 0-10 scores)
+│       └── mock-sor.ts                 # 10 mock SOR records
+├── composables/useReviewHub.ts         # State + filters + computed status + tag enrichment
+└── components/settings/AirbnbReviewConfig.vue  # Host review + reply auto-post settings
 ```
 
-**Data Model:**
+**Data Model (Channex-Aligned):**
 ```ts
 type ReviewSource = 'airbnb' | 'booking_com' | 'direct'
-type ReplyStatus = 'needs_reply' | 'replied'  // removed guest_review_pending, host_review_due
+type ReplyStatus = 'host_review_pending' | 'needs_reply' | 'replied'
+
+interface ScoreCategory {
+  category: string  // Channex: "clean", "accuracy", "communication", "location", etc.
+  score: number     // 0-10 scale, all channels normalized
+}
 
 interface ReviewRecord {
   id: string
   reservation_id: string
   source: ReviewSource
   listing_id, listing_name, listing_location
-  unit_id: string | null  // null for single-unit listings; required for multi-unit to show unit info
+  unit_id: string | null
   guest_name, num_guests, nights
-  guest_rating_overall: number | null
-  guest_rating_max: number | null  // 5 for Airbnb, 10 for Booking.com
-  guest_rating_categories: Partial<GuestRatingCategories> | Partial<BookingComRatingCategories>
+  guest_rating_overall: number | null  // Channex: 0-10, all channels normalized
+  scores: ScoreCategory[]              // Channex: [{category: "clean", score: 9.5}, ...]
+  tags: string[]                       // Channex: ~80+ predefined tag codes (Airbnb only)
   guest_review_text: string | null
-  private_feedback: string | null  // for host review of guest (Airbnb only)
+  is_hidden: boolean                   // Channex: Airbnb double-blind flag
+  is_replied: boolean                  // Channex: host has replied
+  private_feedback: string | null
   review_received_at, language_detected
-  reply_status: ReplyStatus
+  reply_status: ReplyStatus            // Elev8 computed
   reply_text, reply_posted_at
-  host_review_id: string | null  // joins to AutoReview.id
+  host_review_id: string | null
+  host_review_text: string | null
+  host_review_ratings: { cleanliness, communication, respect_house_rules } | null  // Channex 1-5
+  is_reviewee_recommended: boolean | null  // Channex flag
+  host_review_tags: string[]           // Channex host review tags
   sor_id, checkout_date, created_at, updated_at
-}
-
-interface StayOperationalRecord {
-  id, reservation_id, listing_id
-  cleaning_score: number | null  // 0-5 (mock) or 0-10 (PRD)
-  cleaning_notes, cleaning_duration_delta
-  house_rule_flags: HouseRuleFlag[]
-  communication_score: number | null
-  communication_summary
-  computed_at
-}
-
-interface ReviewFeedItem {
-  id
-  review_record: ReviewRecord
-  sor: StayOperationalRecord | null
-  host_review: AutoReview | null  // joined from useAirbnbReviews by reservation_id
 }
 ```
 
-**Numeric Ratings Throughout:**
-- All ratings displayed as `X/5` or `X/10` (no star icons)
-- Booking.com 10-point normalized to 5 in filters: `r.guest_rating_max === 10 ? r.guest_rating_overall / 2 : r.guest_rating_overall`
+**Channex API Mapping:**
+- `GET /reviews` → `ReviewRecord` (scores[], tags[], is_hidden, is_replied)
+- `POST /reviews/:id/reply` → text-only reply (`{ reply: { reply: "text" } }`)
+- `POST /reviews/:id/guest_review` → **Airbnb only**: scores, public_review, private_review, `is_reviewee_recommended`, tags[]
+- Tags are Airbnb-only; Booking.com reviews have empty `tags[]`
+- All scores normalized to 0-10 by Channex; display helpers: `getDisplayScore()` (Airbnb ÷2, Booking.com as-is), `getDisplayMax()` (Airbnb 5, Booking.com 10)
 
-**Channels:**
-- **Airbnb**: 5-star scale, 14-day host review window, supports private feedback + category ratings
-- **Booking.com**: 10-point scale, 365-day host review window, **public-only** host reviews (no private feedback, no category ratings)
-- **Direct**: 5-star scale, no host review support ("Direct bookings do not support host reviews of guests")
+**Computed Status (getComputedStatus):**
+- `replied` — `is_replied === true`
+- `host_review_pending` — Airbnb: `!host_review_id && window > 0`; Booking.com: same + 365d window
+- `needs_reply` — guest review visible + has content + not replied
 
-**Property Column (feed table):**
-- Display logic for subtext (below listing_name):
-  - **Multi-unit** (listing has `unitTypes[]` array with at least 1 unit type) + has `unit_id` → `"UnitType · UnitName"` (e.g., "Kingbed · Master Suite")
-  - **Single-unit** (no `unitTypes[]` data) → `"Single unit"`
-  - **Unknown** (listing_id not found) → falls back to `listing_location`
-- Helpers in `useReviewHub`:
-  - `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` by looking up via `getUnitById` + `getUnitTypeForUnit` from listings data
-  - `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on `listing.unitType` enum + actual `unitTypes[]` array presence
-- Mock data: lst-1 has 2 unit types (Kingbed, Single Bed) with 4 units (Master Suite, Garden Unit, Pool Unit, Loft Unit); 4 records have `unit_id` set; other listings are single-unit
-- Integrations: imports `listings as allListings`, `getUnitById`, `getUnitTypeForUnit` from `~/components/listings/data/listings`
+**Airbnb Double-Blind (isGuestReviewHidden):**
+- Hidden when: `is_hidden === true` + `!host_review_id` + `< 14 days since checkout`
+- Auto-reveal: after 14d from checkout OR when host submits review (sets `is_hidden: false`)
+- Reply window: Airbnb ~44d from checkout (14d blind + 30d reply), Booking.com 30d
 
-**Host Review Window:**
-- `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (negative = expired)
-- Expired message: "The {14|365}-day review window has closed. Reviews can no longer be submitted."
-- After expiry, Generate button disabled everywhere (FeedTable + panel)
+**Host Review of Guest (Airbnb Only):**
+- Channex `POST /guest_review` is Airbnb only — Booking.com/Direct don't support it
+- HostReviewPanel rendered only when `showHostReviewPanel` computed is true:
+  - Already submitted (readonly view)
+  - Airbnb: guest review still hidden (double-blind active)
+- Panel includes: public review, private feedback, 3 ratings (cleanliness, communication, respect_house_rules), `is_reviewee_recommended` toggle, 22 host review tags selector
+- `generateHostReviewDraft()` returns tags[] derived from SOR signals (auto-selected on generate)
+- `submitHostReview(id, text, ratings, isRecommended, tags)` — sets `is_hidden: false`
 
-**Host Review Panel States:**
-- `!channelSupportsReview` (Direct) → "Direct bookings do not support host reviews" message
-- `isExpired` → expired message
-- `!sorAvailable && !isGenerated` → "Write Manually" button (manual entry)
-- `isSubmitted && hasGeneratedData` → read-only "Review Submitted" view
-- `!isGenerated && isGenerating` → **full loading state** (primary gradient + spinner + skeleton placeholders)
-- `!isGenerated` → "Generate Host Review" button
-- `isGenerated` → editable form (public review, private feedback if !publicOnly, ratings) + Regenerate / Submit Review buttons
+**Tag System:**
+- **Guest review tags** (~80+): `guest_review_host_positive_spotless_furniture_and_linens`, `negative_dirty_or_dusty`, etc. Displayed as green/red chips in DetailGuestPanel (expandable, 4 visible + "+N more")
+- **Host review tags** (22): 8 cleanliness, 7 house_rules, 7 communication — selectable chips in HostReviewPanel
+- **Tag enrichment** (`enrichSorFromTags`): derives cleaning_score/communication_score/house_rule_flags from Channex tags when SOR data is missing or sparse. Does not override existing SOR data.
 
-**Auto-Generate Behavior:**
-- Click Generate in FeedTable row → button shows "Generating..." + spinner → drawer opens → `autoGenerate()` runs
-- `autoGenerate()` early-returns if `isExpired || isSubmitted`; otherwise resets `isGenerated` and runs `handleGenerate()`
-- For Booking.com records: DetailDrawer watch auto-triggers `autoGenerate()` on open (if `reply_status === 'needs_reply'` and not expired)
-- `handleGenerate()` 1.5s mock delay → populates `draftText`, `privateFeedback`, ratings
+**ScoreCards:**
+- Aggregate scores computed from `filteredFeedItems`: overall average + top 3 category scores with counts
+- Rendered above feed table on `/reviews` page
 
-**State Hydration (defensive):**
-- `isGenerated` initialized from `!!hostReview?.public_review` (not just `!!hostReview`) — prevents showing edit view for records with pending/empty AutoReview
-- `isSubmitted` requires `reply_status === 'replied' && hasGeneratedData` — prevents showing "Review Submitted" without actual data
-- If `isGenerated && isSubmitted` and user re-opens, shows read-only view; if user clicks Generate again, resets and re-generates
-
-**Filters (Filters.vue):**
-- Search (guest name, listing) — fixed width `w-[280px]` (medium)
-- Status: All / Needs Reply / Replied (segmented buttons)
-- Channel: All / Airbnb / Booking.com / Direct (segmented buttons)
-- Property: `<SharedPropertyPicker>` (multi-select, search, tags filter)
-- Rating filter removed — all reviews shown regardless of rating
-
-**Stay Report (SOR) MiniBadges (table column):**
-- Cleaning: `X/5` with lucide:spray-can icon
-- House Rules: `5 - flagCount` numeric (1-5 scale) with lucide:shield-alert icon, tooltip lists flag types
-- Communication: `X/5` with lucide:message-circle icon
-- Color coded green/amber/red per `badgeLevelColors`
-
-**Settings (in /reviews page header Sheet):**
-- Moved from `/settings/integrations` to right-side Sheet on Review Hub page
-- 480px width with `flex flex-col p-0 gap-0` + `SheetHeader` border-b + `flex-1 overflow-y-auto p-6` (matches inbox/Layout.vue integrations pattern)
-- `SettingsAirbnbReviewConfig.vue` contents:
-  - Master "Enable Review Automation" toggle (native button switch, not Reka UI)
-  - Review Language (7 options with flags)
-  - Review Tone (3 cards: balanced/gentle/data-driven)
-  - **Auto-Post Channels** (per-channel toggles):
-    - **Airbnb** card (logos:airbnb icon) — "14-day review window after checkout"
-    - **Booking.com** card (simple-icons:bookingdotcom icon) — "365-day review window after checkout"
-  - Auto-Post Delay (0-13 days, NumberField) — only shown if at least one channel enabled
-  - Review Delay (1-168 hours, NumberField) — delay before generation
-
-**Auto-Post Config Schema:**
-- `ReviewAutomationConfig.auto_post` (boolean, legacy) → replaced with `auto_post_channels: { airbnb: boolean, booking_com: boolean }`
-- Default: both `false`
-- Backwards compat: localStorage spread `{ ...defaultConfig, ...persisted }` auto-applies new shape
-
-**ElevAI Promo Banner (on /reviews page):**
-- Two states: `'off'` (master toggle off) and `'autopost_off'` (master on, no channels enabled)
-- States: `null` (dismissed or configured) hides banner
-- Dismiss button sets `bannerDismissed = true` for the session
-- **Primary theme colors** (per project taste: gold reserved for ElevAI branding, primary for general UI):
-  - Gradient bg: `from-primary/10 via-primary/5 to-transparent`
-  - Border: `border-primary/30`
-  - Icon circle bg: `bg-primary/15`
-  - Sparkle icon: `<SharedAiIcon>` (4-point sparkle) in `text-primary`
-  - "New" badge: `bg-primary/15 text-primary`
-  - CTA button: shadcn-vue default (primary variant) — no custom override
-- Headlines: "Turn on ElevAI review automation" or "Let ElevAI auto-post your guest reviews"
-- CTAs: "Enable automation" or "Enable auto-post" — both open the Settings sheet
+**Settings (AirbnbReviewConfig.vue):**
+- Two separate sections with distinct icons:
+  - **Host Review of Guest** (icon: user-check): Airbnb auto-post toggle, submission delay (1-13d), auto-select tags toggle
+  - **Reply to Guest Review** (icon: message-circle): Airbnb + Booking.com per-channel auto-post toggles, reply delay (0-30d)
+- Shared: master toggle, language (7 options), tone (balanced/gentle/data-driven), generation delay (1-168h)
+- Config fields: `auto_post_host_review`, `host_review_delay_days`, `auto_select_tags`, `auto_post_replies: { airbnb, booking_com }`, `reply_delay_days`
 
 **Composable (`useReviewHub`):**
-- `reviewRecords` — `useState<ReviewRecord[]>` (key: 'review-hub-records')
-- `sorRecords` — `useState<StayOperationalRecord[]>` (key: 'review-hub-sor')
-- `filteredFeedItems` — computed: filter by status/channel/rating/property + search
-- `feedItems` — computed: joins `hostReview` from `useAirbnbReviews.reviews` by `reservation_id`
-- `hubStats` — computed counts (kept for potential reuse)
-- `searchQuery`, `filterStatus`, `filterChannel`, `filterListing` (string[]), `filterRating`
-- `uniqueListings` — derived from review records
-- `clearFilters()` — resets all filters
-- `getSor(reservationId)` — returns SOR for a record
-- `getUnitInfo(listingId, unitId)` — returns `{ unitName, unitTypeName } | null` for multi-unit listings
-- `getListingStructure(listingId)` — returns `'multi' | 'single' | 'unknown'` based on listing's `unitType` enum + `unitTypes[]` array presence
-- `getHostReviewCountdown(checkoutDate, source)` — returns days remaining (14d Airbnb, 365d Booking.com)
-- `generateReplyDraft(recordId)` — 1.5s mock; returns positive/mixed/negative based on rating
-- `generateHostReviewDraft(recordId)` — 1.5s mock; returns `{ text, privateFeedback, ratings }`; uses SOR cleaning_score + house_rule_flags
-- `submitHostReview(recordId, text, ratings | null)` — sets `reply_status: 'replied'`, `host_review_id`, `private_feedback`; for Booking.com, passes `null` ratings
+- `reviewRecords`, `sorRecords` — `useState<>()` with deep-cloned mock data
+- `filteredFeedItems` — computed: filter by status (computed)/channel/property + search, sorted by checkout desc
+- `feedItems` — computed: merges ReviewRecord + enriched SOR + hostReview from `useAirbnbReviews`
+- `getComputedStatus(record)` — derives ReplyStatus from is_hidden/is_replied/host_review_id/countdown
+- `isGuestReviewHidden(record)` — double-blind check (is_hidden + 14d)
+- `isGuestReviewVisible(record)` — inverse
+- `getHostReviewCountdown(checkout, source)` — 14d Airbnb / 365d Booking.com
+- `getReplyCountdown(checkout, source)` — 44d Airbnb / 30d Booking.com
+- `enrichSorFromTags(record, sor)` — tag-derived SOR signals
+- `generateReplyDraft(recordId)` — 1.5s mock, positive/mixed/negative based on overall score (≥8 positive)
+- `generateHostReviewDraft(recordId)` — 1.5s mock, returns `{ text, privateFeedback, ratings, tags }`
+- `approveReply(recordId, text)` — sets is_replied + reply_status
+- `submitHostReview(recordId, text, ratings, isRecommended, tags)` — sets host_review_id + is_hidden: false
 
-**Mock Data (10 records, 8 have joined hostReview):**
-- Sources: 4 Airbnb, 3 Booking.com, 3 Direct
-- 8 `needs_reply`, 2 `replied` (Elena Kowalski Booking.com, Anna Schmidt Direct)
+**Mock Data (10 records):**
+- 3 Airbnb (1 double-blind hidden, 2 visible), 3 Booking.com (1 replied, 2 host_review_pending), 2 Direct (1 replied, 1 no review), 2 past Airbnb (>14d, auto-revealed)
+- All scores in 0-10 Channex format, realistic tags on Airbnb records
 - 10 SOR records with cleaning_score 2-5, house_rule_flags 0-3, communication_score 3-5
-
-**Roadmap / Known Gaps:**
-- AI generation is fully mocked (1.5s timeout, no real SOR grounding beyond rule-flag appending)
-- `ReplyPanel.vue` exists but is not rendered in `DetailDrawer` yet (only HostReviewPanel is shown)
-- Reply panel is wired to `generateReplyDraft` + `approveReply` composable functions
-- Future: add reply panel to drawer, real LLM integration, Booking.com native API for host reviews (currently only Airbnb via Channex)
 
 ### Payment Request Module (`app/components/payment-request/`)
 
