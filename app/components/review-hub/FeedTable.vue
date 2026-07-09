@@ -3,16 +3,26 @@ import type { ReviewFeedItem } from '~/components/review-hub/data/types'
 import { format } from 'date-fns'
 import { getDisplayScore, getDisplayMax } from '~/components/review-hub/data/types'
 
-defineProps<{
+const props = defineProps<{
   items: ReviewFeedItem[]
+  page: number
+  pageSize: number
 }>()
 
 const emit = defineEmits<{
   select: [item: ReviewFeedItem]
   generate: [item: ReviewFeedItem]
+  'update:page': [page: number]
 }>()
 
 const { getHostReviewCountdown, getUnitInfo, getListingStructure, isGuestReviewHidden, getReplyCountdown, getComputedStatus } = useReviewHub()
+
+const totalPages = computed(() => Math.max(1, Math.ceil(props.items.length / props.pageSize)))
+
+const pageItems = computed(() => {
+  const start = (props.page - 1) * props.pageSize
+  return props.items.slice(start, start + props.pageSize)
+})
 
 function getPropertySubtext(item: ReviewFeedItem) {
   const structure = getListingStructure(item.review_record.listing_id)
@@ -30,7 +40,6 @@ const isGenerating = (id: string) => generatingIds.value.has(id)
 async function handleGenerate(item: ReviewFeedItem) {
   generatingIds.value.add(item.id)
   emit('generate', item)
-  // Clear after the drawer has had time to open and the panel takes over the loading state
   await new Promise(resolve => setTimeout(resolve, 800))
   generatingIds.value.delete(item.id)
 }
@@ -39,7 +48,6 @@ function formatDate(date: string) {
   return format(new Date(date), 'MMM d, yyyy')
 }
 
-// Airbnb double-blind: rating hidden until host submits OR 14 days pass
 function isRatingHidden(item: ReviewFeedItem) {
   return isGuestReviewHidden(item.review_record)
 }
@@ -49,7 +57,6 @@ function ratingDisplay(rating: number | null, source: string) {
   return `${getDisplayScore(rating, source as any)}/${getDisplayMax(source as any)}`
 }
 
-// Host review window expired (Airbnb 14d, Booking.com 365d) — only relevant for channels that support host reviews
 function isHostReviewExpired(item: ReviewFeedItem) {
   const r = item.review_record
   if (r.source === 'direct') return true
@@ -97,7 +104,7 @@ function isReplyExpired(item: ReviewFeedItem) {
       </TableHeader>
       <TableBody>
         <TableRow
-          v-for="item in items"
+          v-for="item in pageItems"
           :key="item.id"
           class="cursor-pointer hover:bg-muted/50"
           @click="emit('select', item)"
@@ -172,7 +179,7 @@ function isReplyExpired(item: ReviewFeedItem) {
             </Button>
           </TableCell>
         </TableRow>
-        <TableRow v-if="items.length === 0">
+        <TableRow v-if="pageItems.length === 0">
           <TableCell colspan="8">
             <Empty class="py-10">
               <Icon name="lucide:message-square-text" class="size-8 text-muted-foreground" />
@@ -189,5 +196,14 @@ function isReplyExpired(item: ReviewFeedItem) {
         </TableRow>
       </TableBody>
     </Table>
+
+    <!-- Pagination -->
+    <ReviewHubFeedPagination
+      v-if="totalPages > 1"
+      :page="page"
+      :total-items="items.length"
+      :page-size="pageSize"
+      @update:page="(p: number) => emit('update:page', p)"
+    />
   </div>
 </template>

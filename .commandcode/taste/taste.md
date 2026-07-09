@@ -53,13 +53,15 @@ See [finance/taste.md](finance/taste.md)
 - Within a unit type, guest capacity settings (max adults, max children, max infants) must be uniform across all units — no per-unit capacity overrides. Confidence: 0.65
 
 # review-hub
-- Booking.com host reviews should only include public review text (no private feedback), unlike Airbnb which includes both public and private feedback. Confidence: 0.70
-- Display review ratings as numbers (not stars) for all sources, including converting Airbnb 5-star to a 10-point numeric scale. Confidence: 0.70
-- Use consistent numeric scoring format (X/5) across all related badges/metrics — avoid mixing count-based display with score-based display. Confidence: 0.65
-- In FeedTable Property column: show unit info (e.g., "Kingbed · Master Suite") for multi-unit records, but display "single unit" text (not location) for single-unit records. Confidence: 0.70
-
+See [review-hub/taste.md](review-hub/taste.md)
+# documentation
+- Include a concise executive summary / quick-reference section at the top of PRD documents so developers can understand the feature at a glance before diving into details. Confidence: 0.70
+- Write PRDs and technical specs as implementation-ready documents without labeling anything as "mock" — developers will build from them as real specifications. Confidence: 0.70
 # icons
 - Use the sparkle AI SVG icon (flaticon #17653301) for AI-related iconography instead of custom brush/pen designs. Confidence: 0.75
+
+# integrations
+- Don't mention third-party integration provider brand names (e.g., Seam) anywhere in the UI except within the integration settings/configuration page itself. Confidence: 0.75
 
 # notifications
 - Marking a notification as read should NOT remove/dismiss it from the list. Confidence: 0.75
