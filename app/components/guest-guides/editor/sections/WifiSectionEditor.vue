@@ -24,12 +24,12 @@ const assignedListings = computed(() =>
   listings.value.filter(l => assignedListingIds.value.includes(l.id)),
 )
 
-const defaultSsid = computed(() =>
-  assignedListings.value.length === 1 ? (assignedListings.value[0].wifiSsid ?? null) : null,
+const singleListing = computed(() =>
+  assignedListings.value.length === 1 ? assignedListings.value[0] : null,
 )
-const defaultPassword = computed(() =>
-  assignedListings.value.length === 1 ? (assignedListings.value[0].wifiPassword ?? null) : null,
-)
+
+const defaultSsid = computed(() => singleListing.value?.wifiSsid ?? null)
+const defaultPassword = computed(() => singleListing.value?.wifiPassword ?? null)
 </script>
 
 <template>
@@ -45,7 +45,7 @@ const defaultPassword = computed(() =>
       class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
     >
       <div>
-        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+        Default from listing "<strong>{{ singleListing?.name }}</strong>" — override below if needed.
       </div>
       <div v-if="defaultSsid" class="font-mono text-foreground">
         SSID: {{ defaultSsid }}

@@ -31,9 +31,12 @@ const assignedListings = computed(() =>
   listings.value.filter(l => assignedListingIds.value.includes(l.id)),
 )
 
+const singleListing = computed(() =>
+  assignedListings.value.length === 1 ? assignedListings.value[0] : null,
+)
+
 const defaultRules = computed<string[]>(() => {
-  if (assignedListings.value.length !== 1) return []
-  const houseRules = assignedListings.value[0].resources?.basics?.houseRules
+  const houseRules = singleListing.value?.resources?.basics?.houseRules
   if (!houseRules) return []
   return houseRules.split('\n').map(r => r.trim()).filter(Boolean)
 })
@@ -52,7 +55,7 @@ const defaultRules = computed<string[]>(() => {
       class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
     >
       <div>
-        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+        Default from listing "<strong>{{ singleListing?.name }}</strong>" — override below if needed.
       </div>
       <div class="text-foreground">
         {{ defaultRules.length }} rule{{ defaultRules.length === 1 ? '' : 's' }}: {{ defaultRules.join(' · ') }}

@@ -36,10 +36,11 @@ const assignedListings = computed(() =>
   listings.value.filter(l => assignedListingIds.value.includes(l.id)),
 )
 
-const defaultAmenities = computed<string[]>(() => {
-  if (assignedListings.value.length !== 1) return []
-  return assignedListings.value[0].amenities ?? []
-})
+const singleListing = computed(() =>
+  assignedListings.value.length === 1 ? assignedListings.value[0] : null,
+)
+
+const defaultAmenities = computed<string[]>(() => singleListing.value?.amenities ?? [])
 </script>
 
 <template>
@@ -55,7 +56,7 @@ const defaultAmenities = computed<string[]>(() => {
       class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
     >
       <div>
-        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+        Default from listing "<strong>{{ singleListing?.name }}</strong>" — override below if needed.
       </div>
       <div class="text-foreground">
         {{ defaultAmenities.length }} amenit{{ defaultAmenities.length === 1 ? 'y' : 'ies' }}: {{ defaultAmenities.join(' · ') }}

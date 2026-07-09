@@ -18,16 +18,12 @@ const assignedListings = computed(() =>
   listings.value.filter(l => assignedListingIds.value.includes(l.id)),
 )
 
-const defaultTime = computed(() =>
-  assignedListings.value.length === 1
-    ? (assignedListings.value[0].resources?.basics?.checkOutTime ?? null)
-    : null,
+const singleListing = computed(() =>
+  assignedListings.value.length === 1 ? assignedListings.value[0] : null,
 )
-const defaultInstructions = computed(() =>
-  assignedListings.value.length === 1
-    ? (assignedListings.value[0].checkOutInstructions ?? null)
-    : null,
-)
+
+const defaultTime = computed(() => singleListing.value?.resources?.basics?.checkOutTime ?? null)
+const defaultInstructions = computed(() => singleListing.value?.checkOutInstructions ?? null)
 </script>
 
 <template>
@@ -43,7 +39,7 @@ const defaultInstructions = computed(() =>
       class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
     >
       <div>
-        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+        Default from listing "<strong>{{ singleListing?.name }}</strong>" — override below if needed.
       </div>
       <div v-if="defaultTime" class="font-mono text-foreground">
         Time: {{ defaultTime }}
