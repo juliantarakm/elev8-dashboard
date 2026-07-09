@@ -1,5 +1,6 @@
 <!-- app/pages/guest-guides/[id]/links.vue -->
 <script setup lang="ts">
+import type { GuestGuideLink, GuideSubmission } from '~/components/guest-guides/data/types'
 import { ref, computed } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -8,12 +9,18 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '~/components/ui/table'
 import { Badge } from '~/components/ui/badge'
+import LinkDetailDrawer from '~/components/guest-guides/links/LinkDetailDrawer.vue'
 
 const route = useRoute()
 const guideId = computed(() => route.params.id as string)
 
 const { guides } = useGuestGuides()
 const { links, revokeLink } = useGuestGuideLinks()
+const { getSubmissionForLink } = useGuestGuideSubmissions()
+
+const drawerOpen = ref(false)
+const selectedLink = ref<GuestGuideLink | null>(null)
+const selectedSubmission = ref<GuideSubmission | null>(null)
 
 const guide = computed(() => guides.value.find(g => g.id === guideId.value))
 const guideLinks = computed(() => links.value.filter(l => l.guideId === guideId.value))
@@ -44,6 +51,12 @@ function formatDate(iso: string): string {
 function handleRevoke(id: string) {
   revokeLink(id)
   toast.success('Link revoked')
+}
+
+function openLink(link: GuestGuideLink) {
+  selectedLink.value = link
+  selectedSubmission.value = getSubmissionForLink(link.id)
+  drawerOpen.value = true
 }
 </script>
 
@@ -91,7 +104,7 @@ function handleRevoke(id: string) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="link in filteredLinks" :key="link.id">
+          <TableRow v-for="link in filteredLinks" :key="link.id" class="cursor-pointer" @click="openLink(link)">
             <TableCell class="font-mono text-xs">{{ link.token.slice(0, 8) }}…</TableCell>
             <TableCell>{{ link.guestName }}</TableCell>
             <TableCell>{{ link.reservationId }}</TableCell>
@@ -103,7 +116,7 @@ function handleRevoke(id: string) {
               </Badge>
             </TableCell>
             <TableCell>
-              <Button v-if="link.status !== 'revoked'" variant="ghost" size="sm" @click="handleRevoke(link.id)">
+              <Button v-if="link.status !== 'revoked'" variant="ghost" size="sm" @click.stop="handleRevoke(link.id)">
                 Revoke
               </Button>
             </TableCell>
@@ -116,5 +129,6 @@ function handleRevoke(id: string) {
         </TableBody>
       </Table>
     </div>
+    <LinkDetailDrawer v-model:open="drawerOpen" :link="selectedLink" :submission="selectedSubmission" />
   </div>
 </template>
