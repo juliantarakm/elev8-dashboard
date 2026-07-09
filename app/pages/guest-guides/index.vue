@@ -28,7 +28,7 @@ function handleCreate() {
 }
 
 function handleEdit(id: string) {
-  toast.info(`Editor opens in Phase 2 - guide: ${id}`)
+  navigateTo(`/guest-guides/${id}`)
 }
 
 function handlePreview(id: string) {
