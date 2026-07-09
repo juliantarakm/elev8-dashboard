@@ -9,6 +9,7 @@ import { toast } from 'vue-sonner'
 import SectionList from './SectionList.vue'
 import SectionEditor from './SectionEditor.vue'
 import AddSectionDialog from './AddSectionDialog.vue'
+import ListingsAssignSection from './ListingsAssignSection.vue'
 import { generateSectionId } from '~/utils/guest-guide-token'
 
 const props = defineProps<{ guideId: string }>()
@@ -89,6 +90,9 @@ function handleSmartOrderingToggle(value: boolean) {
 <template>
   <div v-if="guide" class="flex h-full">
     <aside class="w-64 border-r p-4 overflow-y-auto">
+      <div class="mb-4">
+        <ListingsAssignSection :guide-id="guideId" />
+      </div>
       <h3 class="mb-3 text-sm font-medium text-muted-foreground">Sections</h3>
       <SectionList
         :model-value="guide.sections"
