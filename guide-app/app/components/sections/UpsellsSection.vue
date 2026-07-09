@@ -5,6 +5,7 @@ defineProps<{
     heading?: string
     subheading?: string
   }
+  listing?: any
   token?: string
 }>()
 

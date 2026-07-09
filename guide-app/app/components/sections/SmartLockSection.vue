@@ -4,6 +4,7 @@ defineProps<{
     heading?: string
     codeWindowHours?: number
   }
+  listing?: any
   token?: string
 }>()
 

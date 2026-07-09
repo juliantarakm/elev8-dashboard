@@ -1,11 +1,23 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   data: {
     time?: string
     instructions?: string
     earlyCheckinAvailable?: boolean
   }
+  listing?: {
+    resources?: {
+      basics?: {
+        checkInTime?: string
+      }
+    }
+    checkInInstructions?: string
+  }
+  token?: string
 }>()
+
+const time = computed(() => props.data?.time ?? props.listing?.resources?.basics?.checkInTime ?? '14:00')
+const instructions = computed(() => props.data?.instructions ?? props.listing?.checkInInstructions ?? null)
 
 const { translate } = useAutoTranslate()
 </script>
@@ -21,10 +33,10 @@ const { translate } = useAutoTranslate()
       </h2>
     </div>
     <div class="mb-2 text-2xl font-bold text-primary">
-      {{ data.time ?? '15:00' }}
+      {{ time }}
     </div>
-    <p v-if="data.instructions" class="text-sm leading-relaxed text-muted-foreground md:text-base">
-      {{ translate(data.instructions) }}
+    <p v-if="instructions" class="text-sm leading-relaxed text-muted-foreground md:text-base">
+      {{ translate(instructions) }}
     </p>
     <p v-if="data.earlyCheckinAvailable" class="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
       <Icon name="lucide:check" class="size-3" />

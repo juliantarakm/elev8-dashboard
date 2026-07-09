@@ -3,6 +3,8 @@ defineProps<{
   data: {
     files?: Array<{ id: string; name: string; url: string; size?: number }>
   }
+  listing?: any
+  token?: string
 }>()
 
 const { translate } = useAutoTranslate()

@@ -3,6 +3,8 @@ defineProps<{
   data: {
     message?: string
   }
+  listing?: any
+  token?: string
 }>()
 
 const { translate } = useAutoTranslate()

@@ -3,6 +3,8 @@ defineProps<{
   data: {
     tips?: Array<{ title: string; body: string; icon?: string }>
   }
+  listing?: any
+  token?: string
 }>()
 
 const { translate } = useAutoTranslate()

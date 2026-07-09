@@ -1,10 +1,22 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   data: {
     time?: string
     instructions?: string
   }
+  listing?: {
+    resources?: {
+      basics?: {
+        checkOutTime?: string
+      }
+    }
+    checkOutInstructions?: string
+  }
+  token?: string
 }>()
+
+const time = computed(() => props.data?.time ?? props.listing?.resources?.basics?.checkOutTime ?? '11:00')
+const instructions = computed(() => props.data?.instructions ?? props.listing?.checkOutInstructions ?? null)
 
 const { translate } = useAutoTranslate()
 </script>
@@ -20,10 +32,10 @@ const { translate } = useAutoTranslate()
       </h2>
     </div>
     <div class="mb-2 text-2xl font-bold text-primary">
-      {{ data.time ?? '11:00' }}
+      {{ time }}
     </div>
-    <p v-if="data.instructions" class="text-sm leading-relaxed text-muted-foreground md:text-base">
-      {{ translate(data.instructions) }}
+    <p v-if="instructions" class="text-sm leading-relaxed text-muted-foreground md:text-base">
+      {{ translate(instructions) }}
     </p>
   </section>
 </template>

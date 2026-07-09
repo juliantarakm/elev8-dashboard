@@ -1,12 +1,22 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   data: {
     ssid?: string
     password?: string
     networkNotes?: string
     showPassword?: boolean
   }
+  listing?: {
+    wifiSsid?: string
+    wifiPassword?: string
+  }
+  token?: string
 }>()
+
+const ssid = computed(() => props.data?.ssid ?? props.listing?.wifiSsid ?? null)
+const password = computed(() => props.data?.password ?? props.listing?.wifiPassword ?? null)
+const networkNotes = computed(() => props.data?.networkNotes ?? null)
+const hasWifi = computed(() => Boolean(ssid.value && password.value))
 
 const { translate } = useAutoTranslate()
 const showPw = ref(false)
@@ -31,21 +41,21 @@ async function copy(text: string) {
       </h2>
     </div>
 
-    <div class="space-y-3">
+    <div v-if="hasWifi" class="space-y-3">
       <div class="flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
         <div>
           <div class="text-xs text-muted-foreground">
             {{ translate('Network') }}
           </div>
           <div class="font-mono text-sm font-medium">
-            {{ data.ssid ?? '—' }}
+            {{ ssid }}
           </div>
         </div>
         <button
           type="button"
           class="ml-2 rounded-md p-1.5 hover:bg-muted"
           :aria-label="translate('Copy network name')"
-          @click="copy(data.ssid ?? '')"
+          @click="copy(ssid ?? '')"
         >
           <Icon name="lucide:copy" class="size-4" />
         </button>
@@ -57,7 +67,7 @@ async function copy(text: string) {
             {{ translate('Password') }}
           </div>
           <div class="truncate font-mono text-sm font-medium">
-            {{ showPw ? (data.password ?? '—') : '••••••••' }}
+            {{ showPw ? password : '••••••••' }}
           </div>
         </div>
         <div class="ml-2 flex items-center gap-1">
@@ -73,16 +83,19 @@ async function copy(text: string) {
             type="button"
             class="rounded-md p-1.5 hover:bg-muted"
             :aria-label="translate('Copy password')"
-            @click="copy(data.password ?? '')"
+            @click="copy(password ?? '')"
           >
             <Icon name="lucide:copy" class="size-4" />
           </button>
         </div>
       </div>
 
-      <p v-if="data.networkNotes" class="text-xs text-muted-foreground">
-        {{ translate(data.networkNotes) }}
+      <p v-if="networkNotes" class="text-xs text-muted-foreground">
+        {{ translate(networkNotes) }}
       </p>
     </div>
+    <p v-else class="text-sm text-muted-foreground">
+      {{ translate('Wi-Fi info coming soon.') }}
+    </p>
   </section>
 </template>

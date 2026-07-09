@@ -1,9 +1,15 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   data: {
     items?: string[]
   }
+  listing?: {
+    amenities?: string[]
+  }
+  token?: string
 }>()
+
+const items = computed(() => props.data?.items ?? props.listing?.amenities ?? [])
 
 const { translate } = useAutoTranslate()
 </script>
@@ -18,9 +24,9 @@ const { translate } = useAutoTranslate()
         {{ translate('Amenities') }}
       </h2>
     </div>
-    <div v-if="data.items && data.items.length" class="flex flex-wrap gap-2">
+    <div v-if="items && items.length" class="flex flex-wrap gap-2">
       <span
-        v-for="(item, idx) in data.items"
+        v-for="(item, idx) in items"
         :key="idx"
         class="inline-flex items-center rounded-full border bg-muted px-3 py-1 text-xs font-medium md:text-sm"
       >

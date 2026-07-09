@@ -5,6 +5,8 @@ defineProps<{
     title?: string
     subtitle?: string
   }
+  listing?: any
+  token?: string
 }>()
 
 const { translate } = useAutoTranslate()

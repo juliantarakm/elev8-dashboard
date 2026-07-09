@@ -1,9 +1,26 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   data: {
     rules?: string[]
   }
+  listing?: {
+    resources?: {
+      basics?: {
+        houseRules?: string
+      }
+    }
+  }
+  token?: string
 }>()
+
+const rules = computed<string[]>(() => {
+  if (props.data?.rules?.length) return props.data.rules
+  const houseRules = props.listing?.resources?.basics?.houseRules
+  if (houseRules) {
+    return houseRules.split('\n').map(r => r.trim()).filter(Boolean)
+  }
+  return []
+})
 
 const { translate } = useAutoTranslate()
 </script>
@@ -18,9 +35,9 @@ const { translate } = useAutoTranslate()
         {{ translate('House Rules') }}
       </h2>
     </div>
-    <ul v-if="data.rules && data.rules.length" class="space-y-2">
+    <ul v-if="rules.length" class="space-y-2">
       <li
-        v-for="(rule, idx) in data.rules"
+        v-for="(rule, idx) in rules"
         :key="idx"
         class="flex items-start gap-2 text-sm md:text-base"
       >
