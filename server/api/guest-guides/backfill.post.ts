@@ -1,5 +1,5 @@
 import type { GuestGuideLink } from '~/components/guest-guides/data/types'
-import { conversations } from '~/components/inbox/data/conversations'
+import { conversations, reservations } from '~/components/inbox/data/conversations'
 import { generateLinkId, generateToken } from '~/utils/guest-guide-token'
 
 interface BackfillBody {
@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
     // expiresAt = checkOut + 1 day, fallback +7 days from now
     const baseExpiry = c.checkOut ? new Date(c.checkOut) : new Date(now.getTime() + 7 * 86400000)
     const expiresAt = new Date(baseExpiry.getTime() + 86400000).toISOString()
+    const reservation = reservations[c.reservationId]
     const link: GuestGuideLink = {
       id: generateLinkId(),
       token: generateToken(),
@@ -42,8 +43,8 @@ export default defineEventHandler(async (event) => {
       reservationId: c.reservationId,
       listingId: c.listingName ?? '',
       guestName: c.guestName,
-      guestEmail: c.guestDetails?.email,
-      guestPhone: c.guestDetails?.phone,
+      guestEmail: reservation?.guestDetails?.email,
+      guestPhone: reservation?.guestDetails?.phone,
       guestLanguage: c.guestLanguage,
       sentAt: nowIso,
       expiresAt,
