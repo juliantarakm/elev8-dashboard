@@ -52,6 +52,13 @@ export interface AccessCode {
   guestName?: string
   reservationId?: string
   purpose?: string
+  /**
+   * How the active window was configured by the host:
+   * - 'ongoing' — always active (endsAt is far in the future)
+   * - 'range'   — explicit start/end timestamps supplied by the host
+   * - undefined — auto-generated (24h default window), no explicit schedule yet
+   */
+  scheduleType?: 'ongoing' | 'range'
   status: 'active' | 'expired' | 'revoked'
   providerCodeId: string
 }
@@ -313,13 +320,27 @@ export function useSmartLock() {
     reservationId?: string
     code?: string
     purpose?: string
+    scheduleType?: 'ongoing' | 'range'
   }): Promise<{ success: boolean, error?: string, code?: AccessCode }> {
     // Mock network delay so loading states are visible in the UI
     await new Promise(r => setTimeout(r, 700))
     const lock = locks.value.find(l => l.id === opts.lockId)
     if (!lock) return { success: false, error: 'Lock not found.' }
     const startsAt = opts.startsAt ?? new Date().toISOString()
-    const endsAt = opts.endsAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    // Compute endsAt from the chosen schedule type:
+    //  - 'ongoing' = far future (effectively always active)
+    //  - 'range'   = the user-supplied endsAt (validation lives in the caller)
+    //  - default   = 24h from now (auto-generated without explicit schedule)
+    let endsAt: string
+    if (opts.scheduleType === 'ongoing') {
+      endsAt = new Date('2099-12-31T23:59:59Z').toISOString()
+    }
+    else if (opts.endsAt) {
+      endsAt = opts.endsAt
+    }
+    else {
+      endsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    }
     // Revoke any existing active code on this lock FOR THE SAME RESERVATION (so different guests
     // can each have their own code on the same lock, and housekeeping codes don't conflict with guest codes)
     codes.value = codes.value.map(c =>
@@ -336,6 +357,7 @@ export function useSmartLock() {
       guestName: opts.guestName,
       reservationId: opts.reservationId,
       purpose: opts.purpose,
+      scheduleType: opts.scheduleType,
       status: 'active',
       providerCodeId: `code-${Math.random().toString(36).slice(2, 10)}`,
     }

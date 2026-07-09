@@ -67,6 +67,61 @@ const allRooms = computed(() =>
   unitTypes.value.flatMap(ut => ut.units.map(u => ({ id: u.id, name: u.name, typeName: ut.name }))),
 )
 
+// Brand lookup map for paired locks — keyed by deviceId, returns capitalized provider name + model
+const providerMap = computed(() => {
+  const map = new Map<string, { name: string; model: string }>()
+  for (const device of smartLock.allDevices.value) {
+    map.set(device.deviceId, {
+      name: device.provider.charAt(0).toUpperCase() + device.provider.slice(1),
+      model: device.model,
+    })
+  }
+  return map
+})
+
+function getProvider(deviceId: string) {
+  return providerMap.value.get(deviceId) ?? null
+}
+
+// Grouped locks by scope — property level first, then per-room in unitTypes order
+const propertyLocks = computed(() =>
+  listingLocks.value.filter(l => l.assignment === 'property' || !l.unitId),
+)
+
+// Flat list of every room in this listing (preserving unitType → unit order)
+const roomsList = computed(() =>
+  unitTypes.value.flatMap(ut => ut.units.map(u => ({
+    id: u.id,
+    name: u.name,
+    typeName: ut.name,
+  }))),
+)
+
+function roomLocksForUnit(unitId: string) {
+  return listingLocks.value.filter(l => l.unitId === unitId && l.assignment === 'room')
+}
+
+// Active tab state — property vs rooms
+const activeTab = ref<'property' | 'rooms'>('property')
+
+// Total locks across all rooms (for the Rooms tab badge)
+const totalRoomLocks = computed(() =>
+  roomsList.value.reduce((sum, r) => sum + roomLocksForUnit(r.id).length, 0),
+)
+
+// Card-header "Add Lock" button: scopes the pair dialog to the currently active tab.
+// For the Rooms tab, defaults to the first room that has no locks yet (or just the first room).
+function handleCardHeaderAdd() {
+  if (activeTab.value === 'property') {
+    openPairDialog('property')
+  }
+  else {
+    const target = roomsList.value.find(r => roomLocksForUnit(r.id).length === 0) ?? roomsList.value[0]
+    if (target) openPairDialog('room', target.id)
+    else openPairDialog('property')
+  }
+}
+
 // Reactive default for "Set as main" — true if no lock in the selected scope yet
 watch([pairAssignment, pairUnitId, showPairDialog], () => {
   if (!showPairDialog.value) return
@@ -229,6 +284,156 @@ const relevantReservations = computed(() => {
     return checkOut >= today
   })
 })
+
+// --- Per-lock card UI state ---
+const unlockingLockId = ref<string | null>(null)
+
+// --- Codes dialog (one dialog, scoped to one lock at a time) ---
+const codesDialogLockId = ref<string | null>(null)
+
+// "Add code" form state
+const newCodePurpose = ref('')
+const newCodeValue = ref('')
+const newCodeScheduleType = ref<'ongoing' | 'range'>('ongoing')
+const newCodeStartAt = ref('')
+const newCodeEndAt = ref('')
+const savingNewCode = ref(false)
+const newCodeError = ref('')
+
+const codesDialogOpen = computed({
+  get: () => codesDialogLockId.value !== null,
+  set: (val: boolean) => {
+    if (!val) codesDialogLockId.value = null
+  },
+})
+
+function openCodesDialog(lockId: string) {
+  codesDialogLockId.value = lockId
+  // Reset form (random 6-digit default so user can save immediately if they want)
+  newCodePurpose.value = ''
+  newCodeValue.value = generateRandomCode()
+  newCodeScheduleType.value = 'ongoing'
+  newCodeStartAt.value = ''
+  newCodeEndAt.value = ''
+  newCodeError.value = ''
+}
+
+function generateRandomCode() {
+  return Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('')
+}
+
+// Sorted codes for a given lock (newest first)
+function codesForLock(lockId: string) {
+  return smartLock.codes.value
+    .filter(c => c.lockId === lockId)
+    .sort((a, b) => +new Date(b.startsAt) - +new Date(a.startsAt))
+}
+
+/**
+ * 3-state lifecycle badge driven by scheduleType + current time + status:
+ *  - 'unset'   = revoked, expired, or scheduled in the future with no active window
+ *  - 'setting' = auto-generated (no explicit schedule yet) OR future-scheduled with explicit range
+ *  - 'set'     = currently within an explicit active window (ongoing or within range)
+ */
+type CodeTimeStatus = 'unset' | 'setting' | 'set'
+
+function getCodeTimeStatus(code: { status: string, startsAt: string, endsAt: string, scheduleType?: 'ongoing' | 'range' }): CodeTimeStatus {
+  if (code.status === 'revoked') return 'unset'
+  const now = Date.now()
+  const start = +new Date(code.startsAt)
+  const end = +new Date(code.endsAt)
+  if (end <= now) return 'unset'
+
+  if (code.scheduleType === 'ongoing') return 'set'
+  if (code.scheduleType === 'range') return start > now ? 'setting' : 'set'
+
+  // No explicit schedule = auto-generated, sitting in transition
+  return 'setting'
+}
+
+function timeStatusLabel(s: CodeTimeStatus): string {
+  return s === 'set' ? 'Set' : s === 'setting' ? 'Setting' : 'Unset'
+}
+
+function timeStatusClass(s: CodeTimeStatus): string {
+  if (s === 'set') return 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
+  if (s === 'setting') return 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+  return 'border-muted-foreground/30 bg-muted text-muted-foreground'
+}
+
+function timeUntilExpiry(endsAt: string): string {
+  const ms = +new Date(endsAt) - Date.now()
+  if (ms <= 0) return 'expired'
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+  if (hours <= 0) return `${minutes}m left`
+  if (hours < 24) return `${hours}h ${minutes}m left`
+  const days = Math.floor(hours / 24)
+  return `${days}d left`
+}
+
+async function handleUnlock(lockId: string) {
+  unlockingLockId.value = lockId
+  await new Promise(r => setTimeout(r, 800))
+  unlockingLockId.value = null
+  const lock = smartLock.locks.value.find(l => l.id === lockId)
+  toast.success(`"${lock?.name ?? 'Lock'}" unlocked.`)
+}
+
+async function handleSaveNewCode() {
+  if (!codesDialogLockId.value) return
+  newCodeError.value = ''
+  const purpose = newCodePurpose.value.trim()
+  if (!purpose) {
+    newCodeError.value = 'Code name is required.'
+    return
+  }
+  const value = newCodeValue.value.trim()
+  if (!/^\d{6}$/.test(value)) {
+    newCodeError.value = 'Code must be 6 digits.'
+    return
+  }
+  let startsAt: string | undefined
+  let endsAt: string | undefined
+  if (newCodeScheduleType.value === 'range') {
+    if (!newCodeStartAt.value || !newCodeEndAt.value) {
+      newCodeError.value = 'Start and end times are required for a range.'
+      return
+    }
+    startsAt = new Date(newCodeStartAt.value).toISOString()
+    endsAt = new Date(newCodeEndAt.value).toISOString()
+    if (+new Date(startsAt) >= +new Date(endsAt)) {
+      newCodeError.value = 'End time must be after start time.'
+      return
+    }
+  }
+
+  savingNewCode.value = true
+  const result = await smartLock.generateAccessCode({
+    lockId: codesDialogLockId.value,
+    code: value,
+    purpose,
+    scheduleType: newCodeScheduleType.value,
+    startsAt,
+    endsAt,
+  })
+  savingNewCode.value = false
+  if (!result.code) {
+    newCodeError.value = 'Failed to create code.'
+    return
+  }
+  toast.success(`Code "${purpose}" created.`)
+  // Reset form so the user can add another code
+  newCodePurpose.value = ''
+  newCodeValue.value = generateRandomCode()
+  newCodeStartAt.value = ''
+  newCodeEndAt.value = ''
+}
+
+function handleRevokeCode(codeId: string) {
+  smartLock.revokeAccessCode(codeId)
+  toast.info('Code revoked.')
+}
 </script>
 
 <template>
@@ -266,7 +471,7 @@ const relevantReservations = computed(() => {
           size="sm"
           class="gap-1.5"
           :disabled="availableDevices.length === 0"
-          @click="openPairDialog('property')"
+          @click="handleCardHeaderAdd"
         >
           <Icon name="lucide:plus" class="size-3.5" />
           Add Lock
@@ -285,94 +490,500 @@ const relevantReservations = computed(() => {
         </p>
       </div>
 
-      <!-- No locks yet -->
-      <div v-else-if="listingLocks.length === 0" class="rounded-lg border border-dashed p-6 text-center">
-        <p class="text-sm text-muted-foreground">
-          No locks paired to this property yet.
-        </p>
-      </div>
+      <!-- Tabs: Property vs Rooms -->
+      <Tabs v-else v-model="activeTab" class="w-full">
+        <TabsList class="grid w-full grid-cols-2">
+          <TabsTrigger value="property" class="gap-1.5">
+            <Icon name="lucide:building-2" class="size-3.5" />
+            Property
+            <Badge variant="secondary" class="ml-1 h-4 px-1.5 text-[10px]">
+              {{ propertyLocks.length }}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="rooms" class="gap-1.5">
+            <Icon name="lucide:door-open" class="size-3.5" />
+            Rooms
+            <Badge variant="secondary" class="ml-1 h-4 px-1.5 text-[10px]">
+              {{ totalRoomLocks }}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
 
-      <!-- Lock list -->
-      <div v-else class="flex flex-col gap-2">
-        <div
-          v-for="lock in listingLocks"
-          :key="lock.id"
-          class="flex items-center gap-3 rounded-lg border p-3"
-        >
+        <!-- Property tab -->
+        <TabsContent value="property" class="mt-4 space-y-2">
+          <div v-if="propertyLocks.length === 0" class="rounded-lg border border-dashed p-6 text-center">
+            <p class="text-sm text-muted-foreground">
+              No locks paired at property level.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              class="mt-3 gap-1.5"
+              :disabled="availableDevices.length === 0"
+              @click="openPairDialog('property')"
+            >
+              <Icon name="lucide:plus" class="size-3.5" />
+              Add Lock
+            </Button>
+          </div>
+          <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div
+              v-for="lock in propertyLocks"
+              :key="lock.id"
+              class="flex flex-col gap-3 rounded-lg border p-4"
+            >
+              <!-- Header: icon + name + brand + main -->
+              <div class="flex items-start gap-2">
+                <div
+                  class="flex size-9 shrink-0 items-center justify-center rounded-md border"
+                  :class="lock.online ? 'bg-green-500/10' : 'bg-muted'"
+                >
+                  <Icon
+                    :name="lock.online ? 'lucide:lock' : 'lucide:lock-open'"
+                    class="size-4"
+                    :class="lock.online ? 'text-green-600' : 'text-muted-foreground'"
+                  />
+                </div>
+                <div class="min-w-0 flex-1 space-y-1">
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      v-if="renameLockId === lock.id"
+                      v-model="renameValue"
+                      class="w-full text-sm font-medium bg-transparent border-b border-primary outline-none"
+                      @keydown.enter="commitRename"
+                      @keydown.esc="renameLockId = null"
+                      @blur="commitRename"
+                    >
+                    <p v-else class="truncate text-sm font-medium">
+                      {{ lock.name }}
+                    </p>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span
+                      v-if="getProvider(lock.providerDeviceId)"
+                      class="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                      :title="getProvider(lock.providerDeviceId)?.model"
+                    >
+                      {{ getProvider(lock.providerDeviceId)?.name }}
+                    </span>
+                    <Badge v-if="lock.isMain" variant="default" class="text-[9px] px-1 py-0">
+                      Main
+                    </Badge>
+                    <span
+                      v-if="!lock.isMain"
+                      class="cursor-pointer text-muted-foreground hover:text-foreground"
+                      title="Set as main"
+                      @click="handleSetMain(lock.id)"
+                    >
+                      <Icon name="lucide:star" class="size-3" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Meta -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                <span class="inline-flex items-center gap-0.5">
+                  <Icon name="lucide:battery" class="size-3" :class="lock.batteryLevel <= 20 ? 'text-amber-500' : 'text-muted-foreground'" />
+                  {{ lock.batteryLevel }}%
+                </span>
+                <span class="inline-flex items-center gap-0.5">
+                  <span class="size-1.5 rounded-full" :class="lock.online ? 'bg-green-500' : 'bg-muted-foreground/50'" />
+                  {{ lock.online ? 'Online' : 'Offline' }}
+                </span>
+                <span>Property</span>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex flex-wrap items-center gap-1.5">
+                <Button
+                  size="sm"
+                  class="h-7 gap-1 px-2 text-xs"
+                  :disabled="!lock.online || unlockingLockId === lock.id"
+                  @click="handleUnlock(lock.id)"
+                >
+                  <Icon v-if="unlockingLockId === lock.id" name="lucide:loader-2" class="size-3 animate-spin" />
+                  <Icon v-else name="lucide:lock-keyhole" class="size-3" />
+                  Unlock
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  class="h-7 gap-1 px-2 text-xs"
+                  @click="openCodesDialog(lock.id)"
+                >
+                  <Icon name="lucide:key" class="size-3" />
+                  Codes {{ codesForLock(lock.id).length }}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  title="Rename"
+                  @click="startRename(lock.id, lock.name)"
+                >
+                  <Icon name="lucide:pencil" class="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  title="Swap device"
+                  @click="startSwap(lock.id)"
+                >
+                  <Icon name="lucide:refresh-cw" class="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                  title="Unpair"
+                  @click="handleUnpair(lock.id, lock.name)"
+                >
+                  <Icon name="lucide:trash-2" class="size-3.5" />
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        </TabsContent>
+
+        <!-- Rooms tab -->
+        <TabsContent value="rooms" class="mt-4 space-y-4">
           <div
-            class="flex size-9 shrink-0 items-center justify-center rounded-md border"
-            :class="lock.online ? 'bg-green-500/10' : 'bg-muted'"
+            v-if="roomsList.length === 0"
+            class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground"
           >
-            <Icon
-              :name="lock.online ? 'lucide:lock' : 'lucide:lock-open'"
-              class="size-4"
-              :class="lock.online ? 'text-green-600' : 'text-muted-foreground'"
-            />
+            This listing has no rooms. Add rooms in the listing setup to pair per-room locks.
           </div>
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5">
-              <input
-                v-if="renameLockId === lock.id"
-                v-model="renameValue"
-                class="text-sm font-medium bg-transparent border-b border-primary outline-none"
-                @keydown.enter="commitRename"
-                @keydown.esc="renameLockId = null"
-                @blur="commitRename"
+          <div
+            v-for="room in roomsList"
+            v-else
+            :key="room.id"
+            class="space-y-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex min-w-0 items-center gap-2">
+                <Icon name="lucide:door-open" class="size-3.5 shrink-0 text-muted-foreground" />
+                <h4 class="truncate text-sm font-medium">
+                  {{ room.name }}
+                </h4>
+                <span class="text-[11px] text-muted-foreground">· {{ room.typeName }}</span>
+                <Badge variant="secondary" class="text-[10px]">
+                  {{ roomLocksForUnit(room.id).length }}
+                </Badge>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                class="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                :disabled="availableDevices.length === 0"
+                @click="openPairDialog('room', room.id)"
               >
-              <p v-else class="truncate text-sm font-medium">
-                {{ lock.name }}
-              </p>
-              <Badge v-if="lock.isMain" variant="default" class="text-[9px] px-1 py-0">
-                Main
-              </Badge>
-              <span
-                v-if="!lock.isMain"
-                class="cursor-pointer text-muted-foreground hover:text-foreground"
-                title="Set as main"
-                @click="handleSetMain(lock.id)"
-              >
-                <Icon name="lucide:star" class="size-3" />
-              </span>
+                <Icon name="lucide:plus" class="size-3" />
+                Add another
+              </Button>
             </div>
-            <div class="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span class="inline-flex items-center gap-0.5">
-                <Icon name="lucide:battery" class="size-3" :class="lock.batteryLevel <= 20 ? 'text-amber-500' : 'text-muted-foreground'" />
-                {{ lock.batteryLevel }}%
-              </span>
-              <span>·</span>
-              <span>{{ lock.assignment === 'room' ? `Room: ${getUnitName(lock.unitId)}` : 'Property' }}</span>
+            <div v-if="roomLocksForUnit(room.id).length === 0" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+              No locks paired to this room.
+            </div>
+            <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div
+                v-for="lock in roomLocksForUnit(room.id)"
+                :key="lock.id"
+                class="flex flex-col gap-3 rounded-lg border p-4"
+              >
+                <!-- Header: icon + name + brand + main -->
+                <div class="flex items-start gap-2">
+                  <div
+                    class="flex size-9 shrink-0 items-center justify-center rounded-md border"
+                    :class="lock.online ? 'bg-green-500/10' : 'bg-muted'"
+                  >
+                    <Icon
+                      :name="lock.online ? 'lucide:lock' : 'lucide:lock-open'"
+                      class="size-4"
+                      :class="lock.online ? 'text-green-600' : 'text-muted-foreground'"
+                    />
+                  </div>
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex items-center gap-1.5">
+                      <input
+                        v-if="renameLockId === lock.id"
+                        v-model="renameValue"
+                        class="w-full text-sm font-medium bg-transparent border-b border-primary outline-none"
+                        @keydown.enter="commitRename"
+                        @keydown.esc="renameLockId = null"
+                        @blur="commitRename"
+                      >
+                      <p v-else class="truncate text-sm font-medium">
+                        {{ lock.name }}
+                      </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span
+                        v-if="getProvider(lock.providerDeviceId)"
+                        class="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        :title="getProvider(lock.providerDeviceId)?.model"
+                      >
+                        {{ getProvider(lock.providerDeviceId)?.name }}
+                      </span>
+                      <Badge v-if="lock.isMain" variant="default" class="text-[9px] px-1 py-0">
+                        Main
+                      </Badge>
+                      <span
+                        v-if="!lock.isMain"
+                        class="cursor-pointer text-muted-foreground hover:text-foreground"
+                        title="Set as main"
+                        @click="handleSetMain(lock.id)"
+                      >
+                        <Icon name="lucide:star" class="size-3" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Meta -->
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  <span class="inline-flex items-center gap-0.5">
+                    <Icon name="lucide:battery" class="size-3" :class="lock.batteryLevel <= 20 ? 'text-amber-500' : 'text-muted-foreground'" />
+                    {{ lock.batteryLevel }}%
+                  </span>
+                  <span class="inline-flex items-center gap-0.5">
+                    <span class="size-1.5 rounded-full" :class="lock.online ? 'bg-green-500' : 'bg-muted-foreground/50'" />
+                    {{ lock.online ? 'Online' : 'Offline' }}
+                  </span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    class="h-7 gap-1 px-2 text-xs"
+                    :disabled="!lock.online || unlockingLockId === lock.id"
+                    @click="handleUnlock(lock.id)"
+                  >
+                    <Icon v-if="unlockingLockId === lock.id" name="lucide:loader-2" class="size-3 animate-spin" />
+                    <Icon v-else name="lucide:lock-keyhole" class="size-3" />
+                    Unlock
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    class="h-7 gap-1 px-2 text-xs"
+                    @click="openCodesDialog(lock.id)"
+                  >
+                    <Icon name="lucide:key" class="size-3" />
+                    Codes {{ codesForLock(lock.id).length }}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    title="Rename"
+                    @click="startRename(lock.id, lock.name)"
+                  >
+                    <Icon name="lucide:pencil" class="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    title="Swap device"
+                    @click="startSwap(lock.id)"
+                  >
+                    <Icon name="lucide:refresh-cw" class="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                    title="Unpair"
+                    @click="handleUnpair(lock.id, lock.name)"
+                  >
+                    <Icon name="lucide:trash-2" class="size-3.5" />
+                  </Button>
+                </div>
+
+              </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Rename"
-            @click="startRename(lock.id, lock.name)"
-          >
-            <Icon name="lucide:pencil" class="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-            title="Swap device"
-            @click="startSwap(lock.id)"
-          >
-            <Icon name="lucide:refresh-cw" class="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-            title="Unpair"
-            @click="handleUnpair(lock.id, lock.name)"
-          >
-            <Icon name="lucide:trash-2" class="size-3.5" />
-          </Button>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </Card>
+
+    <!-- Codes Dialog (per-lock) -->
+    <Dialog v-model:open="codesDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle class="flex items-center gap-2">
+            <Icon name="lucide:key" class="size-4 text-primary" />
+            Access Codes
+          </DialogTitle>
+          <DialogDescription>
+            Manage access codes for this lock. Codes auto-expire after their scheduled window.
+          </DialogDescription>
+        </DialogHeader>
+
+        <!-- Codes list -->
+        <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+          <div v-if="codesDialogLockId && codesForLock(codesDialogLockId).length === 0" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+            No codes generated yet.
+          </div>
+          <div
+            v-for="code in codesDialogLockId ? codesForLock(codesDialogLockId) : []"
+            v-else
+            :key="code.id"
+            class="flex items-start gap-2 rounded-lg border p-3"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <Icon name="lucide:user" class="size-3 shrink-0 text-muted-foreground" />
+                <span class="truncate text-sm font-medium">
+                  {{ code.purpose ?? code.guestName ?? 'Manual code' }}
+                </span>
+                <Badge
+                  variant="outline"
+                  class="ml-auto h-4 px-1.5 text-[9px] uppercase tracking-wider"
+                  :class="timeStatusClass(getCodeTimeStatus(code))"
+                >
+                  {{ timeStatusLabel(getCodeTimeStatus(code)) }}
+                </Badge>
+              </div>
+              <div class="mt-1 font-mono text-lg tracking-widest">
+                {{ code.code }}
+              </div>
+              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                <span v-if="code.scheduleType === 'ongoing'">
+                  <Icon name="lucide:infinity" class="mr-0.5 inline size-3" />
+                  Ongoing
+                </span>
+                <span v-else-if="code.scheduleType === 'range'">
+                  <Icon name="lucide:clock" class="mr-0.5 inline size-3" />
+                  {{ new Date(code.startsAt).toLocaleString() }} → {{ new Date(code.endsAt).toLocaleString() }}
+                </span>
+                <span v-else>
+                  <Icon name="lucide:zap" class="mr-0.5 inline size-3" />
+                  Auto · {{ timeUntilExpiry(code.endsAt) }}
+                </span>
+                <span v-if="code.status === 'revoked'" class="text-destructive">
+                  · Revoked
+                </span>
+              </div>
+            </div>
+            <Button
+              v-if="code.status === 'active'"
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+              title="Revoke"
+              @click="handleRevokeCode(code.id)"
+            >
+              <Icon name="lucide:trash-2" class="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <!-- Add-code form -->
+        <div class="space-y-3 border-t pt-4">
+          <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Add code
+          </p>
+
+          <!-- Name + code field with Generate button -->
+          <div class="space-y-2">
+            <Label>Code name</Label>
+            <Input v-model="newCodePurpose" placeholder="e.g. Anna Schmidt — Evening access" />
+          </div>
+
+          <div class="space-y-2">
+            <Label>Code</Label>
+            <div class="flex items-center gap-1.5">
+              <Input
+                v-model="newCodeValue"
+                placeholder="6 digits"
+                maxlength="6"
+                inputmode="numeric"
+                class="font-mono tracking-widest"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="h-9 gap-1.5 text-xs"
+                @click="newCodeValue = generateRandomCode()"
+              >
+                <Icon name="lucide:refresh-cw" class="size-3.5" />
+                Generate
+              </Button>
+            </div>
+            <p class="text-[11px] text-muted-foreground">
+              Click Generate to create a random 6-digit code, or type your own.
+            </p>
+          </div>
+
+          <!-- Schedule type radio -->
+          <div class="space-y-2">
+            <Label>Schedule</Label>
+            <div class="flex gap-0.5 rounded-md border p-0.5">
+              <button
+                type="button"
+                class="flex-1 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors"
+                :class="newCodeScheduleType === 'ongoing' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                @click="newCodeScheduleType = 'ongoing'"
+              >
+                <Icon name="lucide:infinity" class="mr-1 inline size-3" />
+                Ongoing
+              </button>
+              <button
+                type="button"
+                class="flex-1 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors"
+                :class="newCodeScheduleType === 'range' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                @click="newCodeScheduleType = 'range'"
+              >
+                <Icon name="lucide:clock" class="mr-1 inline size-3" />
+                Start/end times
+              </button>
+            </div>
+
+            <!-- Range pickers -->
+            <div v-if="newCodeScheduleType === 'range'" class="grid grid-cols-2 gap-2 pt-1">
+              <div class="space-y-1.5">
+                <Label class="text-xs">Start</Label>
+                <Input v-model="newCodeStartAt" type="datetime-local" />
+              </div>
+              <div class="space-y-1.5">
+                <Label class="text-xs">End</Label>
+                <Input v-model="newCodeEndAt" type="datetime-local" />
+              </div>
+            </div>
+            <p v-else class="text-[11px] text-muted-foreground">
+              <Icon name="lucide:infinity" class="mr-0.5 inline size-3" />
+              Always active. Revoke manually to disable.
+            </p>
+          </div>
+
+          <p v-if="newCodeError" class="text-[11px] text-destructive">
+            {{ newCodeError }}
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" size="sm" @click="codesDialogOpen = false">
+            Close
+          </Button>
+          <Button
+            size="sm"
+            class="gap-1.5"
+            :disabled="savingNewCode || !newCodePurpose.trim() || !newCodeValue.trim()"
+            @click="handleSaveNewCode"
+          >
+            <Icon v-if="savingNewCode" name="lucide:loader-2" class="size-3.5 animate-spin" />
+            <Icon v-else name="lucide:plus" class="size-3.5" />
+            Create code
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Pair Lock Dialog -->
     <Dialog v-model:open="showPairDialog">
@@ -486,10 +1097,7 @@ const relevantReservations = computed(() => {
             </p>
             <p class="text-[11px] text-muted-foreground">
               <Icon name="lucide:user" class="mr-0.5 inline size-3" />
-              A code will be auto-generated for each current and future guest
-              <span v-if="relevantReservations.length === 0">(no current/future guests for this property)</span>
-              <span v-else>({{ relevantReservations.length }} guest{{ relevantReservations.length !== 1 ? 's' : '' }})</span>.
-              Locks of the same brand share the same code value.
+              A code will be auto-generated for each current and future guest.
             </p>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
@@ -497,12 +1105,9 @@ const relevantReservations = computed(() => {
                 type="checkbox"
                 class="size-4 rounded border-input accent-primary"
               >
-              <Icon name="lucide:broom" class="size-3.5 text-muted-foreground" />
+              <Icon name="lucide:brush-cleaning" class="size-3.5 text-muted-foreground" />
               <span class="text-sm">Also generate code for housekeeping</span>
             </label>
-            <p class="text-[10px] text-muted-foreground">
-              Codes are valid for 24 hours by default. You can view or revoke them in the Inbox or reservation panel.
-            </p>
           </div>
         </div>
         <DialogFooter>
