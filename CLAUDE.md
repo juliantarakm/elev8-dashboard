@@ -212,6 +212,59 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 #### Inbox SSR note
 - `app/pages/inbox.vue` wraps `<InboxLayout>` in `<ClientOnly>` to avoid Reka UI `ScrollArea` hydration mismatches. `useInbox` merges fresh seed conversations/messages into `useState` so newly added seed data always appears.
 
+### SmartLock (Seam) Integration (`app/components/settings/` + `app/composables/useSmartLock.ts`)
+
+Single-connection (one Seam API key per tenant), multi-lock assignment (many locks per listing or per room). Mock/demo only — no real Seam API calls.
+
+#### Architecture (hybrid)
+- **Global connection** — `Settings → Integrations` tile (amber `lucide:key-round` icon, next to WhatsApp / 3CX / Payout)
+- **Per-listing pairing** — Smart Locks card in `ListingSettingsTab.vue` (Settings tab of each listing)
+- **Per-room badge** — Amber lock count badge in the `RoomsPanel.vue` sidebar showing how many locks are paired to each room
+
+#### Data model
+- **`SeamConnection`** — `{ id, apiKey, workspaceName, status, webhookToken, webhookUrl, deviceCount, connectedAt, lastSyncAt }` — one per tenant, keyed by `'seam-connection'` in `useState`
+- **`SeamDevice`** — `{ deviceId, name, deviceType, provider, model, batteryLevel, online, paired }` — 5 mock devices seeded (Front Door, Back Gate, Pool Gate, Side Door, Safe across august/igloohome/yale/nuki/schlage)
+- **`SmartLock`** — `{ id, seamDeviceId, name, assignment: 'property' | 'room', listingId, unitId?, isMain, batteryLevel, online, lastSeen, status, createdAt }` — `isMain` is per-scope (one main per listing for property-level, one main per unit for room-level); `setMainLock()` auto-demotes existing main in scope
+- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, status: 'active' | 'expired' | 'revoked', seamCodeId }` — `generateAccessCode` auto-revokes any prior active code on the same lock
+
+#### Composable (`useSmartLock.ts`)
+- State: `connection` (`SeamConnection | null`), `locks` (`SmartLock[]`), `codes` (`AccessCode[]`) — all `useState` + localStorage persisted (same pattern as `useThreeCX`)
+- Query helpers: `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock(listingId, unitId?)`
+- CRUD: `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `generateAccessCode`, `revokeAccessCode`
+- Connection: `validateAndConnect(apiKey, workspaceName)` — 1.5s mock, validates key prefix (`seam_` or `sk_`), `disconnect()` (wipes connection + locks + codes)
+- Mock webhook sync: `syncDevices()` (nudges battery/online state), `emitMockAlerts()` — creates `SMART_LOCK_*` notifications via `useNotifications.createAlert`
+
+#### Components
+- **`SettingsSmartLockIntegration.vue`** — Sheet content (not a separate page). Connection card form (API key + workspace name), connected state showing device count + last sync, webhook URL with copy button, all-Seam-devices preview (Paired/Available pills), Sync Devices button (triggers `emitMockAlerts` → shows battery/offline alerts in Notification Center)
+- **`SettingsIntegrationsOverview.vue`** — added 4th tile "Smart Lock (Seam)" with amber icon and "Connected · N locks" pill
+
+#### Per-listing flow (`ListingSettingsTab.vue`)
+- New "Smart Locks" card after Distribution Channels
+- Not-connected state shows link to `/settings/integrations`
+- Empty state: "No locks paired to this property yet"
+- Lock list rows: name (inline-rename on pencil click), Main badge or clickable star to promote, online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X), unpair trash button
+- **"Add Lock" button** → Dialog with: device picker (cards with battery/online/model), name input, "Set as main" checkbox (default-checked if first lock in scope)
+
+#### Per-room badge (`RoomsPanel.vue`)
+- Amber lock count badge (`🔒 N`) next to each room name in the sidebar
+- Hovering shows tooltip with full count text
+- Uses `smartLock.getLockCount(listingId, unitId)`
+
+#### Notifications wiring
+- `useNotifications.createAlert(type, severity, context)` — new **generic** alert creator (replaces the `createUpsellAlert`-only API)
+- 5 `SMART_LOCK_*` alert types now wired from `useSmartLock.emitMockAlerts`:
+  - `SMART_LOCK_BATTERY_CRITICAL` (≤5% battery) → `CRITICAL`
+  - `SMART_LOCK_BATTERY_LOW` (≤20% battery) → `WARNING`
+  - `SMART_LOCK_OFFLINE` (device offline) → `CRITICAL`
+  - `SMART_LOCK_DEAD` + `SMART_LOCK_CODE_FAILED` defined but not yet emitted (no triggering UX yet)
+- `SettingsIntegrationsOverview` "Sync Devices" button → `emitMockAlerts` → fires alerts into the bell icon dropdown
+
+#### NOT implemented (intentionally out of scope)
+- **Real Seam API calls** — all API calls are 1.5s mocked; the `apiKey` is stored but never sent to a real endpoint
+- **Web server webhook receiver** — `/api/webhooks/seam` route does not exist; webhook events are simulated in-app via `emitMockAlerts`
+- **Auto-generate code on reservation create** — `generateAccessCode` is callable but not wired to `ReservationPanel` yet
+- **Guest-facing code share** — codes are generated but not auto-messaged to the guest (future: via WhatsApp/inbox)
+
 ### Inbox Settings (gear icon in inbox header)
 
 A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`. Clicking it opens a **Popover** with two options:
@@ -240,6 +293,7 @@ A gear icon (⚙️) sits next to the "Inbox" header title in `InboxLayout.vue`.
 - Computed: `activeAlerts`, `unreadCount`, `filteredAlerts` (by severity)
 - Actions: `markAsRead()`, `markAllAsRead()`, `dismiss()`, `navigateToAlert()`
 - Severity filter: `selectedSeverity` ref (`'all' | 'critical' | 'warning'`)
+- **Generic `createAlert(type, severity, context)`** — accepts any `AlertType` (used by `useSmartLock.emitMockAlerts` for `SMART_LOCK_BATTERY_CRITICAL`, `SMART_LOCK_BATTERY_LOW`, `SMART_LOCK_OFFLINE`). The older `createUpsellAlert` is now a thin wrapper that calls `createAlert` with the right severity for upsell types.
 
 #### Components
 - **NotificationCenter.vue** — Bell icon in Header with unread Badge, Popover dropdown with filter tabs (All/Critical/Warning), ScrollArea list
@@ -1227,6 +1281,7 @@ const table = useVueTable({
 | `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId, accountName)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. |
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
+| `useSmartLock` | `app/composables/useSmartLock.ts` | Seam smart lock connection + per-listing/room lock assignment | `connection`, `isConnected`, `locks`, `codes`, `validateAndConnect(apiKey, workspaceName)`, `disconnect()`, `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `generateAccessCode`, `revokeAccessCode`, `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock`, `syncDevices`, `emitMockAlerts`. Persisted to localStorage. |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -1401,6 +1456,10 @@ app/
 │   │   ├── SidebarNav.vue
 │   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
 │   │   ├── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
+│   │   ├── ThreeCxIntegration.vue   ← 3CX PBX connection + extension mapping
+│   │   ├── SmartLockIntegration.vue ← Seam smart lock connection + webhook URL + device preview
+│   │   ├── SettingsIntegrationsOverview.vue ← Integrations hub tile grid (WhatsApp / 3CX / Seam / Payout)
+│   │   ├── PayoutGatewayPanel.vue   ← Payout gateway configuration
 │   │   └── AirbnbReviewConfig.vue   ← Review automation settings (language, tone, auto-post)
 │   └── tasks/
 │       ├── components/
@@ -1435,7 +1494,8 @@ app/
 │   ├── useAirbnbReviews.ts        ← Airbnb Review state + config + generation
 │   ├── useWhatsApp.ts             ← WhatsApp connection state (connect/disconnect)
 │   ├── useWhatsAppRules.ts        ← Routing rules CRUD
-│   └── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
+│   ├── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
+│   ├── useSmartLock.ts            ← Seam smart lock connection + per-listing/room lock assignment + access codes
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout

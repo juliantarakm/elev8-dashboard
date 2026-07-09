@@ -90,6 +90,11 @@ function toggleType(id: string) {
   next.has(id) ? next.delete(id) : next.add(id)
   expandedTypes.value = next
 }
+
+const smartLock = useSmartLock()
+function getRoomLockCount(unitId: string): number {
+  return smartLock.getLockCount(props.listing.id, unitId)
+}
 </script>
 
 <template>
@@ -148,6 +153,14 @@ function toggleType(id: string) {
                 />
                 <span class="flex-1 truncate" :class="unit.status === 'inactive' ? 'text-muted-foreground line-through' : ''">
                   {{ unit.name }}
+                </span>
+                <span
+                  v-if="getRoomLockCount(unit.id) > 0"
+                  class="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-medium text-amber-700"
+                  :title="`${getRoomLockCount(unit.id)} smart lock${getRoomLockCount(unit.id) !== 1 ? 's' : ''} paired`"
+                >
+                  <Icon name="lucide:lock" class="size-2.5" />
+                  {{ getRoomLockCount(unit.id) }}
                 </span>
                 <button
                   v-if="ut.units.length > 1"

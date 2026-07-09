@@ -2,16 +2,18 @@
 import { computed, ref } from 'vue'
 import SettingsWhatsAppIntegration from './WhatsAppIntegration.vue'
 import SettingsThreeCxIntegration from './ThreeCxIntegration.vue'
+import SettingsSmartLockIntegration from './SmartLockIntegration.vue'
 import { payoutAccounts } from './data/payouts'
 
 const { isConnected: whatsappConnected, whatsappAccounts } = useWhatsApp()
 const { isConnected: threeCxConnected, activeAccount: threeCxAccount } = useThreeCX()
+const smartLock = useSmartLock()
 
-type IntegrationId = 'whatsapp' | 'threecx' | 'payout'
+type IntegrationId = 'whatsapp' | 'threecx' | 'smartlock' | 'payout'
 
 const openIntegration = ref<IntegrationId | null>(null)
 const sheetOpen = computed({
-  get: () => openIntegration.value === 'whatsapp' || openIntegration.value === 'threecx',
+  get: () => openIntegration.value === 'whatsapp' || openIntegration.value === 'threecx' || openIntegration.value === 'smartlock',
   set: (val) => {
     if (!val)
       openIntegration.value = null
@@ -21,12 +23,14 @@ const sheetOpen = computed({
 const activeComponent = computed(() => {
   if (openIntegration.value === 'whatsapp') return SettingsWhatsAppIntegration
   if (openIntegration.value === 'threecx') return SettingsThreeCxIntegration
+  if (openIntegration.value === 'smartlock') return SettingsSmartLockIntegration
   return null
 })
 
 const activeSheetTitle = computed(() => {
   if (openIntegration.value === 'whatsapp') return 'WhatsApp Business'
   if (openIntegration.value === 'threecx') return '3CX Telephony'
+  if (openIntegration.value === 'smartlock') return 'Smart Lock (Seam)'
   return ''
 })
 
@@ -43,6 +47,15 @@ const threeCxPill = computed(() => {
   if (!threeCxConnected.value || !threeCxAccount.value)
     return { label: 'Not connected', tone: 'idle' as const }
   return { label: `Connected · ${threeCxAccount.value.fqdn}`, tone: 'connected' as const }
+})
+
+const smartLockPill = computed(() => {
+  if (!smartLock.isConnected.value) return { label: 'Not connected', tone: 'idle' as const }
+  const count = smartLock.locks.value.length
+  return {
+    label: count > 0 ? `Connected · ${count} lock${count !== 1 ? 's' : ''}` : 'Connected',
+    tone: 'connected' as const,
+  }
 })
 
 const payoutPill = computed(() => {
@@ -116,6 +129,31 @@ function openSheet(id: IntegrationId) {
         </p>
         <Button variant="outline" size="sm" class="self-start" @click="openSheet('threecx')">
           {{ threeCxConnected ? 'Manage' : 'Connect' }}
+        </Button>
+      </div>
+
+      <!-- Smart Lock (Seam) -->
+      <div class="flex flex-col rounded-lg border bg-card p-4 transition-colors hover:border-border/80">
+        <div class="mb-3 flex items-start justify-between">
+          <div class="flex h-9 w-9 items-center justify-center rounded-md border bg-amber-500/10">
+            <Icon name="lucide:key-round" class="size-5 text-amber-600" />
+          </div>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
+            :class="statusToneClass[smartLockPill.tone]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass[smartLockPill.tone]" />
+            {{ smartLockPill.label }}
+          </span>
+        </div>
+        <p class="mb-1 text-sm font-medium">
+          Smart Lock (Seam)
+        </p>
+        <p class="mb-4 flex-1 text-xs text-muted-foreground leading-relaxed">
+          Pair locks to properties or rooms, auto-generate guest access codes, and monitor battery &amp; connectivity.
+        </p>
+        <Button variant="outline" size="sm" class="self-start" @click="openSheet('smartlock')">
+          {{ smartLock.isConnected.value ? 'Manage' : 'Connect' }}
         </Button>
       </div>
 
