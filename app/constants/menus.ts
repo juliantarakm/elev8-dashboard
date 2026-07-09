@@ -139,6 +139,12 @@ export const navMenu: NavMenu[] = [
           },
         ],
       },
+      {
+        title: 'Guest Guides',
+        icon: 'i-lucide-book-open',
+        link: '/guest-guides',
+        new: true,
+      },
     ],
   },
   {
