@@ -40,6 +40,7 @@ export type ActionType
     | 'flag_reservation'
     | 'staff_alert'
     | 'raise_action_item'
+    | 'send_guest_guide'
 
 export type FailBehavior = 'skip' | 'stop'
 
