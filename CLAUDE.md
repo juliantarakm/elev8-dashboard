@@ -212,47 +212,78 @@ WhatsApp Business is integrated **into the existing inbox** (not a separate page
 #### Inbox SSR note
 - `app/pages/inbox.vue` wraps `<InboxLayout>` in `<ClientOnly>` to avoid Reka UI `ScrollArea` hydration mismatches. `useInbox` merges fresh seed conversations/messages into `useState` so newly added seed data always appears.
 
-### SmartLock (Seam) Integration (`app/components/settings/` + `app/composables/useSmartLock.ts`)
+#### Inbox reservation ID fix
+- `app/components/inbox/Layout.vue` synthesizes `effectiveReservation` (passed to `ReservationPanel`) with `id: c.reservationId` — the **conversation's reservation ID** (`res-1`, `res-7`, etc.), NOT the conversation's own `id` (`conv-1`).
+- This matters because any code that filters by `reservation.id === code.reservationId` (e.g. the Smart Lock tab) needs the synthesized id to match the code's `reservationId`. Using `c.id` here would cause the Smart Lock tab to always show "No active codes".
 
-Single-connection (one Seam API key per tenant), multi-lock assignment (many locks per listing or per room). Mock/demo only — no real Seam API calls.
+### SmartLock Integration (`app/components/settings/` + `app/composables/useSmartLock.ts`)
+
+Single-connection (one API key per tenant), multi-lock assignment (many locks per listing or per room). Mock/demo only — no real provider API calls. The integration is provider-agnostic; only the connection sheet references the underlying provider name.
 
 #### Architecture (hybrid)
 - **Global connection** — `Settings → Integrations` tile (amber `lucide:key-round` icon, next to WhatsApp / 3CX / Payout)
 - **Per-listing pairing** — Smart Locks card in `ListingSettingsTab.vue` (Settings tab of each listing)
-- **Per-room badge** — Amber lock count badge in the `RoomsPanel.vue` sidebar showing how many locks are paired to each room
+- **Per-room pairing** — Clickable amber lock count badge in the `RoomsPanel.vue` sidebar → opens per-room lock management Dialog (list of paired locks + inline pair form)
 
 #### Data model
-- **`SeamConnection`** — `{ id, apiKey, workspaceName, status, webhookToken, webhookUrl, deviceCount, connectedAt, lastSyncAt }` — one per tenant, keyed by `'seam-connection'` in `useState`
-- **`SeamDevice`** — `{ deviceId, name, deviceType, provider, model, batteryLevel, online, paired }` — 5 mock devices seeded (Front Door, Back Gate, Pool Gate, Side Door, Safe across august/igloohome/yale/nuki/schlage)
-- **`SmartLock`** — `{ id, seamDeviceId, name, assignment: 'property' | 'room', listingId, unitId?, isMain, batteryLevel, online, lastSeen, status, createdAt }` — `isMain` is per-scope (one main per listing for property-level, one main per unit for room-level); `setMainLock()` auto-demotes existing main in scope
-- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, status: 'active' | 'expired' | 'revoked', seamCodeId }` — `generateAccessCode` auto-revokes any prior active code on the same lock
+- **`SmartLockConnection`** — `{ id, apiKey, workspaceName, status, webhookToken, webhookUrl, deviceCount, connectedAt, lastSyncAt }` — one per tenant, keyed by `'smartlock-connection'` in `useState`
+- **`SmartLockDevice`** — `{ deviceId, name, deviceType, provider, model, batteryLevel, online, paired }` — **10 mock devices seeded** (brand-grouped for sharing demo):
+  - **August** (3): Front Door, Garage Door, Side Gate
+  - **Yale** (2): Pool Gate, Office Door
+  - **Schlage** (2): Safe, Wine Cellar
+  - **Nuki** (2): Side Door, Boathouse (8% battery, offline — used for alert demo)
+  - **igloohome** (1): Back Gate
+- **`SmartLock`** — `{ id, providerDeviceId, name, assignment: 'property' | 'room', listingId, unitId?, isMain, batteryLevel, online, lastSeen, status, createdAt }` — `isMain` is per-scope (one main per listing for property-level, one main per unit for room-level); `setMainLock()` auto-demotes existing main in scope
+- **`AccessCode`** — `{ id, lockId, code (6-digit), startsAt, endsAt, guestName?, reservationId?, status: 'active' | 'expired' | 'revoked', providerCodeId }` — `generateAccessCode` is **async** (700ms mock delay for visible loading states) and auto-revokes any prior active code on the **same lockId + reservationId** combo (so different guests can each have their own active code on the same lock)
 
 #### Composable (`useSmartLock.ts`)
-- State: `connection` (`SeamConnection | null`), `locks` (`SmartLock[]`), `codes` (`AccessCode[]`) — all `useState` + localStorage persisted (same pattern as `useThreeCX`)
+- State: `connection` (`SmartLockConnection | null`), `locks` (`SmartLock[]`), `codes` (`AccessCode[]`) — all `useState` + localStorage persisted (same pattern as `useThreeCX`)
 - Query helpers: `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock(listingId, unitId?)`
-- CRUD: `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `generateAccessCode`, `revokeAccessCode`
-- Connection: `validateAndConnect(apiKey, workspaceName)` — 1.5s mock, validates key prefix (`seam_` or `sk_`), `disconnect()` (wipes connection + locks + codes)
+- CRUD: `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `swapDevice(lockId, newProviderDeviceId)`, `generateAccessCode` (async), `revokeAccessCode`
+- Brand sharing: `findActiveBrandCode(reservationId, provider)` returns the existing code value for a (reservation, brand) combo so multiple locks of the same brand share the same code value for each guest
+- Connection: `validateAndConnect(apiKey, workspaceName)` — 1.5s mock, validates key prefix, `disconnect()` (wipes connection + locks + codes)
 - Mock webhook sync: `syncDevices()` (nudges battery/online state), `emitMockAlerts()` — creates `SMART_LOCK_*` notifications via `useNotifications.createAlert`
 
 #### Components
-- **`SettingsSmartLockIntegration.vue`** — Sheet content (not a separate page). Connection card form (API key + workspace name), connected state showing device count + last sync, webhook URL with copy button, all-Seam-devices preview (Paired/Available pills), Sync Devices button (triggers `emitMockAlerts` → shows battery/offline alerts in Notification Center)
-- **`SettingsIntegrationsOverview.vue`** — added 4th tile "Smart Lock (Seam)" with amber icon and "Connected · N locks" pill
+- **`SettingsSmartLockIntegration.vue`** — Sheet content (not a separate page). Connection card form (API key + workspace name), connected state showing device count + last sync, webhook URL with copy button, all-devices preview (Paired/Available pills), Sync Devices button (triggers `emitMockAlerts` → shows battery/offline alerts in Notification Center)
+- **`SettingsIntegrationsOverview.vue`** — added 4th tile "Smart Lock" with amber icon and "Connected · N locks" pill
+- **`InboxReservationSmartLocks.vue`** (NEW) — Smart Lock tab content for the Inbox reservation panel. Shows paired locks for the reservation's listing, active codes (filtered by `reservationId` + `status: 'active'`), each code in large monospace with Copy + Revoke actions. "Generate code" button per lock with per-lock loading state (spinner + "Generating…"). Empty states: not connected, listing not found, no locks paired, no codes.
 
 #### Per-listing flow (`ListingSettingsTab.vue`)
 - New "Smart Locks" card after Distribution Channels
 - Not-connected state shows link to `/settings/integrations`
 - Empty state: "No locks paired to this property yet"
-- Lock list rows: name (inline-rename on pencil click), Main badge or clickable star to promote, online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X), unpair trash button
-- **"Add Lock" button** → Dialog with: device picker (cards with battery/online/model), name input, "Set as main" checkbox (default-checked if first lock in scope)
+- Lock list rows: name (inline-rename on pencil click), Main badge or clickable star to promote, online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X), three action buttons (Rename / **Swap device** / Unpair)
+- **"Add Lock" button** → Dialog with:
+  - **Assign to picker** (Property / Room segmented control) — Property for whole listing, Room for a specific room (shows room Select)
+  - Device picker (cards with battery/online/model)
+  - Name input
+  - "Set as main" checkbox (default-checked if first lock in scope)
+  - **Auto-generate codes info** (read-only): explains that codes are auto-generated for each current/future guest, same brand = shared code value
+  - "Also generate code for housekeeping" checkbox (per-lock, not brand-shared)
 
-#### Per-room badge (`RoomsPanel.vue`)
-- Amber lock count badge (`🔒 N`) next to each room name in the sidebar
-- Hovering shows tooltip with full count text
-- Uses `smartLock.getLockCount(listingId, unitId)`
+#### Per-room flow (`RoomsPanel.vue`)
+- Amber lock count badge (`🔒 N`) next to each room name in the sidebar — click to open per-room lock dialog
+- When no locks paired + connected: hover-revealed "Lock" button (`lucide:lock-keyhole`) on the row
+- Dialog contents: list of paired locks (with main star, battery, Rename / **Swap device** / Unpair actions), empty state, "Add Lock" button → inline pair form (device picker + name + "Set as main" + auto-generate info + housekeeping checkbox, scoped to that room)
+- **Swap device** dialog: shows current device in info bar, lists swappable devices (excludes current), each shows Paired/Available state, disabled when offline
+
+#### Brand sharing (auto-generate on Add Lock)
+- When a lock is paired, `ListingSettingsTab.handlePair` / `RoomsPanel.handleRoomPair` iterates **`relevantReservations`** (current + future guests for the listing) and calls `generateAccessCode` for each
+- For each (reservation, provider) combo: `findActiveBrandCode` is checked first; if a code exists for the same brand on a different lock, the new code reuses the same value (brand-shared)
+- Success toast shows per-guest code with `(new)` or `(shared)` tag, e.g. `"Front Door" paired to this property. Codes: Anna Schmidt: 482915 (shared), Yuki Tanaka: 716234 (new), ...`
+- Housekeeping code (if checked) is per-lock, not brand-shared
+
+#### Inbox Smart Lock tab
+- `app/components/inbox/ReservationPanel.vue` has a new `Smart Lock` tab (after Upsell, before History) with `lucide:key-round` icon
+- `app/components/inbox/ReservationSmartLocks.vue` renders: locks paired to the conversation's listing (looked up by `reservation.listingName`), active codes filtered by `reservation.id`, per-lock "Generate code" button with per-lock loading state
+- **Loading state**: each "Generate code" button has a `generatingLockId` ref; while loading, shows `lucide:loader-2` spinner + "Generating…" text + disabled. Prevents double-clicks via early-return guard
+- **Code display**: large monospace with letter-spacing (e.g. `4 8 2 9 1 5`), guest name + expiry timestamp below, Copy button (clipboard) + Revoke button (sets status to `revoked`)
+- ⚠️ **Required fix**: `app/components/inbox/Layout.vue` synthesizes `effectiveReservation` with `id: c.reservationId` (not `c.id` — the conversation ID). Without this, codes (keyed by `reservationId`) never match the synthesized reservation's `id`, and the tab shows "No active codes" even when codes exist
 
 #### Notifications wiring
 - `useNotifications.createAlert(type, severity, context)` — new **generic** alert creator (replaces the `createUpsellAlert`-only API)
-- 5 `SMART_LOCK_*` alert types now wired from `useSmartLock.emitMockAlerts`:
+- 3 `SMART_LOCK_*` alert types now wired from `useSmartLock.emitMockAlerts`:
   - `SMART_LOCK_BATTERY_CRITICAL` (≤5% battery) → `CRITICAL`
   - `SMART_LOCK_BATTERY_LOW` (≤20% battery) → `WARNING`
   - `SMART_LOCK_OFFLINE` (device offline) → `CRITICAL`
@@ -260,9 +291,9 @@ Single-connection (one Seam API key per tenant), multi-lock assignment (many loc
 - `SettingsIntegrationsOverview` "Sync Devices" button → `emitMockAlerts` → fires alerts into the bell icon dropdown
 
 #### NOT implemented (intentionally out of scope)
-- **Real Seam API calls** — all API calls are 1.5s mocked; the `apiKey` is stored but never sent to a real endpoint
-- **Web server webhook receiver** — `/api/webhooks/seam` route does not exist; webhook events are simulated in-app via `emitMockAlerts`
-- **Auto-generate code on reservation create** — `generateAccessCode` is callable but not wired to `ReservationPanel` yet
+- **Real provider API calls** — all API calls are 1.5s mocked; the `apiKey` is stored but never sent to a real endpoint
+- **Web server webhook receiver** — `/api/webhooks/smartlock` route does not exist; webhook events are simulated in-app via `emitMockAlerts`
+- **Auto-generate code on reservation create** — codes are auto-generated when pairing a lock, but not when a new reservation is created later
 - **Guest-facing code share** — codes are generated but not auto-messaged to the guest (future: via WhatsApp/inbox)
 
 ### Inbox Settings (gear icon in inbox header)
@@ -1281,7 +1312,7 @@ const table = useVueTable({
 | `useWhatsApp` | `app/composables/useWhatsApp.ts` | WhatsApp connection state | `whatsappAccounts`, `isConnected`, `validateAndConnect(token, wabaId, phoneId, accountName)`, `addAccount()`, `removeAccount()`, `assignListings()`, `bulkAssign()`, `disconnect()`. Persisted to localStorage. |
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
-| `useSmartLock` | `app/composables/useSmartLock.ts` | Seam smart lock connection + per-listing/room lock assignment | `connection`, `isConnected`, `locks`, `codes`, `validateAndConnect(apiKey, workspaceName)`, `disconnect()`, `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `generateAccessCode`, `revokeAccessCode`, `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock`, `syncDevices`, `emitMockAlerts`. Persisted to localStorage. |
+| `useSmartLock` | `app/composables/useSmartLock.ts` | Smart lock connection + per-listing/room lock assignment + brand-shared access codes | `connection`, `isConnected`, `locks`, `codes`, `validateAndConnect(apiKey, workspaceName)`, `disconnect()`, `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `swapDevice(lockId, newProviderDeviceId)`, `generateAccessCode` (async, 700ms mock), `revokeAccessCode`, `findActiveBrandCode(reservationId, provider)`, `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock`, `syncDevices`, `emitMockAlerts`. Persisted to localStorage. |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
@@ -1396,7 +1427,8 @@ app/
 │   │   ├── ReservationActivity.vue
 │   │   ├── ReservationGuest.vue
 │   │   ├── ReservationListing.vue
-│   │   ├── ReservationPanel.vue    ← Upsell tab shows linked orders
+│   │   ├── ReservationPanel.vue    ← Upsell + Smart Lock tabs
+│   │   ├── ReservationSmartLocks.vue ← Smart Lock tab: paired locks, active codes, generate/copy/revoke
 │   │   ├── ReservationSummary.vue
 │   │   ├── ReservationTasks.vue
 │   │   ├── ReservationUpsells.vue  ← Linked upsell orders from conversation
@@ -1457,8 +1489,8 @@ app/
 │   │   ├── WhatsAppIntegration.vue  ← Connection card (disconnected/connected states)
 │   │   ├── WhatsAppRoutingRules.vue ← Routing rules (not currently used in UI)
 │   │   ├── ThreeCxIntegration.vue   ← 3CX PBX connection + extension mapping
-│   │   ├── SmartLockIntegration.vue ← Seam smart lock connection + webhook URL + device preview
-│   │   ├── SettingsIntegrationsOverview.vue ← Integrations hub tile grid (WhatsApp / 3CX / Seam / Payout)
+│   │   ├── SmartLockIntegration.vue ← Smart lock connection + webhook URL + device preview
+│   │   ├── SettingsIntegrationsOverview.vue ← Integrations hub tile grid (WhatsApp / 3CX / Smart Lock / Payout)
 │   │   ├── PayoutGatewayPanel.vue   ← Payout gateway configuration
 │   │   └── AirbnbReviewConfig.vue   ← Review automation settings (language, tone, auto-post)
 │   └── tasks/
@@ -1495,7 +1527,7 @@ app/
 │   ├── useWhatsApp.ts             ← WhatsApp connection state (connect/disconnect)
 │   ├── useWhatsAppRules.ts        ← Routing rules CRUD
 │   ├── useWhatsAppTemplates.ts    ← Template messages (booking_confirmation, etc.)
-│   ├── useSmartLock.ts            ← Seam smart lock connection + per-listing/room lock assignment + access codes
+│   ├── useSmartLock.ts            ← Smart lock connection + per-listing/room lock assignment + access codes
 ├── layouts/
 │   ├── blank.vue              # Auth pages
 │   └── default.vue            # Main app layout
