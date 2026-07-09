@@ -25,3 +25,7 @@ export function generateSectionId(): string {
 export function generateToken(): string {
   return nanoid(12)
 }
+
+export function generateId(prefix: string): string {
+  return `${prefix}-${nanoid(12)}` as `${string}-${string}`
+}
