@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject, computed } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
 import { Switch } from '~/components/ui/switch'
 import { Icon } from '#components'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ modelValue: Record<string, any> }>()
 const emit = defineEmits<{ 'update:modelValue': [v: Record<string, any>] }>()
@@ -14,15 +15,57 @@ function update(patch: Record<string, any>) {
 }
 
 const showPassword = ref(false)
+
+// Pull the assigned listing IDs from the parent GuideEditor (defaults to empty).
+const assignedListingIds = inject<Ref<string[]>>('assignedListingIds', ref([]))
+
+// Resolve the listings currently assigned to this guide (for fallback hints).
+const assignedListings = computed(() =>
+  listings.value.filter(l => assignedListingIds.value.includes(l.id)),
+)
+
+const defaultSsid = computed(() =>
+  assignedListings.value.length === 1 ? (assignedListings.value[0].wifiSsid ?? null) : null,
+)
+const defaultPassword = computed(() =>
+  assignedListings.value.length === 1 ? (assignedListings.value[0].wifiPassword ?? null) : null,
+)
 </script>
 
 <template>
   <div class="space-y-3">
+    <div
+      v-if="assignedListings.length === 0"
+      class="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      Assign this guide to a listing first to see default values.
+    </div>
+    <div
+      v-else-if="assignedListings.length === 1"
+      class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      <div>
+        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+      </div>
+      <div v-if="defaultSsid" class="font-mono text-foreground">
+        SSID: {{ defaultSsid }}
+      </div>
+      <div v-if="defaultPassword" class="font-mono text-foreground">
+        Password: {{ defaultPassword }}
+      </div>
+    </div>
+    <div
+      v-else
+      class="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      Defaults vary across {{ assignedListings.length }} listings. Use per-listing overrides (coming soon).
+    </div>
+
     <div>
       <Label>Network name (SSID)</Label>
       <Input
         :model-value="modelValue.ssid ?? ''"
-        placeholder="e.g. VillaWiFi-Guest"
+        placeholder="Leave blank to use listing default"
         @update:model-value="update({ ssid: $event })"
       />
     </div>
@@ -33,6 +76,7 @@ const showPassword = ref(false)
         <Input
           :type="showPassword ? 'text' : 'password'"
           :model-value="modelValue.password ?? ''"
+          placeholder="Leave blank to use listing default"
           @update:model-value="update({ password: $event })"
         />
         <Button

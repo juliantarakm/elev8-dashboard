@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject, computed, type Ref } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Icon } from '#components'
+import { listings } from '~/components/listings/data/listings'
 
 const props = defineProps<{ modelValue: Record<string, any> }>()
 const emit = defineEmits<{ 'update:modelValue': [v: Record<string, any>] }>()
@@ -28,10 +29,45 @@ function add() {
 function remove(idx: number) {
   items.value = items.value.filter((_, i) => i !== idx)
 }
+
+const assignedListingIds = inject<Ref<string[]>>('assignedListingIds', ref([]))
+
+const assignedListings = computed(() =>
+  listings.value.filter(l => assignedListingIds.value.includes(l.id)),
+)
+
+const defaultAmenities = computed<string[]>(() => {
+  if (assignedListings.value.length !== 1) return []
+  return assignedListings.value[0].amenities ?? []
+})
 </script>
 
 <template>
   <div class="space-y-3">
+    <div
+      v-if="assignedListings.length === 0"
+      class="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      Assign this guide to a listing first to see default values.
+    </div>
+    <div
+      v-else-if="assignedListings.length === 1 && defaultAmenities.length > 0"
+      class="space-y-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      <div>
+        Default from listing "<strong>{{ assignedListings[0].name }}</strong>" — override below if needed.
+      </div>
+      <div class="text-foreground">
+        {{ defaultAmenities.length }} amenit{{ defaultAmenities.length === 1 ? 'y' : 'ies' }}: {{ defaultAmenities.join(' · ') }}
+      </div>
+    </div>
+    <div
+      v-else-if="assignedListings.length > 1"
+      class="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground"
+    >
+      Defaults vary across {{ assignedListings.length }} listings. Use per-listing overrides (coming soon).
+    </div>
+
     <div class="flex gap-2">
       <Input
         v-model="newItem"

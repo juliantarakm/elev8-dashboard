@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, provide } from 'vue'
 import type { GuideSection, GuideSectionType } from '../data/types'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -17,6 +17,11 @@ const props = defineProps<{ guideId: string }>()
 const { guides, updateGuide } = useGuestGuides()
 
 const guide = computed(() => guides.value.find(g => g.id === props.guideId))
+
+// Provide the assigned listing IDs so individual section editors can look up
+// fallback data from the listing (Wi-Fi, check-in/out, house rules, amenities).
+const assignedListingIds = computed(() => guide.value?.assignedListingIds ?? [])
+provide('assignedListingIds', assignedListingIds)
 
 const selectedSectionId = ref<string | null>(null)
 const addDialogOpen = ref(false)
