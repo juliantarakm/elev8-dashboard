@@ -1,48 +1,70 @@
 <script setup lang="ts">
-const props = defineProps<{
-  token: string
-}>()
+import { ref } from 'vue'
+import { Button } from '~/../app/components/ui/button'
+import { Input } from '~/../app/components/ui/input'
+import { Label } from '~/../app/components/ui/label'
+import { toast } from 'vue-sonner'
+
+const props = defineProps<{ token: string }>()
+
+const idType = ref<'passport' | 'ktp' | 'driver_license' | ''>('')
+const idNumber = ref('')
+const photoFile = ref<File | null>(null)
+const photoPreview = ref<string | null>(null)
+const submitting = ref(false)
+const submitted = ref(false)
 
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBaseUrl
 
-const idType = ref<'passport' | 'ktp' | 'driver_license'>('passport')
-const idNumber = ref('')
-const idPhotoFile = ref<File | null>(null)
-const idPhotoPreview = ref<string | null>(null)
-
-const submitting = ref(false)
-const error = ref('')
-const success = ref(false)
-
 function onFileChange(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0] ?? null
-  idPhotoFile.value = file
-  idPhotoPreview.value = file ? URL.createObjectURL(file) : null
+  photoFile.value = file
+  photoPreview.value = file ? URL.createObjectURL(file) : null
+}
+
+function clearPhoto() {
+  photoFile.value = null
+  photoPreview.value = null
 }
 
 async function handleSubmit() {
-  if (!props.token) return
+  if (!idType.value) {
+    toast.error('Please select an ID type')
+    return
+  }
   if (!idNumber.value) {
-    error.value = 'Please enter your ID number.'
+    toast.error('Please enter your ID number')
     return
   }
   submitting.value = true
-  error.value = ''
   try {
-    // Phase 1: skip photo upload — Phase 5 adds the upload pipeline.
-    await $fetch(`${apiBase}/api/guest-guides/by-token/${props.token}/submit-id`, {
-      method: 'POST',
-      body: {
-        idType: idType.value,
-        idNumber: idNumber.value,
-        idPhotoUrl: undefined,
+    let idPhotoUrl: string | undefined
+    if (photoFile.value) {
+      const formData = new FormData()
+      formData.append('photo', photoFile.value)
+      const uploadRes = await $fetch<{ url: string }>(
+        `${apiBase}/api/guest-guides/by-token/${props.token}/upload-id-photo`,
+        { method: 'POST', body: formData },
+      )
+      idPhotoUrl = uploadRes.url
+    }
+    await $fetch(
+      `${apiBase}/api/guest-guides/by-token/${props.token}/submit-id`,
+      {
+        method: 'POST',
+        body: {
+          idType: idType.value,
+          idNumber: idNumber.value,
+          idPhotoUrl,
+        },
       },
-    })
-    success.value = true
+    )
+    submitted.value = true
+    toast.success('ID submitted')
   } catch (err: any) {
-    error.value = err?.message ?? 'Submission failed'
+    toast.error(err?.statusMessage ?? err?.message ?? 'Failed to submit ID')
   } finally {
     submitting.value = false
   }
@@ -51,12 +73,15 @@ async function handleSubmit() {
 
 <template>
   <form class="space-y-4" @submit.prevent="handleSubmit">
-    <div>
-      <label class="mb-1 block text-sm font-medium">ID type</label>
+    <div v-if="!submitted">
+      <Label>ID type</Label>
       <select
         v-model="idType"
-        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
       >
+        <option value="">
+          Select...
+        </option>
         <option value="passport">
           Passport
         </option>
@@ -69,51 +94,48 @@ async function handleSubmit() {
       </select>
     </div>
 
-    <div>
-      <label class="mb-1 block text-sm font-medium">ID number</label>
-      <input
-        v-model="idNumber"
-        type="text"
-        placeholder="Enter ID number"
-        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-      />
+    <div v-if="!submitted">
+      <Label>ID number</Label>
+      <Input v-model="idNumber" placeholder="Enter ID number" class="mt-1" />
     </div>
 
-    <div>
-      <label class="mb-1 block text-sm font-medium">ID photo (optional)</label>
+    <div v-if="!submitted">
+      <Label>Photo of ID (optional)</Label>
       <input
         type="file"
         accept="image/*"
-        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-primary-foreground"
+        class="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-primary-foreground"
         @change="onFileChange"
-      />
-      <img
-        v-if="idPhotoPreview"
-        :src="idPhotoPreview"
-        alt="ID preview"
-        class="mt-2 max-h-40 rounded-md border"
       >
+      <div v-if="photoPreview" class="mt-2 flex items-start gap-2">
+        <img
+          :src="photoPreview"
+          alt="ID preview"
+          class="max-h-40 rounded-md border"
+        >
+        <button
+          type="button"
+          class="rounded-md border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+          @click="clearPhoto"
+        >
+          Remove
+        </button>
+      </div>
       <p class="mt-1 text-xs text-muted-foreground">
-        Photo upload comes online in Phase 5. Form can be submitted without it.
+        Max 5MB. JPG, PNG, or WebP.
       </p>
     </div>
 
-    <p v-if="error" class="text-sm text-destructive">
-      {{ error }}
-    </p>
-
-    <div v-if="success" class="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700">
-      ID submitted. Thanks!
+    <div
+      v-if="submitted"
+      class="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700"
+    >
+      ID submitted successfully. Thanks!
     </div>
 
-    <button
-      v-if="!success"
-      type="submit"
-      :disabled="submitting"
-      class="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-    >
+    <Button v-if="!submitted" type="submit" :disabled="submitting" class="w-full">
       <Icon v-if="submitting" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
       {{ submitting ? 'Submitting...' : 'Submit ID' }}
-    </button>
+    </Button>
   </form>
 </template>
