@@ -13,6 +13,7 @@ defineEmits<{
   edit: [id: string]
   preview: [id: string]
   links: [id: string]
+  send: [id: string]
 }>()
 
 const linkStats = computed(() => {
@@ -48,6 +49,9 @@ const linkStats = computed(() => {
         </div>
       </div>
       <div class="mt-4 flex gap-2">
+        <Button variant="default" size="sm" @click="$emit('send', guide.id)">
+          + Send Link
+        </Button>
         <Button variant="outline" size="sm" @click="$emit('edit', guide.id)">
           Edit
         </Button>

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import GuideCard from '~/components/guest-guides/GuideCard.vue'
+import SendLinkDialog from '~/components/guest-guides/SendLinkDialog.vue'
 import { toast } from 'vue-sonner'
 
 const { guides } = useGuestGuides()
@@ -10,6 +11,9 @@ const { links } = useGuestGuideLinks()
 
 const search = ref('')
 const statusFilter = ref<'all' | 'active' | 'draft' | 'archived'>('all')
+
+const sendDialogOpen = ref(false)
+const sendDialogGuideId = ref<string | null>(null)
 
 const filteredGuides = computed(() => {
   return guides.value.filter(g => {
@@ -33,6 +37,11 @@ function handlePreview(id: string) {
 
 function handleLinks(id: string) {
   navigateTo(`/guest-guides/${id}/links`)
+}
+
+function handleSend(guideId: string) {
+  sendDialogGuideId.value = guideId
+  sendDialogOpen.value = true
 }
 </script>
 
@@ -72,11 +81,18 @@ function handleLinks(id: string) {
         @edit="handleEdit"
         @preview="handlePreview"
         @links="handleLinks"
+        @send="handleSend"
       />
     </div>
 
     <div v-if="filteredGuides.length === 0" class="py-12 text-center text-muted-foreground">
       No guides match your filters.
     </div>
+
+    <SendLinkDialog
+      v-if="sendDialogGuideId"
+      v-model:open="sendDialogOpen"
+      :guide-id="sendDialogGuideId"
+    />
   </div>
 </template>
