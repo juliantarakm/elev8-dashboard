@@ -1,5 +1,6 @@
 import { findGuideByToken, findLinkByToken } from '../../../utils/guest-guide-store'
 import { conversations } from '../../../../app/components/inbox/data/conversations'
+import { listings } from '../../../../app/components/listings/data/listings'
 
 export default defineEventHandler(async (event) => {
   const token = getRouterParam(event, 'token')
@@ -30,5 +31,13 @@ export default defineEventHandler(async (event) => {
   const checkIn = conversation?.checkIn ?? null
   const checkOut = conversation?.checkOut ?? null
 
-  return { link, guide, checkIn, checkOut }
+  // Look up the listing for fallback data (Wi-Fi, check-in/out, house rules, amenities).
+  // link.listingId is the listing ID (e.g. "lst-1"). If not found, fall back to the first
+  // listing referenced by the guide's assignedListingIds.
+  let listing = listings.value.find(l => l.id === link.listingId) ?? null
+  if (!listing && guide.assignedListingIds.length > 0) {
+    listing = listings.value.find(l => l.id === guide.assignedListingIds[0]) ?? null
+  }
+
+  return { link, guide, listing, checkIn, checkOut }
 })
