@@ -32,7 +32,7 @@ function handleEdit(id: string) {
 }
 
 function handlePreview(id: string) {
-  toast.info(`Preview opens in Phase 2 - guide: ${id}`)
+  navigateTo(`/guest-guides/${id}/preview`)
 }
 
 function handleLinks(id: string) {
