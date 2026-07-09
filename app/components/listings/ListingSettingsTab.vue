@@ -3,6 +3,7 @@ import type { Listing, Unit, UnitType } from '~/components/listings/data/listing
 import { reservations as allReservations } from '~/components/inbox/data/conversations'
 import { toast } from 'vue-sonner'
 import GuideStatusBadge from '~/components/guest-guides/GuideStatusBadge.vue'
+import GuideAssignPopover from '~/components/listings/GuideAssignPopover.vue'
 
 const props = defineProps<{ listing: Listing }>()
 const emit = defineEmits<{ update: [listing: Listing] }>()
@@ -822,9 +823,10 @@ function handleRevokeCode(codeId: string) {
           <CardTitle>Guest Guide</CardTitle>
           <CardDescription>Welcome page auto-sent to guests on booking</CardDescription>
         </div>
-        <NuxtLink :to="`/guest-guides?listing=${listing.id}`">
-          <Button variant="outline" size="sm">Manage guides</Button>
-        </NuxtLink>
+        <GuideAssignPopover
+          :listing-id="listing.id"
+          :listing-name="listing.name"
+        />
       </CardHeader>
       <CardContent>
         <div v-if="assignedGuide" class="flex items-center justify-between">
@@ -842,7 +844,7 @@ function handleRevokeCode(codeId: string) {
           </div>
         </div>
         <div v-else class="text-sm text-muted-foreground">
-          No guide assigned. <NuxtLink to="/guest-guides/new" class="underline">Create one</NuxtLink> or assign an existing guide.
+          No guide assigned. <NuxtLink to="/guest-guides/new" class="underline">Create one</NuxtLink>.
         </div>
       </CardContent>
     </Card>
