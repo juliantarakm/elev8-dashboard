@@ -13,7 +13,7 @@ Guest Guide is a feature that auto-sends guests a **tokenized public link** to a
 
 ### Key Features
 
-- **Custom editor** with 12 section types (hero, welcome, pre-arrival form, ID verification, house rules, Wi-Fi, amenities, local tips, upsells, smart lock, documents, checkout, custom rich)
+- **Custom editor** with 13 section types (hero, welcome, check-in, check-out, pre-arrival form, ID verification, house rules, Wi-Fi, amenities, local tips, upsells, smart lock, documents, custom rich)
 - **3 bundled templates** (Bali Villa, Mountain Retreat, City Apartment) for fast setup
 - **Auto-trigger** via Journeys on `new_booking` event
 - **Multi-channel delivery** (WhatsApp Phase 1; Email + OTA Phase 5)
@@ -442,7 +442,7 @@ Add "Guest Guide" card to `ListingSettingsTab.vue` (alongside Smart Locks):
 | Phase | Scope | Duration |
 |-------|-------|----------|
 | **1. Foundation (MVP)** | Data model + composables, library page (read-only), manual link issuance, subdomain scaffold with `welcome` section only | ~1 week |
-| **2. Editor + Sections** | All 12 section types + editors, template gallery, drag-reorder, preview iframe | ~1.5 weeks |
+| **2. Editor + Sections** | All 13 section types + editors, template gallery, drag-reorder, preview iframe | ~1.5 weeks |
 | **3. Auto-Trigger** | `send_guest_guide` Journey step, 3 marketplace templates, WhatsApp delivery | ~1 week |
 | **4. Forms + Live Data** | Pre-arrival form, ID verification, upsell integration, smart lock panel, submissions monitoring UI, reservation panel tab, listing settings card | ~2 weeks |
 | **5. Polish** | ID photo upload pipeline, email + OTA channels, smart section ordering, backfill existing reservations, analytics | ~1 week |
@@ -474,6 +474,7 @@ app/
 │   │   │   └── sections/
 │   │   │       ├── HeroSectionEditor.vue
 │   │   │       ├── WelcomeSectionEditor.vue
+│   │   │       ├── CheckinSectionEditor.vue
 │   │   │       ├── PreArrivalSectionEditor.vue
 │   │   │       ├── IdVerificationSectionEditor.vue
 │   │   │       ├── HouseRulesSectionEditor.vue
