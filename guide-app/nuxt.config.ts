@@ -2,6 +2,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
   ssr: true,
+  // Override the inherited /dashboard/ baseURL so guide-app serves at root
+  baseURL: '/',
   app: {
     head: {
       title: 'Your Guest Guide',
@@ -15,7 +17,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/dashboard',
     },
   },
 })
