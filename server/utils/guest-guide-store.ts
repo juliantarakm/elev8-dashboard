@@ -10,6 +10,10 @@ export function findGuide(id: string): GuestGuide | undefined {
   return guides.get(id)
 }
 
+export function saveLink(link: GuestGuideLink): void {
+  links.set(link.id, link)
+}
+
 export function findLinkByToken(token: string): GuestGuideLink | undefined {
   for (const link of links.values()) {
     if (link.token === token) return link
