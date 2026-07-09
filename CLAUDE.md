@@ -253,7 +253,16 @@ Single-connection (one API key per tenant), multi-lock assignment (many locks pe
 - New "Smart Locks" card after Distribution Channels
 - Not-connected state shows link to `/settings/integrations`
 - Empty state: "No locks paired to this property yet"
-- Lock list rows: name (inline-rename on pencil click), Main badge or clickable star to promote, online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X), three action buttons (Rename / **Swap device** / Unpair)
+- **Locks grouped by scope** — Property first, then per-room, in the order they appear in `unitTypes`:
+  - Each group has a header with scope name + lock count + **"+ Add another"** button (opens the Add Lock dialog pre-set to that scope)
+  - Each lock rendered via the **`LockRow`** component (see below)
+- **`LockRow.vue`** (NEW) — reusable per-lock row component used in both `ListingSettingsTab` and `RoomsPanel`:
+  - Brand pill (e.g. `August`, `Yale`, `Schlage`, `Nuki`, `igloohome`) derived from the device's `provider` field
+  - Lock name (inline rename on pencil click — Enter to save, Esc to cancel)
+  - `Main` badge for the main lock in scope, clickable star to promote a different one
+  - Online/offline lock icon, battery % (amber when ≤20%), assignment label (Property / Room: X)
+  - Action buttons: **Rename** / **Swap device** / **Unlock** (with loading spinner) / **Unpair**
+  - Emits `rename(lockId, newName)`, `unpair(lockId, name)`, `set-main(lockId)`, `swap(lockId)`, `unlock(lockId)`
 - **"Add Lock" button** → Dialog with:
   - **Assign to picker** (Property / Room segmented control) — Property for whole listing, Room for a specific room (shows room Select)
   - Device picker (cards with battery/online/model)
@@ -1385,6 +1394,7 @@ app/
 │   │   ├── ListingSetupOverlay.vue ← Full-screen overlay shell (Property/Rooms tabs + two-panel)
 │   │   ├── ListingSetupFieldPanel.vue ← Left panel: 6 tabs + pencil config icons per field
 │   │   ├── ListingSetupResourcePanel.vue ← Right panel: documents (incl. AI Generate) + Elev8 AI + auto-fill + copy
+│   │   ├── LockRow.vue            ← Reusable per-lock row: brand pill, name (inline rename), battery, Unlock/Swap/Unpair actions
 │   │   ├── RoomsPanel.vue         ← Rooms tab: sidebar of rooms grouped by type + room editor (reuses FieldPanel)
 │   │   ├── UnitTypeManager.vue    ← Room type card with Details + Pricing tabs (multi-rate-plan supported)
 │   │   ├── FieldConfigDialog.vue  ← Per-field: reservation stages + copy to properties
