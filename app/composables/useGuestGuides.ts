@@ -1,6 +1,11 @@
-import type { GuestGuide, GuideStatus } from '~/components/guest-guides/data/types'
+import type { GuestGuide, GuideStatus, GuideTemplate } from '~/components/guest-guides/data/types'
 import { mockGuestGuides } from '~/components/guest-guides/data/mock-guides'
-import { generateGuideId } from '~/utils/guest-guide-token'
+import { generateGuideId, generateSectionId } from '~/utils/guest-guide-token'
+import baliVilla from '~/components/guest-guides/templates/bali-villa.json'
+import mountainRetreat from '~/components/guest-guides/templates/mountain-retreat.json'
+import cityApartment from '~/components/guest-guides/templates/city-apartment.json'
+
+const templates: GuideTemplate[] = [baliVilla, mountainRetreat, cityApartment]
 
 export function useGuestGuides() {
   const guides = useState<GuestGuide[]>('guest-guides', () => [...mockGuestGuides])
@@ -60,12 +65,47 @@ export function useGuestGuides() {
     return copy
   }
 
+  function getTemplates(): GuideTemplate[] {
+    return templates
+  }
+
+  function getTemplate(id: string): GuideTemplate | undefined {
+    return templates.find(t => t.id === id)
+  }
+
+  function createGuideFromTemplate(templateId: string, title: string, defaultLanguage: string): GuestGuide | null {
+    const template = getTemplate(templateId)
+    if (!template) return null
+    const now = new Date().toISOString()
+    const newGuide: GuestGuide = {
+      id: generateGuideId(),
+      title,
+      defaultLanguage,
+      templateId,
+      assignedListingIds: [],
+      status: 'draft',
+      sections: template.sections.map((s, idx) => ({
+        ...s,
+        id: generateSectionId(),
+        order: idx,
+      })),
+      createdBy: 'staff-1',
+      createdAt: now,
+      updatedAt: now,
+    }
+    guides.value = [...guides.value, newGuide]
+    return newGuide
+  }
+
   return {
     guides,
     createGuide,
+    createGuideFromTemplate,
     updateGuide,
     deleteGuide,
     setStatus,
     duplicateGuide,
+    getTemplates,
+    getTemplate,
   }
 }
