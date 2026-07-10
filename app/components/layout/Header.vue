@@ -6,6 +6,7 @@
     <SidebarTrigger />
     <div class="ml-auto flex items-center gap-1">
       <LayoutLanguageSelector />
+      <ElevAIButton />
       <NotificationsNotificationCenter />
       <LayoutHeaderUserMenu />
     </div>
