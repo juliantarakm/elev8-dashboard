@@ -17,5 +17,7 @@
     "lib": "@/lib",
     "composables": "@/composables"
   },
-  "registries": {}
+  "registries": {
+    "@ai-elements": "https://registry.ai-elements-vue.com/{name}.json"
+  }
 }
