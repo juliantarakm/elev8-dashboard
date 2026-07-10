@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useAssistant } from '~/composables/useAssistant'
+import ElevAIAssistant from '~/components/assistant/ElevAIAssistant.vue'
 
 const { isOpen, closePanel } = useAssistant()
 
