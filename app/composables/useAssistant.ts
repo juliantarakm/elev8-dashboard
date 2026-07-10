@@ -1,5 +1,4 @@
-import { ref, computed } from 'vue'
-import type { Ref } from 'vue'
+import { ref } from 'vue'
 
 export interface AssistantMessage {
   id: string
@@ -170,12 +169,17 @@ const useAssistantState = () => {
 }
 
 function humanizeToolName(name: string): string {
+  // v2 safety fallback: today the server always sends `displayName` alongside the
+  // tool call, so this map is unused in practice. Keep it so a v2 server (or a
+  // tool call arriving without a pre-computed displayName) still gets a
+  // human-readable label.
   const map: Record<string, string> = {
     get_upcoming_checkins: 'Looked up upcoming check-ins',
     get_upcoming_checkouts: 'Looked up upcoming check-outs',
     get_current_bookings: 'Looked up in-house guests',
     get_cleaning_schedule: 'Looked up cleaning schedule',
     get_listings_overview: 'Looked up listings',
+    get_listings_performance: 'Looked up listing performance',
     get_occupancy_rate: 'Calculated occupancy',
     get_revenue_summary: 'Looked up revenue',
     get_revenue_by_listing: 'Looked up revenue by listing',

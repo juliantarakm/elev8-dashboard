@@ -167,6 +167,7 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_current_bookings: 'Looked up in-house guests',
   get_cleaning_schedule: 'Looked up cleaning schedule',
   get_listings_overview: 'Looked up listings',
+  get_listings_performance: 'Looked up listing performance',
   get_occupancy_rate: 'Calculated occupancy',
   get_revenue_summary: 'Looked up revenue',
   get_revenue_by_listing: 'Looked up revenue by listing',
@@ -283,6 +284,20 @@ export function resolveIntent(intent: Intent): ResolvedIntent {
         const header = `${data.length} listing${data.length > 1 ? 's' : ''} in your portfolio:\n\n`
         const body = data
           .map(l => `• **${l.name}** — ${l.location}, ${l.bedrooms} BR, sleeps ${l.maxGuests}${l.isActive ? '' : ' (inactive)'}`)
+          .join('\n')
+        return { toolCalls: [tool], chunks: splitText(header + body) }
+      }
+
+      case 'performance': {
+        const tool = tc('get_listings_performance', {})
+        const raw = mock.getRevenueByListing() ?? []
+        if (raw.length === 0) {
+          return { toolCalls: [tool], chunks: splitText('No listing performance data available yet.') }
+        }
+        const sorted = [...raw].sort((a, b) => b.revenue - a.revenue)
+        const header = `Top listings by revenue:\n\n`
+        const body = sorted
+          .map(l => `• **${l.listingName}** — ${l.revenue.toLocaleString('de-CH')} CHF (${l.nights} nights)`)
           .join('\n')
         return { toolCalls: [tool], chunks: splitText(header + body) }
       }

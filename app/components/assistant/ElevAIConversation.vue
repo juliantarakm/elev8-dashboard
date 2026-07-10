@@ -25,7 +25,7 @@ watch(() => props.messages[props.messages.length - 1]?.content, scrollToBottom)
 </script>
 
 <template>
-  <ScrollArea
+  <div
     ref="scrollContainer"
     class="flex-1 min-h-0 overflow-y-auto"
     aria-live="polite"
@@ -35,5 +35,5 @@ watch(() => props.messages[props.messages.length - 1]?.content, scrollToBottom)
     <div class="flex flex-col gap-4 p-4">
       <slot />
     </div>
-  </ScrollArea>
+  </div>
 </template>

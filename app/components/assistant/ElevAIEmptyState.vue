@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { useAssistant } from '~/composables/useAssistant'
 
-const emit = defineEmits<{ select: [prompt: string] }>()
-
 const SUGGESTIONS = [
   { emoji: '📅', label: "Today's check-ins", prompt: "What are today's check-ins?" },
   { emoji: '🧹', label: 'Cleaning today', prompt: 'What is the cleaning schedule today?' },

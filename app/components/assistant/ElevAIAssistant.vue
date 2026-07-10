@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAssistant } from '~/composables/useAssistant'
 
-const { messages, isStreaming } = useAssistant()
+const { messages } = useAssistant()
 </script>
 
 <template>

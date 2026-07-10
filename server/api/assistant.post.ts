@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody, createError } from 'h3'
-import { matchQuery, resolveIntent } from '../utils/intents'
+import { matchQuery, resolveIntent, splitText } from '../utils/intents'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ messages: Array<{ role: string; content: string }> }>(event)
@@ -63,21 +63,4 @@ export default defineEventHandler(async (event) => {
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-function splitText(text: string, maxLen = 60): string[] {
-  const chunks: string[] = []
-  const words = text.split(/(\s+)/)
-  let current = ''
-  for (const word of words) {
-    if ((current + word).length > maxLen && current.length > 0) {
-      chunks.push(current.trim())
-      current = word.trimStart()
-    }
-    else {
-      current += word
-    }
-  }
-  if (current.trim()) chunks.push(current.trim())
-  return chunks
 }
