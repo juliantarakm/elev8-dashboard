@@ -231,7 +231,7 @@ const RULES: IntentRule[] = [
     extractParams: () => ({ when: 'today' }) },
   { domain: 'cleaning', action: 'cleaning_schedule',
     keywords: ['cleaning schedule', 'clean this week', 'housekeeping'],
-    extractParams: extractWeekParam },
+    extractParams: extractDateParam },
   { domain: 'cleaning', action: 'open_tasks',
     keywords: ['open task', 'pending task', 'unfinished'],
     extractParams: () => ({}) },
