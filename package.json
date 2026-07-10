@@ -88,6 +88,7 @@
     "@vee-validate/zod": "^4.15.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/ui": "^4.1.8",
+    "@vue/test-utils": "^2.4.11",
     "@vueuse/core": "^12.8.2",
     "@vueuse/math": "^12.8.2",
     "@vueuse/nuxt": "^12.8.2",
