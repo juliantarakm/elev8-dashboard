@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { useAssistant } from '~/composables/useAssistant'
-import ElevAIConversation from '~/components/assistant/ElevAIConversation.vue'
-import ElevAIMessage from '~/components/assistant/ElevAIMessage.vue'
-import ElevAIEmptyState from '~/components/assistant/ElevAIEmptyState.vue'
-import ElevAIPromptInput from '~/components/assistant/ElevAIPromptInput.vue'
 
 const { messages } = useAssistant()
 </script>

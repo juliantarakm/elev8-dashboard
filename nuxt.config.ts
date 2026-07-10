@@ -15,6 +15,15 @@ export default defineNuxtConfig({
       path: '~/components',
       extensions: ['.vue'],
     },
+    // Disable path prefix for AI Assistant components so they auto-import
+    // as <ElevAIAssistant>, <ElevAIMessage>, etc. instead of
+    // <AssistantElevAIAssistant>, etc. This matches how our component
+    // templates reference them.
+    {
+      path: '~/components/assistant',
+      extensions: ['.vue'],
+      pathPrefix: false,
+    },
   ],
 
   modules: [

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useAssistant } from '~/composables/useAssistant'
-import ElevAISuggestionChip from '~/components/assistant/ElevAISuggestionChip.vue'
 
 const SUGGESTIONS = [
   { emoji: '📅', label: "Today's check-ins", prompt: "What are today's check-ins?" },
