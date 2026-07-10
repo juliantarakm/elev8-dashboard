@@ -83,19 +83,20 @@ const useAssistantState = () => {
     const assistantId = appendAssistantPlaceholder()
 
     try {
-      // Use Nuxt's $fetch which automatically prepends baseURL (/dashboard/)
-      // Plain fetch('/api/assistant') would 302 to the SPA fallback in dev
-      // because of baseURL.
-      const response = await $fetch<ReadableStream>('/api/assistant', {
+      // Use runtime config to get baseURL (default '/dashboard/' in dev).
+      // Plain fetch() with a path needs the baseURL prepended manually
+      // because baseURL is not part of the JS origin (Nuxt serves under
+      // /dashboard/ but window.location.origin is still http://localhost:3007).
+      const baseURL = useRuntimeConfig().app.baseURL || ''
+      const response = await fetch(`${baseURL}api/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: {
+        body: JSON.stringify({
           messages: messages.value
             .filter(m => m.role !== 'system')
             .map(m => ({ role: m.role, content: m.content })),
-        },
-        responseType: 'stream',
-      }) as unknown as Response
+        }),
+      })
 
       if (!response.ok || !response.body) {
         throw new Error(`Server returned ${response.status}`)
