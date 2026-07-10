@@ -79,3 +79,63 @@ describe('matchQuery', () => {
     expect(result?.params.when).toBe('tomorrow')
   })
 })
+
+import { resolveIntent, type ToolCall, type AssistantChunk } from '~/server/utils/intents'
+
+describe('resolveIntent', () => {
+  it('resolves upcoming_checkins to tool call + text chunks', () => {
+    const result = resolveIntent({
+      domain: 'reservations',
+      action: 'upcoming_checkins',
+      params: { when: 'today' },
+    })
+    expect(result.toolCalls).toEqual([
+      expect.objectContaining({
+        name: 'get_upcoming_checkins',
+        args: { when: 'today' },
+      }),
+    ])
+    expect(result.chunks.length).toBeGreaterThan(0)
+    expect(result.chunks.join('')).toContain('Anna Schmidt')
+  })
+
+  it('resolves cleaning_schedule(today) to cleaning data', () => {
+    const result = resolveIntent({
+      domain: 'cleaning',
+      action: 'cleaning_schedule',
+      params: { when: 'today' },
+    })
+    expect(result.toolCalls[0].name).toBe('get_cleaning_schedule')
+    expect(result.chunks.join('')).toContain('Villa Bamboo')
+  })
+
+  it('resolves revenue_summary(month) to revenue figures', () => {
+    const result = resolveIntent({
+      domain: 'finance',
+      action: 'revenue_summary',
+      params: { when: 'month' },
+    })
+    expect(result.toolCalls[0].name).toBe('get_revenue_summary')
+    expect(result.chunks.join('')).toContain('CHF')
+  })
+
+  it('chunks split on sentence boundaries (each chunk ≤ 60 chars)', () => {
+    const result = resolveIntent({
+      domain: 'finance',
+      action: 'revenue_summary',
+      params: { when: 'month' },
+    })
+    for (const chunk of result.chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(60)
+    }
+  })
+
+  it('returns friendly fallback for unknown intent', () => {
+    const result = resolveIntent({
+      domain: 'reservations',
+      action: 'unknown_action',
+      params: {},
+    })
+    expect(result.chunks.join('')).toContain('help')
+  })
+})
