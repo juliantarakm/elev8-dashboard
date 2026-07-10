@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AssistantMessage } from '~/composables/useAssistant'
+import ElevAIResponse from '~/components/assistant/ElevAIResponse.vue'
+import ElevAILoader from '~/components/assistant/ElevAILoader.vue'
+import ElevAIToolBadge from '~/components/assistant/ElevAIToolBadge.vue'
 
 defineProps<{
   message: AssistantMessage
