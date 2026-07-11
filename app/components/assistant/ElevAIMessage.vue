@@ -8,6 +8,7 @@ import type { AssistantAttachment } from '~/components/assistant/ElevAIAttachmen
 const props = defineProps<{
   message: AssistantMessage
   isLast?: boolean
+  reasoningText?: string
 }>()
 
 const emit = defineEmits<{
@@ -135,10 +136,16 @@ const followUps = computed<string[]>(() => {
         flashing ? 'rounded-lg bg-primary/15 px-4 py-3 ring-1 ring-primary/30' : '',
       ]"
     >
-      <ElevAIChainOfThought
-        v-if="message.toolCalls && message.toolCalls.length > 0"
-        :tool-calls="message.toolCalls"
-      />
+      <Reasoning
+        v-if="reasoningText"
+        :is-streaming="!message.content && isLast"
+        :duration="!message.content ? undefined : 250"
+        class="ml-2 mt-1 w-fit"
+        data-testid="elev-ai-reasoning"
+      >
+        <ReasoningTrigger />
+        <ReasoningContent>{{ reasoningText }}</ReasoningContent>
+      </Reasoning>
 
       <MessageResponse v-if="message.content" :content="message.content" />
       <div v-else class="flex items-center gap-2">
