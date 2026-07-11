@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { AssistantMessage } from '~/composables/useAssistant'
+import type { AssistantAttachment } from '~/components/assistant/ElevAIAttachments.vue'
 
 const props = defineProps<{
   message: AssistantMessage
@@ -46,7 +47,7 @@ watch(
   >
     <ElevAIAttachments
       v-if="message.attachments && message.attachments.length > 0"
-      :attachments="message.attachments"
+      :attachments="(message.attachments as AssistantAttachment[])"
     />
     <div v-if="message.content" class="max-w-[85%] rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">
       {{ message.content }}

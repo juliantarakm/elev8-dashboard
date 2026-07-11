@@ -26,7 +26,7 @@ function getMediaCategory(att: AssistantAttachment): 'image' | 'video' | 'audio'
 function toAttachmentData(att: AssistantAttachment) {
   return {
     type: 'file' as const,                  // ai-elements expects 'file' | 'inline-data' | 'symbol'
-    url: att.url,
+    url: att.url ?? '',
     filename: att.name,
     mediaType: att.type,
   }
