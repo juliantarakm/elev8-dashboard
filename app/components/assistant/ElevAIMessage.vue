@@ -172,9 +172,9 @@ const followUps = computed<string[]>(() => {
         @reject="onReject"
       />
 
-      <Suggestions
+      <div
         v-if="message.content && isLast && followUps.length > 0"
-        class="mt-2 -mb-1 animate-in fade-in slide-in-from-bottom-2 duration-500"
+        class="mt-2 -mb-1 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500"
         data-testid="elev-ai-follow-ups"
       >
         <Suggestion
@@ -185,7 +185,7 @@ const followUps = computed<string[]>(() => {
           :suggestion="prompt"
           @click="onFollowUp(prompt)"
         />
-      </Suggestions>
+      </div>
     </MessageContent>
   </Message>
 </template>
