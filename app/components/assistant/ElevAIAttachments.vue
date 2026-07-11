@@ -23,9 +23,12 @@ function getMediaCategory(att: AssistantAttachment): 'image' | 'video' | 'audio'
 }
 
 // Map our MIME-typed attachment to ai-elements AttachmentData shape.
-function toAttachmentData(att: AssistantAttachment) {
+// AttachmentData = (FileUIPart | SourceDocumentUIPart) & { id: string }
+// FileUIPart needs: type, url, filename (optional), mediaType (optional)
+function toAttachmentData(att: AssistantAttachment, id: string) {
   return {
-    type: 'file' as const,                  // ai-elements expects 'file' | 'inline-data' | 'symbol'
+    id,
+    type: 'file' as const,
     url: att.url ?? '',
     filename: att.name,
     mediaType: att.type,
@@ -49,7 +52,7 @@ function formatSize(bytes: number): string {
     <Attachment
       v-for="att in attachments"
       :key="att.id"
-      :data="toAttachmentData(att)"
+      :data="toAttachmentData(att, att.id)"
       @remove="emit('remove', att.id)"
     >
       <!-- Auto-detects media category from context. For images with a url,
