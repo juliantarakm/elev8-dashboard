@@ -41,10 +41,14 @@ watch(
 <template>
   <div
     v-if="message.role === 'user'"
-    class="flex justify-end animate-in fade-in slide-in-from-right-4 duration-200"
+    class="flex flex-col items-end gap-1.5 animate-in fade-in slide-in-from-right-4 duration-200"
     data-testid="message-user"
   >
-    <div class="max-w-[85%] rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">
+    <ElevAIAttachments
+      v-if="message.attachments && message.attachments.length > 0"
+      :attachments="message.attachments"
+    />
+    <div v-if="message.content" class="max-w-[85%] rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">
       {{ message.content }}
     </div>
   </div>

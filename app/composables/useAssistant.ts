@@ -5,6 +5,12 @@ export interface AssistantMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   toolCalls?: ToolCallDisplay[]
+  attachments?: Array<{
+    name: string
+    type: string
+    size: number
+    url?: string
+  }>
   confirmation?: {
     title: string
     description: string
@@ -48,10 +54,18 @@ const useAssistantState = () => {
     error.value = null
   }
 
-  function appendUserMessage(content: string) {
+  function appendUserMessage(
+    content: string,
+    attachments?: Array<{ name: string, type: string, size: number, url?: string }>,
+  ) {
     messages.value = [
       ...messages.value,
-      { id: `msg-${Date.now()}-user`, role: 'user', content },
+      {
+        id: `msg-${Date.now()}-user`,
+        role: 'user',
+        content,
+        attachments: attachments && attachments.length > 0 ? attachments : undefined,
+      },
     ]
   }
 
@@ -102,7 +116,7 @@ const useAssistantState = () => {
                      : '[Attached: ' + attachments.map(a => a.name).join(', ') + ']')
       : ''
     const trimmed = (text.trim() + attachmentSuffix).slice(0, 2000)
-    appendUserMessage(trimmed)
+    appendUserMessage(trimmed, attachments.length > 0 ? attachments : undefined)
     input.value = ''
     isStreaming.value = true
     error.value = null
