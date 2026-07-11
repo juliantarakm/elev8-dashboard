@@ -44,14 +44,14 @@ async function copyToClipboard() {
 </script>
 
 <template>
-  <!-- USER MESSAGE -->
+  <!-- USER MESSAGE — primary-colored chat bubble -->
   <Message
     v-if="message.role === 'user'"
     from="user"
     class="animate-in fade-in slide-in-from-right-4 duration-200"
     data-testid="message-user"
   >
-    <MessageContent class="is-user:bg-primary is-user:text-primary-foreground is-user:px-4 is-user:py-2 rounded-lg gap-1.5">
+    <MessageContent class="!bg-primary !text-primary-foreground !px-4 !py-2 rounded-lg gap-1.5">
       <ElevAIAttachments
         v-if="message.attachments && message.attachments.length > 0"
         :attachments="(message.attachments as AssistantAttachment[])"
@@ -65,7 +65,7 @@ async function copyToClipboard() {
     </Avatar>
   </Message>
 
-  <!-- ASSISTANT MESSAGE -->
+  <!-- ASSISTANT MESSAGE — no background bubble, just text -->
   <Message
     v-else
     from="assistant"
@@ -79,8 +79,8 @@ async function copyToClipboard() {
     </Avatar>
     <MessageContent
       :class="[
-        'rounded-lg px-4 py-2 gap-2',
-        flashing ? 'bg-primary/15 ring-1 ring-primary/30' : 'bg-muted text-foreground',
+        'gap-2 px-0 py-0 transition-colors duration-300',
+        flashing ? 'rounded-lg bg-primary/15 px-4 py-3 ring-1 ring-primary/30' : '',
       ]"
     >
       <ElevAIChainOfThought
