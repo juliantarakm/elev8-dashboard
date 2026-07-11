@@ -141,9 +141,11 @@ const followUps = computed<string[]>(() => {
       />
 
       <MessageResponse v-if="message.content" :content="message.content" />
-      <Shimmer v-else class="text-sm">
-        Thinking...
-      </Shimmer>
+      <div v-else class="flex items-center gap-2">
+        <Shimmer class="text-sm">
+          Thinking...
+        </Shimmer>
+      </div>
 
       <MessageActions v-if="message.content && isLast">
         <MessageAction label="Copy" @click="copyToClipboard">

@@ -39,10 +39,21 @@ const steps = computed(() =>
         :key="step.id"
         :class="`animate-in fade-in slide-in-from-left-2 zoom-in-95 fill-mode-backwards duration-700`"
         :style="{ animationDelay: step.delay }"
-        :label="step.label"
+        :label="step.status === 'active' ? step.label : step.label"
         :description="step.description"
         :status="step.status"
-      />
+      >
+        <!-- Shimmer the active step's label to draw attention while the
+             tool_call chunk is fresh — fades to plain text once 'complete'
+             when text deltas start arriving. -->
+        <Shimmer
+          v-if="step.status === 'active'"
+          :duration="1.5"
+          class="text-sm"
+        >
+          {{ step.label }}
+        </Shimmer>
+      </ChainOfThoughtStep>
     </ChainOfThoughtHeader>
     <ChainOfThoughtContent>
       <div class="flex flex-col gap-2 pl-6 text-xs text-muted-foreground">
