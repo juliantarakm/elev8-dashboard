@@ -58,7 +58,8 @@ async function copyToClipboard() {
       />
       <div v-if="message.content" class="whitespace-pre-wrap">{{ message.content }}</div>
     </MessageContent>
-    <Avatar class="size-8 ring-1 ring-border bg-primary text-primary-foreground">
+    <Avatar class="size-8 ring-1 ring-border bg-primary text-primary-foreground overflow-hidden">
+      <AvatarImage src="/avatars/avatartion.png" :alt="'Komang'" />
       <AvatarFallback class="bg-primary text-primary-foreground text-xs font-medium">
         KO
       </AvatarFallback>

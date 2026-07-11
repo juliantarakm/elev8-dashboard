@@ -14,9 +14,8 @@ const { isOpen, togglePanel, isStreaming } = useAssistant()
     data-testid="elev-ai-button"
     @click="togglePanel"
   >
-    <Icon
-      name="lucide:sparkles"
-      class="size-4"
+    <SharedAiIcon
+      custom-class="size-4"
       :class="isStreaming ? 'animate-pulse' : ''"
     />
     <span class="hidden sm:inline">Ask AI</span>
