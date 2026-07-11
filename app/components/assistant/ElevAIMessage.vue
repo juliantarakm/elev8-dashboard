@@ -21,13 +21,13 @@ defineProps<{
     class="flex flex-col items-start gap-2"
     data-testid="message-assistant"
   >
-    <div class="max-w-[90%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground">
-      <ElevAIResponse v-if="message.content" :content="message.content" />
-      <ElevAILoader v-else />
-    </div>
     <ElevAIChainOfThought
       v-if="message.toolCalls && message.toolCalls.length > 0"
       :tool-calls="message.toolCalls"
     />
+    <div class="max-w-[90%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground">
+      <ElevAIResponse v-if="message.content" :content="message.content" />
+      <ElevAILoader v-else />
+    </div>
   </div>
 </template>
