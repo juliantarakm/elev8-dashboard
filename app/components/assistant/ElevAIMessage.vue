@@ -6,6 +6,19 @@ const props = defineProps<{
   message: AssistantMessage
 }>()
 
+const emit = defineEmits<{
+  approve: [messageId: string]
+  reject: [messageId: string]
+}>()
+
+function onApprove() {
+  emit('approve', props.message.id)
+}
+
+function onReject() {
+  emit('reject', props.message.id)
+}
+
 // Flash the assistant bubble background briefly each time new text
 // arrives from the stream. Listens for content length changes; ignores
 // tool-call additions (those have their own pop-in animation).
@@ -53,5 +66,19 @@ watch(
       <ElevAIResponse v-if="message.content" :content="message.content" />
       <ElevAILoader v-else />
     </div>
+    <ElevAIContext
+      v-if="message.content && !flashing"
+      :content="message.content"
+      :tool-call-count="message.toolCalls?.length ?? 0"
+    />
+    <ElevAIConfirmation
+      v-if="message.confirmation"
+      :title="message.confirmation.title"
+      :description="message.confirmation.description"
+      :action-label="message.confirmation.actionLabel"
+      :details="message.confirmation.details"
+      @approve="onApprove"
+      @reject="onReject"
+    />
   </div>
 </template>

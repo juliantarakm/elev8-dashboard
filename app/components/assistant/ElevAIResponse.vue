@@ -1,8 +1,8 @@
 <script setup lang="ts">
-defineProps<{ content: string }>()
+import { computed } from 'vue'
 
-// Minimal markdown: **bold**, *italic*, `code`, - lists, [links](url)
-// For v1 we render manually rather than pulling in a heavy markdown lib.
+const props = defineProps<{ content: string }>()
+
 function sanitizeHref(url: string): string | null {
   const trimmed = url.trim()
   if (!trimmed) return null
@@ -26,12 +26,31 @@ function sanitizeHref(url: string): string | null {
       return null
     }
   }
-  // Unknown scheme (e.g. relative, custom scheme) — reject to be safe.
   return null
 }
 
+// Tokenize content into segments: 'code' (fenced ```lang\n...\n```) or 'text'
+type Segment = { kind: 'text', value: string } | { kind: 'code', value: string, lang: string | undefined }
+
+const segments = computed<Segment[]>(() => {
+  const out: Segment[] = []
+  const re = /```(\w+)?\n([\s\S]*?)```/g
+  let lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = re.exec(props.content)) !== null) {
+    if (m.index > lastIndex) {
+      out.push({ kind: 'text', value: props.content.slice(lastIndex, m.index) })
+    }
+    out.push({ kind: 'code', value: m[2] ?? '', lang: m[1] ?? 'plaintext' })
+    lastIndex = m.index + m[0].length
+  }
+  if (lastIndex < props.content.length) {
+    out.push({ kind: 'text', value: props.content.slice(lastIndex) })
+  }
+  return out
+})
+
 function renderMarkdown(text: string): string {
-  // Order matters: escape first, then apply transforms
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -49,8 +68,18 @@ function renderMarkdown(text: string): string {
 </script>
 
 <template>
-  <div
-    class="leading-relaxed [&_strong]:font-semibold [&_a]:text-primary [&_code]:font-mono"
-    v-html="renderMarkdown(content)"
-  />
+  <div class="leading-relaxed [&_strong]:font-semibold [&_a]:text-primary [&_code]:font-mono flex flex-col gap-3">
+    <template v-for="(seg, i) in segments" :key="i">
+      <CodeBlock
+        v-if="seg.kind === 'code'"
+        :code="seg.value.trimEnd()"
+        :language="(seg.lang ?? 'text') as any"
+        class="my-1 rounded-md border bg-background"
+      />
+      <div
+        v-else
+        v-html="renderMarkdown(seg.value)"
+      />
+    </template>
+  </div>
 </template>

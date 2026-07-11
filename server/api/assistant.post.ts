@@ -30,7 +30,14 @@ export default defineEventHandler(async (event) => {
         return
       }
 
-      const resolved = resolveIntent(intent)
+      // Pass the raw query text so resolvers like create_task can extract
+      // details from it (e.g. "create task to fix pool" → task title).
+      const resolved = resolveIntent({
+        ...intent,
+        // __queryText is a non-standard extension; resolvers can read it
+        // via (intent as any).__queryText. Keeps Intent type clean.
+        __queryText: lastUser.content,
+      } as any)
 
       for (const toolCall of resolved.toolCalls) {
         controller.enqueue(encoder.encode(
@@ -44,6 +51,15 @@ export default defineEventHandler(async (event) => {
       for (const chunk of resolved.chunks) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', delta: chunk })}\n\n`))
         await sleep(80)
+      }
+
+      // If the intent requires confirmation, emit the confirmation data
+      // after the text so the UI can render the approval prompt.
+      if (resolved.requiresConfirmation && resolved.confirmation) {
+        controller.enqueue(encoder.encode(
+          `data: ${JSON.stringify({ type: 'confirmation', data: resolved.confirmation })}\n\n`,
+        ))
+        await sleep(150)
       }
 
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'finish' })}\n\n`))

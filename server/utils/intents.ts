@@ -1,4 +1,4 @@
-export type Domain = 'reservations' | 'cleaning' | 'listings' | 'finance'
+export type Domain = 'reservations' | 'cleaning' | 'listings' | 'finance' | 'tasks'
 
 export interface Intent {
   domain: Domain
@@ -125,6 +125,14 @@ const RULES: IntentRule[] = [
     extractParams: extractDateParam,
     priority: 10,
   },
+  // Write actions (require user confirmation in UI)
+  {
+    domain: 'tasks',
+    action: 'create_task',
+    keywords: ['create task', 'add task', 'new task', 'remind me to'],
+    extractParams: () => ({}),
+    priority: 10,
+  },
 ]
 
 export function matchQuery(text: string): Intent | null {
@@ -143,7 +151,8 @@ export function matchQuery(text: string): Intent | null {
 
   // Pick the highest-scoring rule. Ties broken by priority (already in score).
   matches.sort((a, b) => b.score - a.score)
-  const winner = matches[0].rule
+  const winner = matches[0]?.rule
+  if (!winner) return null
   return {
     domain: winner.domain,
     action: winner.action,
@@ -184,9 +193,18 @@ export interface AssistantChunk {
   delta?: string
 }
 
+export interface ConfirmationData {
+  title: string
+  description: string
+  actionLabel: string
+  details: Array<{ label: string, value: string }>
+}
+
 export interface ResolvedIntent {
   toolCalls: ToolCall[]
   chunks: string[]                                   // pre-stream text chunks
+  requiresConfirmation?: boolean
+  confirmation?: ConfirmationData
 }
 
 /**
@@ -349,6 +367,35 @@ export function resolveIntent(intent: Intent): ResolvedIntent {
           `• ${data.count} orders\n` +
           `• Top category: **${data.topCategory}**`
         return { toolCalls: [tool], chunks: splitText(text) }
+      }
+
+      case 'create_task': {
+        // Extract the task description from the query text (everything after the trigger keyword).
+        const queryText = ((intent as any).__queryText ?? '').toLowerCase()
+        const triggerMatch = queryText.match(/(?:create task|add task|new task|remind me to)\s+(?:to\s+)?(.+)/)
+        const taskTitle = triggerMatch
+          ? triggerMatch[1].trim().replace(/[.!?]+$/, '').replace(/^(to\s+)/, '')
+          : 'Untitled task'
+
+        const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+        const tool = tc('create_task', { title: taskTitle, dueDate })
+
+        return {
+          toolCalls: [tool],
+          chunks: splitText(`I'll create a new task for you. Please review and confirm the details below.`),
+          requiresConfirmation: true,
+          confirmation: {
+            title: 'Create new task',
+            description: 'This will add a task to your open tasks list.',
+            actionLabel: 'Create task',
+            details: [
+              { label: 'Title', value: taskTitle },
+              { label: 'Due date', value: dueDate },
+              { label: 'Priority', value: 'medium' },
+              { label: 'Assigned to', value: 'Komang Juliantara' },
+            ],
+          },
+        }
       }
 
       default:

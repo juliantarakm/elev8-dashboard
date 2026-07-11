@@ -5,6 +5,13 @@ export interface AssistantMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   toolCalls?: ToolCallDisplay[]
+  confirmation?: {
+    title: string
+    description: string
+    actionLabel: string
+    details: Array<{ label: string, value: string }>
+  }
+  approvalState?: 'pending' | 'approved' | 'rejected'
 }
 
 export interface ToolCallDisplay {
@@ -71,6 +78,20 @@ const useAssistantState = () => {
     )
   }
 
+  function setConfirmation(assistantId: string, confirmation: AssistantMessage['confirmation']) {
+    messages.value = messages.value.map(m =>
+      m.id === assistantId
+        ? { ...m, confirmation: confirmation ?? undefined, approvalState: 'pending' }
+        : m,
+    )
+  }
+
+  function setApprovalState(assistantId: string, state: 'approved' | 'rejected') {
+    messages.value = messages.value.map(m =>
+      m.id === assistantId ? { ...m, approvalState: state } : m,
+    )
+  }
+
   async function submit(text: string) {
     if (!text.trim() || isStreaming.value) return
 
@@ -130,6 +151,9 @@ const useAssistantState = () => {
             }
             else if (data.type === 'text' && data.delta) {
               appendTextDelta(assistantId, data.delta)
+            }
+            else if (data.type === 'confirmation' && data.data) {
+              setConfirmation(assistantId, data.data)
             }
             else if (data.type === 'finish') {
               break
