@@ -139,7 +139,8 @@ const followUps = computed<string[]>(() => {
       <Reasoning
         v-if="reasoningText"
         :is-streaming="!message.content && isLast"
-        :duration="!message.content ? undefined : 250"
+        :duration="!message.content ? undefined : 5000"
+        :open="!message.content ? true : undefined"
         class="ml-2 mt-1 w-fit"
         data-testid="elev-ai-reasoning"
       >
