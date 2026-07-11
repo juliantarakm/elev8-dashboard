@@ -1,15 +1,34 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { AssistantMessage } from '~/composables/useAssistant'
 
-defineProps<{
+const props = defineProps<{
   message: AssistantMessage
 }>()
+
+// Flash the assistant bubble background briefly each time new text
+// arrives from the stream. Listens for content length changes; ignores
+// tool-call additions (those have their own pop-in animation).
+const flashing = ref(false)
+let flashTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => props.message.content,
+  (newContent, oldContent) => {
+    if (newContent.length > (oldContent ?? '').length && !props.message.role.includes('user')) {
+      flashing.value = true
+      if (flashTimer) clearTimeout(flashTimer)
+      flashTimer = setTimeout(() => {
+        flashing.value = false
+      }, 350)
+    }
+  },
+)
 </script>
 
 <template>
   <div
     v-if="message.role === 'user'"
-    class="flex justify-end"
+    class="flex justify-end animate-in fade-in slide-in-from-right-4 duration-200"
     data-testid="message-user"
   >
     <div class="max-w-[85%] rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">
@@ -25,7 +44,12 @@ defineProps<{
       v-if="message.toolCalls && message.toolCalls.length > 0"
       :tool-calls="message.toolCalls"
     />
-    <div class="max-w-[90%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground">
+    <div
+      :class="[
+        'max-w-[90%] rounded-lg px-4 py-2 text-sm text-foreground transition-colors duration-300',
+        flashing ? 'bg-primary/15 ring-1 ring-primary/30' : 'bg-muted',
+      ]"
+    >
       <ElevAIResponse v-if="message.content" :content="message.content" />
       <ElevAILoader v-else />
     </div>

@@ -36,8 +36,10 @@ function handleSelect(prompt: string) {
       </p>
       <div class="grid grid-cols-2 gap-2">
         <ElevAISuggestionChip
-          v-for="s in SUGGESTIONS"
+          v-for="(s, i) in SUGGESTIONS"
           :key="s.prompt"
+          :style="{ animationDelay: `${i * 60}ms` }"
+          class="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-300"
           :emoji="s.emoji"
           :label="s.label"
           :prompt="s.prompt"
