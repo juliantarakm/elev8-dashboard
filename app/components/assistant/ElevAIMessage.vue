@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { CopyIcon, RefreshCcwIcon } from '@lucide/vue'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import type { AssistantMessage } from '~/composables/useAssistant'
+import type { AssistantMessage, ToolCallDisplay } from '~/composables/useAssistant'
 import type { AssistantAttachment } from '~/components/assistant/ElevAIAttachments.vue'
 
 const props = defineProps<{
@@ -14,11 +14,13 @@ const emit = defineEmits<{
   approve: [messageId: string]
   reject: [messageId: string]
   retry: [messageId: string]
+  followUp: [prompt: string]
 }>()
 
 function onApprove() { emit('approve', props.message.id) }
 function onReject() { emit('reject', props.message.id) }
 function onRetry() { emit('retry', props.message.id) }
+function onFollowUp(prompt: string) { emit('followUp', prompt) }
 
 // Flash the assistant bubble background briefly each time new text
 // arrives from the stream.
@@ -41,6 +43,57 @@ async function copyToClipboard() {
   try { await navigator.clipboard.writeText(props.message.content) }
   catch { /* ignore */ }
 }
+
+// Context-aware follow-up suggestions based on the tool calls the AI made.
+// Hardcoded for v1 (real AI would generate these dynamically).
+const followUps = computed<string[]>(() => {
+  if (!props.message.toolCalls || props.message.toolCalls.length === 0) return []
+  const names = props.message.toolCalls.map((t: ToolCallDisplay) => t.name)
+
+  if (names.includes('get_upcoming_checkins')) {
+    return [
+      "What about today's check-outs?",
+      'Any VIP guests arriving?',
+      'Which villa has the most arrivals?',
+    ]
+  }
+  if (names.includes('get_cleaning_schedule') || names.includes('get_cleaning_schedule_by_date_range')) {
+    return [
+      'Who is cleaning tomorrow?',
+      'Any deep cleans this week?',
+      'Are there any maintenance issues?',
+    ]
+  }
+  if (names.includes('get_revenue_summary') || names.includes('get_revenue_by_listing')) {
+    return [
+      'What about last month?',
+      'Which listing earns the most?',
+      'Any pending payouts?',
+    ]
+  }
+  if (names.includes('get_occupancy_rate')) {
+    return [
+      'Which villa has lowest occupancy?',
+      'Compare to last month',
+      'Show me upcoming gaps',
+    ]
+  }
+  if (names.includes('get_listings_overview')) {
+    return [
+      'Show me active listings only',
+      'Which has the best rating?',
+      'Any inactive listings?',
+    ]
+  }
+  if (names.includes('get_repeat_guests') || names.includes('get_current_bookings')) {
+    return [
+      'Tell me more about Anna Schmidt',
+      'Any special requests?',
+      "What's the average stay length?",
+    ]
+  }
+  return ['Tell me more', 'What about last week?', 'Any issues?']
+})
 </script>
 
 <template>
@@ -118,6 +171,21 @@ async function copyToClipboard() {
         @approve="onApprove"
         @reject="onReject"
       />
+
+      <Suggestions
+        v-if="message.content && isLast && followUps.length > 0"
+        class="mt-2 -mb-1 animate-in fade-in slide-in-from-bottom-2 duration-500"
+        data-testid="elev-ai-follow-ups"
+      >
+        <Suggestion
+          v-for="(prompt, i) in followUps"
+          :key="prompt"
+          :style="{ animationDelay: `${i * 80}ms` }"
+          class="animate-in fade-in slide-in-from-bottom-1 fill-mode-backwards duration-400"
+          :suggestion="prompt"
+          @click="onFollowUp(prompt)"
+        />
+      </Suggestions>
     </MessageContent>
   </Message>
 </template>

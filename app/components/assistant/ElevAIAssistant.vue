@@ -15,6 +15,12 @@ function onReject(messageId: string) {
     m.id === messageId ? { ...m, approvalState: 'rejected' as const } : m,
   )
 }
+
+const { submit } = useAssistant()
+
+async function onFollowUp(prompt: string) {
+  await submit(prompt)
+}
 </script>
 
 <template>
@@ -24,8 +30,10 @@ function onReject(messageId: string) {
         v-for="msg in messages"
         :key="msg.id"
         :message="msg"
+        :is-last="msg === messages[messages.length - 1]"
         @approve="onApprove"
         @reject="onReject"
+        @follow-up="onFollowUp"
       />
     </ElevAIConversation>
 
