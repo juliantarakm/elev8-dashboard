@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { CopyIcon, RefreshCcwIcon, SparklesIcon } from '@lucide/vue'
+import { CopyIcon, RefreshCcwIcon } from '@lucide/vue'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { AssistantMessage } from '~/composables/useAssistant'
 import type { AssistantAttachment } from '~/components/assistant/ElevAIAttachments.vue'
@@ -74,7 +74,7 @@ async function copyToClipboard() {
   >
     <Avatar class="size-8 ring-1 ring-border bg-primary/10 shrink-0">
       <AvatarFallback class="bg-primary/10 text-primary">
-        <SparklesIcon class="size-4" />
+        <SharedAiIcon custom-class="size-4" />
       </AvatarFallback>
     </Avatar>
     <MessageContent
