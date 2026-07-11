@@ -16,17 +16,9 @@ const emit = defineEmits<{
   retry: [messageId: string]
 }>()
 
-function onApprove() {
-  emit('approve', props.message.id)
-}
-
-function onReject() {
-  emit('reject', props.message.id)
-}
-
-function onRetry() {
-  emit('retry', props.message.id)
-}
+function onApprove() { emit('approve', props.message.id) }
+function onReject() { emit('reject', props.message.id) }
+function onRetry() { emit('retry', props.message.id) }
 
 // Flash the assistant bubble background briefly each time new text
 // arrives from the stream.
@@ -35,7 +27,7 @@ let flashTimer: ReturnType<typeof setTimeout> | null = null
 watch(
   () => props.message.content,
   (newContent, oldContent) => {
-    if (newContent.length > (oldContent ?? '').length && !props.message.role.includes('user')) {
+    if (newContent.length > (oldContent ?? '').length && props.message.role === 'assistant') {
       flashing.value = true
       if (flashTimer) clearTimeout(flashTimer)
       flashTimer = setTimeout(() => {
@@ -46,12 +38,8 @@ watch(
 )
 
 async function copyToClipboard() {
-  try {
-    await navigator.clipboard.writeText(props.message.content)
-  }
-  catch {
-    // ignore — clipboard may be blocked in some contexts
-  }
+  try { await navigator.clipboard.writeText(props.message.content) }
+  catch { /* ignore */ }
 }
 </script>
 
@@ -63,25 +51,18 @@ async function copyToClipboard() {
     class="animate-in fade-in slide-in-from-right-4 duration-200"
     data-testid="message-user"
   >
+    <MessageContent class="is-user:bg-primary is-user:text-primary-foreground is-user:px-4 is-user:py-2 rounded-lg gap-1.5">
+      <ElevAIAttachments
+        v-if="message.attachments && message.attachments.length > 0"
+        :attachments="(message.attachments as AssistantAttachment[])"
+      />
+      <div v-if="message.content" class="whitespace-pre-wrap">{{ message.content }}</div>
+    </MessageContent>
     <Avatar class="size-8 ring-1 ring-border bg-primary text-primary-foreground">
       <AvatarFallback class="bg-primary text-primary-foreground text-xs font-medium">
         KO
       </AvatarFallback>
     </Avatar>
-    <MessageContent>
-      <ElevAIAttachments
-        v-if="message.attachments && message.attachments.length > 0"
-        :attachments="(message.attachments as AssistantAttachment[])"
-      />
-      <div
-        v-if="message.content"
-        :class="[
-          'rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors duration-300',
-        ]"
-      >
-        {{ message.content }}
-      </div>
-    </MessageContent>
   </Message>
 
   <!-- ASSISTANT MESSAGE -->
@@ -91,25 +72,24 @@ async function copyToClipboard() {
     class="animate-in fade-in slide-in-from-left-4 duration-300"
     data-testid="message-assistant"
   >
-    <Avatar class="size-8 ring-1 ring-border bg-primary/10">
+    <Avatar class="size-8 ring-1 ring-border bg-primary/10 shrink-0">
       <AvatarFallback class="bg-primary/10 text-primary">
         <SparklesIcon class="size-4" />
       </AvatarFallback>
     </Avatar>
-    <MessageContent>
+    <MessageContent
+      :class="[
+        'rounded-lg px-4 py-2 gap-2',
+        flashing ? 'bg-primary/15 ring-1 ring-primary/30' : 'bg-muted text-foreground',
+      ]"
+    >
       <ElevAIChainOfThought
         v-if="message.toolCalls && message.toolCalls.length > 0"
         :tool-calls="message.toolCalls"
       />
-      <div
-        :class="[
-          'rounded-lg px-4 py-2 text-sm text-foreground transition-colors duration-300',
-          flashing ? 'bg-primary/15 ring-1 ring-primary/30' : 'bg-muted',
-        ]"
-      >
-        <MessageResponse v-if="message.content" :content="message.content" />
-        <Loader v-else />
-      </div>
+
+      <MessageResponse v-if="message.content" :content="message.content" />
+      <Loader v-else />
 
       <MessageActions v-if="message.content && isLast">
         <MessageAction label="Copy" @click="copyToClipboard">
