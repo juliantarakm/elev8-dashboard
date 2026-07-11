@@ -25,15 +25,9 @@ defineProps<{
       <ElevAIResponse v-if="message.content" :content="message.content" />
       <ElevAILoader v-else />
     </div>
-    <div
+    <ElevAIChainOfThought
       v-if="message.toolCalls && message.toolCalls.length > 0"
-      class="ml-2 flex flex-col gap-1 w-full max-w-[90%]"
-    >
-      <ElevAIToolBadge
-        v-for="tool in message.toolCalls"
-        :key="tool.id"
-        :tool-call="tool"
-      />
-    </div>
+      :tool-calls="message.toolCalls"
+    />
   </div>
 </template>
