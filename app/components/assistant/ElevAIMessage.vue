@@ -72,8 +72,8 @@ async function copyToClipboard() {
     class="animate-in fade-in slide-in-from-left-4 duration-300"
     data-testid="message-assistant"
   >
-    <Avatar class="size-8 ring-1 ring-border bg-primary/10 shrink-0">
-      <AvatarFallback class="bg-primary/10 text-primary">
+    <Avatar class="size-8 ring-1 ring-border bg-primary text-primary-foreground shrink-0">
+      <AvatarFallback class="bg-primary text-primary-foreground">
         <SharedAiIcon custom-class="size-4" />
       </AvatarFallback>
     </Avatar>
