@@ -92,10 +92,16 @@ const useAssistantState = () => {
     )
   }
 
-  async function submit(text: string) {
-    if (!text.trim() || isStreaming.value) return
+  async function submit(text: string, attachments: Array<{ name: string, type: string, size: number }> = []) {
+    if ((!text.trim() && attachments.length === 0) || isStreaming.value) return
 
-    const trimmed = text.trim().slice(0, 2000)
+    // Append attachment names to the user message so the matcher / resolver
+    // see them. Real AI would upload the files separately; v1 is text-only.
+    const attachmentSuffix = attachments.length
+      ? (text.trim() ? '\n\n[Attached: ' + attachments.map(a => a.name).join(', ') + ']'
+                     : '[Attached: ' + attachments.map(a => a.name).join(', ') + ']')
+      : ''
+    const trimmed = (text.trim() + attachmentSuffix).slice(0, 2000)
     appendUserMessage(trimmed)
     input.value = ''
     isStreaming.value = true
@@ -116,6 +122,7 @@ const useAssistantState = () => {
           messages: messages.value
             .filter(m => m.role !== 'system')
             .map(m => ({ role: m.role, content: m.content })),
+          attachments,
         }),
       })
 
