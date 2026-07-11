@@ -38,6 +38,34 @@ watch(
   },
 )
 
+// Reasoning panel open state — manage manually because the ai-elements
+// Reasoning primitive has a hardcoded 1000ms auto-close that ignores
+// the duration prop. We want it open for a few seconds after streaming
+// completes so the user can actually read it.
+const reasoningOpen = ref(true)
+let closeTimer: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => props.message.content,
+  (newContent) => {
+    // Open while content is empty (still streaming/thinking)
+    if (!newContent) {
+      reasoningOpen.value = true
+      if (closeTimer) clearTimeout(closeTimer)
+      return
+    }
+    // Content arrived → keep open for 10 seconds, then auto-close
+    reasoningOpen.value = true
+    if (closeTimer) clearTimeout(closeTimer)
+    closeTimer = setTimeout(() => {
+      reasoningOpen.value = false
+    }, 10_000)
+  },
+  { immediate: true },
+)
+onUnmounted(() => {
+  if (closeTimer) clearTimeout(closeTimer)
+})
+
 async function copyToClipboard() {
   try { await navigator.clipboard.writeText(props.message.content) }
   catch { /* ignore */ }
@@ -139,8 +167,10 @@ const followUps = computed<string[]>(() => {
       <Reasoning
         v-if="reasoningText"
         :is-streaming="!message.content && isLast"
-        :duration="!message.content ? undefined : 5000"
-        :open="!message.content ? true : undefined"
+        :duration="250"
+        :default-open="false"
+        :open="reasoningOpen"
+        @update:open="(v: boolean) => reasoningOpen = v"
         class="ml-2 mt-1 w-fit"
         data-testid="elev-ai-reasoning"
       >
