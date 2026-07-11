@@ -14,13 +14,11 @@ const emit = defineEmits<{
   approve: [messageId: string]
   reject: [messageId: string]
   retry: [messageId: string]
-  followUp: [prompt: string]
 }>()
 
 function onApprove() { emit('approve', props.message.id) }
 function onReject() { emit('reject', props.message.id) }
 function onRetry() { emit('retry', props.message.id) }
-function onFollowUp(prompt: string) { emit('followUp', prompt) }
 
 // Flash the assistant bubble background briefly each time new text
 // arrives from the stream.
@@ -171,21 +169,6 @@ const followUps = computed<string[]>(() => {
         @approve="onApprove"
         @reject="onReject"
       />
-
-      <div
-        v-if="message.content && isLast && followUps.length > 0"
-        class="mt-2 -mb-1 flex flex-wrap gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500"
-        data-testid="elev-ai-follow-ups"
-      >
-        <Suggestion
-          v-for="(prompt, i) in followUps"
-          :key="prompt"
-          :style="{ animationDelay: `${i * 80}ms` }"
-          class="animate-in fade-in slide-in-from-bottom-1 fill-mode-backwards duration-400"
-          :suggestion="prompt"
-          @click="onFollowUp(prompt)"
-        />
-      </div>
     </MessageContent>
   </Message>
 </template>

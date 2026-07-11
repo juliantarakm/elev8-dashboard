@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { PaperclipIcon } from '@lucide/vue'
+import { ref, computed } from 'vue'
 import { useAssistant } from '~/composables/useAssistant'
+import type { ToolCallDisplay } from '~/composables/useAssistant'
 
-const { submit, stop, isStreaming } = useAssistant()
+const { submit, stop, isStreaming, messages } = useAssistant()
 
 // Map our isStreaming to the ChatStatus used by ai-elements primitives.
 const chatStatus = computed<'ready' | 'streaming' | 'submitted' | 'error'>(
@@ -11,9 +11,7 @@ const chatStatus = computed<'ready' | 'streaming' | 'submitted' | 'error'>(
 )
 
 // Local mirror of the files in the PromptInput context. We watch it so we
-// can show preview chips above the textarea (the ai-elements primitives
-// handle the file picker + drag/drop, but they don't render previews
-// inline — we render our own ElevAIAttachments chip strip).
+// can show preview chips above the textarea.
 interface PreviewFile {
   id: string
   name: string
@@ -26,7 +24,6 @@ const previews = ref<PreviewFile[]>([])
 async function onPromptSubmit(payload: { text: string, files: Array<{ type: string, filename?: string, mediaType?: string }> }) {
   if (!payload.text.trim() && previews.value.length === 0) return
 
-  // Map previews (which have blob URLs) to the shape submit() expects.
   const attachments = previews.value.map((p) => ({
     name: p.name,
     type: p.type,
@@ -34,8 +31,6 @@ async function onPromptSubmit(payload: { text: string, files: Array<{ type: stri
     url: p.url,
   }))
 
-  // Revoke blob URLs as soon as submit completes (they're no longer
-  // needed since the messages array holds the same reference).
   const revokable = previews.value
   previews.value = []
   revokable.forEach((p) => { if (p.url) URL.revokeObjectURL(p.url) })
@@ -48,17 +43,6 @@ function onPromptError(payload: { code: string, message: string }) {
   console.error('PromptInput error:', payload)
 }
 
-// Watch files via window events would be more invasive — instead the
-// ai-elements PromptInputProvider exposes the files context. We watch
-// the actual selected files by listening to the input change indirectly.
-// Since we don't have direct context access from outside, we mirror
-// the files using a side-effect of the PromptInput's input element.
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-// Watch the hidden file input to build preview chips. The ai-elements
-// PromptInput manages this input internally, but exposes it via the
-// fileInputRef on the context. We use a MutationObserver-free approach:
-// intercept clicks on attachment-add buttons by listening to drag events.
 function handleFilesAdded(fileList: FileList | File[]) {
   const files = Array.from(fileList)
   for (const f of files) {
@@ -81,32 +65,106 @@ function removePreview(id: string) {
   }
 }
 
-// Listen for drag/drop on the wrapper to capture files (the ai-elements
-// PromptInput does this itself, but it doesn't expose a public event for
-// new files — so we rely on the input element's change event bubbling).
-function handleDrop(e: DragEvent) {
-  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-    // Hand off to ai-elements PromptInput's built-in handler
-    // (the drop event already bubbles to it via @drop.prevent.stop on PromptInput)
-  }
-}
-
 function handleStop() {
   stop()
+}
+
+// --- Follow-up suggestions: derived from the last assistant message's
+// tool calls. Shown as a horizontal scroll row above the textarea, but
+// only when the AI has finished responding AND there's room (panel wide
+// enough) to fit them.
+const lastMessage = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i]
+    if (m && m.role === 'assistant' && m.content) return m
+  }
+  return null
+})
+
+const followUps = computed<string[]>(() => {
+  const m = lastMessage.value
+  if (!m?.toolCalls || m.toolCalls.length === 0) return []
+  const names = m.toolCalls.map((t: ToolCallDisplay) => t.name)
+
+  if (names.includes('get_upcoming_checkins')) {
+    return [
+      "What about today's check-outs?",
+      'Any VIP guests arriving?',
+      'Which villa has the most arrivals?',
+    ]
+  }
+  if (names.includes('get_cleaning_schedule') || names.includes('get_cleaning_schedule_by_date_range')) {
+    return [
+      'Who is cleaning tomorrow?',
+      'Any deep cleans this week?',
+      'Are there any maintenance issues?',
+    ]
+  }
+  if (names.includes('get_revenue_summary') || names.includes('get_revenue_by_listing')) {
+    return [
+      'What about last month?',
+      'Which listing earns the most?',
+      'Any pending payouts?',
+    ]
+  }
+  if (names.includes('get_occupancy_rate')) {
+    return [
+      'Which villa has lowest occupancy?',
+      'Compare to last month',
+      'Show me upcoming gaps',
+    ]
+  }
+  if (names.includes('get_listings_overview')) {
+    return [
+      'Show me active listings only',
+      'Which has the best rating?',
+      'Any inactive listings?',
+    ]
+  }
+  if (names.includes('get_repeat_guests') || names.includes('get_current_bookings')) {
+    return [
+      'Tell me more about Anna Schmidt',
+      'Any special requests?',
+      "What's the average stay length?",
+    ]
+  }
+  return ['Tell me more', 'What about last week?', 'Any issues?']
+})
+
+const showFollowUps = computed(
+  () => !isStreaming.value && followUps.value.length > 0,
+)
+
+async function onFollowUp(prompt: string) {
+  await submit(prompt)
 }
 </script>
 
 <template>
-  <div class="border-t p-3">
-    <!-- Show preview chips for files that have been added.
-         Note: the ai-elements PromptInput manages the file state internally,
-         but doesn't render visible previews by default — we mirror the
-         picked files locally by listening for new File objects. -->
+  <div class="border-t p-3 space-y-2">
+    <!-- File attachment previews -->
     <ElevAIAttachments
       v-if="previews.length > 0"
       :attachments="previews"
       @remove="removePreview"
     />
+
+    <!-- Follow-up suggestions: horizontal scroll row above the textarea,
+         shown only after the last assistant message has a response -->
+    <Suggestions
+      v-if="showFollowUps"
+      class="-mx-1 animate-in fade-in slide-in-from-bottom-2 duration-500"
+      data-testid="elev-ai-follow-ups"
+    >
+      <Suggestion
+        v-for="(prompt, i) in followUps"
+        :key="prompt"
+        :style="{ animationDelay: `${i * 80}ms` }"
+        class="animate-in fade-in slide-in-from-bottom-1 fill-mode-backwards duration-400"
+        :suggestion="prompt"
+        @click="onFollowUp(prompt)"
+      />
+    </Suggestions>
 
     <PromptInput
       class="w-full"
