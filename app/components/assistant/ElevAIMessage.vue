@@ -58,7 +58,7 @@ watch(
     if (closeTimer) clearTimeout(closeTimer)
     closeTimer = setTimeout(() => {
       reasoningOpen.value = false
-    }, 10_000)
+    }, 5_000)
   },
   { immediate: true },
 )
