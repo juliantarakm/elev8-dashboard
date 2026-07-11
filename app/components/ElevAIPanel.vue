@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAssistant } from '~/composables/useAssistant'
 import ElevAIAssistant from '~/components/assistant/ElevAIAssistant.vue'
+import ElevAIFindingsSettings from '~/components/assistant/ElevAIFindingsSettings.vue'
 
 const { isOpen, closePanel } = useAssistant()
+
+const settingsOpen = ref(false)
 
 // ESC to close
 function handleKeydown(e: KeyboardEvent) {
@@ -53,20 +56,34 @@ watch(isOpen, (open) => {
             <Icon name="lucide:sparkles" class="size-4 text-primary" />
             <h2 class="text-sm font-medium">Ask AI</h2>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close AI assistant"
-            data-testid="elev-ai-close"
-            @click="closePanel"
-          >
-            <Icon name="lucide:x" class="size-4" />
-          </Button>
+          <div class="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="AI findings settings"
+              data-testid="elev-ai-settings"
+              @click="settingsOpen = true"
+            >
+              <Icon name="lucide:settings-2" class="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close AI assistant"
+              data-testid="elev-ai-close"
+              @click="closePanel"
+            >
+              <Icon name="lucide:x" class="size-4" />
+            </Button>
+          </div>
         </header>
 
         <!-- Chat content slot -->
         <ElevAIAssistant />
       </aside>
     </Transition>
+
+    <!-- Findings settings sheet -->
+    <ElevAIFindingsSettings v-model:open="settingsOpen" />
   </Teleport>
 </template>
