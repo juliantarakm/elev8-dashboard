@@ -1,9 +1,30 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ToolCallDisplay } from '~/composables/useAssistant'
 
-defineProps<{
+const props = defineProps<{
   toolCalls: ToolCallDisplay[]
 }>()
+
+// Format args as "key: value, key: value" — shown in ChainOfThoughtStep's
+// description slot beneath the tool name.
+const argsLabel = (tool: ToolCallDisplay) =>
+  Object.entries(tool.args)
+    .map(([k, v]) => `${k}: ${String(v)}`)
+    .join(', ')
+
+const stepLabel = (tool: ToolCallDisplay) => tool.displayName
+
+// Stable per-step data — computed once to avoid recomputing in the template
+const steps = computed(() =>
+  props.toolCalls.map((tool, i) => ({
+    id: tool.id,
+    label: stepLabel(tool),
+    description: argsLabel(tool),
+    status: (tool.status === 'running' ? 'active' : 'complete') as 'active' | 'complete',
+    delay: `${i * 220}ms`,
+  })),
+)
 </script>
 
 <template>
@@ -14,16 +35,14 @@ defineProps<{
   >
     <ChainOfThoughtHeader>
       <ChainOfThoughtStep
-        v-for="(tool, i) in toolCalls"
-        :key="tool.id"
+        v-for="step in steps"
+        :key="step.id"
         :class="`animate-in fade-in slide-in-from-left-2 zoom-in-95 fill-mode-backwards duration-700`"
-        :style="{ animationDelay: `${i * 220}ms` }"
-        :label="tool.displayName"
-        :description="Object.entries(tool.args).map(([k, v]) => `${k}: ${String(v)}`).join(', ')"
-        :status="tool.status === 'running' ? 'active' : 'complete'"
-      >
-        <ElevAIToolBadge :tool-call="tool" />
-      </ChainOfThoughtStep>
+        :style="{ animationDelay: step.delay }"
+        :label="step.label"
+        :description="step.description"
+        :status="step.status"
+      />
     </ChainOfThoughtHeader>
     <ChainOfThoughtContent>
       <div class="flex flex-col gap-2 pl-6 text-xs text-muted-foreground">
