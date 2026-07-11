@@ -109,13 +109,11 @@ const useAssistantState = () => {
   async function submit(text: string, attachments: Array<{ name: string, type: string, size: number }> = []) {
     if ((!text.trim() && attachments.length === 0) || isStreaming.value) return
 
-    // Append attachment names to the user message so the matcher / resolver
-    // see them. Real AI would upload the files separately; v1 is text-only.
-    const attachmentSuffix = attachments.length
-      ? (text.trim() ? '\n\n[Attached: ' + attachments.map(a => a.name).join(', ') + ']'
-                     : '[Attached: ' + attachments.map(a => a.name).join(', ') + ']')
-      : ''
-    const trimmed = (text.trim() + attachmentSuffix).slice(0, 2000)
+    // v1: attachments are rendered visually in the chat bubble via
+    // <ElevAIAttachments> — no text suffix in the message body. The
+    // attachment metadata is still sent to the server as a top-level
+    // field so the matcher/resolver can use it later.
+    const trimmed = text.trim().slice(0, 2000)
     appendUserMessage(trimmed, attachments.length > 0 ? attachments : undefined)
     input.value = ''
     isStreaming.value = true
