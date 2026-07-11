@@ -2,18 +2,17 @@
 import { useAssistant } from '~/composables/useAssistant'
 
 const SUGGESTIONS = [
-  { emoji: '📅', label: "Today's check-ins", prompt: "What are today's check-ins?" },
-  { emoji: '🧹', label: 'Cleaning today', prompt: 'What is the cleaning schedule today?' },
-  { emoji: '💰', label: 'Revenue this month', prompt: 'How is revenue this month?' },
-  { emoji: '📊', label: 'Occupancy this month', prompt: 'What is the occupancy this month?' },
-  { emoji: '🏠', label: 'Listings overview', prompt: 'Show me all listings' },
-  { emoji: '👥', label: 'Repeat guests', prompt: 'Who are the repeat guests?' },
+  { label: "📅 Today's check-ins", prompt: "What are today's check-ins?" },
+  { label: '🧹 Cleaning today', prompt: 'What is the cleaning schedule today?' },
+  { label: '💰 Revenue this month', prompt: 'How is revenue this month?' },
+  { label: '📊 Occupancy this month', prompt: 'What is the occupancy this month?' },
+  { label: '🏠 Listings overview', prompt: 'Show me all listings' },
+  { label: '👥 Repeat guests', prompt: 'Who are the repeat guests?' },
 ]
 
 const { submit } = useAssistant()
 
 function handleSelect(prompt: string) {
-  // Auto-send immediately
   submit(prompt)
 }
 </script>
@@ -30,22 +29,23 @@ function handleSelect(prompt: string) {
       </p>
     </div>
 
-    <div class="w-full max-w-sm space-y-2">
+    <div class="w-full max-w-sm space-y-3">
       <p class="text-xs font-medium text-muted-foreground">
         Try asking:
       </p>
-      <div class="grid grid-cols-2 gap-2">
-        <ElevAISuggestionChip
+      <!-- Suggestions primitive provides a horizontal scroll container —
+          users can swipe to see more chips on narrow panels.
+          Staggered fade-in animation kept from previous version. -->
+      <Suggestions class="mx-auto w-fit max-w-full">
+        <Suggestion
           v-for="(s, i) in SUGGESTIONS"
           :key="s.prompt"
           :style="{ animationDelay: `${i * 120}ms` }"
           class="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-500"
-          :emoji="s.emoji"
-          :label="s.label"
-          :prompt="s.prompt"
-          @select="handleSelect"
+          :suggestion="s.label"
+          @click="handleSelect(s.prompt)"
         />
-      </div>
+      </Suggestions>
     </div>
   </div>
 </template>
