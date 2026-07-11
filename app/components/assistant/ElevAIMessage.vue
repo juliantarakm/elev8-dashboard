@@ -90,7 +90,9 @@ async function copyToClipboard() {
       />
 
       <MessageResponse v-if="message.content" :content="message.content" />
-      <Loader v-else />
+      <Shimmer v-else class="text-sm">
+        Thinking...
+      </Shimmer>
 
       <MessageActions v-if="message.content && isLast">
         <MessageAction label="Copy" @click="copyToClipboard">
