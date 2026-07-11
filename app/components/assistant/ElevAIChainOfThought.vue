@@ -16,8 +16,8 @@ defineProps<{
       <ChainOfThoughtStep
         v-for="(tool, i) in toolCalls"
         :key="tool.id"
-        :class="`animate-in fade-in zoom-in-95 fill-mode-backwards duration-200`"
-        :style="{ animationDelay: `${i * 80}ms` }"
+        :class="`animate-in fade-in slide-in-from-left-2 zoom-in-95 fill-mode-backwards duration-700`"
+        :style="{ animationDelay: `${i * 220}ms` }"
         :label="tool.displayName"
         :description="Object.entries(tool.args).map(([k, v]) => `${k}: ${String(v)}`).join(', ')"
         :status="tool.status === 'running' ? 'active' : 'complete'"

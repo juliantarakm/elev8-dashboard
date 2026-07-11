@@ -38,8 +38,8 @@ function handleSelect(prompt: string) {
         <ElevAISuggestionChip
           v-for="(s, i) in SUGGESTIONS"
           :key="s.prompt"
-          :style="{ animationDelay: `${i * 60}ms` }"
-          class="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-300"
+          :style="{ animationDelay: `${i * 120}ms` }"
+          class="animate-in fade-in slide-in-from-bottom-2 fill-mode-backwards duration-500"
           :emoji="s.emoji"
           :label="s.label"
           :prompt="s.prompt"
