@@ -695,6 +695,52 @@ function onOpenChange(val: boolean) {
           </div>
         </div>
 
+        <!-- Step 4: Visibility -->
+        <div v-if="currentStep === 4" class="flex flex-col gap-5 p-6">
+          <!-- Match mode selector -->
+          <div class="flex flex-col gap-2 rounded-md border p-4">
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                class="flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors"
+                :class="formVisibilityMatchMode === 'all'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background hover:bg-muted/50'"
+                @click="formVisibilityMatchMode = 'all'"
+              >
+                <Icon name="lucide:circle-check" class="mr-2 inline h-4 w-4" />
+                All conditions met
+                <span class="ml-1 text-xs opacity-70">(AND)</span>
+              </button>
+              <button
+                type="button"
+                class="flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors"
+                :class="formVisibilityMatchMode === 'any'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background hover:bg-muted/50'"
+                @click="formVisibilityMatchMode = 'any'"
+              >
+                <Icon name="lucide:circle-dot" class="mr-2 inline h-4 w-4" />
+                Any condition met
+                <span class="ml-1 text-xs opacity-70">(OR)</span>
+              </button>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Choose how multiple rules combine. Unset conditions are ignored.
+            </p>
+          </div>
+
+          <!-- Condition cards container -->
+          <div class="flex flex-col gap-3">
+            <!-- Each condition card will be added in Tasks 9 and 10 -->
+          </div>
+
+          <!-- Summary banner placeholder -->
+          <div class="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+            No visibility conditions set — upsell will show everywhere.
+          </div>
+        </div>
+
         <!-- Step 5: Settings -->
         <div v-if="currentStep === 5" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-3">
