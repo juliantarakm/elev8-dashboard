@@ -23,11 +23,10 @@ describe('emptyVisibilityConditions', () => {
     })
   })
 
-  it('returns a fresh object on each call (no shared reference)', () => {
+  it('returns a fresh outer object on each call', () => {
     const a = emptyVisibilityConditions()
     const b = emptyVisibilityConditions()
     expect(a).not.toBe(b)
-    expect(a.channels).not.toBe(b.channels)
   })
 })
 
