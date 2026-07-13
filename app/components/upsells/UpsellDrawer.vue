@@ -168,6 +168,27 @@ const otherUpsellServices = computed(() => {
   const all = useUpsellServices().services.value
   return props.service ? all.filter(s => s.id !== props.service!.id) : all
 })
+
+const activeConditionSummaries = computed(() => {
+  const v = formVisibility.value
+  const entries: Array<{ key: VisibilityConditionKey, label: string }> = []
+  for (const key of Object.keys(v) as VisibilityConditionKey[]) {
+    const summary = summarizeCondition(key, v[key])
+    if (summary)
+      entries.push({ key, label: summary })
+  }
+  return entries
+})
+
+const summaryText = computed(() => {
+  const entries = activeConditionSummaries.value
+  if (entries.length === 0)
+    return 'No visibility conditions set — upsell will show everywhere.'
+  const conditionCount = entries.length
+  const matchLabel = formVisibilityMatchMode.value === 'all' ? 'All conditions met' : 'Any condition met'
+  return `${conditionCount} condition${conditionCount === 1 ? '' : 's'} active: ${entries.map(e => e.label).join(', ')}. Match mode: ${matchLabel}.`
+})
+
 const showDeleteConfirm = ref(false)
 
 // Item modal state
@@ -960,9 +981,10 @@ function onOpenChange(val: boolean) {
             </div>
           </div>
 
-          <!-- Summary banner placeholder -->
-          <div class="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-            No visibility conditions set — upsell will show everywhere.
+          <!-- Summary banner -->
+          <div class="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+            <Icon name="lucide:info" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{{ summaryText }}</span>
           </div>
         </div>
 
