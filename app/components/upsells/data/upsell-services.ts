@@ -12,6 +12,60 @@ export type UpsellCategory
     | 'Miscellaneous'
     | 'Pet'
 
+export type BookingStatusFilter
+  = | 'inquiry'
+    | 'confirmed'
+    | 'checked_in'
+    | 'checked_out'
+    | 'cancelled'
+
+export type OtaChannel
+  = | 'airbnb'
+    | 'booking_com'
+    | 'direct'
+    | 'agoda'
+    | 'vrbo'
+    | 'expedia'
+
+export type VisibilityMatchMode = 'all' | 'any'
+
+export type VisibilityConditionKey
+  = | 'hoursBeforeCheckIn'
+    | 'hoursBeforeCheckOut'
+    | 'bookingStatuses'
+    | 'guestCountMin'
+    | 'guestCountMax'
+    | 'lengthOfStayMin'
+    | 'lengthOfStayMax'
+    | 'excludeIfUpsellPurchased'
+    | 'channels'
+
+export interface VisibilityConditions {
+  hoursBeforeCheckIn: number | null
+  hoursBeforeCheckOut: number | null
+  bookingStatuses: BookingStatusFilter[] | null
+  guestCountMin: number | null
+  guestCountMax: number | null
+  lengthOfStayMin: number | null
+  lengthOfStayMax: number | null
+  excludeIfUpsellPurchased: string[] | null
+  channels: OtaChannel[] | null
+}
+
+export function emptyVisibilityConditions(): VisibilityConditions {
+  return {
+    hoursBeforeCheckIn: null,
+    hoursBeforeCheckOut: null,
+    bookingStatuses: null,
+    guestCountMin: null,
+    guestCountMax: null,
+    lengthOfStayMin: null,
+    lengthOfStayMax: null,
+    excludeIfUpsellPurchased: null,
+    channels: null,
+  }
+}
+
 export interface UpsellItem {
   id: string
   name: string
