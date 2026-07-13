@@ -13,7 +13,7 @@ import {
   emptyVisibilityConditions,
   getConditionDefault,
   getConditionEmpty,
-  summarizeCondition,
+  summarizeVisibility,
 } from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import draggable from 'vuedraggable'
@@ -169,16 +169,7 @@ const otherUpsellServices = computed(() => {
   return props.service ? all.filter(s => s.id !== props.service!.id) : all
 })
 
-const activeConditionSummaries = computed(() => {
-  const v = formVisibility.value
-  const entries: Array<{ key: VisibilityConditionKey, label: string }> = []
-  for (const key of Object.keys(v) as VisibilityConditionKey[]) {
-    const summary = summarizeCondition(key, v[key])
-    if (summary)
-      entries.push({ key, label: summary })
-  }
-  return entries
-})
+const activeConditionSummaries = computed(() => summarizeVisibility(formVisibility.value))
 
 const summaryText = computed(() => {
   const entries = activeConditionSummaries.value
@@ -756,8 +747,9 @@ function onOpenChange(val: boolean) {
             <!-- Time before Check-in -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckIn') ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Time before Check-in</h4>
+                <h4 id="visibility-hours-before-check-in" class="text-sm font-medium">Time before Check-in</h4>
                 <Switch
+                  aria-labelledby="visibility-hours-before-check-in"
                   :model-value="isConditionEnabled('hoursBeforeCheckIn')"
                   @update:model-value="toggleCondition('hoursBeforeCheckIn')"
                 />
@@ -770,19 +762,21 @@ function onOpenChange(val: boolean) {
                     type="number"
                     min="0"
                     class="flex-1"
+                    aria-describedby="visibility-hours-before-check-in-help"
                     @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckIn: Number(v) }"
                   />
                   <span class="text-sm text-muted-foreground">hours</span>
                 </div>
-                <p class="text-xs text-muted-foreground">Show only within the window from N hours before check-in up to check-in. Set 0 for "show anytime up to check-in".</p>
+                <p id="visibility-hours-before-check-in-help" class="text-xs text-muted-foreground">Show only within the window from N hours before check-in up to check-in. Set 0 for "show anytime up to check-in".</p>
               </div>
             </div>
 
             <!-- Time before Check-out -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckOut') ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Time before Check-out</h4>
+                <h4 id="visibility-hours-before-check-out" class="text-sm font-medium">Time before Check-out</h4>
                 <Switch
+                  aria-labelledby="visibility-hours-before-check-out"
                   :model-value="isConditionEnabled('hoursBeforeCheckOut')"
                   @update:model-value="toggleCondition('hoursBeforeCheckOut')"
                 />
@@ -795,19 +789,21 @@ function onOpenChange(val: boolean) {
                     type="number"
                     min="0"
                     class="flex-1"
+                    aria-describedby="visibility-hours-before-check-out-help"
                     @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckOut: Number(v) }"
                   />
                   <span class="text-sm text-muted-foreground">hours</span>
                 </div>
-                <p class="text-xs text-muted-foreground">Show only within the window from N hours before check-out up to check-out.</p>
+                <p id="visibility-hours-before-check-out-help" class="text-xs text-muted-foreground">Show only within the window from N hours before check-out up to check-out.</p>
               </div>
             </div>
 
             <!-- Guest Count -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Guest Count</h4>
+                <h4 id="visibility-guest-count" class="text-sm font-medium">Guest Count</h4>
                 <Switch
+                  aria-labelledby="visibility-guest-count"
                   :model-value="isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')"
                   @update:model-value="(v) => { toggleCondition('guestCountMin'); toggleCondition('guestCountMax') }"
                 />
@@ -821,6 +817,7 @@ function onOpenChange(val: boolean) {
                       :model-value="formVisibility.guestCountMin ?? undefined"
                       type="number"
                       min="1"
+                      aria-describedby="visibility-guest-count-help"
                       @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMin: Number(v) }"
                     />
                   </div>
@@ -830,6 +827,7 @@ function onOpenChange(val: boolean) {
                       :model-value="formVisibility.guestCountMax ?? undefined"
                       type="number"
                       min="1"
+                      aria-describedby="visibility-guest-count-help"
                       @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMax: Number(v) }"
                     />
                   </div>
@@ -837,15 +835,16 @@ function onOpenChange(val: boolean) {
                 <p v-if="formVisibility.guestCountMin !== null && formVisibility.guestCountMax !== null && formVisibility.guestCountMin > formVisibility.guestCountMax" class="text-xs text-destructive">
                   Min is greater than max.
                 </p>
-                <p class="text-xs text-muted-foreground">Show only when guest count is within this range.</p>
+                <p id="visibility-guest-count-help" class="text-xs text-muted-foreground">Show only when guest count is within this range.</p>
               </div>
             </div>
 
             <!-- Length of Stay -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Length of Stay</h4>
+                <h4 id="visibility-length-of-stay" class="text-sm font-medium">Length of Stay</h4>
                 <Switch
+                  aria-labelledby="visibility-length-of-stay"
                   :model-value="isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')"
                   @update:model-value="(v) => { toggleCondition('lengthOfStayMin'); toggleCondition('lengthOfStayMax') }"
                 />
@@ -859,6 +858,7 @@ function onOpenChange(val: boolean) {
                       :model-value="formVisibility.lengthOfStayMin ?? undefined"
                       type="number"
                       min="1"
+                      aria-describedby="visibility-length-of-stay-help"
                       @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMin: Number(v) }"
                     />
                   </div>
@@ -868,6 +868,7 @@ function onOpenChange(val: boolean) {
                       :model-value="formVisibility.lengthOfStayMax ?? undefined"
                       type="number"
                       min="1"
+                      aria-describedby="visibility-length-of-stay-help"
                       @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMax: Number(v) }"
                     />
                   </div>
@@ -875,15 +876,16 @@ function onOpenChange(val: boolean) {
                 <p v-if="formVisibility.lengthOfStayMin !== null && formVisibility.lengthOfStayMax !== null && formVisibility.lengthOfStayMin > formVisibility.lengthOfStayMax" class="text-xs text-destructive">
                   Min is greater than max.
                 </p>
-                <p class="text-xs text-muted-foreground">Show only when stay length (nights) is within this range.</p>
+                <p id="visibility-length-of-stay-help" class="text-xs text-muted-foreground">Show only when stay length (nights) is within this range.</p>
               </div>
             </div>
 
             <!-- Booking Status -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('bookingStatuses') ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Booking Status</h4>
+                <h4 id="visibility-booking-status" class="text-sm font-medium">Booking Status</h4>
                 <Switch
+                  aria-labelledby="visibility-booking-status"
                   :model-value="isConditionEnabled('bookingStatuses')"
                   @update:model-value="toggleCondition('bookingStatuses')"
                 />
@@ -905,6 +907,7 @@ function onOpenChange(val: boolean) {
                     :class="isBookingStatusSelected(opt.value as BookingStatusFilter)
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isBookingStatusSelected(opt.value as BookingStatusFilter)"
                     @click="toggleBookingStatus(opt.value as BookingStatusFilter)"
                   >
                     {{ opt.label }}
@@ -917,8 +920,9 @@ function onOpenChange(val: boolean) {
             <!-- Related Upsell -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('excludeIfUpsellPurchased') ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Related Upsell</h4>
+                <h4 id="visibility-related-upsell" class="text-sm font-medium">Related Upsell</h4>
                 <Switch
+                  aria-labelledby="visibility-related-upsell"
                   :model-value="isConditionEnabled('excludeIfUpsellPurchased')"
                   @update:model-value="toggleCondition('excludeIfUpsellPurchased')"
                 />
@@ -935,6 +939,7 @@ function onOpenChange(val: boolean) {
                     :class="isRelatedUpsellSelected(svc.id)
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isRelatedUpsellSelected(svc.id)"
                     @click="toggleRelatedUpsell(svc.id)"
                   >
                     {{ svc.name }}
@@ -947,8 +952,9 @@ function onOpenChange(val: boolean) {
             <!-- Channels -->
             <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('channels') ? 'border-primary/30 bg-primary/5' : 'border-border'">
               <div class="flex items-center justify-between">
-                <h4 class="text-sm font-medium">Channels</h4>
+                <h4 id="visibility-channels" class="text-sm font-medium">Channels</h4>
                 <Switch
+                  aria-labelledby="visibility-channels"
                   :model-value="isConditionEnabled('channels')"
                   @update:model-value="toggleCondition('channels')"
                 />
@@ -971,6 +977,7 @@ function onOpenChange(val: boolean) {
                     :class="isChannelSelected(opt.value as OtaChannel)
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isChannelSelected(opt.value as OtaChannel)"
                     @click="toggleChannel(opt.value as OtaChannel)"
                   >
                     {{ opt.label }}

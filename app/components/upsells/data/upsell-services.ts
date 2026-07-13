@@ -139,6 +139,87 @@ export function summarizeCondition(
   }
 }
 
+export function summarizeVisibility(
+  conditions: VisibilityConditions,
+): Array<{ key: VisibilityConditionKey, label: string }> {
+  const entries: Array<{ key: VisibilityConditionKey, label: string }> = []
+
+  // Time conditions
+  if (conditions.hoursBeforeCheckIn !== null) {
+    entries.push({
+      key: 'hoursBeforeCheckIn',
+      label: `Time before Check-in (within ${conditions.hoursBeforeCheckIn}h)`,
+    })
+  }
+  if (conditions.hoursBeforeCheckOut !== null) {
+    entries.push({
+      key: 'hoursBeforeCheckOut',
+      label: `Time before Check-out (within ${conditions.hoursBeforeCheckOut}h)`,
+    })
+  }
+
+  // Booking statuses
+  if (conditions.bookingStatuses !== null) {
+    const labels: Record<BookingStatusFilter, string> = {
+      inquiry: 'Inquiry',
+      confirmed: 'Confirmed',
+      checked_in: 'Checked-in',
+      checked_out: 'Checked-out',
+      cancelled: 'Cancelled',
+    }
+    entries.push({
+      key: 'bookingStatuses',
+      label: `Booking Status (${conditions.bookingStatuses.map(s => labels[s]).join(', ')})`,
+    })
+  }
+
+  // Guest count — combined
+  if (conditions.guestCountMin !== null || conditions.guestCountMax !== null) {
+    const min = conditions.guestCountMin !== null ? conditions.guestCountMin : 'any'
+    const max = conditions.guestCountMax !== null ? conditions.guestCountMax : 'any'
+    entries.push({
+      key: 'guestCountMin',
+      label: `Guest Count (${min}–${max} guests)`,
+    })
+  }
+
+  // Length of stay — combined
+  if (conditions.lengthOfStayMin !== null || conditions.lengthOfStayMax !== null) {
+    const min = conditions.lengthOfStayMin !== null ? conditions.lengthOfStayMin : 'any'
+    const max = conditions.lengthOfStayMax !== null ? conditions.lengthOfStayMax : 'any'
+    entries.push({
+      key: 'lengthOfStayMin',
+      label: `Length of Stay (${min}–${max} nights)`,
+    })
+  }
+
+  // Related upsell
+  if (conditions.excludeIfUpsellPurchased !== null) {
+    entries.push({
+      key: 'excludeIfUpsellPurchased',
+      label: `Related Upsell (${conditions.excludeIfUpsellPurchased.length} selected)`,
+    })
+  }
+
+  // Channels
+  if (conditions.channels !== null) {
+    const labels: Record<OtaChannel, string> = {
+      airbnb: 'Airbnb',
+      booking_com: 'Booking.com',
+      direct: 'Direct',
+      agoda: 'Agoda',
+      vrbo: 'VRBO',
+      expedia: 'Expedia',
+    }
+    entries.push({
+      key: 'channels',
+      label: `Channels (${conditions.channels.map(c => labels[c]).join(', ')})`,
+    })
+  }
+
+  return entries
+}
+
 export interface UpsellItem {
   id: string
   name: string
