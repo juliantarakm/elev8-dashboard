@@ -1,5 +1,20 @@
 <script setup lang="ts">
-import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
+import type {
+  BookingStatusFilter,
+  OtaChannel,
+  UpsellCategory,
+  UpsellItem,
+  UpsellService,
+  VisibilityConditionKey,
+  VisibilityConditions,
+  VisibilityMatchMode,
+} from '@/components/upsells/data/upsell-services'
+import {
+  emptyVisibilityConditions,
+  getConditionDefault,
+  getConditionEmpty,
+  summarizeCondition,
+} from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import draggable from 'vuedraggable'
 import {
@@ -84,6 +99,74 @@ const formItems = ref<UpsellItem[]>([])
 const formListings = ref<string[]>([])
 const formAvailability = ref<'always' | 'by_request'>('always')
 const formStatus = ref<'active' | 'inactive'>('active')
+const formVisibility = ref<VisibilityConditions>(emptyVisibilityConditions())
+const formVisibilityMatchMode = ref<VisibilityMatchMode>('all')
+
+function isConditionEnabled(key: VisibilityConditionKey): boolean {
+  return formVisibility.value[key] !== null
+}
+
+function toggleCondition(key: VisibilityConditionKey) {
+  if (isConditionEnabled(key)) {
+    formVisibility.value = {
+      ...formVisibility.value,
+      [key]: getConditionEmpty(key),
+    }
+  }
+  else {
+    formVisibility.value = {
+      ...formVisibility.value,
+      [key]: getConditionDefault(key),
+    }
+  }
+}
+
+function isBookingStatusSelected(status: BookingStatusFilter): boolean {
+  return formVisibility.value.bookingStatuses?.includes(status) ?? false
+}
+
+function toggleBookingStatus(status: BookingStatusFilter) {
+  const current = formVisibility.value.bookingStatuses ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    bookingStatuses: current.includes(status)
+      ? current.filter(s => s !== status)
+      : [...current, status],
+  }
+}
+
+function isChannelSelected(channel: OtaChannel): boolean {
+  return formVisibility.value.channels?.includes(channel) ?? false
+}
+
+function toggleChannel(channel: OtaChannel) {
+  const current = formVisibility.value.channels ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    channels: current.includes(channel)
+      ? current.filter(c => c !== channel)
+      : [...current, channel],
+  }
+}
+
+function isRelatedUpsellSelected(serviceId: string): boolean {
+  return formVisibility.value.excludeIfUpsellPurchased?.includes(serviceId) ?? false
+}
+
+function toggleRelatedUpsell(serviceId: string) {
+  const current = formVisibility.value.excludeIfUpsellPurchased ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    excludeIfUpsellPurchased: current.includes(serviceId)
+      ? current.filter(id => id !== serviceId)
+      : [...current, serviceId],
+  }
+}
+
+const otherUpsellServices = computed(() => {
+  const all = useUpsellServices().services.value
+  return props.service ? all.filter(s => s.id !== props.service!.id) : all
+})
 const showDeleteConfirm = ref(false)
 
 // Item modal state
