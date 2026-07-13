@@ -50,7 +50,8 @@ const steps = [
   { id: 1, label: 'Basic Info' },
   { id: 2, label: 'Items' },
   { id: 3, label: 'Listings' },
-  { id: 4, label: 'Settings' },
+  { id: 4, label: 'Visibility' },
+  { id: 5, label: 'Settings' },
 ]
 
 function stepCircleClass(stepId: number) {
@@ -183,7 +184,7 @@ watch(() => props.open, (open) => {
     showDeleteConfirm.value = false
     if (props.service) {
       currentStep.value = 1
-      visitedSteps.value = new Set([1, 2, 3, 4])
+      visitedSteps.value = new Set([1, 2, 3, 4, 5])
       nameError.value = false
       formName.value = props.service.name
       formDescription.value = props.service.description
@@ -694,8 +695,8 @@ function onOpenChange(val: boolean) {
           </div>
         </div>
 
-        <!-- Step 4: Settings -->
-        <div v-if="currentStep === 4" class="flex flex-col gap-5 p-6">
+        <!-- Step 5: Settings -->
+        <div v-if="currentStep === 5" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <Label>Tax and Service</Label>
@@ -815,8 +816,8 @@ function onOpenChange(val: boolean) {
           >
             Cancel
           </Button>
-          <Button class="flex-1" @click="currentStep < 4 ? nextStep() : handleSave()">
-            <template v-if="currentStep < 4">
+          <Button class="flex-1" @click="currentStep < 5 ? nextStep() : handleSave()">
+            <template v-if="currentStep < 5">
               Next
               <Icon name="lucide:chevron-right" class="ml-1 h-4 w-4" />
             </template>
