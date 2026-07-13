@@ -732,7 +732,131 @@ function onOpenChange(val: boolean) {
 
           <!-- Condition cards container -->
           <div class="flex flex-col gap-3">
-            <!-- Each condition card will be added in Tasks 9 and 10 -->
+            <!-- Time before Check-in -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckIn') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Time before Check-in</h4>
+                <Switch
+                  :model-value="isConditionEnabled('hoursBeforeCheckIn')"
+                  @update:model-value="toggleCondition('hoursBeforeCheckIn')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('hoursBeforeCheckIn')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <Input
+                    :model-value="formVisibility.hoursBeforeCheckIn ?? undefined"
+                    type="number"
+                    min="0"
+                    class="flex-1"
+                    @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckIn: Number(v) }"
+                  />
+                  <span class="text-sm text-muted-foreground">hours</span>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only within the window from N hours before check-in up to check-in. Set 0 for "show anytime up to check-in".</p>
+              </div>
+            </div>
+
+            <!-- Time before Check-out -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckOut') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Time before Check-out</h4>
+                <Switch
+                  :model-value="isConditionEnabled('hoursBeforeCheckOut')"
+                  @update:model-value="toggleCondition('hoursBeforeCheckOut')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('hoursBeforeCheckOut')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <Input
+                    :model-value="formVisibility.hoursBeforeCheckOut ?? undefined"
+                    type="number"
+                    min="0"
+                    class="flex-1"
+                    @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckOut: Number(v) }"
+                  />
+                  <span class="text-sm text-muted-foreground">hours</span>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only within the window from N hours before check-out up to check-out.</p>
+              </div>
+            </div>
+
+            <!-- Guest Count -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Guest Count</h4>
+                <Switch
+                  :model-value="isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')"
+                  @update:model-value="(v) => { toggleCondition('guestCountMin'); toggleCondition('guestCountMax') }"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('guestCountMin') && !isConditionEnabled('guestCountMax')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Min guests</Label>
+                    <Input
+                      :model-value="formVisibility.guestCountMin ?? undefined"
+                      type="number"
+                      min="1"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMin: Number(v) }"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Max guests</Label>
+                    <Input
+                      :model-value="formVisibility.guestCountMax ?? undefined"
+                      type="number"
+                      min="1"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMax: Number(v) }"
+                    />
+                  </div>
+                </div>
+                <p v-if="formVisibility.guestCountMin !== null && formVisibility.guestCountMax !== null && formVisibility.guestCountMin > formVisibility.guestCountMax" class="text-xs text-destructive">
+                  Min is greater than max.
+                </p>
+                <p class="text-xs text-muted-foreground">Show only when guest count is within this range.</p>
+              </div>
+            </div>
+
+            <!-- Length of Stay -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Length of Stay</h4>
+                <Switch
+                  :model-value="isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')"
+                  @update:model-value="(v) => { toggleCondition('lengthOfStayMin'); toggleCondition('lengthOfStayMax') }"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('lengthOfStayMin') && !isConditionEnabled('lengthOfStayMax')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Min nights</Label>
+                    <Input
+                      :model-value="formVisibility.lengthOfStayMin ?? undefined"
+                      type="number"
+                      min="1"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMin: Number(v) }"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Max nights</Label>
+                    <Input
+                      :model-value="formVisibility.lengthOfStayMax ?? undefined"
+                      type="number"
+                      min="1"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMax: Number(v) }"
+                    />
+                  </div>
+                </div>
+                <p v-if="formVisibility.lengthOfStayMin !== null && formVisibility.lengthOfStayMax !== null && formVisibility.lengthOfStayMin > formVisibility.lengthOfStayMax" class="text-xs text-destructive">
+                  Min is greater than max.
+                </p>
+                <p class="text-xs text-muted-foreground">Show only when stay length (nights) is within this range.</p>
+              </div>
+            </div>
           </div>
 
           <!-- Summary banner placeholder -->
