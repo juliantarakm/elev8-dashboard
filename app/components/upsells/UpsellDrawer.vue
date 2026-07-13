@@ -200,6 +200,8 @@ watch(() => props.open, (open) => {
       formListings.value = [...props.service.assignedListings]
       formAvailability.value = props.service.availability
       formStatus.value = props.service.status
+      formVisibility.value = { ...props.service.visibility }
+      formVisibilityMatchMode.value = props.service.visibilityMatchMode
     }
     else {
       formName.value = ''
@@ -219,6 +221,8 @@ watch(() => props.open, (open) => {
       formListings.value = []
       formAvailability.value = 'always'
       formStatus.value = 'active'
+      formVisibility.value = emptyVisibilityConditions()
+      formVisibilityMatchMode.value = 'all'
       currentStep.value = 1
       visitedSteps.value = new Set([1])
       nameError.value = false
@@ -374,6 +378,8 @@ function handleSave() {
     assignedListings: formListings.value,
     availability: formAvailability.value,
     status: formStatus.value,
+    visibility: { ...formVisibility.value },
+    visibilityMatchMode: formVisibilityMatchMode.value,
   }
 
   if (isEditing.value && props.service) {
