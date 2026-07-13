@@ -857,6 +857,107 @@ function onOpenChange(val: boolean) {
                 <p class="text-xs text-muted-foreground">Show only when stay length (nights) is within this range.</p>
               </div>
             </div>
+
+            <!-- Booking Status -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('bookingStatuses') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Booking Status</h4>
+                <Switch
+                  :model-value="isConditionEnabled('bookingStatuses')"
+                  @update:model-value="toggleCondition('bookingStatuses')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('bookingStatuses')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="opt in [
+                      { value: 'inquiry', label: 'Inquiry' },
+                      { value: 'confirmed', label: 'Confirmed' },
+                      { value: 'checked_in', label: 'Checked-in' },
+                      { value: 'checked_out', label: 'Checked-out' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ]"
+                    :key="opt.value"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isBookingStatusSelected(opt.value as BookingStatusFilter)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    @click="toggleBookingStatus(opt.value as BookingStatusFilter)"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only when the booking is in one of these statuses.</p>
+              </div>
+            </div>
+
+            <!-- Related Upsell -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('excludeIfUpsellPurchased') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Related Upsell</h4>
+                <Switch
+                  :model-value="isConditionEnabled('excludeIfUpsellPurchased')"
+                  @update:model-value="toggleCondition('excludeIfUpsellPurchased')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('excludeIfUpsellPurchased')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <p v-if="otherUpsellServices.length === 0" class="text-xs text-muted-foreground">No other upsells to relate to.</p>
+                <div v-else class="flex flex-wrap gap-2">
+                  <button
+                    v-for="svc in otherUpsellServices"
+                    :key="svc.id"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isRelatedUpsellSelected(svc.id)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    @click="toggleRelatedUpsell(svc.id)"
+                  >
+                    {{ svc.name }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Hide this upsell if any of the selected services were already purchased.</p>
+              </div>
+            </div>
+
+            <!-- Channels -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('channels') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium">Channels</h4>
+                <Switch
+                  :model-value="isConditionEnabled('channels')"
+                  @update:model-value="toggleCondition('channels')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('channels')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="opt in [
+                      { value: 'airbnb', label: 'Airbnb' },
+                      { value: 'booking_com', label: 'Booking.com' },
+                      { value: 'direct', label: 'Direct' },
+                      { value: 'agoda', label: 'Agoda' },
+                      { value: 'vrbo', label: 'VRBO' },
+                      { value: 'expedia', label: 'Expedia' },
+                    ]"
+                    :key="opt.value"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isChannelSelected(opt.value as OtaChannel)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    @click="toggleChannel(opt.value as OtaChannel)"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only on these booking channels.</p>
+              </div>
+            </div>
           </div>
 
           <!-- Summary banner placeholder -->
