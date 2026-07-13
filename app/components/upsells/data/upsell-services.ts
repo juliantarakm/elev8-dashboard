@@ -66,6 +66,79 @@ export function emptyVisibilityConditions(): VisibilityConditions {
   }
 }
 
+export function getConditionDefault(key: VisibilityConditionKey): VisibilityConditions[VisibilityConditionKey] {
+  switch (key) {
+    case 'hoursBeforeCheckIn':
+    case 'hoursBeforeCheckOut':
+      return 24
+    case 'bookingStatuses':
+      return ['confirmed', 'checked_in']
+    case 'guestCountMin':
+    case 'lengthOfStayMin':
+      return 1
+    case 'guestCountMax':
+    case 'lengthOfStayMax':
+      return 10
+    case 'excludeIfUpsellPurchased':
+      return []
+    case 'channels':
+      return ['airbnb']
+  }
+}
+
+export function getConditionEmpty(key: VisibilityConditionKey): VisibilityConditions[VisibilityConditionKey] {
+  return null
+}
+
+export function summarizeCondition(
+  key: VisibilityConditionKey,
+  value: VisibilityConditions[VisibilityConditionKey],
+): string {
+  if (value === null)
+    return ''
+  switch (key) {
+    case 'hoursBeforeCheckIn':
+      return `Time before Check-in (within ${value as number}h)`
+    case 'hoursBeforeCheckOut':
+      return `Time before Check-out (within ${value as number}h)`
+    case 'bookingStatuses': {
+      const arr = value as BookingStatusFilter[]
+      const labels: Record<BookingStatusFilter, string> = {
+        inquiry: 'Inquiry',
+        confirmed: 'Confirmed',
+        checked_in: 'Checked-in',
+        checked_out: 'Checked-out',
+        cancelled: 'Cancelled',
+      }
+      return `Booking Status (${arr.map(s => labels[s]).join(', ')})`
+    }
+    case 'guestCountMin':
+      return `Guest Count min (${value as number})`
+    case 'guestCountMax':
+      return `Guest Count max (${value as number})`
+    case 'lengthOfStayMin':
+      return `Length of Stay min (${value as number} nights)`
+    case 'lengthOfStayMax':
+      return `Length of Stay max (${value as number} nights)`
+    case 'excludeIfUpsellPurchased': {
+      const ids = value as string[]
+      return `Related Upsell (${ids.length} selected)`
+    }
+    case 'channels': {
+      const arr = value as OtaChannel[]
+      const labels: Record<OtaChannel, string> = {
+        airbnb: 'Airbnb',
+        booking_com: 'Booking.com',
+        direct: 'Direct',
+        agoda: 'Agoda',
+        vrbo: 'VRBO',
+        expedia: 'Expedia',
+      }
+      return `Channels (${arr.map(c => labels[c]).join(', ')})`
+    }
+  }
+}
+
 export interface UpsellItem {
   id: string
   name: string
@@ -91,6 +164,8 @@ export interface UpsellService {
   assignedListings: string[]
   availability: 'always' | 'by_request'
   status: 'active' | 'inactive'
+  visibility: VisibilityConditions
+  visibilityMatchMode: VisibilityMatchMode
   createdAt: string
   updatedAt: string
 }
