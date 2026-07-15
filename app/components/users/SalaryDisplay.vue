@@ -11,11 +11,10 @@ interface Props {
 const props = defineProps<Props>()
 
 const formattedAmount = computed(() => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  const num = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 0,
   }).format(props.amount)
+  return `IDR ${num}`
 })
 
 const hasData = computed(() =>
