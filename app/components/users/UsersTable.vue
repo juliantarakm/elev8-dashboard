@@ -35,21 +35,25 @@ const statusFilter = ref<string>('all')
 
 const filtered = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return users.value.filter((u) => {
-    if (q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false
-    if (roleFilter.value !== 'all' && u.roleId !== roleFilter.value) return false
-    if (listingFilter.value !== 'all' && !u.listingIds.includes(listingFilter.value)) return false
-    if (statusFilter.value !== 'all' && u.status !== statusFilter.value) return false
-    return true
-  })
+  const options = allListingOptions.value
+  const optionById = new Map(options.map(o => [o.id, o]))
+  return users.value
+    .filter((u) => {
+      if (q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false
+      if (roleFilter.value !== 'all' && u.roleId !== roleFilter.value) return false
+      if (listingFilter.value !== 'all' && !u.listingIds.includes(listingFilter.value)) return false
+      if (statusFilter.value !== 'all' && u.status !== statusFilter.value) return false
+      return true
+    })
+    .map((u) => {
+      const listingNames: { name: string, id: string }[] = []
+      for (const id of u.listingIds) {
+        const o = optionById.get(id)
+        if (o) listingNames.push({ name: o.name, id: o.id })
+      }
+      return { user: u, listingNames }
+    })
 })
-
-function getListingNamesFor(user: User): { name: string, id: string }[] {
-  return user.listingIds
-    .map(id => allListingOptions.value.find(p => p.id === id))
-    .filter((p): p is NonNullable<typeof p> => !!p)
-    .map(p => ({ name: p.name, id: p.id }))
-}
 
 function handleDelete(user: User) {
   if (confirm(`Delete user "${user.name}"? This cannot be undone.`)) {
@@ -96,7 +100,7 @@ function handleDelete(user: User) {
       </Select>
 
       <Select v-model="statusFilter">
-        <SelectTrigger class="w-32">
+        <SelectTrigger class="w-40">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -137,7 +141,7 @@ function handleDelete(user: User) {
         </thead>
         <tbody>
           <tr
-            v-for="u in filtered"
+            v-for="{ user: u, listingNames } in filtered"
             :key="u.id"
             class="border-t hover:bg-muted/30 transition-colors"
           >
@@ -172,15 +176,15 @@ function handleDelete(user: User) {
               </div>
               <div v-else class="flex flex-wrap gap-1">
                 <Badge
-                  v-for="(p, i) in getListingNamesFor(u).slice(0, 2)"
+                  v-for="(p, i) in listingNames.slice(0, 2)"
                   :key="p.id"
                   variant="outline"
                   class="text-xs"
                 >
                   {{ p.name }}
                 </Badge>
-                <Badge v-if="getListingNamesFor(u).length > 2" variant="outline" class="text-xs">
-                  +{{ getListingNamesFor(u).length - 2 }}
+                <Badge v-if="listingNames.length > 2" variant="outline" class="text-xs">
+                  +{{ listingNames.length - 2 }}
                 </Badge>
               </div>
             </td>

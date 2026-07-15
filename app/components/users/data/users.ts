@@ -37,7 +37,7 @@ export interface User {
   updatedAt: string
 }
 
-// Computes initials from a name (e.g. "Reto Wyss Test" → "RWT")
+// Computes initials from a name (e.g. "Reto Wyss" → "RW")
 export function computeInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return '?'
@@ -52,7 +52,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-1',
     name: 'Komang Juliantara',
-    phone: '6281234567801',
+    phone: '+6281234567801',
     preferredLanguage: 'id',
     email: 'komang@elev8.io',
     employeeNumber: 'EMP-001',
@@ -69,7 +69,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-2',
     name: 'Made Surya',
-    phone: '6281234567802',
+    phone: '+6281234567802',
     preferredLanguage: 'id',
     email: 'made.surya@elev8.io',
     employeeNumber: 'EMP-002',
@@ -86,7 +86,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-3',
     name: 'Wayan Adi',
-    phone: '6281234567803',
+    phone: '+6281234567803',
     preferredLanguage: 'id',
     email: 'wayan.adi@elev8.io',
     employeeNumber: 'EMP-003',
@@ -103,7 +103,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-4',
     name: 'Reto Wyss Test',
-    phone: '41768165541',
+    phone: '+41768165541',
     preferredLanguage: 'de',
     email: 'reto@iwyss.ch',
     employeeNumber: 'EMP-004',
@@ -120,7 +120,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-5',
     name: 'Made Wirawan',
-    phone: '6281234567805',
+    phone: '+6281234567805',
     preferredLanguage: 'id',
     email: 'made.wirawan@elev8.io',
     employeeNumber: 'EMP-005',
@@ -137,7 +137,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-6',
     name: 'Ni Putu Sari',
-    phone: '6281234567806',
+    phone: '+6281234567806',
     preferredLanguage: 'id',
     email: 'putu.sari@elev8.io',
     employeeNumber: 'EMP-006',
@@ -154,7 +154,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-7',
     name: 'Ketut Antara',
-    phone: '6281234567807',
+    phone: '+6281234567807',
     preferredLanguage: 'id',
     email: 'ketut.antara@elev8.io',
     employeeNumber: 'EMP-007',
@@ -171,7 +171,7 @@ export const seedUsers: User[] = [
   {
     id: 'user-8',
     name: 'Gede Pratama',
-    phone: '6281234567808',
+    phone: '+6281234567808',
     preferredLanguage: 'id',
     email: 'gede.pratama@elev8.io',
     employeeNumber: 'EMP-008',
