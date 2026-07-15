@@ -52,8 +52,17 @@ watchEffect(() => {
   }
 })
 
-function onPhoneInput(e: Event) {
-  const raw = (e.target as HTMLInputElement).value.replace(/\D/g, '')
+function onDialCodeChange(newCode: string) {
+  const oldCode = selectedDialCode.value
+  const stripped = props.modelValue.phone.startsWith(oldCode)
+    ? props.modelValue.phone.slice(oldCode.length)
+    : props.modelValue.phone
+  selectedDialCode.value = newCode
+  update('phone', newCode + stripped)
+}
+
+function onPhoneInput(value: string | number) {
+  const raw = String(value).replace(/\D/g, '')
   update('phone', selectedDialCode.value + raw)
 }
 </script>
@@ -68,7 +77,7 @@ function onPhoneInput(e: Event) {
         id="user-name"
         :model-value="modelValue.name"
         placeholder="e.g. Reto Wyss Test"
-        @update:model-value="(v) => update('name', v)"
+        @update:model-value="(v) => update('name', String(v))"
       />
       <p v-if="errors.name" class="text-xs text-destructive">
         {{ errors.name }}
@@ -78,7 +87,7 @@ function onPhoneInput(e: Event) {
     <div class="space-y-1.5">
       <Label for="user-phone">Phone / WhatsApp Number</Label>
       <div class="flex gap-2">
-        <Select :model-value="selectedDialCode" @update:model-value="(v) => selectedDialCode = v as string">
+        <Select :model-value="selectedDialCode" @update:model-value="(v) => onDialCodeChange(v as string)">
           <SelectTrigger class="w-28">
             <SelectValue />
           </SelectTrigger>
@@ -95,7 +104,7 @@ function onPhoneInput(e: Event) {
           inputmode="numeric"
           placeholder="41768165541"
           class="flex-1"
-          @update:model-value="onPhoneInput($event as unknown as Event)"
+          @update:model-value="(v) => onPhoneInput(v)"
         />
       </div>
     </div>
@@ -124,7 +133,7 @@ function onPhoneInput(e: Event) {
         type="email"
         :model-value="modelValue.email"
         placeholder="user@example.com"
-        @update:model-value="(v) => update('email', v)"
+        @update:model-value="(v) => update('email', String(v))"
       />
       <p v-if="errors.email" class="text-xs text-destructive">
         {{ errors.email }}
@@ -137,7 +146,7 @@ function onPhoneInput(e: Event) {
         id="user-emp-num"
         :model-value="modelValue.employeeNumber"
         placeholder="Enter employee number"
-        @update:model-value="(v) => update('employeeNumber', v)"
+        @update:model-value="(v) => update('employeeNumber', String(v))"
       />
     </div>
   </div>
