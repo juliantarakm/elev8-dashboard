@@ -28,6 +28,10 @@ export const taskSchema = z.object({
   linkedInventoryEntryId: z.string().optional(),
   conditionBefore: z.string().optional(),
   detectedByHostBuddy: z.boolean().optional(),
+  /** Where the task came from. Defaults to 'manual' for ad-hoc entries. */
+  source: z.enum(['manual', 'from_finding']).optional(),
+  /** When source === 'from_finding', the id of the originating finding. */
+  sourceRef: z.string().optional(),
 })
 
 export type Task = z.infer<typeof taskSchema>

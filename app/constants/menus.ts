@@ -61,6 +61,12 @@ export const navMenu: NavMenu[] = [
         new: true,
       },
       {
+        title: 'Users',
+        icon: 'i-lucide-users-round',
+        link: '/users',
+        new: true,
+      },
+      {
         title: 'Review Hub',
         icon: 'i-lucide-message-square-text',
         link: '/reviews',

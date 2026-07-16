@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   srcDir: 'app/',
   pages: true,
 
@@ -14,6 +14,15 @@ export default defineNuxtConfig({
     {
       path: '~/components',
       extensions: ['.vue'],
+    },
+    // Disable path prefix for AI Assistant components so they auto-import
+    // as <ElevAIAssistant>, <ElevAIMessage>, etc. instead of
+    // <AssistantElevAIAssistant>, etc. This matches how our component
+    // templates reference them.
+    {
+      path: '~/components/assistant',
+      extensions: ['.vue'],
+      pathPrefix: false,
     },
   ],
 

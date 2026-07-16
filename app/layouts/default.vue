@@ -14,6 +14,7 @@
       </div>
     </SidebarInset>
   </SidebarProvider>
+  <ElevAIPanel />
 </template>
 
 <style scoped>

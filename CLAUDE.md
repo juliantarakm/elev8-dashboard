@@ -17,6 +17,7 @@
 - **Finance** — Revenue (Reservations + Upsell), Costs, Integrations (Jurnal/Bexio)
 - **Listings** — Property management with 6-tab detail page (Overview, Pricing, Calendar, Reviews, Maintenance, Settings) + compact hero with AI schedule Sheet (HostBuddy concept)
 - **Upsells** — Full request system: Catalog CRUD, Order tracking with lifecycle (pending→confirmed→completed/cancelled), Cancellation flow with refund policies, Staff/Guest notifications, Inbox integration (UpsellOrderCreator, UpsellOfferCard in chat, linked orders in ReservationPanel)
+- **AI Assistant** — Global Ask AI slide-over panel accessible from the top-right header on any page. Streams answers about reservations, cleaning, listings, occupancy, and revenue. **All ai-elements primitives** in use: `Message`/`Conversation`/`PromptInput`/`MessageResponse`/`MessageActions`/`Loader`/`Reasoning`/`Context`/`Confirmation`/`Suggestions`/`Attachments`/`Shimmer`/`ChainOfThought`. Mock-only v1 (pattern matcher + mock data + mock reasoning text), real-AI-ready via Vercel AI SDK streaming protocol. Follow-up suggestion chips appear above the textarea after each response.
 - **Airbnb Reviews** — AI-powered guest review automation: tenant settings (language, tone, auto-post, delay), review queue with preview/edit/regenerate/post workflow, notification integration
 - **Journeys** — AI-powered multi-step guest communication automation (Smart Flow section)
 - **Kanban** — Task board
@@ -968,6 +969,10 @@ Standalone global library of promo codes, referenced by ID from booking widgets 
 - `Badge` component with `variant="default"` showing count
 - Applied on: sidebar Inbox link, per-conversation in list
 
+### AI Assistant Panel Color Tokens
+
+The AI Assistant slide-over panel uses **primary color** (same as primary buttons), not ElevAI gold. Gold remains reserved for inline ElevAI brand elements (HostBuddy suggestion chip, etc.). See `docs/superpowers/specs/2026-07-10-elev8-ai-assistant-design.md`.
+
 ### AI-Written Messages
 - `aiWritten: true` on host messages → shows:
   - "ElevAI" as sender name
@@ -1058,6 +1063,7 @@ Most commonly used:
 - `app/components/ThemeCustomize.vue`
 
 ### 3. Module-Specific Components
+- **AI Assistant**: `ElevAIButton` (header trigger), `ElevAIPanel` (slide-over shell), `assistant/ElevAIAssistant` (chat root), `assistant/ElevAIConversation`, `assistant/ElevAIMessage`, `assistant/ElevAIResponse`, `assistant/ElevAIToolBadge`, `assistant/ElevAILoader`, `assistant/ElevAIEmptyState`, `assistant/ElevAISuggestionChip`
 - **Inbox**: `inbox/Layout`, `inbox/List`, `inbox/Thread`, `inbox/ReplyBox`, `inbox/Nav`, `inbox/ActionCard`, etc.
 - **Layout**: `layout/AppSidebar`, `layout/Header`, `layout/HeaderUserMenu`, `layout/Auth`
 - **Auth**: `auth/SignIn`, `auth/SignUp`, `auth/OTPForm`

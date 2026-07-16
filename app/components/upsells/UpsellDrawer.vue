@@ -1,5 +1,20 @@
 <script setup lang="ts">
-import type { UpsellCategory, UpsellItem, UpsellService } from '@/components/upsells/data/upsell-services'
+import type {
+  BookingStatusFilter,
+  OtaChannel,
+  UpsellCategory,
+  UpsellItem,
+  UpsellService,
+  VisibilityConditionKey,
+  VisibilityConditions,
+  VisibilityMatchMode,
+} from '@/components/upsells/data/upsell-services'
+import {
+  emptyVisibilityConditions,
+  getConditionDefault,
+  getConditionEmpty,
+  summarizeVisibility,
+} from '@/components/upsells/data/upsell-services'
 import { toast } from 'vue-sonner'
 import draggable from 'vuedraggable'
 import {
@@ -35,7 +50,8 @@ const steps = [
   { id: 1, label: 'Basic Info' },
   { id: 2, label: 'Items' },
   { id: 3, label: 'Listings' },
-  { id: 4, label: 'Settings' },
+  { id: 4, label: 'Visibility' },
+  { id: 5, label: 'Settings' },
 ]
 
 function stepCircleClass(stepId: number) {
@@ -84,6 +100,86 @@ const formItems = ref<UpsellItem[]>([])
 const formListings = ref<string[]>([])
 const formAvailability = ref<'always' | 'by_request'>('always')
 const formStatus = ref<'active' | 'inactive'>('active')
+const formVisibility = ref<VisibilityConditions>(emptyVisibilityConditions())
+const formVisibilityMatchMode = ref<VisibilityMatchMode>('all')
+
+function isConditionEnabled(key: VisibilityConditionKey): boolean {
+  return formVisibility.value[key] !== null
+}
+
+function toggleCondition(key: VisibilityConditionKey) {
+  if (isConditionEnabled(key)) {
+    formVisibility.value = {
+      ...formVisibility.value,
+      [key]: getConditionEmpty(key),
+    }
+  }
+  else {
+    formVisibility.value = {
+      ...formVisibility.value,
+      [key]: getConditionDefault(key),
+    }
+  }
+}
+
+function isBookingStatusSelected(status: BookingStatusFilter): boolean {
+  return formVisibility.value.bookingStatuses?.includes(status) ?? false
+}
+
+function toggleBookingStatus(status: BookingStatusFilter) {
+  const current = formVisibility.value.bookingStatuses ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    bookingStatuses: current.includes(status)
+      ? current.filter(s => s !== status)
+      : [...current, status],
+  }
+}
+
+function isChannelSelected(channel: OtaChannel): boolean {
+  return formVisibility.value.channels?.includes(channel) ?? false
+}
+
+function toggleChannel(channel: OtaChannel) {
+  const current = formVisibility.value.channels ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    channels: current.includes(channel)
+      ? current.filter(c => c !== channel)
+      : [...current, channel],
+  }
+}
+
+function isRelatedUpsellSelected(serviceId: string): boolean {
+  return formVisibility.value.excludeIfUpsellPurchased?.includes(serviceId) ?? false
+}
+
+function toggleRelatedUpsell(serviceId: string) {
+  const current = formVisibility.value.excludeIfUpsellPurchased ?? []
+  formVisibility.value = {
+    ...formVisibility.value,
+    excludeIfUpsellPurchased: current.includes(serviceId)
+      ? current.filter(id => id !== serviceId)
+      : [...current, serviceId],
+  }
+}
+
+const otherUpsellServices = computed(() => {
+  const all = useUpsellServices().services.value
+  return props.service ? all.filter(s => s.id !== props.service!.id) : all
+})
+
+const activeConditionSummaries = computed(() => summarizeVisibility(formVisibility.value))
+
+const summaryText = computed(() => {
+  const entries = activeConditionSummaries.value
+  if (entries.length === 0)
+    return 'No visibility conditions set — upsell will show everywhere.'
+  const conditionCount = entries.length
+  const matchLabel = formVisibilityMatchMode.value === 'all' ? 'All conditions met' : 'Any condition met'
+  return `${conditionCount} condition${conditionCount === 1 ? '' : 's'} active: ${entries.map(e => e.label).join(', ')}. Match mode: ${matchLabel}.`
+})
+
 const showDeleteConfirm = ref(false)
 
 // Item modal state
@@ -100,7 +196,7 @@ watch(() => props.open, (open) => {
     showDeleteConfirm.value = false
     if (props.service) {
       currentStep.value = 1
-      visitedSteps.value = new Set([1, 2, 3, 4])
+      visitedSteps.value = new Set([1, 2, 3, 4, 5])
       nameError.value = false
       formName.value = props.service.name
       formDescription.value = props.service.description
@@ -117,6 +213,8 @@ watch(() => props.open, (open) => {
       formListings.value = [...props.service.assignedListings]
       formAvailability.value = props.service.availability
       formStatus.value = props.service.status
+      formVisibility.value = { ...props.service.visibility }
+      formVisibilityMatchMode.value = props.service.visibilityMatchMode
     }
     else {
       formName.value = ''
@@ -136,6 +234,8 @@ watch(() => props.open, (open) => {
       formListings.value = []
       formAvailability.value = 'always'
       formStatus.value = 'active'
+      formVisibility.value = emptyVisibilityConditions()
+      formVisibilityMatchMode.value = 'all'
       currentStep.value = 1
       visitedSteps.value = new Set([1])
       nameError.value = false
@@ -291,6 +391,8 @@ function handleSave() {
     assignedListings: formListings.value,
     availability: formAvailability.value,
     status: formStatus.value,
+    visibility: { ...formVisibility.value },
+    visibilityMatchMode: formVisibilityMatchMode.value,
   }
 
   if (isEditing.value && props.service) {
@@ -605,8 +707,296 @@ function onOpenChange(val: boolean) {
           </div>
         </div>
 
-        <!-- Step 4: Settings -->
+        <!-- Step 4: Visibility -->
         <div v-if="currentStep === 4" class="flex flex-col gap-5 p-6">
+          <!-- Match mode selector -->
+          <div class="flex flex-col gap-2 rounded-md border p-4">
+            <div class="flex items-center gap-3">
+              <button
+                type="button"
+                class="flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors"
+                :class="formVisibilityMatchMode === 'all'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background hover:bg-muted/50'"
+                @click="formVisibilityMatchMode = 'all'"
+              >
+                <Icon name="lucide:circle-check" class="mr-2 inline h-4 w-4" />
+                All conditions met
+                <span class="ml-1 text-xs opacity-70">(AND)</span>
+              </button>
+              <button
+                type="button"
+                class="flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors"
+                :class="formVisibilityMatchMode === 'any'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background hover:bg-muted/50'"
+                @click="formVisibilityMatchMode = 'any'"
+              >
+                <Icon name="lucide:circle-dot" class="mr-2 inline h-4 w-4" />
+                Any condition met
+                <span class="ml-1 text-xs opacity-70">(OR)</span>
+              </button>
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Choose how multiple rules combine. Unset conditions are ignored.
+            </p>
+          </div>
+
+          <!-- Condition cards container -->
+          <div class="flex flex-col gap-3">
+            <!-- Time before Check-in -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckIn') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-hours-before-check-in" class="text-sm font-medium">Time before Check-in</h4>
+                <Switch
+                  aria-labelledby="visibility-hours-before-check-in"
+                  :model-value="isConditionEnabled('hoursBeforeCheckIn')"
+                  @update:model-value="toggleCondition('hoursBeforeCheckIn')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('hoursBeforeCheckIn')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <Input
+                    :model-value="formVisibility.hoursBeforeCheckIn ?? undefined"
+                    type="number"
+                    min="0"
+                    class="flex-1"
+                    aria-describedby="visibility-hours-before-check-in-help"
+                    @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckIn: Number(v) }"
+                  />
+                  <span class="text-sm text-muted-foreground">hours</span>
+                </div>
+                <p id="visibility-hours-before-check-in-help" class="text-xs text-muted-foreground">Show only within the window from N hours before check-in up to check-in. Set 0 for "show anytime up to check-in".</p>
+              </div>
+            </div>
+
+            <!-- Time before Check-out -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('hoursBeforeCheckOut') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-hours-before-check-out" class="text-sm font-medium">Time before Check-out</h4>
+                <Switch
+                  aria-labelledby="visibility-hours-before-check-out"
+                  :model-value="isConditionEnabled('hoursBeforeCheckOut')"
+                  @update:model-value="toggleCondition('hoursBeforeCheckOut')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('hoursBeforeCheckOut')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <Input
+                    :model-value="formVisibility.hoursBeforeCheckOut ?? undefined"
+                    type="number"
+                    min="0"
+                    class="flex-1"
+                    aria-describedby="visibility-hours-before-check-out-help"
+                    @update:model-value="(v) => formVisibility = { ...formVisibility, hoursBeforeCheckOut: Number(v) }"
+                  />
+                  <span class="text-sm text-muted-foreground">hours</span>
+                </div>
+                <p id="visibility-hours-before-check-out-help" class="text-xs text-muted-foreground">Show only within the window from N hours before check-out up to check-out.</p>
+              </div>
+            </div>
+
+            <!-- Guest Count -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-guest-count" class="text-sm font-medium">Guest Count</h4>
+                <Switch
+                  aria-labelledby="visibility-guest-count"
+                  :model-value="isConditionEnabled('guestCountMin') || isConditionEnabled('guestCountMax')"
+                  @update:model-value="(v) => { toggleCondition('guestCountMin'); toggleCondition('guestCountMax') }"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('guestCountMin') && !isConditionEnabled('guestCountMax')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Min guests</Label>
+                    <Input
+                      :model-value="formVisibility.guestCountMin ?? undefined"
+                      type="number"
+                      min="1"
+                      aria-describedby="visibility-guest-count-help"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMin: Number(v) }"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Max guests</Label>
+                    <Input
+                      :model-value="formVisibility.guestCountMax ?? undefined"
+                      type="number"
+                      min="1"
+                      aria-describedby="visibility-guest-count-help"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, guestCountMax: Number(v) }"
+                    />
+                  </div>
+                </div>
+                <p v-if="formVisibility.guestCountMin !== null && formVisibility.guestCountMax !== null && formVisibility.guestCountMin > formVisibility.guestCountMax" class="text-xs text-destructive">
+                  Min is greater than max.
+                </p>
+                <p id="visibility-guest-count-help" class="text-xs text-muted-foreground">Show only when guest count is within this range.</p>
+              </div>
+            </div>
+
+            <!-- Length of Stay -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="(isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')) ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-length-of-stay" class="text-sm font-medium">Length of Stay</h4>
+                <Switch
+                  aria-labelledby="visibility-length-of-stay"
+                  :model-value="isConditionEnabled('lengthOfStayMin') || isConditionEnabled('lengthOfStayMax')"
+                  @update:model-value="(v) => { toggleCondition('lengthOfStayMin'); toggleCondition('lengthOfStayMax') }"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('lengthOfStayMin') && !isConditionEnabled('lengthOfStayMax')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Min nights</Label>
+                    <Input
+                      :model-value="formVisibility.lengthOfStayMin ?? undefined"
+                      type="number"
+                      min="1"
+                      aria-describedby="visibility-length-of-stay-help"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMin: Number(v) }"
+                    />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <Label class="text-xs font-normal text-muted-foreground">Max nights</Label>
+                    <Input
+                      :model-value="formVisibility.lengthOfStayMax ?? undefined"
+                      type="number"
+                      min="1"
+                      aria-describedby="visibility-length-of-stay-help"
+                      @update:model-value="(v) => formVisibility = { ...formVisibility, lengthOfStayMax: Number(v) }"
+                    />
+                  </div>
+                </div>
+                <p v-if="formVisibility.lengthOfStayMin !== null && formVisibility.lengthOfStayMax !== null && formVisibility.lengthOfStayMin > formVisibility.lengthOfStayMax" class="text-xs text-destructive">
+                  Min is greater than max.
+                </p>
+                <p id="visibility-length-of-stay-help" class="text-xs text-muted-foreground">Show only when stay length (nights) is within this range.</p>
+              </div>
+            </div>
+
+            <!-- Booking Status -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('bookingStatuses') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-booking-status" class="text-sm font-medium">Booking Status</h4>
+                <Switch
+                  aria-labelledby="visibility-booking-status"
+                  :model-value="isConditionEnabled('bookingStatuses')"
+                  @update:model-value="toggleCondition('bookingStatuses')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('bookingStatuses')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="opt in [
+                      { value: 'inquiry', label: 'Inquiry' },
+                      { value: 'confirmed', label: 'Confirmed' },
+                      { value: 'checked_in', label: 'Checked-in' },
+                      { value: 'checked_out', label: 'Checked-out' },
+                      { value: 'cancelled', label: 'Cancelled' },
+                    ]"
+                    :key="opt.value"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isBookingStatusSelected(opt.value as BookingStatusFilter)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isBookingStatusSelected(opt.value as BookingStatusFilter)"
+                    @click="toggleBookingStatus(opt.value as BookingStatusFilter)"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only when the booking is in one of these statuses.</p>
+              </div>
+            </div>
+
+            <!-- Related Upsell -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('excludeIfUpsellPurchased') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-related-upsell" class="text-sm font-medium">Related Upsell</h4>
+                <Switch
+                  aria-labelledby="visibility-related-upsell"
+                  :model-value="isConditionEnabled('excludeIfUpsellPurchased')"
+                  @update:model-value="toggleCondition('excludeIfUpsellPurchased')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('excludeIfUpsellPurchased')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <p v-if="otherUpsellServices.length === 0" class="text-xs text-muted-foreground">No other upsells to relate to.</p>
+                <div v-else class="flex flex-wrap gap-2">
+                  <button
+                    v-for="svc in otherUpsellServices"
+                    :key="svc.id"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isRelatedUpsellSelected(svc.id)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isRelatedUpsellSelected(svc.id)"
+                    @click="toggleRelatedUpsell(svc.id)"
+                  >
+                    {{ svc.name }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Hide this upsell if any of the selected services were already purchased.</p>
+              </div>
+            </div>
+
+            <!-- Channels -->
+            <div class="flex flex-col gap-2 rounded-md border p-3" :class="isConditionEnabled('channels') ? 'border-primary/30 bg-primary/5' : 'border-border'">
+              <div class="flex items-center justify-between">
+                <h4 id="visibility-channels" class="text-sm font-medium">Channels</h4>
+                <Switch
+                  aria-labelledby="visibility-channels"
+                  :model-value="isConditionEnabled('channels')"
+                  @update:model-value="toggleCondition('channels')"
+                />
+              </div>
+              <p v-if="!isConditionEnabled('channels')" class="text-xs text-muted-foreground">Off — condition ignored</p>
+              <div v-else class="flex flex-col gap-1">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="opt in [
+                      { value: 'airbnb', label: 'Airbnb' },
+                      { value: 'booking_com', label: 'Booking.com' },
+                      { value: 'direct', label: 'Direct' },
+                      { value: 'agoda', label: 'Agoda' },
+                      { value: 'vrbo', label: 'VRBO' },
+                      { value: 'expedia', label: 'Expedia' },
+                    ]"
+                    :key="opt.value"
+                    type="button"
+                    class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                    :class="isChannelSelected(opt.value as OtaChannel)
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background hover:bg-muted/50'"
+                    :aria-pressed="isChannelSelected(opt.value as OtaChannel)"
+                    @click="toggleChannel(opt.value as OtaChannel)"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
+                <p class="text-xs text-muted-foreground">Show only on these booking channels.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary banner -->
+          <div class="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+            <Icon name="lucide:info" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{{ summaryText }}</span>
+          </div>
+        </div>
+
+        <!-- Step 5: Settings -->
+        <div v-if="currentStep === 5" class="flex flex-col gap-5 p-6">
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <Label>Tax and Service</Label>
@@ -726,8 +1116,8 @@ function onOpenChange(val: boolean) {
           >
             Cancel
           </Button>
-          <Button class="flex-1" @click="currentStep < 4 ? nextStep() : handleSave()">
-            <template v-if="currentStep < 4">
+          <Button class="flex-1" @click="currentStep < 5 ? nextStep() : handleSave()">
+            <template v-if="currentStep < 5">
               Next
               <Icon name="lucide:chevron-right" class="ml-1 h-4 w-4" />
             </template>

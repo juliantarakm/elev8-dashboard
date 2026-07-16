@@ -15,6 +15,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // `~/server/...` resolves to root-level `server/...` (Nuxt server
+      // utilities). Listed BEFORE the broader `~` alias so it wins the
+      // longest-match for `~/server/...` imports.
+      '~/server': fileURLToPath(new URL('./server', import.meta.url)),
       '~': fileURLToPath(new URL('./app', import.meta.url)),
     },
   },
