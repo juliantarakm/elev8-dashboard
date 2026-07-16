@@ -1,3 +1,5 @@
+import { ref, computed } from 'vue'
+
 export type OverrideAudience = 'future' | 'current' | 'inquiry'
 
 export interface TimeSlot {

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Separator } from '~/components/ui/separator'
 import { useUsers } from '~/composables/useUsers'
 import { useRoles } from '~/composables/useRoles'
+import { toast } from 'vue-sonner'
 import UserPersonalInfoForm from './UserPersonalInfoForm.vue'
 import UserAssignmentPicker from './UserAssignmentPicker.vue'
 import SalaryDisplay from './SalaryDisplay.vue'
@@ -138,9 +139,11 @@ function handleSave() {
   if (editingUser.value) {
     updateUser(editingUser.value.id, payload)
     saved = { ...editingUser.value, ...payload }
+    toast.success(`User ${saved.name} updated`)
   }
   else {
     saved = addUser(payload)
+    toast.success(`User ${saved.name} added`)
   }
   emit('saved', saved)
   emit('update:open', false)

@@ -9,6 +9,7 @@ import { Input } from '~/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { useUsers } from '~/composables/useUsers'
 import { useRoles } from '~/composables/useRoles'
+import { toast } from 'vue-sonner'
 import { listings } from '~/components/listings/data/listings'
 import type { User } from '~/components/users/data/users'
 
@@ -18,6 +19,10 @@ const emit = defineEmits<{
 
 const { users, toggleActive, deleteUser } = useUsers()
 const { roles, getRole } = useRoles()
+
+function goToUser(user: User) {
+  return navigateTo(`/users/${user.id}`)
+}
 
 // Listings as {id, name} objects — used for the "All listings" filter dropdown
 // and per-row assignment chips. `User.listingIds` holds Listing.id values (e.g. 'lst-1'),
@@ -58,7 +63,14 @@ const filtered = computed(() => {
 function handleDelete(user: User) {
   if (confirm(`Delete user "${user.name}"? This cannot be undone.`)) {
     deleteUser(user.id)
+    toast.error(`User ${user.name} deleted`)
   }
+}
+
+function handleToggleActive(user: User) {
+  const willActivate = user.status !== 'active'
+  toggleActive(user.id)
+  toast.info(willActivate ? `User ${user.name} activated` : `User ${user.name} deactivated`)
 }
 </script>
 
@@ -143,10 +155,18 @@ function handleDelete(user: User) {
           <tr
             v-for="{ user: u, listingNames } in filtered"
             :key="u.id"
-            class="border-t hover:bg-muted/30 transition-colors"
+            class="border-t hover:bg-muted/30 transition-colors cursor-pointer"
+            tabindex="0"
+            @click="goToUser(u)"
+            @keydown.enter.prevent="goToUser(u)"
+            @keydown.space.prevent="goToUser(u)"
           >
             <td class="px-4 py-3">
-              <div class="flex items-center gap-3">
+              <NuxtLink
+                :to="`/users/${u.id}`"
+                class="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+                @click.stop
+              >
                 <Avatar class="size-9">
                   <AvatarFallback class="bg-primary/10 text-primary text-xs">
                     {{ u.initials }}
@@ -160,7 +180,7 @@ function handleDelete(user: User) {
                     {{ u.email }}
                   </div>
                 </div>
-              </div>
+              </NuxtLink>
             </td>
 
             <td class="px-4 py-3">
@@ -189,14 +209,14 @@ function handleDelete(user: User) {
               </div>
             </td>
 
-            <td class="px-4 py-3">
+            <td class="px-4 py-3" @click.stop>
               <Switch
                 :model-value="u.status === 'active'"
-                @update:model-value="() => toggleActive(u.id)"
+                @update:model-value="() => handleToggleActive(u)"
               />
             </td>
 
-            <td class="px-4 py-3 text-right">
+            <td class="px-4 py-3 text-right" @click.stop>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button variant="ghost" size="icon" class="size-8">
@@ -208,7 +228,7 @@ function handleDelete(user: User) {
                     <Icon name="lucide:pencil" class="mr-2 size-4" />
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="toggleActive(u.id)">
+                  <DropdownMenuItem @click="handleToggleActive(u)">
                     <Icon :name="u.status === 'active' ? 'lucide:user-x' : 'lucide:user-check'" class="mr-2 size-4" />
                     {{ u.status === 'active' ? 'Deactivate' : 'Activate' }}
                   </DropdownMenuItem>

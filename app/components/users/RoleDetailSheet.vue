@@ -8,6 +8,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { Input as TimeInput } from '~/components/ui/input'
 import { cn } from '@/lib/utils'
+import { toast } from 'vue-sonner'
 import PermissionMatrix from './PermissionMatrix.vue'
 import { useRoles } from '~/composables/useRoles'
 import type { Role, RoleId, WeekDay } from '~/components/users/data/roles'
@@ -59,15 +60,18 @@ function handleSave() {
     workingHours: draft.value.workingHours,
     defaultPermissions: draft.value.defaultPermissions,
   })
+  toast.success(`Role ${draft.value.name} saved`)
   emit('saved', draft.value)
   emit('update:open', false)
 }
 
 function handleReset() {
   if (!draft.value) return
+  const roleName = draft.value.name
   resetRoleToDefaults(draft.value.id)
   const fresh = getRole(draft.value.id)
   if (fresh) draft.value = JSON.parse(JSON.stringify(fresh))
+  toast.info(`Role ${roleName} reset to defaults`)
 }
 </script>
 
