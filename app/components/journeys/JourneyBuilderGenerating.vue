@@ -1,28 +1,39 @@
 <script setup lang="ts">
 import type { Journey } from './data/journeys'
-import { generatedJourneyExample } from './data/journeys'
+import { buildModifiedJourney, generatedJourneyExample } from './data/journeys'
 
 const props = defineProps<{
   prompt: string
+  existingJourney?: Journey | null
 }>()
 
 const emit = defineEmits<{
   done: [journey: Journey]
 }>()
 
-const generatingSteps = [
-  'Analysing goal',
-  'Identifying triggers',
-  'Generating message directives',
-  'Adding context checks',
-  'Finalising',
-]
+const isModify = computed(() => !!props.existingJourney)
+
+const generatingSteps = computed(() => isModify.value
+  ? [
+    'Reading existing journey',
+    'Identifying what to add',
+    'Composing new steps',
+    'Preserving your edits',
+    'Finalising',
+  ]
+  : [
+    'Analysing goal',
+    'Identifying triggers',
+    'Generating message directives',
+    'Adding context checks',
+    'Finalising',
+  ])
 
 const completedCount = ref(0)
 const activeIndex = ref(0)
 const dotCount = ref(1)
 
-const progress = computed(() => Math.round((completedCount.value / generatingSteps.length) * 100))
+const progress = computed(() => Math.round((completedCount.value / generatingSteps.value.length) * 100))
 
 let dotInterval: ReturnType<typeof setInterval>
 
@@ -31,7 +42,7 @@ async function runGeneration() {
     dotCount.value = (dotCount.value % 3) + 1
   }, 400)
 
-  for (let i = 0; i < generatingSteps.length; i++) {
+  for (let i = 0; i < generatingSteps.value.length; i++) {
     activeIndex.value = i
     await new Promise(r => setTimeout(r, 600))
     completedCount.value = i + 1
@@ -39,7 +50,11 @@ async function runGeneration() {
 
   clearInterval(dotInterval)
   await new Promise(r => setTimeout(r, 400))
-  emit('done', generatedJourneyExample as Journey)
+
+  const result = isModify.value && props.existingJourney
+    ? buildModifiedJourney(props.existingJourney, props.prompt)
+    : generatedJourneyExample
+  emit('done', result as Journey)
 }
 
 onMounted(() => {
@@ -56,7 +71,7 @@ onUnmounted(() => {
     <div class="w-full max-w-md">
       <div class="mb-6 text-center">
         <h2 class="text-xl font-semibold">
-          Generating your Journey{{ '.'.repeat(dotCount) }}
+          {{ isModify ? `Modifying “${props.existingJourney?.name}”` : 'Generating your Journey' }}{{ '.'.repeat(dotCount) }}
         </h2>
         <div class="mt-3 rounded-lg border bg-muted/40 px-4 py-3">
           <p class="text-sm italic text-muted-foreground">
