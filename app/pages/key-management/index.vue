@@ -7,6 +7,7 @@ import KeyActivityTimeline from '~/components/key-management/KeyActivityTimeline
 import KeyBoxCard from '~/components/key-management/KeyBoxCard.vue'
 import KeyBoxDialog from '~/components/key-management/KeyBoxDialog.vue'
 import KeyCheckoutDialog from '~/components/key-management/KeyCheckoutDialog.vue'
+import KeyHandoverDialog from '~/components/key-management/KeyHandoverDialog.vue'
 import KeyHistorySheet from '~/components/key-management/KeyHistorySheet.vue'
 import KeyLostDialog from '~/components/key-management/KeyLostDialog.vue'
 import KeyRegisterDialog from '~/components/key-management/KeyRegisterDialog.vue'
@@ -33,6 +34,7 @@ onMounted(() => {
 // --- Dialog/sheet targets ---
 const registerOpen = ref(false)
 const checkoutTarget = ref<PhysicalKey | null>(null)
+const handoverTarget = ref<PhysicalKey | null>(null)
 const lostTarget = ref<PhysicalKey | null>(null)
 const historyTarget = ref<PhysicalKey | null>(null)
 const keyBoxDialogOpen = ref(false)
@@ -43,6 +45,13 @@ const checkoutOpen = computed({
   set: (val: boolean) => {
     if (!val)
       checkoutTarget.value = null
+  },
+})
+const handoverOpen = computed({
+  get: () => handoverTarget.value !== null,
+  set: (val: boolean) => {
+    if (!val)
+      handoverTarget.value = null
   },
 })
 const lostOpen = computed({
@@ -301,6 +310,7 @@ const activeTab = ref('keys')
           :is-overdue="isOverdue"
           @checkout="checkoutTarget = $event"
           @return="handleReturn"
+          @handover="handoverTarget = $event"
           @lost="lostTarget = $event"
           @replace="handleReplace"
           @history="historyTarget = $event"
@@ -336,6 +346,7 @@ const activeTab = ref('keys')
 
     <KeyRegisterDialog v-model:open="registerOpen" />
     <KeyCheckoutDialog v-model:open="checkoutOpen" :key-item="checkoutTarget" />
+    <KeyHandoverDialog v-model:open="handoverOpen" :key-item="handoverTarget" />
     <KeyLostDialog v-model:open="lostOpen" :key-item="lostTarget" />
     <KeyHistorySheet v-model:open="historyOpen" :key-item="historyTarget" />
     <KeyBoxDialog v-model:open="keyBoxDialogOpen" :key-box="keyBoxEditTarget" />

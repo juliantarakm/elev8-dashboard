@@ -101,12 +101,13 @@ export function useKeyManagement() {
       .sort((a, b) => b.at.localeCompare(a.at))
   }
 
-  function appendEvent(keyId: string, action: KeyEventAction, staffId?: string, note?: string) {
+  function appendEvent(keyId: string, action: KeyEventAction, staffId?: string, note?: string, previousStaffId?: string) {
     const event: KeyEvent = {
       id: generateKeyEventId(),
       keyId,
       action,
       staffId,
+      previousStaffId,
       actorStaffId: CURRENT_STAFF_ID,
       at: new Date().toISOString(),
       note,
@@ -187,6 +188,27 @@ export function useKeyManagement() {
       : k)
     appendEvent(keyId, 'return', holder)
     resolveOverdueAlert(keyId)
+    return { success: true }
+  }
+
+  function handoverKey(keyId: string, toStaffId: string, note?: string): { success: boolean, error?: string } {
+    const key = getKeyById(keyId)
+    if (!key)
+      return { success: false, error: 'Key not found.' }
+    if (key.status !== 'checked_out')
+      return { success: false, error: 'Only checked-out keys can be handed over.' }
+    if (!toStaffId)
+      return { success: false, error: 'Select a staff member.' }
+    if (toStaffId === key.holderStaffId)
+      return { success: false, error: 'Key is already held by this staff member.' }
+    const fromStaffId = key.holderStaffId
+    keys.value = keys.value.map(k => k.id === keyId
+      ? {
+          ...k,
+          holderStaffId: toStaffId,
+        }
+      : k)
+    appendEvent(keyId, 'handover', toStaffId, note, fromStaffId)
     return { success: true }
   }
 
@@ -320,6 +342,7 @@ export function useKeyManagement() {
     registerKey,
     checkoutKey,
     returnKey,
+    handoverKey,
     markKeyLost,
     replaceKey,
     addKeyBox,

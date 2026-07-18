@@ -22,13 +22,14 @@ export interface PhysicalKey {
   createdAt: string
 }
 
-export type KeyEventAction = 'register' | 'checkout' | 'return' | 'mark_lost' | 'replace'
+export type KeyEventAction = 'register' | 'checkout' | 'return' | 'mark_lost' | 'replace' | 'handover'
 
 export interface KeyEvent {
   id: string
   keyId: string
   action: KeyEventAction
-  staffId?: string
+  staffId?: string // holder involved (new holder for handover)
+  previousStaffId?: string // previous holder, set on handover
   actorStaffId: string
   at: string
   note?: string
@@ -74,6 +75,7 @@ export const keyEventLabels: Record<KeyEventAction, string> = {
   return: 'Returned',
   mark_lost: 'Reported lost',
   replace: 'Replaced',
+  handover: 'Handed over',
 }
 
 export function getKeyDisplayName(key: Pick<PhysicalKey, 'type' | 'copyNumber' | 'label'>): string {

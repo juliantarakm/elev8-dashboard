@@ -13,6 +13,7 @@ const { keys, isOverdue } = defineProps<{
 const emit = defineEmits<{
   checkout: [key: PhysicalKey]
   return: [key: PhysicalKey]
+  handover: [key: PhysicalKey]
   lost: [key: PhysicalKey]
   replace: [key: PhysicalKey]
   history: [key: PhysicalKey]
@@ -121,6 +122,9 @@ function timeAgo(date: string) {
                 </DropdownMenuItem>
                 <DropdownMenuItem v-if="keyItem.status === 'checked_out'" class="gap-2" @click="emit('return', keyItem)">
                   <Icon name="lucide:undo-2" class="size-4" /> Return
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="keyItem.status === 'checked_out'" class="gap-2" @click="emit('handover', keyItem)">
+                  <Icon name="lucide:arrow-right-left" class="size-4" /> Hand over
                 </DropdownMenuItem>
                 <DropdownMenuItem v-if="keyItem.status !== 'lost'" class="gap-2" @click="emit('lost', keyItem)">
                   <Icon name="lucide:triangle-alert" class="size-4" /> Mark lost

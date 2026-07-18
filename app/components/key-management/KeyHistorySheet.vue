@@ -34,11 +34,23 @@ function actionBadgeVariant(action: KeyEventAction) {
     case 'return': return 'outline'
     case 'mark_lost': return 'destructive'
     case 'replace': return 'secondary'
+    case 'handover': return 'default'
   }
 }
 
 function timeAgo(iso: string) {
   return formatDistanceToNow(new Date(iso), { addSuffix: true })
+}
+
+function eventDescription(event: KeyEvent) {
+  const actor = staffName(event.actorStaffId)
+  const staff = staffName(event.staffId)
+  const previous = staffName(event.previousStaffId)
+  if (event.action === 'handover' && previous && staff)
+    return `${previous} → ${staff} · recorded by ${actor}`
+  if (staff)
+    return `${staff} · recorded by ${actor}`
+  return `Recorded by ${actor}`
 }
 </script>
 
@@ -61,13 +73,7 @@ function timeAgo(iso: string) {
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-sm">
-              <template v-if="staffName(event.staffId)">
-                {{ staffName(event.staffId) }}
-                <span class="text-muted-foreground">· recorded by {{ staffName(event.actorStaffId) }}</span>
-              </template>
-              <template v-else>
-                Recorded by {{ staffName(event.actorStaffId) }}
-              </template>
+              {{ eventDescription(event) }}
             </p>
             <p v-if="event.note" class="mt-0.5 text-sm text-muted-foreground">
               {{ event.note }}

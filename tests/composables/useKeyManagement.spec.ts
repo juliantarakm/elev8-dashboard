@@ -64,6 +64,28 @@ describe('useKeyManagement', () => {
     expect(returnKey('key-003').success).toBe(false) // available keys cannot be returned
   })
 
+  it('handoverKey transfers a checked-out key to another staff member', () => {
+    const { handoverKey, getKeyById, getEventsForKey } = useKeyManagement()
+    const result = handoverKey('key-004', 'staff-2', 'Shift change')
+    expect(result.success).toBe(true)
+    const key = getKeyById('key-004')!
+    expect(key.status).toBe('checked_out')
+    expect(key.holderStaffId).toBe('staff-2')
+    const event = getEventsForKey('key-004')[0]
+    expect(event.action).toBe('handover')
+    expect(event.staffId).toBe('staff-2')
+    expect(event.previousStaffId).toBe('staff-4')
+    expect(event.note).toBe('Shift change')
+  })
+
+  it('handoverKey rejects invalid transitions', () => {
+    const { handoverKey } = useKeyManagement()
+    expect(handoverKey('key-003', 'staff-3').success).toBe(false) // available
+    expect(handoverKey('key-006', 'staff-3').success).toBe(false) // lost
+    expect(handoverKey('key-004', '').success).toBe(false) // no staff
+    expect(handoverKey('key-004', 'staff-4').success).toBe(false) // same holder
+  })
+
   it('markKeyLost marks a key as lost and clears custody', () => {
     const { markKeyLost, getKeyById, getEventsForKey } = useKeyManagement()
     const result = markKeyLost('key-009', 'Did not come back from maintenance')
