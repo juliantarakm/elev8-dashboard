@@ -1056,7 +1056,7 @@ export function buildModifiedJourney(
       {
         id: `s-${Date.now()}-a`,
         type: 'wait',
-        name: 'Wait Until Mid-stay',
+        name: 'Wait',
         waitMode: 'time_delay',
         durationDays: 2,
         durationHours: 0,
@@ -1066,7 +1066,7 @@ export function buildModifiedJourney(
       {
         id: `s-${Date.now()}-b`,
         type: 'message',
-        name: 'Mid-stay Upsell',
+        name: 'Send Message',
         messageMode: 'directive',
         channel: 'whatsapp',
         templateText: '',
@@ -1085,7 +1085,7 @@ export function buildModifiedJourney(
       {
         id: `s-${Date.now()}-c`,
         type: 'wait',
-        name: 'Wait 1 Day After Checkout',
+        name: 'Wait',
         waitMode: 'time_delay',
         durationDays: 1,
         durationHours: 0,
@@ -1095,7 +1095,7 @@ export function buildModifiedJourney(
       {
         id: `s-${Date.now()}-d`,
         type: 'message',
-        name: 'Request Review',
+        name: 'Send Message',
         messageMode: 'directive',
         channel: 'ota',
         templateText: '',
