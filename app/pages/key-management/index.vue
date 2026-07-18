@@ -6,6 +6,7 @@ import { getKeyDisplayName, keyTypeLabels } from '~/components/key-management/da
 import KeyActivityTimeline from '~/components/key-management/KeyActivityTimeline.vue'
 import KeyBoxCard from '~/components/key-management/KeyBoxCard.vue'
 import KeyBoxDialog from '~/components/key-management/KeyBoxDialog.vue'
+import KeyBoxKeysDialog from '~/components/key-management/KeyBoxKeysDialog.vue'
 import KeyCheckoutDialog from '~/components/key-management/KeyCheckoutDialog.vue'
 import KeyHandoverDialog from '~/components/key-management/KeyHandoverDialog.vue'
 import KeyHistorySheet from '~/components/key-management/KeyHistorySheet.vue'
@@ -39,6 +40,7 @@ const lostTarget = ref<PhysicalKey | null>(null)
 const historyTarget = ref<PhysicalKey | null>(null)
 const keyBoxDialogOpen = ref(false)
 const keyBoxEditTarget = ref<KeyBox | null>(null)
+const keyBoxKeysTarget = ref<KeyBox | null>(null)
 
 const checkoutOpen = computed({
   get: () => checkoutTarget.value !== null,
@@ -68,6 +70,13 @@ const historyOpen = computed({
       historyTarget.value = null
   },
 })
+const keyBoxKeysOpen = computed({
+  get: () => keyBoxKeysTarget.value !== null,
+  set: (val: boolean) => {
+    if (!val)
+      keyBoxKeysTarget.value = null
+  },
+})
 
 // --- Row action handlers ---
 function handleReturn(key: PhysicalKey) {
@@ -95,6 +104,10 @@ function openAddKeyBox() {
 function openEditKeyBox(box: KeyBox) {
   keyBoxEditTarget.value = box
   keyBoxDialogOpen.value = true
+}
+
+function openKeyBoxKeys(box: KeyBox) {
+  keyBoxKeysTarget.value = box
 }
 
 function handleRemoveKeyBox(box: KeyBox) {
@@ -325,6 +338,7 @@ const activeTab = ref('keys')
             :key-box="box"
             @edit="openEditKeyBox"
             @remove="handleRemoveKeyBox"
+            @view-keys="openKeyBoxKeys"
           />
         </div>
         <div v-else class="flex flex-col items-center gap-3 rounded-lg border py-12 text-center">
@@ -350,5 +364,6 @@ const activeTab = ref('keys')
     <KeyLostDialog v-model:open="lostOpen" :key-item="lostTarget" />
     <KeyHistorySheet v-model:open="historyOpen" :key-item="historyTarget" />
     <KeyBoxDialog v-model:open="keyBoxDialogOpen" :key-box="keyBoxEditTarget" />
+    <KeyBoxKeysDialog v-model:open="keyBoxKeysOpen" :key-box="keyBoxKeysTarget" />
   </div>
 </template>

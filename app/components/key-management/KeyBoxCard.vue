@@ -11,6 +11,7 @@ const { keyBox } = defineProps<{
 const emit = defineEmits<{
   edit: [keyBox: KeyBox]
   remove: [keyBox: KeyBox]
+  viewKeys: [keyBox: KeyBox]
 }>()
 
 const { getKeysInBox } = useKeyManagement()
@@ -58,6 +59,9 @@ const maskedPin = computed(() => '•'.repeat(keyBox.pin.length))
       </p>
     </CardContent>
     <CardFooter class="gap-2">
+      <Button variant="outline" size="sm" class="gap-1.5" @click="emit('viewKeys', keyBox)">
+        <Icon name="lucide:key-round" class="size-3.5" /> View keys
+      </Button>
       <Button variant="outline" size="sm" class="gap-1.5" @click="emit('edit', keyBox)">
         <Icon name="lucide:pencil" class="size-3.5" /> Edit
       </Button>
