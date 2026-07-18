@@ -27,14 +27,14 @@ function staffName(id?: string) {
   return staffMembers.find(s => s.id === id)?.name ?? id
 }
 
-function actionBadgeVariant(action: KeyEventAction) {
+function actionDotClass(action: KeyEventAction) {
   switch (action) {
-    case 'register': return 'secondary'
-    case 'checkout': return 'default'
-    case 'return': return 'outline'
-    case 'mark_lost': return 'destructive'
-    case 'replace': return 'secondary'
-    case 'handover': return 'default'
+    case 'register': return 'bg-muted-foreground/50'
+    case 'checkout': return 'bg-primary'
+    case 'return': return 'bg-muted-foreground/50'
+    case 'mark_lost': return 'bg-destructive'
+    case 'replace': return 'bg-muted-foreground/50'
+    case 'handover': return 'bg-primary'
   }
 }
 
@@ -64,26 +64,28 @@ function eventDescription(event: KeyEvent) {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="mt-6 space-y-3 overflow-y-auto px-1 pb-6">
-        <div v-for="event in events" :key="event.id" class="flex gap-3 rounded-lg border p-3">
-          <div class="mt-0.5 shrink-0">
-            <Badge :variant="actionBadgeVariant(event.action)">
-              {{ keyEventLabels[event.action] }}
-            </Badge>
+      <div class="mt-6 overflow-y-auto px-6 pb-6">
+        <div v-for="(event, index) in events" :key="event.id" class="flex gap-4">
+          <div class="flex flex-col items-center pt-1">
+            <div class="size-2 rounded-full" :class="actionDotClass(event.action)" />
+            <div v-if="index < events.length - 1" class="mt-2 w-px flex-1 bg-border" />
           </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-sm">
+          <div class="min-w-0 flex-1 pb-6">
+            <p class="text-sm font-medium">
+              {{ keyEventLabels[event.action] }}
+            </p>
+            <p class="text-sm text-muted-foreground">
               {{ eventDescription(event) }}
             </p>
-            <p v-if="event.note" class="mt-0.5 text-sm text-muted-foreground">
+            <p v-if="event.note" class="mt-1 text-sm text-muted-foreground">
               {{ event.note }}
             </p>
-            <p class="mt-0.5 text-xs text-muted-foreground">
+            <p class="mt-1 text-xs text-muted-foreground">
               {{ timeAgo(event.at) }}
             </p>
           </div>
         </div>
-        <p v-if="!events.length" class="py-4 text-center text-sm text-muted-foreground">
+        <p v-if="!events.length" class="py-8 text-center text-sm text-muted-foreground">
           No events yet.
         </p>
       </div>
