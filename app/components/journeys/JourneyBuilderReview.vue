@@ -3,16 +3,33 @@ import type { Journey } from './data/journeys'
 
 const props = defineProps<{
   journey: Journey & { aiReasoning?: string, stats?: { messages: number, contextChecks: number, estimatedTime: string } }
+  mode?: 'new' | 'modify'
+  sourceJourneyName?: string
 }>()
 
 const emit = defineEmits<{
   'use-journey': [journey: Journey]
   'regenerate': []
   'back': []
+  'refine': [prompt: string]
 }>()
 
 const selectedStepId = ref<string | null>(props.journey.steps[0]?.id ?? null)
 const refinePrompt = ref('')
+const isRefining = ref(false)
+
+function handleRefine() {
+  const p = refinePrompt.value.trim()
+  if (!p || isRefining.value) return
+  isRefining.value = true
+  // Brief delay so the spinner is visible, then emit. Parent will swap
+  // generatedJourney to the refined result and the textarea is reset.
+  setTimeout(() => {
+    emit('refine', p)
+    refinePrompt.value = ''
+    isRefining.value = false
+  }, 600)
+}
 
 const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
   trigger: { icon: 'i-lucide-zap', colorClasses: 'text-purple-500 bg-purple-50 dark:bg-purple-950' },
@@ -36,7 +53,7 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
       <div class="flex flex-1 flex-col overflow-y-auto p-6">
         <div class="mx-auto w-full max-w-xl">
           <h2 class="mb-5 text-lg font-semibold">
-            Generated Journey
+            {{ mode === 'modify' ? `Modified version of “${sourceJourneyName}”` : 'Generated Journey' }}
           </h2>
           <div class="flex flex-col">
             <div
@@ -46,6 +63,7 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
               <div
                 class="flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3 transition-all hover:border-primary/50" :class="[
                   selectedStepId === step.id && 'ring-2 ring-primary bg-primary/5 border-primary/30',
+                  (step as any).isNew && 'border-primary/60 bg-primary/5',
                 ]"
                 @click="selectedStepId = step.id"
               >
@@ -67,6 +85,12 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
                       class="rounded px-1.5 py-0.5 text-xs font-medium"
                       :style="{ backgroundColor: '#C8A84B22', color: '#C8A84B' }"
                     >ElevAI</span>
+                    <span
+                      v-if="(step as any).isNew"
+                      class="rounded px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary"
+                    >
+                      New
+                    </span>
                   </div>
                   <p v-if="step.type === 'message'" class="truncate text-xs text-muted-foreground">
                     {{ (step as any).directive }}
@@ -133,10 +157,17 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
             v-model="refinePrompt"
             class="min-h-20 text-sm resize-none"
             placeholder="e.g. Add a mid-stay check-in message…"
+            :disabled="isRefining"
           />
-          <Button class="mt-2 w-full" variant="outline" :disabled="!refinePrompt.trim()">
-            <Icon name="i-lucide-sparkles" class="mr-2 h-4 w-4" />
-            Refine Journey
+          <Button
+            class="mt-2 w-full"
+            variant="outline"
+            :disabled="!refinePrompt.trim() || isRefining"
+            @click="handleRefine"
+          >
+            <Icon v-if="isRefining" name="i-lucide-loader-2" class="mr-2 h-4 w-4 animate-spin" />
+            <Icon v-else name="i-lucide-sparkles" class="mr-2 h-4 w-4" />
+            {{ isRefining ? 'Refining…' : 'Refine Journey' }}
           </Button>
         </div>
 
@@ -146,7 +177,7 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
             Regenerate
           </Button>
           <Button class="w-full" @click="emit('use-journey', journey)">
-            Use this Journey
+            {{ mode === 'modify' ? 'Apply Changes to Journey' : 'Use this Journey' }}
             <Icon name="i-lucide-arrow-right" class="ml-2 h-4 w-4" />
           </Button>
         </div>

@@ -93,6 +93,7 @@ const summaryText = computed(() => {
 
 const isWhatsApp = computed(() => props.step.type === 'message' && (props.step as any).channel === 'whatsapp')
 const isMessage = computed(() => props.step.type === 'message')
+const isNew = computed(() => !!(props.step as any).isNew)
 </script>
 
 <template>
@@ -100,6 +101,7 @@ const isMessage = computed(() => props.step.type === 'message')
     :class="cn(
       'group flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3 transition-all hover:border-primary/50',
       active && 'ring-2 ring-primary bg-primary/5 border-primary/30',
+      isNew && 'border-primary/60 bg-primary/5',
     )"
     @click="emit('select')"
   >
@@ -116,6 +118,13 @@ const isMessage = computed(() => props.step.type === 'message')
           class="rounded px-1.5 py-0.5 text-xs font-medium"
           :style="{ backgroundColor: '#C8A84B22', color: '#C8A84B' }"
         >ElevAI</span>
+        <span
+          v-if="isNew"
+          class="rounded px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary"
+          title="Added by AI — review before saving"
+        >
+          New
+        </span>
       </div>
       <p class="truncate text-xs text-muted-foreground">
         {{ summaryText }}
