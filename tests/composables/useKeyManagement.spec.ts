@@ -62,4 +62,87 @@ describe('useKeyManagement', () => {
     expect(getEventsForKey('key-001')[0].action).toBe('return')
     expect(returnKey('key-003').success).toBe(false) // available keys cannot be returned
   })
+
+  it('markKeyLost marks a key as lost and clears custody', () => {
+    const { markKeyLost, getKeyById, getEventsForKey } = useKeyManagement()
+    const result = markKeyLost('key-009', 'Did not come back from maintenance')
+    expect(result.success).toBe(true)
+    const key = getKeyById('key-009')!
+    expect(key.status).toBe('lost')
+    expect(key.holderStaffId).toBeUndefined()
+    expect(getEventsForKey('key-009')[0].action).toBe('mark_lost')
+    expect(markKeyLost('key-009').success).toBe(false) // already lost
+  })
+
+  it('replaceKey creates a linked replacement copy and rejects double replace', () => {
+    const { replaceKey, getKeyById, getEventsForKey } = useKeyManagement()
+    const result = replaceKey('key-011')
+    expect(result.success).toBe(true)
+    const newKey = result.key!
+    expect(newKey.type).toBe('storage')
+    expect(newKey.listingId).toBe('lst-10')
+    expect(newKey.copyNumber).toBe(2)
+    expect(newKey.status).toBe('available')
+    expect(getKeyById('key-011')!.replacedByKeyId).toBe(newKey.id)
+    expect(getEventsForKey(newKey.id)[0].action).toBe('replace')
+    expect(replaceKey('key-011').success).toBe(false) // already replaced
+    expect(replaceKey('key-003').success).toBe(false) // not lost
+  })
+
+  it('overdueKeys contains only checked-out keys past expected return', () => {
+    const { overdueKeys } = useKeyManagement()
+    const ids = overdueKeys.value.map(k => k.id)
+    expect(ids).toContain('key-001') // expected back 6h ago
+    expect(ids).not.toContain('key-004') // due in 20h
+    expect(ids).not.toContain('key-009') // due in 5h
+  })
+
+  it('stats counts match mock data', () => {
+    const { stats } = useKeyManagement()
+    expect(stats.value.total).toBe(12)
+    expect(stats.value.available).toBe(7)
+    expect(stats.value.checkedOut).toBe(3)
+    expect(stats.value.lost).toBe(2)
+    expect(stats.value.overdue).toBe(1)
+  })
+
+  it('filteredKeys applies status, type, listing, and search filters', () => {
+    const { filteredKeys, filters } = useKeyManagement()
+    filters.value.status = 'lost'
+    expect(filteredKeys.value.map(k => k.id).sort()).toEqual(['key-006', 'key-011'])
+    filters.value.status = 'all'
+    filters.value.type = 'main_door'
+    // NOTE: brief says 5, but mock data has 6 main_door keys
+    // (key-001, key-002, key-005, key-006, key-007, key-010) — corrected to match data.
+    expect(filteredKeys.value).toHaveLength(6)
+    filters.value.type = 'all'
+    filters.value.listings = ['lst-1']
+    expect(filteredKeys.value).toHaveLength(4)
+    filters.value.listings = []
+    filters.value.search = 'scoopy'
+    expect(filteredKeys.value.map(k => k.id)).toEqual(['key-004'])
+  })
+
+  it('removeKeyBox refuses to remove a box that still holds keys', () => {
+    const { removeKeyBox, checkoutKey, keyBoxes } = useKeyManagement()
+    expect(removeKeyBox('kb-1').success).toBe(false) // holds key-002
+    expect(removeKeyBox('kb-2').success).toBe(false) // holds key-005
+    expect(removeKeyBox('kb-3').success).toBe(false) // holds key-010
+    checkoutKey('key-010', 'staff-4') // moves the key out of the box
+    expect(removeKeyBox('kb-3').success).toBe(true)
+    expect(keyBoxes.value.map(b => b.id)).not.toContain('kb-3')
+  })
+
+  it('addKeyBox validates required fields and updateKeyBox patches a box', () => {
+    const { addKeyBox, updateKeyBox, keyBoxes } = useKeyManagement()
+    expect(addKeyBox({ listingId: 'lst-9', name: '', location: 'x', pin: '1' }).success).toBe(false)
+    expect(addKeyBox({ listingId: 'lst-9', name: 'x', location: 'x', pin: '' }).success).toBe(false)
+    const added = addKeyBox({ listingId: 'lst-9', name: 'Treehouse lockbox', location: 'On the stair railing', pin: '9031' })
+    expect(added.success).toBe(true)
+    expect(keyBoxes.value).toHaveLength(4)
+    const updated = updateKeyBox(added.keyBox!.id, { pin: '4410' })
+    expect(updated.success).toBe(true)
+    expect(keyBoxes.value.find(b => b.id === added.keyBox!.id)!.pin).toBe('4410')
+    expect(updateKeyBox('kb-missing', { pin: '1' }).success).toBe(false)
+  })
 })

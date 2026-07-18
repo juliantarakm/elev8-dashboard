@@ -1,8 +1,10 @@
 import type { KeyBox, KeyEvent, KeyEventAction, KeyStatus, KeyType, PhysicalKey } from '~/components/key-management/data/keys'
 import {
   CURRENT_STAFF_ID,
+  generateKeyBoxId,
   generateKeyEventId,
   generateKeyId,
+  getKeyDisplayName,
   keyTypeLabels,
   mockKeyBoxes,
   mockKeyEvents,
@@ -184,6 +186,86 @@ export function useKeyManagement() {
     return { success: true }
   }
 
+  function getKeysInBox(keyBoxId: string): PhysicalKey[] {
+    return keys.value.filter(k => k.status === 'available' && k.location === 'key_box' && k.keyBoxId === keyBoxId)
+  }
+
+  function markKeyLost(keyId: string, note?: string): { success: boolean, error?: string } {
+    const key = getKeyById(keyId)
+    if (!key)
+      return { success: false, error: 'Key not found.' }
+    if (key.status === 'lost')
+      return { success: false, error: 'Key is already marked as lost.' }
+    const holder = key.holderStaffId
+    keys.value = keys.value.map(k => k.id === keyId
+      ? {
+          ...k,
+          status: 'lost' as KeyStatus,
+          holderStaffId: undefined,
+          checkedOutAt: undefined,
+          expectedReturnAt: undefined,
+          location: 'office' as const,
+          keyBoxId: undefined,
+        }
+      : k)
+    appendEvent(keyId, 'mark_lost', holder, note)
+    return { success: true }
+  }
+
+  function replaceKey(lostKeyId: string): { success: boolean, error?: string, key?: PhysicalKey } {
+    const lost = getKeyById(lostKeyId)
+    if (!lost)
+      return { success: false, error: 'Key not found.' }
+    if (lost.status !== 'lost')
+      return { success: false, error: 'Only lost keys can be replaced.' }
+    if (lost.replacedByKeyId)
+      return { success: false, error: 'This key was already replaced.' }
+    const newKey: PhysicalKey = {
+      id: generateKeyId(),
+      listingId: lost.listingId,
+      type: lost.type,
+      label: lost.label,
+      copyNumber: nextCopyNumber(keys.value, lost.listingId, lost.type),
+      status: 'available',
+      location: 'office',
+      createdAt: new Date().toISOString(),
+    }
+    keys.value = [...keys.value, newKey]
+    keys.value = keys.value.map(k => k.id === lostKeyId ? { ...k, replacedByKeyId: newKey.id } : k)
+    appendEvent(newKey.id, 'replace', undefined, `Replacement for ${getKeyDisplayName(lost)}`)
+    return { success: true, key: newKey }
+  }
+
+  function addKeyBox(input: KeyBoxInput): { success: boolean, error?: string, keyBox?: KeyBox } {
+    if (!input.listingId || !input.name.trim() || !input.location.trim() || !input.pin.trim())
+      return { success: false, error: 'Listing, name, location, and PIN are required.' }
+    const keyBox: KeyBox = {
+      id: generateKeyBoxId(),
+      listingId: input.listingId,
+      name: input.name.trim(),
+      location: input.location.trim(),
+      pin: input.pin.trim(),
+      notes: input.notes?.trim() || undefined,
+    }
+    keyBoxes.value = [...keyBoxes.value, keyBox]
+    return { success: true, keyBox }
+  }
+
+  function updateKeyBox(id: string, patch: Partial<KeyBoxInput>): { success: boolean, error?: string } {
+    const box = keyBoxes.value.find(b => b.id === id)
+    if (!box)
+      return { success: false, error: 'Key box not found.' }
+    keyBoxes.value = keyBoxes.value.map(b => b.id === id ? { ...b, ...patch } : b)
+    return { success: true }
+  }
+
+  function removeKeyBox(id: string): { success: boolean, error?: string } {
+    if (getKeysInBox(id).length > 0)
+      return { success: false, error: 'Move the stored keys out of this box first.' }
+    keyBoxes.value = keyBoxes.value.filter(b => b.id !== id)
+    return { success: true }
+  }
+
   return {
     keys,
     keyEvents,
@@ -196,8 +278,14 @@ export function useKeyManagement() {
     isOverdue,
     getKeyById,
     getEventsForKey,
+    getKeysInBox,
     registerKey,
     checkoutKey,
     returnKey,
+    markKeyLost,
+    replaceKey,
+    addKeyBox,
+    updateKeyBox,
+    removeKeyBox,
   }
 }
