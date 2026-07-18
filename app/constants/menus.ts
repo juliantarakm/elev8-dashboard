@@ -49,6 +49,12 @@ export const navMenu: NavMenu[] = [
         new: true,
       },
       {
+        title: 'Key Management',
+        icon: 'i-lucide-key-round',
+        link: '/key-management',
+        new: true,
+      },
+      {
         title: 'Procurement',
         icon: 'i-lucide-shopping-cart',
         link: '/procurement',
