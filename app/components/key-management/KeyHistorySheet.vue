@@ -64,9 +64,9 @@ function eventDescription(event: KeyEvent) {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="mt-6 space-y-4 overflow-y-auto">
-        <div v-for="event in events" :key="event.id" class="flex gap-3">
-          <div class="mt-0.5">
+      <div class="mt-6 space-y-3 overflow-y-auto px-1 pb-6">
+        <div v-for="event in events" :key="event.id" class="flex gap-3 rounded-lg border p-3">
+          <div class="mt-0.5 shrink-0">
             <Badge :variant="actionBadgeVariant(event.action)">
               {{ keyEventLabels[event.action] }}
             </Badge>
@@ -83,7 +83,7 @@ function eventDescription(event: KeyEvent) {
             </p>
           </div>
         </div>
-        <p v-if="!events.length" class="text-sm text-muted-foreground">
+        <p v-if="!events.length" class="py-4 text-center text-sm text-muted-foreground">
           No events yet.
         </p>
       </div>
