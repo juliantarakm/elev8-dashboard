@@ -1,10 +1,14 @@
 import type { GuestGuide, GuestGuideLink } from '~/../app/components/guest-guides/data/types'
+import type { PublicGuestGuideBranding } from '~/../app/components/settings/data/branding'
 
 // Mirror the type imports. In production these come from a shared package.
 export interface PublicGuideResponse {
   link: GuestGuideLink
   guide: GuestGuide
   listing?: any // Listing for fallback data (Wi-Fi, check-in/out, house rules, amenities)
+  checkIn: string | null
+  checkOut: string | null
+  branding: PublicGuestGuideBranding
 }
 
 export function usePublicGuestGuide() {
