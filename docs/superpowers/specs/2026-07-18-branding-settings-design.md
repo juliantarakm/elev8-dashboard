@@ -94,7 +94,7 @@ The section contains three instances of one reusable asset field.
 - Used only by the invoice preview and future invoice renderers.
 - Accepts PNG, JPEG, and WebP.
 - Maximum file size: 1 MB.
-- Shows an **Using primary logo** fallback state when empty.
+- Shows a **Using primary logo** fallback state when empty.
 - Recommended canvas: approximately 400 × 120 px.
 
 Each asset field supports:
@@ -244,7 +244,7 @@ Add `useTenantBranding` as the only dashboard-side branding state API. It provid
 - `defaults`: immutable Elev8 defaults
 - `resolvedInvoiceLogo`
 - `saveBranding(draft)`
-- `resetBranding()` or an equivalent default-cloning helper
+- `createDefaultBrandingDraft()`
 - `syncGuestGuideBranding()`
 - storage hydration and validation
 
@@ -254,7 +254,7 @@ Persistence key:
 elev8-tenant-branding-v1
 ```
 
-The composable uses the established `useState` plus client-only LocalStorage hydration pattern. Stored data is schema-checked before use. Invalid or obsolete data falls back to defaults rather than crashing rendering.
+The composable uses the established `useState` plus client-only LocalStorage hydration pattern. Stored data is schema-checked before use. Invalid or obsolete data falls back to defaults rather than crashing rendering. `updatedAt` is not editable; `saveBranding` replaces it with `new Date().toISOString()` only after validation succeeds.
 
 Asset limits keep the base64-expanded payload below normal LocalStorage quotas:
 
@@ -272,7 +272,7 @@ Asset limits keep the base64-expanded payload below normal LocalStorage quotas:
 
 If LocalStorage fails, saved reactive state must not change and the draft remains available for correction or retry.
 
-If LocalStorage succeeds but the server synchronization fails, dashboard branding still changes. Show a warning that the public Guest Guide could not be updated and keep a retry path available.
+If LocalStorage succeeds but server synchronization fails, dashboard branding still changes. Show a warning toast with a **Retry** action that calls `syncGuestGuideBranding()` using the saved configuration. The composable also retries once during the next client hydration.
 
 ## Dashboard Integration
 
@@ -373,9 +373,10 @@ app/components/settings/data/branding.ts
 app/composables/useTenantBranding.ts
 server/api/tenant-branding/index.put.ts
 server/utils/tenant-branding-store.ts
+guide-app/app/components/BrandHeader.vue
 ```
 
-A small Guest Guide brand-header component may be introduced if keeping it inline would make the public page responsible for both page orchestration and branding presentation.
+`BrandHeader.vue` owns the optional custom-logo bar so the public guide page remains responsible only for fetching data, applying page-level tokens, and composing sections.
 
 ### Updated files
 
@@ -392,7 +393,7 @@ guide-app/app/composables/usePublicGuestGuide.ts
 guide-app/app/assets/css/main.css
 ```
 
-Exact file ownership may be refined during implementation planning, but the state, upload, preview, server relay, and runtime consumer responsibilities must remain separated.
+The implementation must preserve these boundaries: shared state and defaults in the composable/data module, reusable upload behavior in `BrandingAssetField`, preview-only markup in `BrandingPreview`, server relay in the API/store, and runtime rendering in each app's existing shell.
 
 ## Validation and Error Handling
 
@@ -402,7 +403,7 @@ Exact file ownership may be refined during implementation planning, but the stat
 - File over the field's size limit
 - Image cannot be decoded
 - Color is not a six-digit hex value
-- Branding payload does not match the server schema
+- Draft does not match the local `TenantBranding` schema
 
 A blocking error disables Save changes.
 
@@ -493,10 +494,10 @@ Run at minimum:
 ```text
 pnpm typecheck
 pnpm lint
-pnpm test
+pnpm exec vitest run
 ```
 
-Use the repository's actual package-manager invocation if it differs during implementation.
+The repository does not define a `test` package script, so tests run through the installed Vitest binary.
 
 ## Acceptance Criteria
 
