@@ -871,29 +871,6 @@ const showAltTriggerPicker = ref(false)
             </button>
           </div>
         </div>
-        <div>
-          <Label>Channel</Label>
-          <Select :model-value="messageStep.channel" @update:model-value="patch({ channel: $event } as any)">
-            <SelectTrigger class="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ota">
-                OTA Inbox
-              </SelectItem>
-              <SelectItem value="whatsapp">
-                WhatsApp
-              </SelectItem>
-              <SelectItem value="email">
-                Email
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <p v-if="messageStep.channel === 'whatsapp'" class="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
-            <Icon name="i-lucide-triangle-alert" class="h-3 w-3" />
-            Requires WhatsApp Business API
-          </p>
-        </div>
         <div v-if="messageStep.messageMode === 'directive'">
           <div class="flex items-center gap-2 mb-1">
             <Label>Smart Directive</Label>
@@ -1012,31 +989,6 @@ const showAltTriggerPicker = ref(false)
           <p class="text-xs text-muted-foreground">
             Tailor messages using guest's reservation details and preferences.
           </p>
-        </div>
-        <div>
-          <Label>If ElevAI is Off</Label>
-          <Select :model-value="messageStep.fallback" @update:model-value="patch({ fallback: $event } as any)">
-            <SelectTrigger class="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="skip">
-                Skip this step
-              </SelectItem>
-              <SelectItem value="static">
-                Send static template
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div v-if="messageStep.fallback === 'static'">
-          <Label>Fallback Message</Label>
-          <Textarea
-            :model-value="messageStep.fallbackText"
-            class="mt-1 min-h-16 text-sm"
-            placeholder="Static fallback text…"
-            @update:model-value="patch({ fallbackText: $event as string } as any)"
-          />
         </div>
       </div>
 
@@ -1462,17 +1414,6 @@ const showAltTriggerPicker = ref(false)
                 <button class="flex-1 px-3 py-1.5 text-sm" :class="[(activeBranchStep as any)?.messageMode === 'directive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'directive' })">AI Directive</button>
                 <button class="flex-1 px-3 py-1.5 text-sm border-l" :class="[(activeBranchStep as any)?.messageMode === 'template' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'template' })">Template</button>
               </div>
-            </div>
-            <div>
-              <Label>Channel</Label>
-              <Select :model-value="(activeBranchStep as any)?.channel ?? 'ota'" @update:model-value="patchActiveBranch({ channel: $event })">
-                <SelectTrigger class="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ota">OTA Inbox</SelectItem>
-                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div>
               <Label>{{ (activeBranchStep as any)?.messageMode === 'template' ? 'Template Text' : 'AI Directive' }}</Label>
