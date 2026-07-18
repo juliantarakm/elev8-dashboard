@@ -106,7 +106,7 @@ function hoursFromNow(h: number): string {
 
 export const mockKeyBoxes: KeyBox[] = [
   { id: 'kb-1', listingId: 'lst-1', name: 'Front gate lockbox', location: 'Mounted on the left pillar of the main entrance gate', pin: '4821' },
-  { id: 'kb-2', listingId: 'lst-8', name: 'Villa door lockbox', location: 'Beside the main door, behind the plants', pin: '7390', notes: 'Code changes monthly' },
+  { id: 'kb-2', listingId: 'lst-8', name: 'Villa door lockbox', location: 'Beside the main door, behind the plants', pin: '7390' },
   { id: 'kb-3', listingId: 'lst-10', name: 'Beach gate lockbox', location: 'On the wooden fence post at the beach access path', pin: '2255' },
 ]
 
