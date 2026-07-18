@@ -1,4 +1,5 @@
 import type { KeyBox, KeyEvent, KeyEventAction, KeyStatus, KeyType, PhysicalKey } from '~/components/key-management/data/keys'
+import { staffMembers } from '~/components/inbox/data/conversations'
 import {
   CURRENT_STAFF_ID,
   generateKeyBoxId,
@@ -11,6 +12,8 @@ import {
   mockKeys,
   nextCopyNumber,
 } from '~/components/key-management/data/keys'
+import { listings } from '~/components/listings/data/listings'
+import { useNotifications } from '~/composables/useNotifications'
 
 export interface KeyManagementFilters {
   search: string
@@ -183,6 +186,7 @@ export function useKeyManagement() {
         }
       : k)
     appendEvent(keyId, 'return', holder)
+    resolveOverdueAlert(keyId)
     return { success: true }
   }
 
@@ -209,6 +213,7 @@ export function useKeyManagement() {
         }
       : k)
     appendEvent(keyId, 'mark_lost', holder, note)
+    resolveOverdueAlert(keyId)
     return { success: true }
   }
 
@@ -266,6 +271,39 @@ export function useKeyManagement() {
     return { success: true }
   }
 
+  function resolveOverdueAlert(keyId: string) {
+    const notifications = useNotifications()
+    const alert = notifications.alerts.value.find(a =>
+      a.type === 'KEY_NOT_RETURNED' && a.status === 'ACTIVE' && a.context?.key_id === keyId,
+    )
+    if (alert)
+      notifications.markAsRead(alert.alert_id)
+  }
+
+  function checkOverdueKeys() {
+    const notifications = useNotifications()
+    overdueKeys.value.forEach((key) => {
+      const hasActiveAlert = notifications.alerts.value.some(a =>
+        a.type === 'KEY_NOT_RETURNED' && a.status === 'ACTIVE' && a.context?.key_id === key.id,
+      )
+      if (hasActiveAlert)
+        return
+      const listing = listings.value.find(l => l.id === key.listingId)
+      const staff = staffMembers.find(s => s.id === key.holderStaffId)
+      const overdueHours = key.expectedReturnAt
+        ? Math.max(1, Math.round((Date.now() - new Date(key.expectedReturnAt).getTime()) / (1000 * 60 * 60)))
+        : 0
+      notifications.createAlert('KEY_NOT_RETURNED', 'WARNING', {
+        key_id: key.id,
+        listing_id: key.listingId,
+        listing_name: listing?.name ?? key.listingId,
+        key_label: getKeyDisplayName(key),
+        staff_name: staff?.name ?? 'Unknown staff',
+        overdue_hours: overdueHours,
+      })
+    })
+  }
+
   return {
     keys,
     keyEvents,
@@ -287,5 +325,6 @@ export function useKeyManagement() {
     addKeyBox,
     updateKeyBox,
     removeKeyBox,
+    checkOverdueKeys,
   }
 }

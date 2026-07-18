@@ -36,6 +36,7 @@ export type AlertType
     | 'GUEST_GUIDE_NOT_SENT'
     | 'GUEST_GUIDE_OPENED'
     | 'GUEST_GUIDE_SUBMITTED'
+    | 'KEY_NOT_RETURNED'
 
 export type AlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO'
 
@@ -91,6 +92,7 @@ export const alertDisplayLabels: Record<AlertType, string> = {
   GUEST_GUIDE_NOT_SENT: 'Guest Guide - Not Sent',
   GUEST_GUIDE_OPENED: 'Guest Guide - Opened',
   GUEST_GUIDE_SUBMITTED: 'Guest Guide - Form Submitted',
+  KEY_NOT_RETURNED: 'Key - Not Returned',
 }
 
 export const alertIcons: Record<AlertType, string> = {
@@ -131,6 +133,7 @@ export const alertIcons: Record<AlertType, string> = {
   GUEST_GUIDE_NOT_SENT: 'i-lucide-book-open',
   GUEST_GUIDE_OPENED: 'i-lucide-book-open-check',
   GUEST_GUIDE_SUBMITTED: 'i-lucide-book-open-check',
+  KEY_NOT_RETURNED: 'i-lucide-key-round',
 }
 
 export const alertRouteMap: Partial<Record<AlertType, string>> = {
@@ -171,6 +174,7 @@ export const alertRouteMap: Partial<Record<AlertType, string>> = {
   GUEST_GUIDE_NOT_SENT: '/guest-guides',
   GUEST_GUIDE_OPENED: '/guest-guides',
   GUEST_GUIDE_SUBMITTED: '/guest-guides',
+  KEY_NOT_RETURNED: '/key-management',
 }
 
 export function getDescription(type: AlertType, context: Record<string, any>): string {
@@ -236,9 +240,11 @@ export function getDescription(type: AlertType, context: Record<string, any>): s
     case 'AIRBNB_REVIEW_FAILED':
       return `Failed to generate review for ${context.guestName || 'guest'} at ${context.listingName || 'property'}.`
     case 'REVIEW_GUEST_LEFT':
-      return `${context.guestName || 'Guest'} left a ${context.rating ? context.rating + '-star ' : ''}review for ${context.listingName || 'property'}.`
+      return `${context.guestName || 'Guest'} left a ${context.rating ? `${context.rating}-star ` : ''}review for ${context.listingName || 'property'}.`
     case 'REVIEW_HOST_DUE':
       return `Host review for ${context.guestName || 'guest'} at ${context.listingName || 'property'} is due in ${context.daysRemaining || '?'} days.`
+    case 'KEY_NOT_RETURNED':
+      return `${context.key_label || 'Key'} at ${context.listing_name || 'property'} held by ${context.staff_name || 'staff'} is ${context.overdue_hours ?? '?'}h overdue.`
     default:
       return ''
   }

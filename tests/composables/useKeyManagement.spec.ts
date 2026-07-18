@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { useKeyManagement } from '~/composables/useKeyManagement'
+import { useNotifications } from '~/composables/useNotifications'
 
 describe('useKeyManagement', () => {
   it('initializes with mock data', () => {
@@ -144,5 +145,25 @@ describe('useKeyManagement', () => {
     expect(updated.success).toBe(true)
     expect(keyBoxes.value.find(b => b.id === added.keyBox!.id)!.pin).toBe('4410')
     expect(updateKeyBox('kb-missing', { pin: '1' }).success).toBe(false)
+  })
+
+  it('checkOverdueKeys creates one deduped KEY_NOT_RETURNED alert per overdue key', () => {
+    const { checkOverdueKeys } = useKeyManagement()
+    const notifications = useNotifications()
+    checkOverdueKeys()
+    checkOverdueKeys() // second call must not duplicate
+    const keyAlerts = notifications.alerts.value.filter(a => a.type === 'KEY_NOT_RETURNED' && a.status === 'ACTIVE')
+    expect(keyAlerts).toHaveLength(1)
+    expect(keyAlerts[0].context.key_id).toBe('key-001')
+    expect(keyAlerts[0].severity).toBe('WARNING')
+  })
+
+  it('returnKey resolves the active KEY_NOT_RETURNED alert for that key', () => {
+    const { checkOverdueKeys, returnKey } = useKeyManagement()
+    const notifications = useNotifications()
+    checkOverdueKeys()
+    expect(notifications.alerts.value.some(a => a.type === 'KEY_NOT_RETURNED' && a.status === 'ACTIVE')).toBe(true)
+    returnKey('key-001')
+    expect(notifications.alerts.value.filter(a => a.type === 'KEY_NOT_RETURNED' && a.status === 'ACTIVE')).toHaveLength(0)
   })
 })
