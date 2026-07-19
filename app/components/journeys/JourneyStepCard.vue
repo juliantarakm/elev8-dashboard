@@ -13,6 +13,8 @@ const emit = defineEmits<{
   delete: []
 }>()
 
+const { getTemplateById } = useWhatsAppTemplates()
+
 const stepMeta: Record<string, { icon: string, colorClasses: string, label: string }> = {
   trigger: { icon: 'i-lucide-zap', colorClasses: 'text-purple-500 bg-purple-50 dark:bg-purple-950', label: 'Trigger' },
   wait: { icon: 'i-lucide-clock', colorClasses: 'text-muted-foreground bg-muted', label: 'Wait' },
@@ -35,9 +37,12 @@ const summaryText = computed(() => {
     if (s.waitMode === 'until_condition')
       return 'Wait until conditions met'
     const parts = []
-    if ((s as any).durationDays) parts.push(`${(s as any).durationDays}d`)
-    if ((s as any).durationHours) parts.push(`${(s as any).durationHours}h`)
-    if ((s as any).durationMinutes) parts.push(`${(s as any).durationMinutes}m`)
+    if ((s as any).durationDays)
+      parts.push(`${(s as any).durationDays}d`)
+    if ((s as any).durationHours)
+      parts.push(`${(s as any).durationHours}h`)
+    if ((s as any).durationMinutes)
+      parts.push(`${(s as any).durationMinutes}m`)
     const duration = parts.length > 0 ? parts.join(' ') : null
     const hasTime = (s as any).waitUntilSpecificTime && (s as any).waitUntilTime
     if (duration && hasTime)
@@ -51,7 +56,13 @@ const summaryText = computed(() => {
   if (s.type === 'message') {
     const channelLabel: Record<string, string> = { ota: 'OTA Inbox', whatsapp: 'WhatsApp', email: 'Email' }
     const modeLabel = s.messageMode === 'template' ? 'Template' : 'AI Directive'
-    return `${modeLabel} · ${channelLabel[s.channel] ?? s.channel}`
+    const base = `${modeLabel} · ${channelLabel[s.channel] ?? s.channel}`
+    if (s.channel === 'whatsapp' && s.whatsappTemplateId) {
+      const template = getTemplateById(s.whatsappTemplateId)
+      const name = template?.name ?? 'Unknown template'
+      return `${base} · ${name}`
+    }
+    return base
   }
   if (s.type === 'context_check')
     return s.condition.length > 50 ? `${s.condition.slice(0, 50)}…` : s.condition
@@ -67,9 +78,15 @@ const summaryText = computed(() => {
   }
   if (s.type === 'if_else') {
     const actionLabel: Record<string, string> = {
-      wait: 'Wait', message: 'Send a Message', if_else: 'If/Else', hard_requirement: 'Hard Requirement',
-      action: 'Create Action Item', create_note: 'Create Reservation Note',
-      toggle_ai_pause: 'Pause Auto-responses', toggle_ai_start: 'Start Auto-responses', integration: 'Integrations',
+      wait: 'Wait',
+      message: 'Send a Message',
+      if_else: 'If/Else',
+      hard_requirement: 'Hard Requirement',
+      action: 'Create Action Item',
+      create_note: 'Create Reservation Note',
+      toggle_ai_pause: 'Pause Auto-responses',
+      toggle_ai_start: 'Start Auto-responses',
+      integration: 'Integrations',
     }
     const cond = conditionMeta[(s as any).conditionType as ConditionType] ?? ''
     const tStep = (s as any).trueBranchStep
@@ -81,7 +98,10 @@ const summaryText = computed(() => {
   }
   if (s.type === 'hard_requirement')
     return conditionMeta[(s as any).conditionType as ConditionType] ?? ''
-  if (s.type === 'create_note') { const t = (s as any).noteContent as string; return t.length > 50 ? `${t.slice(0, 50)}…` : t }
+  if (s.type === 'create_note') {
+    const t = (s as any).noteContent as string
+    return t.length > 50 ? `${t.slice(0, 50)}…` : t
+  }
   if (s.type === 'toggle_ai')
     return (s as any).enable ? 'Start AI responses' : 'Pause AI responses'
   if (s.type === 'integration')

@@ -118,7 +118,7 @@ function makeStep(type: StepType, id: string, enable?: boolean): JourneyStep {
   if (type === 'wait')
     return { id, type: 'wait', name: 'Wait', waitMode: 'time_delay', durationDays: 0, durationHours: 0, durationMinutes: 0 }
   if (type === 'message')
-    return { id, type: 'message', name: 'Send Message', messageMode: 'directive', channel: 'ota', templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip', fallbackText: '' }
+    return { id, type: 'message', name: 'Send Message', messageMode: 'directive', channel: 'ota', templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip', fallbackText: '', whatsappTemplateId: '' }
   if (type === 'context_check')
     return { id, type: 'context_check', name: 'Context Check', condition: '', onFail: 'skip' }
   if (type === 'if_else')

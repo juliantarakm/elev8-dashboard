@@ -96,6 +96,14 @@ function handleConditionSave(rules: ConditionRule[], combinator: ConditionCombin
 const triggerStep = computed(() => props.step?.type === 'trigger' ? props.step as TriggerStep : null)
 const waitStep = computed(() => props.step?.type === 'wait' ? props.step as WaitStep : null)
 const messageStep = computed(() => props.step?.type === 'message' ? props.step as MessageStep : null)
+
+const { approvedTemplates, getTemplateById } = useWhatsAppTemplates()
+const selectedWhatsAppTemplate = computed(() => {
+  if (!messageStep.value?.whatsappTemplateId)
+    return null
+  return getTemplateById(messageStep.value.whatsappTemplateId)
+})
+
 const contextStep = computed(() => props.step?.type === 'context_check' ? props.step as ContextCheckStep : null)
 const actionStep = computed(() => props.step?.type === 'action' ? props.step as ActionStep : null)
 const ifElseStep = computed(() => props.step?.type === 'if_else' ? props.step as IfElseStep : null)
@@ -141,7 +149,7 @@ function defaultBranchConfig(action: string): Record<string, any> {
   if (action === 'wait')
     return { type: 'wait', waitMode: 'time_delay' as const, durationDays: 0, durationHours: 0, durationMinutes: 0 }
   if (action === 'message')
-    return { type: 'message', messageMode: 'directive' as const, channel: 'ota' as const, templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip' as const, fallbackText: '' }
+    return { type: 'message', messageMode: 'directive' as const, channel: 'ota' as const, templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip' as const, fallbackText: '', whatsappTemplateId: '' }
   if (action === 'action')
     return { type: 'action', actionType: 'raise_action_item' as const, details: '' }
   if (action === 'create_note')
@@ -209,7 +217,12 @@ function branchStepSummary(step: Record<string, any> | undefined): string | null
   }
   if (step.type === 'message') {
     const ch: Record<string, string> = { ota: 'OTA', whatsapp: 'WhatsApp', email: 'Email' }
-    return `${label}: ${step.messageMode === 'template' ? 'Template' : 'AI Directive'} · ${ch[step.channel] ?? step.channel}`
+    const base = `${label}: ${step.messageMode === 'template' ? 'Template' : 'AI Directive'} · ${ch[step.channel] ?? step.channel}`
+    if (step.channel === 'whatsapp' && step.whatsappTemplateId) {
+      const tmpl = getTemplateById(step.whatsappTemplateId)
+      return `${base} · ${tmpl?.name ?? 'unknown'}`
+    }
+    return base
   }
   if (step.type === 'action') {
     const at: Record<string, string> = { raise_action_item: 'Raise Action Item', create_task: 'Create Task', flag_reservation: 'Flag Reservation', staff_alert: 'Staff Alert' }
@@ -894,6 +907,40 @@ const showAltTriggerPicker = ref(false)
             Requires WhatsApp Business API
           </p>
         </div>
+
+        <!-- WhatsApp Template selector -->
+        <div v-if="messageStep.channel === 'whatsapp' && messageStep.messageMode === 'template'" class="space-y-2">
+          <Label>WhatsApp Template</Label>
+          <Select
+            :model-value="messageStep.whatsappTemplateId"
+            @update:model-value="patch({ whatsappTemplateId: $event as string } as any)"
+          >
+            <SelectTrigger class="mt-1">
+              <SelectValue placeholder="Select an approved template…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="template in approvedTemplates"
+                :key="template.id"
+                :value="template.id"
+              >
+                {{ template.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div v-if="selectedWhatsAppTemplate" class="flex flex-wrap gap-1">
+            <Badge variant="secondary" class="capitalize">
+              {{ selectedWhatsAppTemplate.category }}
+            </Badge>
+            <Badge variant="outline">
+              {{ selectedWhatsAppTemplate.language.toUpperCase() }}
+            </Badge>
+          </div>
+          <p v-else-if="approvedTemplates.length === 0" class="text-xs text-muted-foreground">
+            No approved templates yet. Create one from Smart Flow → Journeys → WhatsApp Templates.
+          </p>
+        </div>
+
         <div v-if="messageStep.messageMode === 'directive'">
           <div class="flex items-center gap-2 mb-1">
             <Label>Smart Directive</Label>
@@ -1474,6 +1521,41 @@ const showAltTriggerPicker = ref(false)
                 </SelectContent>
               </Select>
             </div>
+
+            <!-- Branch WhatsApp Template selector -->
+            <div
+              v-if="(activeBranchStep as any)?.channel === 'whatsapp' && (activeBranchStep as any)?.messageMode === 'template'"
+              class="space-y-2"
+            >
+              <Label>WhatsApp Template</Label>
+              <Select
+                :model-value="(activeBranchStep as any)?.whatsappTemplateId ?? ''"
+                @update:model-value="patchActiveBranch({ whatsappTemplateId: $event as string })"
+              >
+                <SelectTrigger class="mt-1"><SelectValue placeholder="Select an approved template…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="template in approvedTemplates"
+                    :key="template.id"
+                    :value="template.id"
+                  >
+                    {{ template.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div
+                v-if="approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)"
+                class="flex flex-wrap gap-1"
+              >
+                <Badge variant="secondary" class="capitalize">
+                  {{ approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)?.category }}
+                </Badge>
+                <Badge variant="outline">
+                  {{ approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)?.language.toUpperCase() }}
+                </Badge>
+              </div>
+            </div>
+
             <div>
               <Label>{{ (activeBranchStep as any)?.messageMode === 'template' ? 'Template Text' : 'AI Directive' }}</Label>
               <Textarea

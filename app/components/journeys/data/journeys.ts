@@ -208,6 +208,8 @@ export interface MessageStep extends BaseStep {
   aiPersonalization?: boolean
   discountPercent?: number
   discountAbsolute?: number
+  // WhatsApp Template Studio
+  whatsappTemplateId?: string
 }
 
 export interface ContextCheckStep extends BaseStep {
