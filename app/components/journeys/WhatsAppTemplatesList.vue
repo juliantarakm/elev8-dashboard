@@ -200,14 +200,23 @@ function formatDate(iso: string): string {
                   {{ template.language.toUpperCase() }}
                 </TableCell>
                 <TableCell>
-                  <div class="flex flex-col gap-0.5">
-                    <Badge :variant="statusMeta[template.status].variant">
+                  <TooltipProvider :delay-duration="100">
+                    <Tooltip v-if="template.status === 'rejected' && template.statusReason">
+                      <TooltipTrigger as-child>
+                        <Badge :variant="statusMeta[template.status].variant" class="cursor-help">
+                          {{ statusMeta[template.status].label }}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" class="max-w-sm">
+                        <p class="text-xs">
+                          {{ template.statusReason }}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Badge v-else :variant="statusMeta[template.status].variant">
                       {{ statusMeta[template.status].label }}
                     </Badge>
-                    <span v-if="template.statusReason" class="text-[10px] text-muted-foreground line-clamp-1 max-w-[260px]">
-                      {{ template.statusReason }}
-                    </span>
-                  </div>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell class="text-sm text-muted-foreground">
                   {{ formatDate(template.lastModified) }}
