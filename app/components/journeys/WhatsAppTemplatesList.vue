@@ -69,6 +69,12 @@ function handleDelete(template: WhatsAppTemplate) {
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+const filterOptions = computed(() => {
+  const all: { key: 'all' | TemplateStatus, label: string } = { key: 'all', label: 'All' }
+  const status = Object.entries(statusMeta).map(([key, meta]) => ({ key: key as TemplateStatus, label: meta.label }))
+  return [all, ...status]
+})
 </script>
 
 <template>
@@ -113,24 +119,24 @@ function formatDate(iso: string): string {
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex flex-wrap gap-1">
             <button
-              v-for="[key, meta] in Object.entries(statusMeta).concat([['all', { label: 'All', variant: 'secondary', description: '' }]])"
-              :key="key"
+              v-for="option in filterOptions"
+              :key="option.key"
               class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-              :class="activeTab === key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'"
-              @click="activeTab = key as TemplateStatus | 'all'"
+              :class="activeTab === option.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'"
+              @click="activeTab = option.key"
             >
-              {{ meta.label }}
+              {{ option.label }}
               <span
-                v-if="key !== 'all'"
+                v-if="option.key !== 'all'"
                 class="rounded-full px-1.5 py-0 text-[10px]"
-                :class="activeTab === key ? 'bg-primary-foreground/20' : 'bg-muted'"
+                :class="activeTab === option.key ? 'bg-primary-foreground/20' : 'bg-muted'"
               >
-                {{ statusCounts[key as TemplateStatus] }}
+                {{ statusCounts[option.key] }}
               </span>
               <span
                 v-else
                 class="rounded-full px-1.5 py-0 text-[10px]"
-                :class="activeTab === key ? 'bg-primary-foreground/20' : 'bg-muted'"
+                :class="activeTab === option.key ? 'bg-primary-foreground/20' : 'bg-muted'"
               >
                 {{ templates.length }}
               </span>
