@@ -958,6 +958,7 @@ Tenant-level mock branding at `/settings/branding`:
 - Invoice logo → invoice preview/future invoice renderers only
 - Guest Guide colors → primary, background, and text; never change dashboard colors
 - `useTenantBranding` persists `TenantBranding` to `elev8-tenant-branding-v1` in LocalStorage and syncs to `PUT /api/tenant-branding`
+- Calling `useTenantBranding()` registers a client-only `onMounted` hook that hydrates LocalStorage and resyncs the mock server after dashboard startup.
 - Public `GET /api/guest-guides/by-token/:token` includes top-level `branding`; guide-app applies scoped CSS variables
 - Invoice renderer/PDF generation and real file storage remain out of scope
 
@@ -1007,7 +1008,7 @@ Tenant-level mock branding at `/settings/branding`:
 
 #### Dashboard integration
 - **`SidebarNavHeader.vue`** — Renders `<img>` for `branding.primaryLogo.dataUrl` when present, otherwise the static Elev8 wordmark. Logo swaps reactively after Save
-- **`app.vue`** — `useHead()` reactive favicon link bound to `faviconHref` (custom data URL or `/favicon.ico`). Hydration-safe via `<ClientOnly>` around the data-URL branch
+- **`app.vue`** — `useHead()` reactive favicon link bound to `faviconHref` (custom data URL or `/favicon.ico`). Hydration-safe via the `isHydrated` gate — LocalStorage hydration runs only in `onMounted`, so SSR renders the default `/favicon.ico`; client hydration swaps to the custom data URL post-mount
 
 #### Server (`server/`)
 - **`server/utils/tenant-branding-store.ts`** — In-process singleton (`currentBranding`) with `getTenantBranding()` / `setTenantBranding(value)` / `resetTenantBranding()`. Stores deep clones; no persistence layer
@@ -1359,7 +1360,7 @@ const table = useVueTable({
 | `useWhatsAppRules` | `app/composables/useWhatsAppRules.ts` | Routing rules CRUD | `rules`, `saveRule()`, `deleteRule()`, `toggleRule()` |
 | `useWhatsAppTemplates` | `app/composables/useWhatsAppTemplates.ts` | Template messages | `waTemplates`, `renderTemplate()` |
 | `useSmartLock` | `app/composables/useSmartLock.ts` | Smart lock connection + per-listing/room lock assignment + brand-shared access codes | `connection`, `isConnected`, `locks`, `codes`, `validateAndConnect(apiKey, workspaceName)`, `disconnect()`, `pairLock`, `unpairLock`, `setMainLock`, `renameLock`, `swapDevice(lockId, newProviderDeviceId)`, `generateAccessCode` (async, 700ms mock), `revokeAccessCode`, `findActiveBrandCode(reservationId, provider)`, `getLocksForListing`, `getLocksForUnit`, `getLockCount`, `getMainLock`, `syncDevices`, `emitMockAlerts`. Persisted to localStorage. |
-| `useTenantBranding` | `app/composables/useTenantBranding.ts` | Tenant logo/favicon/Guest Guide color state | `branding`, `resolvedInvoiceLogo`, `faviconHref`, `saveBranding()`, `syncGuestGuideBranding()`. Persisted to LocalStorage. |
+| `useTenantBranding` | `app/composables/useTenantBranding.ts` | Tenant logo/favicon/Guest Guide color state | `branding`, `isHydrated`, `lastSyncError`, `resolvedInvoiceLogo`, `faviconHref`, `createDefaultBrandingDraft`, `hydrateBranding()`, `saveBranding()`, `syncGuestGuideBranding()`. Persisted to LocalStorage. |
 
 ### State Management Rules
 - **Inbox conversations**: `useState<Conversation[]>()` — reactive, persists per request
