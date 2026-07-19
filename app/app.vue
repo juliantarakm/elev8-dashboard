@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { ConfigProvider } from 'reka-ui'
 import { Toaster } from '@/components/ui/sonner'
+import { getBrandingFaviconHref } from '~/components/settings/data/branding'
 import 'vue-sonner/style.css'
 
 const colorMode = useColorMode()
 const color = computed(() => colorMode.value === 'dark' ? '#09090b' : '#ffffff')
 const { theme } = useAppSettings()
+const { branding } = useTenantBranding()
 
-useHead({
+useHead(() => ({
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: color },
+    { key: 'theme-color', name: 'theme-color', content: color.value },
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' },
+    { rel: 'icon', href: getBrandingFaviconHref(branding.value) },
   ],
-  htmlAttrs: {
-    lang: 'en',
-  },
+  htmlAttrs: { lang: 'en' },
   bodyAttrs: {
-    class: computed(() => `color-${theme.value?.color || 'default'} theme-${theme.value?.type || 'default'}`),
+    class: `color-${theme.value?.color || 'default'} theme-${theme.value?.type || 'default'}`,
   },
   script: [
     {
@@ -28,7 +28,7 @@ useHead({
       tagPosition: 'head',
     },
   ],
-})
+}))
 
 const title = 'Nuxt Shadcn-Vue TailwindCSS 4 - Dashboard Template'
 const description = 'This dashboard, built with Nuxt, Shadcn Vue, and TailwindCSS. It includes a dark mode toggle and is optimized for performance and data efficiency.'

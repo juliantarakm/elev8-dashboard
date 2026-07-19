@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { cn } from '@/lib/utils'
 import { useSidebar } from '~/components/ui/sidebar'
+import { useTenantBranding } from '~/composables/useTenantBranding'
 
 const props = defineProps<{
   teams: {
@@ -10,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const { isMobile } = useSidebar()
+const { branding } = useTenantBranding()
 
 const activeTeam = ref(props.teams[0])
 </script>
@@ -23,8 +26,22 @@ const activeTeam = ref(props.teams[0])
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <div class="aspect-square size-8 flex items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <Icon :name="activeTeam!.logo" class="size-4" />
+            <div
+              :class="cn(
+                'aspect-square size-8 flex items-center justify-center rounded-lg',
+                branding.primaryLogo
+                  ? 'border bg-background p-1'
+                  : 'bg-sidebar-primary text-sidebar-primary-foreground',
+              )"
+            >
+              <img
+                v-if="branding.primaryLogo"
+                data-testid="sidebar-brand-logo"
+                :src="branding.primaryLogo.dataUrl"
+                alt="Tenant primary logo"
+                class="max-h-full max-w-full object-contain"
+              >
+              <Icon v-else :name="activeTeam!.logo" class="size-4" />
             </div>
             <div class="grid flex-1 text-left text-sm leading-tight">
               <span class="truncate font-semibold">
