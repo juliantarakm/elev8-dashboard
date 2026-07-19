@@ -26,6 +26,10 @@ const sidebarNavItems: Item[] = [
     href: '/settings/appearance',
   },
   {
+    title: 'Branding',
+    href: '/settings/branding',
+  },
+  {
     title: 'Notifications',
     href: '/settings/notifications',
   },
