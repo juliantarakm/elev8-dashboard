@@ -20,7 +20,8 @@ const isRefining = ref(false)
 
 function handleRefine() {
   const p = refinePrompt.value.trim()
-  if (!p || isRefining.value) return
+  if (!p || isRefining.value)
+    return
   isRefining.value = true
   // Brief delay so the spinner is visible, then emit. Parent will swap
   // generatedJourney to the refined result and the textarea is reset.
@@ -99,7 +100,7 @@ const stepMeta: Record<string, { icon: string, colorClasses: string }> = {
                     {{ (step as any).waitMode === 'until_condition' ? 'Wait until conditions met' : [
                       (step as any).durationDays ? `${(step as any).durationDays}d` : '',
                       (step as any).durationHours ? `${(step as any).durationHours}h` : '',
-                      (step as any).durationMinutes ? `${(step as any).durationMinutes}m` : ''
+                      (step as any).durationMinutes ? `${(step as any).durationMinutes}m` : '',
                     ].filter(Boolean).join(' ') || 'No wait time configured' }}
                   </p>
                   <p v-else-if="step.type === 'context_check'" class="truncate text-xs text-muted-foreground">

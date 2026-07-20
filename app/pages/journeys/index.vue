@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Journey, MarketplaceTemplate } from '~/components/journeys/data/journeys'
 import type { WhatsAppTemplate } from '~/components/journeys/data/whatsapp-templates'
-import { buildModifiedJourney } from '~/components/journeys/data/journeys'
 import { toast } from 'vue-sonner'
+import { buildModifiedJourney } from '~/components/journeys/data/journeys'
 import { createEmptyTemplate } from '~/components/journeys/data/whatsapp-templates'
 
 definePageMeta({ layout: 'default' })
@@ -114,7 +114,8 @@ function handleReviewBack() {
 function handleRefine(prompt: string) {
   // Refine the journey currently on screen — anchored to what's displayed, not
   // the original source. (Regenerate stays anchored to the source journey.)
-  if (!generatedJourney.value) return
+  if (!generatedJourney.value)
+    return
   const before = generatedJourney.value.steps.length
   const refined = buildModifiedJourney(generatedJourney.value as Journey, prompt)
   generatedJourney.value = refined as unknown as Journey

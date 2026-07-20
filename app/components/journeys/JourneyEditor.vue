@@ -176,7 +176,7 @@ function handleSave() {
   const trigStep = localJourney.value.steps.find(s => s.type === 'trigger') as any
   // Strip the transient `isNew` marker set by buildModifiedJourney. Persisting it
   // would mean every future re-open shows the "New" badge, which is wrong.
-  const steps = localJourney.value.steps.map(s => {
+  const steps = localJourney.value.steps.map((s) => {
     const { isNew: _isNew, ...rest } = s as any
     return rest
   })
