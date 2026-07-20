@@ -1,5 +1,6 @@
 // app/composables/useRoles.ts
 import type { Role, RoleId } from '~/components/users/data/roles'
+import { defaultPerms } from '~/components/users/data/permissions'
 import { defaultRoles, findDefaultRole } from '~/components/users/data/roles'
 
 const STORAGE_KEY = 'elev8-tenant-roles'
@@ -8,12 +9,25 @@ function hasStorage(): boolean {
   return typeof window !== 'undefined' && !!window.localStorage
 }
 
+function mergeWithDefaultPermissions(roles: Role[]): Role[] {
+  const defaults = defaultPerms()
+  return roles.map(r => ({
+    ...r,
+    defaultPermissions: {
+      ...defaults,
+      ...r.defaultPermissions,
+    },
+  }))
+}
+
 function loadFromStorage(): Role[] | null {
-  if (!hasStorage()) return null
+  if (!hasStorage())
+    return null
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as Role[]
+    if (!raw)
+      return null
+    return mergeWithDefaultPermissions(JSON.parse(raw) as Role[])
   }
   catch {
     return null
@@ -21,7 +35,8 @@ function loadFromStorage(): Role[] | null {
 }
 
 function saveToStorage(roles: Role[]): void {
-  if (!hasStorage()) return
+  if (!hasStorage())
+    return
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(roles))
   }
@@ -47,7 +62,8 @@ export function useRoles() {
 
   function resetRoleToDefaults(id: RoleId): void {
     const defaults = findDefaultRole(id)
-    if (!defaults) return
+    if (!defaults)
+      return
     const fresh = JSON.parse(JSON.stringify(defaults))
     roles.value = roles.value.map(r => r.id === id ? fresh : r)
     saveToStorage(roles.value)

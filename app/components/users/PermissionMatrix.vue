@@ -2,8 +2,8 @@
 <script setup lang="ts">
 import type { ModulePermissions, PermissionModule } from '~/components/users/data/permissions'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip'
-import { PERMISSION_MODULES } from '~/components/users/data/permissions'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
+import { DASHBOARD_PERMISSION_MODULES, MOBILE_PERMISSION_MODULES } from '~/components/users/data/permissions'
 
 interface Props {
   permissions: Record<PermissionModule, ModulePermissions>
@@ -36,125 +36,148 @@ function isChecked(module: PermissionModule, key: keyof ModulePermissions): bool
         Permissions
       </CardTitle>
       <p class="text-xs text-muted-foreground">
-        Configure which modules this role can view or edit in the dashboard. Mobile app permissions are coming soon.
+        Configure which modules this role can view or edit on each platform.
       </p>
     </CardHeader>
     <CardContent class="p-0">
-      <TooltipProvider>
-        <div class="border-y">
-          <!-- Header row -->
-          <div class="grid grid-cols-[1fr_80px_80px_80px_80px] text-xs font-medium text-muted-foreground px-4 py-2 border-b bg-muted/30">
-            <div>Module</div>
-            <div class="text-center">
-              Dashboard
-              <div class="text-[10px] font-normal">
-                View
-              </div>
-            </div>
-            <div class="text-center">
-              Dashboard
-              <div class="text-[10px] font-normal">
-                Edit
-              </div>
-            </div>
-            <div class="text-center">
-              Mobile
-              <div class="text-[10px] font-normal">
-                View
-              </div>
-            </div>
-            <div class="text-center">
-              Mobile
-              <div class="text-[10px] font-normal">
-                Edit
-              </div>
-            </div>
-          </div>
-
-          <!-- Module rows -->
-          <div
-            v-for="m in PERMISSION_MODULES"
-            :key="m.id"
-            class="grid grid-cols-[1fr_80px_80px_80px_80px] items-center px-4 py-2 border-b last:border-b-0 hover:bg-muted/20"
+      <Tabs default-value="dashboard" class="w-full">
+        <TabsList class="w-full rounded-none border-b bg-transparent p-0 h-auto">
+          <TabsTrigger
+            value="dashboard"
+            class="flex-1 rounded-none border-b-2 border-transparent py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
-            <div class="text-sm">
-              {{ m.label }}
+            <Icon name="lucide:monitor" class="mr-2 size-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger
+            value="mobile"
+            class="flex-1 rounded-none border-b-2 border-transparent py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            <Icon name="lucide:smartphone" class="mr-2 size-4" />
+            Mobile
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" class="m-0">
+          <div class="border-y">
+            <!-- Header row -->
+            <div class="grid grid-cols-[1fr_80px_80px] text-xs font-medium text-muted-foreground px-4 py-2 border-b bg-muted/30">
+              <div>Module</div>
+              <div class="text-center">
+                View
+              </div>
+              <div class="text-center">
+                Edit
+              </div>
             </div>
 
-            <!-- Dashboard View -->
-            <div class="flex justify-center">
-              <button
-                type="button"
-                :aria-label="`${m.label} dashboard view`"
-                :aria-pressed="isChecked(m.id, 'dashboardView')"
-                :disabled="readonly"
-                class="flex size-5 items-center justify-center rounded border transition-colors"
-                :class="isChecked(m.id, 'dashboardView')
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-input bg-background hover:bg-muted'"
-                @click="toggle(m.id, 'dashboardView')"
-              >
-                <Icon v-if="isChecked(m.id, 'dashboardView')" name="lucide:check" class="size-3" />
-              </button>
-            </div>
+            <!-- Module rows -->
+            <div
+              v-for="m in DASHBOARD_PERMISSION_MODULES"
+              :key="m.id"
+              class="grid grid-cols-[1fr_80px_80px] items-center px-4 py-2 border-b last:border-b-0 hover:bg-muted/20"
+            >
+              <div class="text-sm">
+                {{ m.label }}
+              </div>
 
-            <!-- Dashboard Edit -->
-            <div class="flex justify-center">
-              <button
-                type="button"
-                :aria-label="`${m.label} dashboard edit`"
-                :aria-pressed="isChecked(m.id, 'dashboardEdit')"
-                :disabled="readonly"
-                class="flex size-5 items-center justify-center rounded border transition-colors"
-                :class="isChecked(m.id, 'dashboardEdit')
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-input bg-background hover:bg-muted'"
-                @click="toggle(m.id, 'dashboardEdit')"
-              >
-                <Icon v-if="isChecked(m.id, 'dashboardEdit')" name="lucide:check" class="size-3" />
-              </button>
-            </div>
+              <!-- Dashboard View -->
+              <div class="flex justify-center">
+                <button
+                  type="button"
+                  :aria-label="`${m.label} dashboard view`"
+                  :aria-pressed="isChecked(m.id, 'dashboardView')"
+                  :disabled="readonly"
+                  class="flex size-5 items-center justify-center rounded border transition-colors"
+                  :class="isChecked(m.id, 'dashboardView')
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background hover:bg-muted'"
+                  @click="toggle(m.id, 'dashboardView')"
+                >
+                  <Icon v-if="isChecked(m.id, 'dashboardView')" name="lucide:check" class="size-3" />
+                </button>
+              </div>
 
-            <!-- Mobile View (locked) -->
-            <div class="flex justify-center">
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <button
-                    type="button"
-                    :aria-label="`${m.label} mobile view (coming soon)`"
-                    disabled
-                    class="flex size-5 items-center justify-center rounded border border-muted-foreground/30 bg-muted text-muted-foreground cursor-not-allowed"
-                  >
-                    <Icon name="lucide:lock" class="size-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Mobile app coming soon</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
-            <!-- Mobile Edit (locked) -->
-            <div class="flex justify-center">
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <button
-                    type="button"
-                    :aria-label="`${m.label} mobile edit (coming soon)`"
-                    disabled
-                    class="flex size-5 items-center justify-center rounded border border-muted-foreground/30 bg-muted text-muted-foreground cursor-not-allowed"
-                  >
-                    <Icon name="lucide:lock" class="size-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Mobile app coming soon</p>
-                </TooltipContent>
-              </Tooltip>
+              <!-- Dashboard Edit -->
+              <div class="flex justify-center">
+                <button
+                  type="button"
+                  :aria-label="`${m.label} dashboard edit`"
+                  :aria-pressed="isChecked(m.id, 'dashboardEdit')"
+                  :disabled="readonly"
+                  class="flex size-5 items-center justify-center rounded border transition-colors"
+                  :class="isChecked(m.id, 'dashboardEdit')
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background hover:bg-muted'"
+                  @click="toggle(m.id, 'dashboardEdit')"
+                >
+                  <Icon v-if="isChecked(m.id, 'dashboardEdit')" name="lucide:check" class="size-3" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </TooltipProvider>
+        </TabsContent>
+
+        <TabsContent value="mobile" class="m-0">
+          <div class="border-y">
+            <!-- Header row -->
+            <div class="grid grid-cols-[1fr_80px_80px] text-xs font-medium text-muted-foreground px-4 py-2 border-b bg-muted/30">
+              <div>Module</div>
+              <div class="text-center">
+                View
+              </div>
+              <div class="text-center">
+                Edit
+              </div>
+            </div>
+
+            <!-- Module rows -->
+            <div
+              v-for="m in MOBILE_PERMISSION_MODULES"
+              :key="m.id"
+              class="grid grid-cols-[1fr_80px_80px] items-center px-4 py-2 border-b last:border-b-0 hover:bg-muted/20"
+            >
+              <div class="text-sm">
+                {{ m.label }}
+              </div>
+
+              <!-- Mobile View -->
+              <div class="flex justify-center">
+                <button
+                  type="button"
+                  :aria-label="`${m.label} mobile view`"
+                  :aria-pressed="isChecked(m.id, 'mobileView')"
+                  :disabled="readonly"
+                  class="flex size-5 items-center justify-center rounded border transition-colors"
+                  :class="isChecked(m.id, 'mobileView')
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background hover:bg-muted'"
+                  @click="toggle(m.id, 'mobileView')"
+                >
+                  <Icon v-if="isChecked(m.id, 'mobileView')" name="lucide:check" class="size-3" />
+                </button>
+              </div>
+
+              <!-- Mobile Edit -->
+              <div class="flex justify-center">
+                <button
+                  type="button"
+                  :aria-label="`${m.label} mobile edit`"
+                  :aria-pressed="isChecked(m.id, 'mobileEdit')"
+                  :disabled="readonly"
+                  class="flex size-5 items-center justify-center rounded border transition-colors"
+                  :class="isChecked(m.id, 'mobileEdit')
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background hover:bg-muted'"
+                  @click="toggle(m.id, 'mobileEdit')"
+                >
+                  <Icon v-if="isChecked(m.id, 'mobileEdit')" name="lucide:check" class="size-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </CardContent>
   </Card>
 </template>
