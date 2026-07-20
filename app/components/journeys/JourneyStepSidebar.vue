@@ -18,8 +18,8 @@ import type {
   TriggerType,
   WaitStep,
 } from './data/journeys'
-import { conditionMeta, defaultTriggerSettings, primaryConditionTypes, triggerMeta } from './data/journeys'
 import SendGuestGuideAction from './actions/SendGuestGuideAction.vue'
+import { conditionMeta, defaultTriggerSettings, primaryConditionTypes, triggerMeta } from './data/journeys'
 
 const props = defineProps<{
   step: JourneyStep | null
@@ -96,6 +96,14 @@ function handleConditionSave(rules: ConditionRule[], combinator: ConditionCombin
 const triggerStep = computed(() => props.step?.type === 'trigger' ? props.step as TriggerStep : null)
 const waitStep = computed(() => props.step?.type === 'wait' ? props.step as WaitStep : null)
 const messageStep = computed(() => props.step?.type === 'message' ? props.step as MessageStep : null)
+
+const { approvedTemplates, getTemplateById } = useWhatsAppTemplates()
+const selectedWhatsAppTemplate = computed(() => {
+  if (!messageStep.value?.whatsappTemplateId)
+    return null
+  return getTemplateById(messageStep.value.whatsappTemplateId)
+})
+
 const contextStep = computed(() => props.step?.type === 'context_check' ? props.step as ContextCheckStep : null)
 const actionStep = computed(() => props.step?.type === 'action' ? props.step as ActionStep : null)
 const ifElseStep = computed(() => props.step?.type === 'if_else' ? props.step as IfElseStep : null)
@@ -141,7 +149,7 @@ function defaultBranchConfig(action: string): Record<string, any> {
   if (action === 'wait')
     return { type: 'wait', waitMode: 'time_delay' as const, durationDays: 0, durationHours: 0, durationMinutes: 0 }
   if (action === 'message')
-    return { type: 'message', messageMode: 'directive' as const, channel: 'ota' as const, templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip' as const, fallbackText: '' }
+    return { type: 'message', messageMode: 'directive' as const, channel: 'ota' as const, templateText: '', directive: '', contextCheckEnabled: false, contextCheckInstruction: '', fallback: 'skip' as const, fallbackText: '', whatsappTemplateId: '' }
   if (action === 'action')
     return { type: 'action', actionType: 'raise_action_item' as const, details: '' }
   if (action === 'create_note')
@@ -202,14 +210,22 @@ function branchStepSummary(step: Record<string, any> | undefined): string | null
   const label = branchActionLabels[t] ?? t
   if (step.type === 'wait') {
     const parts = []
-    if (step.durationDays) parts.push(`${step.durationDays}d`)
-    if (step.durationHours) parts.push(`${step.durationHours}h`)
-    if (step.durationMinutes) parts.push(`${step.durationMinutes}m`)
+    if (step.durationDays)
+      parts.push(`${step.durationDays}d`)
+    if (step.durationHours)
+      parts.push(`${step.durationHours}h`)
+    if (step.durationMinutes)
+      parts.push(`${step.durationMinutes}m`)
     return `${label}: ${parts.length ? parts.join(' ') : 'no duration'}`
   }
   if (step.type === 'message') {
     const ch: Record<string, string> = { ota: 'OTA', whatsapp: 'WhatsApp', email: 'Email' }
-    return `${label}: ${step.messageMode === 'template' ? 'Template' : 'AI Directive'} · ${ch[step.channel] ?? step.channel}`
+    const base = `${label}: ${step.messageMode === 'template' ? 'Template' : 'AI Directive'} · ${ch[step.channel] ?? step.channel}`
+    if (step.channel === 'whatsapp' && step.whatsappTemplateId) {
+      const tmpl = getTemplateById(step.whatsappTemplateId)
+      return `${base} · ${tmpl?.name ?? 'unknown'}`
+    }
+    return base
   }
   if (step.type === 'action') {
     const at: Record<string, string> = { raise_action_item: 'Raise Action Item', create_task: 'Create Task', flag_reservation: 'Flag Reservation', staff_alert: 'Staff Alert' }
@@ -217,7 +233,7 @@ function branchStepSummary(step: Record<string, any> | undefined): string | null
   }
   if (step.type === 'create_note') {
     const txt = step.noteContent ?? ''
-    return `${label}: ${txt.length > 40 ? txt.slice(0, 40) + '…' : txt || 'empty'}`
+    return `${label}: ${txt.length > 40 ? `${txt.slice(0, 40)}…` : txt || 'empty'}`
   }
   if (step.type === 'toggle_ai') {
     return `${label}: ${step.duration === 'indefinite' ? 'Indefinite' : `${step.days ?? 0}d ${step.hours ?? 0}h ${step.minutes ?? 0}m`}`
@@ -429,7 +445,9 @@ const showAltTriggerPicker = ref(false)
                   placeholder="e.g. I'm interested in early check-in, Tell me about parking…"
                   @update:model-value="patchTriggerSettings(i, { keywords: $event as string })"
                 />
-                <p class="text-xs text-muted-foreground">AI will analyze guest messages to detect matching intent</p>
+                <p class="text-xs text-muted-foreground">
+                  AI will analyze guest messages to detect matching intent
+                </p>
               </div>
 
               <!-- Settings: sentiment trigger -->
@@ -468,8 +486,12 @@ const showAltTriggerPicker = ref(false)
                     <Icon v-if="entry.settings.triggerImmediately" name="i-lucide-check" class="h-3 w-3" />
                   </div>
                   <div>
-                    <p class="text-sm font-medium leading-none">Trigger immediately</p>
-                    <p class="mt-1 text-xs text-muted-foreground">Start journey as soon as sentiment is detected</p>
+                    <p class="text-sm font-medium leading-none">
+                      Trigger immediately
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Start journey as soon as sentiment is detected
+                    </p>
                   </div>
                 </div>
 
@@ -478,7 +500,9 @@ const showAltTriggerPicker = ref(false)
                     <Label class="text-xs text-muted-foreground">Delay after sentiment detected</Label>
                     <div class="mt-2 grid grid-cols-3 gap-2">
                       <div v-for="unit in [{ key: 'delayDays', label: 'Days' }, { key: 'delayHours', label: 'Hours' }, { key: 'delayMinutes', label: 'Minutes' }]" :key="unit.key">
-                        <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                        <p class="mb-1 text-center text-xs text-muted-foreground">
+                          {{ unit.label }}
+                        </p>
                         <Input type="number" :model-value="(entry.settings as any)[unit.key] ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patchTriggerSettings(i, { [unit.key]: Number($event) })" />
                       </div>
                     </div>
@@ -556,7 +580,9 @@ const showAltTriggerPicker = ref(false)
                   <Label class="text-xs text-muted-foreground">Trigger After Gap Night Opens</Label>
                   <div class="mt-2 grid grid-cols-3 gap-2">
                     <div v-for="unit in [{ key: 'delayDays', label: 'Days' }, { key: 'delayHours', label: 'Hours' }, { key: 'delayMinutes', label: 'Minutes' }]" :key="unit.key">
-                      <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                      <p class="mb-1 text-center text-xs text-muted-foreground">
+                        {{ unit.label }}
+                      </p>
                       <Input type="number" :model-value="(entry.settings as any)[unit.key] ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patchTriggerSettings(i, { [unit.key]: Number($event) })" />
                     </div>
                   </div>
@@ -575,33 +601,35 @@ const showAltTriggerPicker = ref(false)
                   </div>
                   <div>
                     <p class="text-sm font-medium leading-none">
-                      {{ entry.type === 'inquiry_received' ? 'Trigger at inquiry' :
-                         entry.type === 'new_message_received' ? 'Trigger when host sends message' :
-                         entry.type === 'new_booking' ? 'Trigger at booking' :
-                         entry.type === 'guest_checkout' ? 'Trigger at guest check-out' :
-                         'Trigger at cancellation' }}
+                      {{ entry.type === 'inquiry_received' ? 'Trigger at inquiry'
+                        : entry.type === 'new_message_received' ? 'Trigger when host sends message'
+                          : entry.type === 'new_booking' ? 'Trigger at booking'
+                            : entry.type === 'guest_checkout' ? 'Trigger at guest check-out'
+                              : 'Trigger at cancellation' }}
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                      {{ entry.type === 'inquiry_received' ? 'Trigger as soon as the inquiry is received, with no delay' :
-                         entry.type === 'new_message_received' ? 'Trigger as soon as the host sends a message, with no delay' :
-                         entry.type === 'new_booking' ? 'Trigger as soon as the booking is confirmed, with no delay' :
-                         entry.type === 'guest_checkout' ? 'Trigger as soon as the guest marks themselves as checked-out, with no delay' :
-                         'Trigger as soon as the cancellation occurs, with no delay' }}
+                      {{ entry.type === 'inquiry_received' ? 'Trigger as soon as the inquiry is received, with no delay'
+                        : entry.type === 'new_message_received' ? 'Trigger as soon as the host sends a message, with no delay'
+                          : entry.type === 'new_booking' ? 'Trigger as soon as the booking is confirmed, with no delay'
+                            : entry.type === 'guest_checkout' ? 'Trigger as soon as the guest marks themselves as checked-out, with no delay'
+                              : 'Trigger as soon as the cancellation occurs, with no delay' }}
                     </p>
                   </div>
                 </label>
                 <template v-if="!entry.settings.triggerImmediately">
                   <div>
                     <Label class="text-xs text-muted-foreground">
-                      {{ entry.type === 'inquiry_received' ? 'Trigger after inquiry' :
-                         entry.type === 'new_message_received' ? 'Trigger after host sends message' :
-                         entry.type === 'new_booking' ? 'Trigger after booking' :
-                         entry.type === 'guest_checkout' ? 'Trigger after guest check-out' :
-                         'Trigger after cancellation' }}
+                      {{ entry.type === 'inquiry_received' ? 'Trigger after inquiry'
+                        : entry.type === 'new_message_received' ? 'Trigger after host sends message'
+                          : entry.type === 'new_booking' ? 'Trigger after booking'
+                            : entry.type === 'guest_checkout' ? 'Trigger after guest check-out'
+                              : 'Trigger after cancellation' }}
                     </Label>
                     <div class="mt-2 grid grid-cols-3 gap-2">
                       <div v-for="unit in [{ key: 'delayDays', label: 'Days' }, { key: 'delayHours', label: 'Hours' }, { key: 'delayMinutes', label: 'Minutes' }]" :key="unit.key">
-                        <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                        <p class="mb-1 text-center text-xs text-muted-foreground">
+                          {{ unit.label }}
+                        </p>
                         <Input type="number" :model-value="(entry.settings as any)[unit.key] ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patchTriggerSettings(i, { [unit.key]: Number($event) })" />
                       </div>
                     </div>
@@ -644,7 +672,9 @@ const showAltTriggerPicker = ref(false)
                     <Label class="text-xs text-muted-foreground">Days/Hours Before or After</Label>
                     <div class="mt-2 grid grid-cols-3 gap-2">
                       <div v-for="unit in [{ key: 'days', label: 'Days' }, { key: 'hours', label: 'Hours' }, { key: 'minutes', label: 'Minutes' }]" :key="unit.key">
-                        <p class="mb-1 text-center text-xs text-muted-foreground">{{ unit.label }}</p>
+                        <p class="mb-1 text-center text-xs text-muted-foreground">
+                          {{ unit.label }}
+                        </p>
                         <Input
                           type="number"
                           :model-value="entry.settings.offsetUnit === unit.key ? entry.settings.offsetAmount ?? 0 : 0"
@@ -679,7 +709,7 @@ const showAltTriggerPicker = ref(false)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem v-for="(label, idx) in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']" :key="idx" :value="idx + 1">
+                      <SelectItem v-for="(label, idx) in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']" :key="idx" :value="idx + 1">
                         {{ label }}
                       </SelectItem>
                     </SelectContent>
@@ -711,7 +741,7 @@ const showAltTriggerPicker = ref(false)
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem v-for="(label, idx) in ['January','February','March','April','May','June','July','August','September','October','November','December']" :key="idx" :value="idx">
+                      <SelectItem v-for="(label, idx) in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']" :key="idx" :value="idx">
                         {{ label }}
                       </SelectItem>
                     </SelectContent>
@@ -739,17 +769,23 @@ const showAltTriggerPicker = ref(false)
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56">
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Conversation-Based</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Conversation-Based
+              </DropdownMenuLabel>
               <DropdownMenuItem v-for="t in availableTriggers.filter(x => x.category === 'conversation')" :key="t.value" @click="addTrigger(t.value)">
                 {{ t.label }}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Reservation Events</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Reservation Events
+              </DropdownMenuLabel>
               <DropdownMenuItem v-for="t in availableTriggers.filter(x => x.category === 'reservation')" :key="t.value" @click="addTrigger(t.value)">
                 {{ t.label }}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel class="text-xs text-muted-foreground">Calendar-Based</DropdownMenuLabel>
+              <DropdownMenuLabel class="text-xs text-muted-foreground">
+                Calendar-Based
+              </DropdownMenuLabel>
               <DropdownMenuItem v-for="t in availableTriggers.filter(x => x.category === 'calendar')" :key="t.value" @click="addTrigger(t.value)">
                 {{ t.label }}
               </DropdownMenuItem>
@@ -782,15 +818,21 @@ const showAltTriggerPicker = ref(false)
             <Label>Wait Duration</Label>
             <div class="grid grid-cols-3 gap-2">
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Days</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Days
+                </p>
                 <Input type="number" :model-value="waitStep.durationDays ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patch({ durationDays: Number($event) } as any)" />
               </div>
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Hours</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Hours
+                </p>
                 <Input type="number" :model-value="waitStep.durationHours ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patch({ durationHours: Number($event) } as any)" />
               </div>
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Minutes</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Minutes
+                </p>
                 <Input type="number" :model-value="waitStep.durationMinutes ?? 0" min="0" class="h-10 text-center text-sm" @update:model-value="patch({ durationMinutes: Number($event) } as any)" />
               </div>
             </div>
@@ -871,6 +913,63 @@ const showAltTriggerPicker = ref(false)
             </button>
           </div>
         </div>
+        <div>
+          <Label>Channel</Label>
+          <Select :model-value="messageStep.channel" @update:model-value="patch({ channel: $event } as any)">
+            <SelectTrigger class="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ota">
+                OTA Inbox
+              </SelectItem>
+              <SelectItem value="whatsapp">
+                WhatsApp
+              </SelectItem>
+              <SelectItem value="email">
+                Email
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p v-if="messageStep.channel === 'whatsapp'" class="mt-1.5 text-xs text-amber-600 flex items-center gap-1">
+            <Icon name="i-lucide-triangle-alert" class="h-3 w-3" />
+            Requires WhatsApp Business API
+          </p>
+        </div>
+
+        <!-- WhatsApp Template selector -->
+        <div v-if="messageStep.channel === 'whatsapp' && messageStep.messageMode === 'template'" class="space-y-2">
+          <Label>WhatsApp Template</Label>
+          <Select
+            :model-value="messageStep.whatsappTemplateId"
+            @update:model-value="patch({ whatsappTemplateId: $event as string } as any)"
+          >
+            <SelectTrigger class="mt-1">
+              <SelectValue placeholder="Select an approved template…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="template in approvedTemplates"
+                :key="template.id"
+                :value="template.id"
+              >
+                {{ template.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div v-if="selectedWhatsAppTemplate" class="flex flex-wrap gap-1">
+            <Badge variant="secondary" class="capitalize">
+              {{ selectedWhatsAppTemplate.category }}
+            </Badge>
+            <Badge variant="outline">
+              {{ selectedWhatsAppTemplate.language.toUpperCase() }}
+            </Badge>
+          </div>
+          <p v-else-if="approvedTemplates.length === 0" class="text-xs text-muted-foreground">
+            No approved templates yet. Create one from Smart Flow → Journeys → WhatsApp Templates.
+          </p>
+        </div>
+
         <div v-if="messageStep.messageMode === 'directive'">
           <div class="flex items-center gap-2 mb-1">
             <Label>Smart Directive</Label>
@@ -1109,7 +1208,9 @@ const showAltTriggerPicker = ref(false)
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-48">
                 <template v-for="(opts, group) in branchActionGroups" :key="group">
-                  <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">
+                    {{ group }}
+                  </DropdownMenuLabel>
                   <DropdownMenuItem v-for="opt in opts" :key="opt.value" @click="selectBranchAction('true', opt.value)">
                     <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                     {{ opt.label }}
@@ -1118,7 +1219,9 @@ const showAltTriggerPicker = ref(false)
                 </template>
               </DropdownMenuContent>
             </DropdownMenu>
-            <p v-if="trueBranchSummary" class="text-xs text-muted-foreground">{{ trueBranchSummary }}</p>
+            <p v-if="trueBranchSummary" class="text-xs text-muted-foreground">
+              {{ trueBranchSummary }}
+            </p>
           </div>
 
           <!-- False Branch -->
@@ -1142,7 +1245,9 @@ const showAltTriggerPicker = ref(false)
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" class="w-48">
                 <template v-for="(opts, group) in branchActionGroups" :key="group">
-                  <DropdownMenuLabel class="text-xs text-muted-foreground">{{ group }}</DropdownMenuLabel>
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">
+                    {{ group }}
+                  </DropdownMenuLabel>
                   <DropdownMenuItem v-for="opt in opts" :key="opt.value" @click="selectBranchAction('false', opt.value)">
                     <Icon :name="opt.icon" class="mr-2 h-4 w-4" />
                     {{ opt.label }}
@@ -1151,10 +1256,12 @@ const showAltTriggerPicker = ref(false)
                 </template>
               </DropdownMenuContent>
             </DropdownMenu>
-            <p v-if="falseBranchSummary" class="text-xs text-muted-foreground">{{ falseBranchSummary }}</p>
+            <p v-if="falseBranchSummary" class="text-xs text-muted-foreground">
+              {{ falseBranchSummary }}
+            </p>
           </div>
         </div>
-       </div>
+      </div>
 
       <!-- Hard Requirement -->
       <div v-else-if="hardReqStep" class="flex flex-col gap-4">
@@ -1337,15 +1444,21 @@ const showAltTriggerPicker = ref(false)
                 <Label>Wait Duration</Label>
                 <div class="grid grid-cols-3 gap-2">
                   <div>
-                    <p class="mb-1 text-center text-xs text-muted-foreground">Days</p>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">
+                      Days
+                    </p>
                     <Input type="number" :model-value="(activeBranchStep as any)?.durationDays ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationDays: Number($event) })" />
                   </div>
                   <div>
-                    <p class="mb-1 text-center text-xs text-muted-foreground">Hours</p>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">
+                      Hours
+                    </p>
                     <Input type="number" :model-value="(activeBranchStep as any)?.durationHours ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationHours: Number($event) })" />
                   </div>
                   <div>
-                    <p class="mb-1 text-center text-xs text-muted-foreground">Minutes</p>
+                    <p class="mb-1 text-center text-xs text-muted-foreground">
+                      Minutes
+                    </p>
                     <Input type="number" :model-value="(activeBranchStep as any)?.durationMinutes ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ durationMinutes: Number($event) })" />
                   </div>
                 </div>
@@ -1411,10 +1524,70 @@ const showAltTriggerPicker = ref(false)
             <div>
               <Label>Message Mode</Label>
               <div class="mt-1 flex rounded-md border overflow-hidden">
-                <button class="flex-1 px-3 py-1.5 text-sm" :class="[(activeBranchStep as any)?.messageMode === 'directive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'directive' })">AI Directive</button>
-                <button class="flex-1 px-3 py-1.5 text-sm border-l" :class="[(activeBranchStep as any)?.messageMode === 'template' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'template' })">Template</button>
+                <button class="flex-1 px-3 py-1.5 text-sm" :class="[(activeBranchStep as any)?.messageMode === 'directive' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'directive' })">
+                  AI Directive
+                </button>
+                <button class="flex-1 px-3 py-1.5 text-sm border-l" :class="[(activeBranchStep as any)?.messageMode === 'template' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground']" @click="patchActiveBranch({ messageMode: 'template' })">
+                  Template
+                </button>
               </div>
             </div>
+            <div>
+              <Label>Channel</Label>
+              <Select :model-value="(activeBranchStep as any)?.channel ?? 'ota'" @update:model-value="patchActiveBranch({ channel: $event })">
+                <SelectTrigger class="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ota">
+                    OTA Inbox
+                  </SelectItem>
+                  <SelectItem value="whatsapp">
+                    WhatsApp
+                  </SelectItem>
+                  <SelectItem value="email">
+                    Email
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <!-- Branch WhatsApp Template selector -->
+            <div
+              v-if="(activeBranchStep as any)?.channel === 'whatsapp' && (activeBranchStep as any)?.messageMode === 'template'"
+              class="space-y-2"
+            >
+              <Label>WhatsApp Template</Label>
+              <Select
+                :model-value="(activeBranchStep as any)?.whatsappTemplateId ?? ''"
+                @update:model-value="patchActiveBranch({ whatsappTemplateId: $event as string })"
+              >
+                <SelectTrigger class="mt-1">
+                  <SelectValue placeholder="Select an approved template…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="template in approvedTemplates"
+                    :key="template.id"
+                    :value="template.id"
+                  >
+                    {{ template.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div
+                v-if="approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)"
+                class="flex flex-wrap gap-1"
+              >
+                <Badge variant="secondary" class="capitalize">
+                  {{ approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)?.category }}
+                </Badge>
+                <Badge variant="outline">
+                  {{ approvedTemplates.find(t => t.id === (activeBranchStep as any)?.whatsappTemplateId)?.language.toUpperCase() }}
+                </Badge>
+              </div>
+            </div>
+
             <div>
               <Label>{{ (activeBranchStep as any)?.messageMode === 'template' ? 'Template Text' : 'AI Directive' }}</Label>
               <Textarea
@@ -1431,12 +1604,22 @@ const showAltTriggerPicker = ref(false)
             <div>
               <Label>Action Type</Label>
               <Select :model-value="(activeBranchStep as any)?.actionType ?? 'raise_action_item'" @update:model-value="patchActiveBranch({ actionType: $event })">
-                <SelectTrigger class="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger class="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="raise_action_item">Raise Action Item</SelectItem>
-                  <SelectItem value="create_task">Create Task</SelectItem>
-                  <SelectItem value="flag_reservation">Flag Reservation</SelectItem>
-                  <SelectItem value="staff_alert">Staff Alert</SelectItem>
+                  <SelectItem value="raise_action_item">
+                    Raise Action Item
+                  </SelectItem>
+                  <SelectItem value="create_task">
+                    Create Task
+                  </SelectItem>
+                  <SelectItem value="flag_reservation">
+                    Flag Reservation
+                  </SelectItem>
+                  <SelectItem value="staff_alert">
+                    Staff Alert
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1465,24 +1648,36 @@ const showAltTriggerPicker = ref(false)
             <div>
               <Label>Duration</Label>
               <Select :model-value="(activeBranchStep as any)?.duration ?? 'indefinite'" @update:model-value="patchActiveBranch({ duration: $event })">
-                <SelectTrigger class="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger class="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="indefinite">Indefinite</SelectItem>
-                  <SelectItem value="specific">Specific Duration</SelectItem>
+                  <SelectItem value="indefinite">
+                    Indefinite
+                  </SelectItem>
+                  <SelectItem value="specific">
+                    Specific Duration
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div v-if="(activeBranchStep as any)?.duration === 'specific'" class="grid grid-cols-3 gap-2">
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Days</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Days
+                </p>
                 <Input type="number" :model-value="(activeBranchStep as any)?.days ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ days: Number($event) })" />
               </div>
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Hours</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Hours
+                </p>
                 <Input type="number" :model-value="(activeBranchStep as any)?.hours ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ hours: Number($event) })" />
               </div>
               <div>
-                <p class="mb-1 text-center text-xs text-muted-foreground">Minutes</p>
+                <p class="mb-1 text-center text-xs text-muted-foreground">
+                  Minutes
+                </p>
                 <Input type="number" :model-value="(activeBranchStep as any)?.minutes ?? 0" min="0" class="h-10 text-center" @update:model-value="patchActiveBranch({ minutes: Number($event) })" />
               </div>
             </div>
@@ -1502,7 +1697,9 @@ const showAltTriggerPicker = ref(false)
 
           <!-- Hard Requirement -->
           <div v-else-if="branchDialogType === 'hard_requirement'" class="flex flex-col gap-3">
-            <p class="text-xs text-muted-foreground">The branch action only runs if these conditions are met.</p>
+            <p class="text-xs text-muted-foreground">
+              The branch action only runs if these conditions are met.
+            </p>
             <Button variant="outline" class="justify-start gap-2 w-full" @click="branchDialogTarget === 'true' ? openBranchConditionModal('true') : openBranchConditionModal('false')">
               <Icon name="i-lucide-list-filter" class="h-4 w-4" />
               <span>Configure Condition</span>
@@ -1524,7 +1721,9 @@ const showAltTriggerPicker = ref(false)
             <Icon name="i-lucide-trash-2" class="mr-2 h-3.5 w-3.5" />
             Delete Action
           </Button>
-          <Button size="sm" @click="branchDialogOpen = false">Done</Button>
+          <Button size="sm" @click="branchDialogOpen = false">
+            Done
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

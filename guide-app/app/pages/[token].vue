@@ -16,6 +16,7 @@ import CustomRichSection from '~/components/sections/CustomRichSection.vue'
 import PreArrivalForm from '~/components/forms/PreArrivalForm.vue'
 import SmartLockPanel from '~/components/forms/SmartLockPanel.vue'
 import LanguageSwitcher from '~/components/forms/LanguageSwitcher.vue'
+import BrandHeader from '~/components/BrandHeader.vue'
 
 const route = useRoute()
 const token = computed(() => route.params.token as string)
@@ -31,6 +32,14 @@ const { data, pending, error } = await useAsyncData(
     return result
   },
 )
+
+const guideBrandStyle = computed(() => data.value?.branding?.cssVariables ?? {})
+
+useHead(() => ({
+  link: [
+    { rel: 'icon', href: data.value?.branding?.favicon?.dataUrl ?? '/favicon.ico' },
+  ],
+}))
 
 // Push the language into the composable when the user switches.
 watch(currentLang, (lang) => {
@@ -107,69 +116,73 @@ function handleUpsellAdd(serviceId: string) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-4 md:p-6">
-    <div v-if="pending" class="py-12 text-center text-muted-foreground">
-      Loading your guide...
-    </div>
-    <div v-else-if="error" class="py-12 text-center">
-      <h1 class="text-xl font-semibold">
-        We couldn't find your guide
-      </h1>
-      <p class="mt-2 text-sm text-muted-foreground">
-        Please check the link or contact your host.
-      </p>
-    </div>
-    <div v-else-if="data">
-      <header class="mb-4 flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-wider text-muted-foreground">
-            Guest guide
-          </p>
-          <h1 class="text-xl font-bold">
-            {{ data.guide.title }}
-          </h1>
-        </div>
-        <LanguageSwitcher v-model="currentLang" />
-      </header>
+  <div class="min-h-screen bg-background text-foreground" :style="guideBrandStyle">
+    <div class="mx-auto max-w-3xl p-4 md:p-6">
+      <div v-if="pending" class="py-12 text-center text-muted-foreground">
+        Loading your guide...
+      </div>
+      <div v-else-if="error" class="py-12 text-center">
+        <h1 class="text-xl font-semibold">
+          We couldn't find your guide
+        </h1>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Please check the link or contact your host.
+        </p>
+      </div>
+      <div v-else-if="data">
+        <BrandHeader :branding="data.branding" />
 
-      <p class="mb-6 text-sm text-muted-foreground">
-        Welcome, {{ data.link.guestName }}!
-      </p>
+        <header class="mb-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-muted-foreground">
+              Guest guide
+            </p>
+            <h1 class="text-xl font-bold">
+              {{ data.guide.title }}
+            </h1>
+          </div>
+          <LanguageSwitcher v-model="currentLang" />
+        </header>
 
-      <div class="space-y-6">
-        <template v-for="section in sortedSections" :key="section.id">
-          <!-- Pre-arrival section: render heading + inline form -->
-          <div v-if="section.type === 'pre_arrival'" class="space-y-4">
-            <PreArrivalSection :data="section.data" :listing="data.listing" />
-            <div class="rounded-xl border bg-card p-6">
-              <PreArrivalForm :token="token" :fields="section.data?.fields" />
+        <p class="mb-6 text-sm text-muted-foreground">
+          Welcome, {{ data.link.guestName }}!
+        </p>
+
+        <div class="space-y-6">
+          <template v-for="section in sortedSections" :key="section.id">
+            <!-- Pre-arrival section: render heading + inline form -->
+            <div v-if="section.type === 'pre_arrival'" class="space-y-4">
+              <PreArrivalSection :data="section.data" :listing="data.listing" />
+              <div class="rounded-xl border bg-card p-6">
+                <PreArrivalForm :token="token" :fields="section.data?.fields" />
+              </div>
             </div>
-          </div>
 
-          <!-- Smart lock section: render heading + lock panel -->
-          <div v-else-if="section.type === 'smart_lock'" class="space-y-4">
-            <SmartLockSection :data="section.data" :listing="data.listing" :token="token" />
-            <SmartLockPanel :token="token" />
-          </div>
+            <!-- Smart lock section: render heading + lock panel -->
+            <div v-else-if="section.type === 'smart_lock'" class="space-y-4">
+              <SmartLockSection :data="section.data" :listing="data.listing" :token="token" />
+              <SmartLockPanel :token="token" />
+            </div>
 
-          <!-- Upsells: pass add handler down -->
-          <UpsellsSection
-            v-else-if="section.type === 'upsells'"
-            :data="section.data"
-            :listing="data.listing"
-            :token="token"
-            @add="handleUpsellAdd"
-          />
+            <!-- Upsells: pass add handler down -->
+            <UpsellsSection
+              v-else-if="section.type === 'upsells'"
+              :data="section.data"
+              :listing="data.listing"
+              :token="token"
+              @add="handleUpsellAdd"
+            />
 
-          <!-- Default: section renderer -->
-          <component
-            :is="resolveSection(section.type)"
-            v-else
-            :data="section.data"
-            :listing="data.listing"
-            :token="token"
-          />
-        </template>
+            <!-- Default: section renderer -->
+            <component
+              :is="resolveSection(section.type)"
+              v-else
+              :data="section.data"
+              :listing="data.listing"
+              :token="token"
+            />
+          </template>
+        </div>
       </div>
     </div>
   </div>

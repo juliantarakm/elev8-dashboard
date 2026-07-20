@@ -270,6 +270,11 @@ export const navMenu: NavMenu[] = [
             link: '/settings/appearance',
           },
           {
+            title: 'Branding',
+            icon: 'i-lucide-circle',
+            link: '/settings/branding',
+          },
+          {
             title: 'Notifications',
             icon: 'i-lucide-circle',
             link: '/settings/notifications',

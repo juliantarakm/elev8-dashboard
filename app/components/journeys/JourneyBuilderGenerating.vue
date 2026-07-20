@@ -15,19 +15,19 @@ const isModify = computed(() => !!props.existingJourney)
 
 const generatingSteps = computed(() => isModify.value
   ? [
-    'Reading existing journey',
-    'Identifying what to add',
-    'Composing new steps',
-    'Preserving your edits',
-    'Finalising',
-  ]
+      'Reading existing journey',
+      'Identifying what to add',
+      'Composing new steps',
+      'Preserving your edits',
+      'Finalising',
+    ]
   : [
-    'Analysing goal',
-    'Identifying triggers',
-    'Generating message directives',
-    'Adding context checks',
-    'Finalising',
-  ])
+      'Analysing goal',
+      'Identifying triggers',
+      'Generating message directives',
+      'Adding context checks',
+      'Finalising',
+    ])
 
 const completedCount = ref(0)
 const activeIndex = ref(0)

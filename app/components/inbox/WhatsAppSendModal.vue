@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { renderTemplate, waTemplates } from '@/composables/useWhatsAppTemplates'
+import { renderTemplate, useWhatsAppTemplates } from '@/composables/useWhatsAppTemplates'
 
 const props = defineProps<{
   guestName: string
@@ -15,13 +15,15 @@ const open = defineModel<boolean>('open', { default: false })
 
 const selectedId = ref<string>('')
 
+const { waTemplates } = useWhatsAppTemplates()
+
 watch(open, (v) => {
   if (!v)
     selectedId.value = ''
 })
 
 const preview = computed(() => {
-  const tpl = waTemplates.find(t => t.id === selectedId.value)
+  const tpl = waTemplates.value.find(t => t.id === selectedId.value)
   if (!tpl)
     return ''
   return renderTemplate(tpl.body, { guest_name: props.guestName.split(' ')[0] ?? props.guestName, ...props.vars })

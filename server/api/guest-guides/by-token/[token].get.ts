@@ -1,4 +1,7 @@
+import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { findGuideByToken, findLinkByToken } from '../../../utils/guest-guide-store'
+import { getTenantBranding } from '../../../utils/tenant-branding-store'
+import { buildGuestGuideCssVariables } from '../../../../app/lib/branding-colors'
 import { conversations } from '../../../../app/components/inbox/data/conversations'
 import { listings } from '../../../../app/components/listings/data/listings'
 
@@ -39,5 +42,13 @@ export default defineEventHandler(async (event) => {
     listing = listings.value.find(l => l.id === guide.assignedListingIds[0]) ?? null
   }
 
-  return { link, guide, listing, checkIn, checkOut }
+  const tenantBranding = getTenantBranding()
+  const branding = {
+    primaryLogo: tenantBranding.primaryLogo,
+    favicon: tenantBranding.favicon,
+    guestGuideColors: tenantBranding.guestGuideColors,
+    cssVariables: buildGuestGuideCssVariables(tenantBranding.guestGuideColors),
+  }
+
+  return { link, guide, listing, checkIn, checkOut, branding }
 })
