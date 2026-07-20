@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Journey, MarketplaceTemplate } from '~/components/journeys/data/journeys'
 import type { WhatsAppTemplate } from '~/components/journeys/data/whatsapp-templates'
+import { buildModifiedJourney } from '~/components/journeys/data/journeys'
 import { toast } from 'vue-sonner'
 import { createEmptyTemplate } from '~/components/journeys/data/whatsapp-templates'
 
@@ -15,6 +16,7 @@ const currentView = ref<ViewState>('list')
 const builderPrompt = ref('')
 const generatedJourney = ref<Journey | null>(null)
 const editingJourney = ref<Journey | null>(null)
+const builderSourceJourney = ref<Journey | null>(null)
 
 const editingTemplate = ref<WhatsAppTemplate | null>(null)
 const isSubmittingTemplate = ref(false)
@@ -33,8 +35,19 @@ function handleGeneratedDone(journey: Journey) {
   goTo('builder-review')
 }
 
-function handleUseJourney(journey: Journey) {
-  editingJourney.value = { ...journey, id: `j-${Date.now()}`, status: 'draft' }
+function handleUseJourney(journey: Journey & { aiReasoning?: string, stats?: { messages: number, contextChecks: number, estimatedTime: string } }) {
+  if (builderSourceJourney.value) {
+    // Modify mode: keep id/name/status/properties/requirements/trigger as-is.
+    // The helper attached aiReasoning/stats for the Review panel only; strip them
+    // before assigning to the strictly-typed `editingJourney` ref.
+    const { aiReasoning: _aiReasoning, stats: _stats, ...rest } = journey
+    editingJourney.value = rest
+  }
+  else {
+    // New mode (unchanged).
+    editingJourney.value = { ...journey, id: `j-${Date.now()}`, status: 'draft' } as unknown as Journey
+  }
+  builderSourceJourney.value = null
   goTo('editor')
 }
 
@@ -69,8 +82,10 @@ function handleSaveJourney(journey: Journey) {
   goTo('list')
 }
 
-function handleEditorBuildAI(prompt: string) {
+function handleEditorBuildAI(prompt: string, journey: Journey) {
   builderPrompt.value = prompt
+  builderSourceJourney.value = JSON.parse(JSON.stringify(journey))
+  generatedJourney.value = null
   goTo('builder-generating')
 }
 
@@ -80,11 +95,47 @@ function handleSaveTemplate(journey: Journey) {
 
 function handleEditorBack() {
   editingJourney.value = null
+  builderSourceJourney.value = null
   goTo('list')
 }
 
 function handleReviewBack() {
-  goTo('builder-prompt')
+  if (builderSourceJourney.value) {
+    // Modify mode: revert to the unmodified snapshot, return to editor.
+    editingJourney.value = JSON.parse(JSON.stringify(builderSourceJourney.value))
+    builderSourceJourney.value = null
+    goTo('editor')
+  }
+  else {
+    goTo('builder-prompt')
+  }
+}
+
+function handleRefine(prompt: string) {
+  // Refine the journey currently on screen — anchored to what's displayed, not
+  // the original source. (Regenerate stays anchored to the source journey.)
+  if (!generatedJourney.value) return
+  const before = generatedJourney.value.steps.length
+  const refined = buildModifiedJourney(generatedJourney.value as Journey, prompt)
+  generatedJourney.value = refined as unknown as Journey
+  const added = refined.steps.length - before
+  if (added > 0) {
+    toast.success(`Added ${added} new step${added === 1 ? '' : 's'} — review the changes`)
+  }
+  else {
+    toast.info('No matching pattern in that prompt — try "upsell", "review", or "mid-stay"')
+  }
+}
+
+function handlePromptBack() {
+  // In modify mode, Regenerate → Back lands on the prompt screen.
+  // Route the Back to the editor (reverting the snapshot) instead of the list.
+  if (builderSourceJourney.value) {
+    handleReviewBack()
+  }
+  else {
+    goTo('list')
+  }
 }
 
 function handleRegenerate() {
@@ -179,19 +230,23 @@ function handleTemplateCancel() {
         v-else-if="currentView === 'builder-prompt'"
         @generate="handleGenerate"
         @use-template="handleInstallTemplate"
-        @back="goTo('list')"
+        @back="handlePromptBack"
       />
       <JourneysJourneyBuilderGenerating
         v-else-if="currentView === 'builder-generating'"
         :prompt="builderPrompt"
+        :existing-journey="builderSourceJourney"
         @done="handleGeneratedDone"
       />
       <JourneysJourneyBuilderReview
         v-else-if="currentView === 'builder-review'"
         :journey="(generatedJourney as any)"
+        :mode="builderSourceJourney ? 'modify' : 'new'"
+        :source-journey-name="builderSourceJourney?.name"
         @use-journey="handleUseJourney"
         @regenerate="handleRegenerate"
         @back="handleReviewBack"
+        @refine="handleRefine"
       />
       <JourneysJourneyEditor
         v-else-if="currentView === 'editor'"

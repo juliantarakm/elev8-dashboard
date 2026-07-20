@@ -1060,31 +1060,6 @@ const showAltTriggerPicker = ref(false)
             Tailor messages using guest's reservation details and preferences.
           </p>
         </div>
-        <div>
-          <Label>If ElevAI is Off</Label>
-          <Select :model-value="messageStep.fallback" @update:model-value="patch({ fallback: $event } as any)">
-            <SelectTrigger class="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="skip">
-                Skip this step
-              </SelectItem>
-              <SelectItem value="static">
-                Send static template
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div v-if="messageStep.fallback === 'static'">
-          <Label>Fallback Message</Label>
-          <Textarea
-            :model-value="messageStep.fallbackText"
-            class="mt-1 min-h-16 text-sm"
-            placeholder="Static fallback text…"
-            @update:model-value="patch({ fallbackText: $event as string } as any)"
-          />
-        </div>
       </div>
 
       <!-- Context Check (legacy) -->

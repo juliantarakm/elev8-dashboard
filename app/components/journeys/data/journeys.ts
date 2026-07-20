@@ -106,6 +106,12 @@ export interface BaseStep {
   id: string
   type: StepType
   name: string
+  /**
+   * Transient UI marker. Set to `true` by `buildModifiedJourney` on every step
+   * it appends. Drives the "✨ New" badge + highlight in the Review preview and
+   * the editor. Always stripped before persistence (see JourneyEditor.handleSave).
+   */
+  isNew?: boolean
 }
 
 export interface TriggerSettings {
@@ -1019,6 +1025,107 @@ export const marketplaceTemplates: MarketplaceTemplate[] = [
     ],
   },
 ]
+
+/**
+ * Produces a modified version of an existing journey in response to a free-form
+ * prompt. Preserves every metadata field of the original (id, name, status,
+ * triggerType, properties, requirements, requirementCombinator) and only
+ * appends AI-suggested steps based on simple keyword matching. Existing step
+ * ids are kept intact so any in-editor selection stays bound.
+ *
+ * Returns the same `Journey & { aiReasoning, stats }` shape as
+ * `generatedJourneyExample` so `JourneyBuilderReview` can render the AI
+ * reasoning and stats panels without mode-specific branching.
+ */
+export function buildModifiedJourney(
+  original: Journey,
+  prompt: string,
+): Journey & {
+  aiReasoning: string
+  stats: { messages: number, contextChecks: number, estimatedTime: string }
+} {
+  const cloned: Journey = JSON.parse(JSON.stringify(original))
+  const lc = prompt.toLowerCase()
+  const added: JourneyStep[] = []
+
+  const hasStepLike = (substr: string) =>
+    cloned.steps.some(s => s.name.toLowerCase().includes(substr))
+
+  if (/(upsell|mid[\s-]?stay|extend)/.test(lc)
+    && !hasStepLike('upsell')
+    && !hasStepLike('mid-stay')) {
+    added.push(
+      {
+        id: `s-${Date.now()}-a`,
+        type: 'wait',
+        name: 'Wait',
+        waitMode: 'time_delay',
+        durationDays: 2,
+        durationHours: 0,
+        durationMinutes: 0,
+        isNew: true,
+      },
+      {
+        id: `s-${Date.now()}-b`,
+        type: 'message',
+        name: 'Send Message',
+        messageMode: 'directive',
+        channel: 'whatsapp',
+        templateText: '',
+        directive: 'Check in on the guest and offer optional upsells: late checkout, airport transfer, or local experiences.',
+        contextCheckEnabled: true,
+        contextCheckInstruction: 'Do not send if the guest has expressed dissatisfaction.',
+        fallback: 'skip',
+        fallbackText: '',
+        isNew: true,
+      },
+    )
+  }
+
+  if (/(review|feedback)/.test(lc) && !hasStepLike('review')) {
+    added.push(
+      {
+        id: `s-${Date.now()}-c`,
+        type: 'wait',
+        name: 'Wait',
+        waitMode: 'time_delay',
+        durationDays: 1,
+        durationHours: 0,
+        durationMinutes: 0,
+        isNew: true,
+      },
+      {
+        id: `s-${Date.now()}-d`,
+        type: 'message',
+        name: 'Send Message',
+        messageMode: 'directive',
+        channel: 'ota',
+        templateText: '',
+        directive: 'Thank the guest sincerely for their stay and kindly request a review.',
+        contextCheckEnabled: false,
+        contextCheckInstruction: '',
+        fallback: 'skip',
+        fallbackText: '',
+        isNew: true,
+      },
+    )
+  }
+
+  const steps = [...cloned.steps, ...added]
+
+  const messages = steps.filter(s => s.type === 'message').length
+  const contextChecks = steps.filter(s => s.type === 'context_check').length
+  const totalDays = steps
+    .filter(s => s.type === 'wait')
+    .reduce((sum, s) => sum + ((s as WaitStep).durationDays ?? 0), 0)
+
+  return {
+    ...cloned,
+    steps,
+    aiReasoning: `I kept ${cloned.steps.length} existing step${cloned.steps.length === 1 ? '' : 's'} and added ${added.length} new step${added.length === 1 ? '' : 's'} based on your prompt: "${prompt}". Existing trigger, properties, and requirements were preserved.`,
+    stats: { messages, contextChecks, estimatedTime: `${totalDays} days` },
+  }
+}
 
 export const generatedJourneyExample: Journey & {
   aiReasoning: string

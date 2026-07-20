@@ -10,7 +10,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'save': [journey: Journey]
   'back': []
-  'build-with-ai': [prompt: string]
+  'build-with-ai': [prompt: string, journey: Journey]
   'save-template': [journey: Journey]
 }>()
 
@@ -55,7 +55,7 @@ const saveTemplateOpen = ref(false)
 const buildAIOpen = ref(false)
 
 function handleBuildAI(prompt: string) {
-  emit('build-with-ai', prompt)
+  emit('build-with-ai', prompt, JSON.parse(JSON.stringify(localJourney.value)))
 }
 
 function handleSaveTemplate() {
@@ -65,6 +65,14 @@ function handleSaveTemplate() {
 const selectedStepId = ref<string | null>(localJourney.value.steps[0]?.id ?? null)
 const isEditingName = ref(false)
 const nameInputRef = ref<HTMLInputElement | null>(null)
+
+// When entering the editor with AI-modified steps (isNew === true), focus the
+// first new step in the right sidebar so the user immediately sees what changed.
+onMounted(() => {
+  const firstNew = localJourney.value.steps.find(s => (s as any).isNew)
+  if (firstNew)
+    selectedStepId.value = firstNew.id
+})
 
 const isActive = computed({
   get: () => localJourney.value.status === 'active',
@@ -166,9 +174,16 @@ function onDragEnd() {
 
 function handleSave() {
   const trigStep = localJourney.value.steps.find(s => s.type === 'trigger') as any
+  // Strip the transient `isNew` marker set by buildModifiedJourney. Persisting it
+  // would mean every future re-open shows the "New" badge, which is wrong.
+  const steps = localJourney.value.steps.map(s => {
+    const { isNew: _isNew, ...rest } = s as any
+    return rest
+  })
   const journey = {
     ...localJourney.value,
     triggerType: trigStep?.triggers?.[0]?.type ?? localJourney.value.triggerType,
+    steps: steps as any,
   }
   emit('save', journey)
   toast.success(`"${journey.name}" saved`)
