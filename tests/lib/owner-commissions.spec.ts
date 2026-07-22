@@ -84,4 +84,50 @@ describe('findEffectiveCommissionRule', () => {
   it('returns undefined when no rule matches the owner/listing pair', () => {
     expect(findEffectiveCommissionRule(mockCommissionRules, 'own-1', 'lst-999', '2026-06')).toBeUndefined()
   })
+
+  it('honors effectiveTo — a rule that ended before the period is not picked', () => {
+    const expiredRule = {
+      id: 'cr-expired',
+      ownerId: 'own-1',
+      listingId: 'lst-1',
+      name: 'Expired 25%',
+      type: 'flat' as const,
+      rate: 25,
+      effectiveFrom: '2025-01-01',
+      effectiveTo: '2025-12-31',
+    }
+    // Period 2026-06 sits well after the rule's effectiveTo.
+    expect(findEffectiveCommissionRule([...mockCommissionRules, expiredRule], 'own-1', 'lst-1', '2026-06')?.id)
+      .toBe('cr-1')
+    // Period 2025-06 falls inside the rule's interval — it wins.
+    expect(findEffectiveCommissionRule([...mockCommissionRules, expiredRule], 'own-1', 'lst-1', '2025-06')?.id)
+      .toBe('cr-expired')
+    // EffectiveTo on the final day of the period still counts as inclusive.
+    expect(findEffectiveCommissionRule([...mockCommissionRules, expiredRule], 'own-1', 'lst-1', '2025-12')?.id)
+      .toBe('cr-expired')
+  })
+
+  it('picks the rule with the latest effectiveFrom when intervals overlap', () => {
+    const olderRule = {
+      id: 'cr-older',
+      ownerId: 'own-1',
+      listingId: 'lst-1',
+      name: 'Older 15%',
+      type: 'flat' as const,
+      rate: 15,
+      effectiveFrom: '2026-01-01',
+    }
+    const newerRule = {
+      id: 'cr-newer',
+      ownerId: 'own-1',
+      listingId: 'lst-1',
+      name: 'Newer 18%',
+      type: 'flat' as const,
+      rate: 18,
+      effectiveFrom: '2026-04-01',
+    }
+    expect(
+      findEffectiveCommissionRule([olderRule, newerRule], 'own-1', 'lst-1', '2026-06')?.id,
+    ).toBe('cr-newer')
+  })
 })

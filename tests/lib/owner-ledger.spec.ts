@@ -5,6 +5,7 @@ import {
   calculateStatementTotals,
   ledgerEntryToStatementInput,
   mockOwnerLedgerEntries,
+  roundCurrency,
 } from '@/components/owners/data/owner-ledger'
 import { buildStatementLines, mockOwnerStatements } from '@/components/owners/data/owner-statements'
 
@@ -46,6 +47,58 @@ describe('calculateStatementTotals', () => {
       adjustments: 0,
     })
     expect(totals.netPayout).toBe(100.01)
+  })
+
+  it('netPayout equals rounded gross − rounded expenses − rounded commission − rounded taxes/fees + rounded adjustments (no fractional-cent drift)', () => {
+    // Inputs chosen so each component carries a fractional part. The invariant
+    // is what the UI displays: rounded gross − rounded deductions − rounded
+    // additions. If netPayout were derived from the raw inputs and only
+    // re-rounded at the end, the displayed sum could drift by a sub-cent
+    // from the rounded components.
+    const totals = calculateStatementTotals({
+      grossRevenue: 100.114,
+      operatingExpenses: 33.336,
+      commission: 66.668,
+      taxesAndFees: 1.001,
+      adjustments: 0,
+    })
+
+    // Sanity: each component is itself rounded to two decimals.
+    expect(totals.grossRevenue).toBe(100.11)
+    expect(totals.operatingExpenses).toBe(33.34)
+    expect(totals.commission).toBe(66.67)
+    expect(totals.taxesAndFees).toBe(1.00)
+    expect(totals.adjustments).toBe(0)
+
+    // Core invariant: the displayed total equals the signed sum of the
+    // displayed components, with no independent recomputation drift.
+    const invariant = roundCurrency(
+      totals.grossRevenue
+      - totals.operatingExpenses
+      - totals.commission
+      - totals.taxesAndFees
+      + totals.adjustments,
+    )
+    expect(totals.netPayout).toBe(invariant)
+  })
+
+  it('netPayout stays consistent with the rounded components across many magnitudes', () => {
+    const totals = calculateStatementTotals({
+      grossRevenue: 123_456.789,
+      operatingExpenses: 12_345.671,
+      commission: 3_456.125,
+      taxesAndFees: 0.005,
+      adjustments: -123.456,
+    })
+
+    const invariant = roundCurrency(
+      totals.grossRevenue
+      - totals.operatingExpenses
+      - totals.commission
+      - totals.taxesAndFees
+      + totals.adjustments,
+    )
+    expect(totals.netPayout).toBe(invariant)
   })
 })
 

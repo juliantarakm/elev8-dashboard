@@ -93,20 +93,35 @@ export function applyOwnershipShare(input: StatementInput, share: number): State
   }
 }
 
-/** Compute the net payout from a statement input, rounding at the boundary. */
+/**
+ * Compute the net payout from a statement input, rounding at the boundary.
+ *
+ * Each component is rounded to two decimals first, and the net payout is
+ * derived from those rounded values — not from the raw inputs. This keeps the
+ * invariant `rounded gross − rounded expenses − rounded commission − rounded
+ * taxes/fees + rounded adjustments === netPayout` exact (no fractional-cent
+ * drift from re-rounding the raw sum at the end), so what the UI shows in the
+ * breakdown always sums to the displayed total.
+ */
 export function calculateStatementTotals(input: StatementInput): StatementTotals {
+  const grossRevenue = roundCurrency(input.grossRevenue)
+  const operatingExpenses = roundCurrency(input.operatingExpenses)
+  const commission = roundCurrency(input.commission)
+  const taxesAndFees = roundCurrency(input.taxesAndFees)
+  const adjustments = roundCurrency(input.adjustments)
+
   return {
-    grossRevenue: roundCurrency(input.grossRevenue),
-    operatingExpenses: roundCurrency(input.operatingExpenses),
-    commission: roundCurrency(input.commission),
-    taxesAndFees: roundCurrency(input.taxesAndFees),
-    adjustments: roundCurrency(input.adjustments),
+    grossRevenue,
+    operatingExpenses,
+    commission,
+    taxesAndFees,
+    adjustments,
     netPayout: roundCurrency(
-      input.grossRevenue
-      - input.operatingExpenses
-      - input.commission
-      - input.taxesAndFees
-      + input.adjustments,
+      grossRevenue
+      - operatingExpenses
+      - commission
+      - taxesAndFees
+      + adjustments,
     ),
   }
 }
