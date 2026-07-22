@@ -15,13 +15,26 @@
 //      `publishedSnapshot`. Later edits to the live lines do not leak into
 //      what the owner was originally shown.
 //   3. Published statements are immutable — every financial-edit entry point
-//      refuses to run unless `status === 'draft'`.
+//      refuses to run unless `status === 'draft'`. Post-publication
+//      corrections land as `OwnerStatementAdjustment` rows that point at the
+//      published source instead.
 //   4. One open issue per statement line. A second `raiseIssue` on the same
 //      line returns the existing open issue (no duplicate row).
 //   5. Post-publication corrections land as `OwnerStatementAdjustment` rows
 //      pointing at the next period — they NEVER edit the frozen statement.
+//      `recordAdjustment` derives `ownerId`, `listingId`, and `period` from
+//      the published source so callers cannot point an adjustment at a
+//      different tuple than the one they're amending.
 //   6. `mockExport` is read-only against statements (it only appends to the
 //      `exportActivity` feed) and returns after a short mock delay.
+//   7. All generated IDs (statements / issues / adjustments / exports) are
+//      collision-free across composable instances. Counters live inside the
+//      closure so they never leak across tests, HMR reloads, or concurrent
+//      instance use, and every candidate ID is checked against the live
+//      store before being returned.
+//   8. Every state-mutating entry point derives the "now" timestamp exactly
+//      once per call (passed through builders) so related timestamps stay
+//      aligned within a single generation / publish pass.
 //
 // Notifications:
 //   * `OWNER_STATEMENT_DRAFT_READY` fires once per fresh draft after
@@ -47,6 +60,7 @@ import type {
   OwnerStatementLine,
 } from '~/components/owners/data/owner-statements'
 import type { Owner, OwnerPropertyMapping } from '~/components/owners/data/owners'
+import { toRaw } from 'vue'
 import {
   calculateCommission,
   findEffectiveCommissionRule,
@@ -121,11 +135,14 @@ export type RaiseIssueResult
   = | { ok: true, issue: OwnerStatementIssue }
     | { ok: false, reason: 'statement_not_found' | 'duplicate_open_issue' }
 
+/**
+ * `recordAdjustment` derives `ownerId`, `listingId`, and `period` from the
+ * published source statement (the only way to amend a published statement
+ * is via that statement's identity), so the input shape is minimal: just
+ * the source id, where the correction lands, the amount, and why.
+ */
 export interface RecordAdjustmentInput {
   ownerStatementId: string
-  ownerId: string
-  listingId: string
-  period: string
   nextPeriod: string
   amount: number
   reason: string
@@ -155,30 +172,32 @@ const YYYY_MM_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
  */
 const MOCK_EXPORT_DELAY_MS = 60
 
-// --- ID generators (module-private) ----------------------------------------
+// --- Pure helpers (module-private) -----------------------------------------
 
-let statementIdCounter = 0
-function generateStatementId(): string {
-  statementIdCounter += 1
-  return `stmt-gen-${Date.now().toString(36)}-${statementIdCounter.toString(36)}`
-}
-
-let issueIdCounter = 0
-function generateIssueId(): string {
-  issueIdCounter += 1
-  return `sti-gen-${Date.now().toString(36)}-${issueIdCounter.toString(36)}`
-}
-
-let adjustmentIdCounter = 0
-function generateAdjustmentId(): string {
-  adjustmentIdCounter += 1
-  return `osa-gen-${Date.now().toString(36)}-${adjustmentIdCounter.toString(36)}`
-}
-
-let exportIdCounter = 0
-function generateExportId(): string {
-  exportIdCounter += 1
-  return `exa-gen-${Date.now().toString(36)}-${exportIdCounter.toString(36)}`
+/**
+ * Schema-safe plain-object clone that preserves structured nested values
+ * (Date, Map, Set, ArrayBuffer, ...) while stripping Vue reactive proxies
+ * and any function / symbol / computed-only properties that should never
+ * leak into a frozen snapshot.
+ *
+ * Two steps:
+ *   1. `toRaw(value)` walks Vue's reactive proxies and returns the raw
+ *      underlying object — Date, Map, Set, plain objects, arrays all survive
+ *      because Vue's Proxy intercepts property reads but `toRaw` strips it.
+ *   2. `structuredClone(rawValue)` produces a fully detached copy that
+ *      supports structured-cloneable nested types (Date, Map, Set,
+ *      ArrayBuffer, ...) which a plain spread / JSON round-trip would lose.
+ *
+ * For raw inputs (no proxy) `toRaw` is a no-op — `clonePlain` works the
+ * same way in tests (plain fixtures) and in production (Vue ref values).
+ * The output is guaranteed to be free of any reactive linkage, so
+ * downstream mutations cannot leak back into the input.
+ */
+function clonePlain<T>(value: T): T {
+  // `toRaw` strips Vue's reactive Proxy (safe because Vue 3 returns the
+  // underlying target object). It is a no-op for raw inputs, so plain
+  // fixtures in tests clonePlain the same way as production ref values.
+  return structuredClone(toRaw(value))
 }
 
 // --- Notifications --------------------------------------------------------
@@ -232,6 +251,42 @@ export function useOwnerStatements() {
     () => [],
   )
 
+  // --- Per-instance ID generator ----------------------------------------
+  //
+  // Each `useOwnerStatements()` call keeps a prefix-specific counter inside
+  // the closure. The counter is paired with a store-based collision check so
+  // generated IDs cannot collide with seed IDs, IDs minted earlier in the
+  // same batch, or IDs minted by another composable instance. Because the
+  // state is instance-local, it does not leak across tests or HMR reloads.
+  const idCounters = new Map<string, number>()
+
+  function deriveUniqueId(
+    prefix: string,
+    isTaken: (id: string) => boolean,
+  ): string {
+    let counter = idCounters.get(prefix) ?? 0
+    let id = ''
+    do {
+      counter += 1
+      id = `${prefix}-gen-${Date.now().toString(36)}-${counter.toString(36)}`
+    } while (isTaken(id))
+    idCounters.set(prefix, counter)
+    return id
+  }
+
+  function statementIdTaken(id: string): boolean {
+    return statements.value.some(s => s.id === id)
+  }
+  function issueIdTaken(id: string): boolean {
+    return issues.value.some(i => i.id === id)
+  }
+  function adjustmentIdTaken(id: string): boolean {
+    return adjustments.value.some(a => a.id === id)
+  }
+  function exportIdTaken(id: string): boolean {
+    return exportActivity.value.some(e => e.id === id)
+  }
+
   function nowIso(): string {
     return new Date().toISOString()
   }
@@ -255,6 +310,11 @@ export function useOwnerStatements() {
    * Idempotency: an existing (ownerId, listingId, period) statement in any
    * status is left alone — generation is a no-op for that tuple. This is
    * what makes the call safe to invoke from cron / dashboard buttons.
+   *
+   * All drafts minted by one call share the same `createdAt` timestamp
+   * (derived once here and threaded through the builder), so dashboards
+   * can rely on a single "month-end" instant rather than chasing ms-drift
+   * between rows.
    */
   function generateForPeriod(period: string): GenerateForPeriodResult {
     if (!YYYY_MM_RE.test(period)) {
@@ -278,6 +338,10 @@ export function useOwnerStatements() {
     let created = 0
     let skipped = 0
     const additions: OwnerStatement[] = []
+    // Single timestamp for every draft this call produces — keeps
+    // related rows aligned and eliminates ms-drift between the seed
+    // builder and the alert-emission loop below.
+    const createdAt = nowIso()
 
     for (const owner of owners) {
       if (owner.status !== 'active')
@@ -321,6 +385,8 @@ export function useOwnerStatements() {
           mapping,
           entry,
           rule,
+          createdAt,
+          () => deriveUniqueId('stmt', statementIdTaken),
         )
         additions.push(draft)
         existingKeys.add(key)
@@ -350,8 +416,11 @@ export function useOwnerStatements() {
    * Freeze a draft into a published statement.
    *   Rejects when the statement is missing or already published.
    *   Replaces `lines`/`totalAmount`/`currency` in `publishedSnapshot`
-   *     via `structuredClone` — mutating the live lines later cannot leak
-   *     into what the owner was shown.
+   *     via the schema-safe `clonePlain` helper — mutating the live lines
+   *     later cannot leak into what the owner was shown.
+   *
+   * The publish timestamp is captured once and shared by both the snapshot
+   * metadata and the alert context so they refer to the same instant.
    */
   function publish(statementId: string, publishedBy: string): PublishResult {
     const current = findStatement(statementId)
@@ -359,20 +428,18 @@ export function useOwnerStatements() {
       return { ok: false, reason: 'not_publishable' }
     }
 
-    // structuredClone chokes on Vue's reactive proxies, so deep-clone via
-    // JSON for snapshot isolation. The lines array only contains
-    // primitives + enums, so JSON round-trip is faithful.
     const snapshot = {
-      lines: JSON.parse(JSON.stringify(current.lines)) as OwnerStatementLine[],
+      lines: clonePlain(current.lines),
       totalAmount: current.totalAmount,
       currency: current.currency,
     }
+    const publishedAt = nowIso()
     statements.value = statements.value.map(item => item.id === statementId
       ? {
           ...item,
           status: 'published' as const,
           publishedSnapshot: snapshot,
-          publishedAt: nowIso(),
+          publishedAt,
           publishedBy,
         }
       : item,
@@ -439,7 +506,7 @@ export function useOwnerStatements() {
     }
 
     const issue: OwnerStatementIssue = {
-      id: generateIssueId(),
+      id: deriveUniqueId('sti', issueIdTaken),
       statementId: input.statementId,
       lineId: input.lineId,
       description: input.description,
@@ -479,9 +546,15 @@ export function useOwnerStatements() {
    * when the source statement is missing or still a draft — adjustments
    * exist to amend what the owner was *already told*, so they cannot be
    * filed against an unpublished statement.
+   *
+   * The adjustment's `ownerId`, `listingId`, and `period` are derived from
+   * the published source rather than read off caller input — the input
+   * shape intentionally does not include those fields, so a caller cannot
+   * accidentally point an adjustment at a different (owner, listing,
+   * period) tuple than the one they're amending.
    */
   function recordAdjustment(input: RecordAdjustmentInput): RecordAdjustmentResult {
-    const source = findStatement(input.ownerStatementId)
+    const source = statements.value.find(s => s.id === input.ownerStatementId)
     if (!source) {
       return { ok: false, reason: 'statement_not_found' }
     }
@@ -489,12 +562,16 @@ export function useOwnerStatements() {
       return { ok: false, reason: 'not_published' }
     }
 
+    // Derive ownerId / listingId / period from the published source. Read
+    // directly off the (possibly reactive) proxy — the proxy's get trap
+    // returns the underlying value, which for the seed fixtures always
+    // includes ownerId / listingId / period.
     const adjustment: OwnerStatementAdjustment = {
-      id: generateAdjustmentId(),
-      ownerStatementId: input.ownerStatementId,
-      ownerId: input.ownerId,
-      listingId: input.listingId,
-      period: input.period,
+      id: deriveUniqueId('osa', adjustmentIdTaken),
+      ownerStatementId: source.id,
+      ownerId: source.ownerId,
+      listingId: source.listingId,
+      period: source.period,
       nextPeriod: input.nextPeriod,
       amount: input.amount,
       reason: input.reason,
@@ -519,7 +596,7 @@ export function useOwnerStatements() {
 
     const owner = mockOwners.find(o => o.id === statement.ownerId)
     const activity: OwnerExportActivity = {
-      id: generateExportId(),
+      id: deriveUniqueId('exa', exportIdTaken),
       format: input.format,
       statementId: statement.id,
       ownerId: statement.ownerId,
@@ -586,12 +663,22 @@ export function useOwnerStatements() {
  * Compute the lines + totalAmount for one (owner, mapping, ledger, rule)
  * tuple. Shared by `generateForPeriod`; kept module-private so callers
  * outside this file cannot accidentally bypass the public entry points.
+ *
+ * `createdAt` and `nextStatementId` are threaded in from the caller
+ * (rather than captured here) so:
+ *   - every draft produced by one generation pass shares the same instant,
+ *   - the ID factory stays closure-local to the composable instance.
+ *
+ * See the "single source of `nowIso` per generation" + "per-instance
+ * collision-free IDs" invariants in the composable header.
  */
 function buildDraftFromLedger(
   owner: Owner,
   mapping: OwnerPropertyMapping,
   entry: OwnerLedgerEntry,
   rule: CommissionRule,
+  createdAt: string,
+  nextStatementId: () => string,
 ): OwnerStatement {
   const commission = calculateCommission(rule, entry.grossRevenue)
   const input: StatementInput = ledgerEntryToStatementInput(entry, commission)
@@ -605,7 +692,7 @@ function buildDraftFromLedger(
   }))
   const totalAmount = roundCurrency(totals.netPayout)
   return {
-    id: generateStatementId(),
+    id: nextStatementId(),
     ownerId: owner.id,
     listingId: mapping.listingId,
     period: entry.period,
@@ -613,14 +700,7 @@ function buildDraftFromLedger(
     status: 'draft',
     lines: roundedLines,
     totalAmount,
-    createdAt: nowIso(),
+    createdAt,
     issues: [],
   }
-}
-
-// nowIso inlined to keep `buildDraftFromLedger` self-contained for the
-// per-row builder — the closure above is the same instant source as the
-// composable instance, so the timestamps stay aligned within one call.
-function nowIso(): string {
-  return new Date().toISOString()
 }
