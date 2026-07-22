@@ -215,23 +215,23 @@ import { describe, expect, it } from 'vitest'
 import { calculateCommission, findEffectiveCommissionRule } from '@/components/owners/data/commission-rules'
 
 it('calculates flat commission', () => {
-  expect(calculateCommission({ type: 'flat', rate: 0.15 }, 10_000)).toBe(1_500)
+  expect(calculateCommission({ type: 'flat', rate: 15 }, 10_000)).toBe(1_500)
 })
 
 it('calculates progressive tiers', () => {
   const rule = {
     type: 'tiered' as const,
     tiers: [
-      { upTo: 10_000, rate: 0.10 },
-      { upTo: 20_000, rate: 0.15 },
-      { upTo: null, rate: 0.20 },
+      { upTo: 10_000, rate: 10 },
+      { upTo: 20_000, rate: 15 },
+      { upTo: null, rate: 20 },
     ],
   }
-  expect(calculateCommission(rule, 25_000)).toBe(4_250)
+  expect(calculateCommission(rule, 25_000)).toBe(3_750)
 })
 
 it('calculates hybrid commission', () => {
-  expect(calculateCommission({ type: 'hybrid', fixedAmount: 500, rate: 0.10 }, 10_000)).toBe(1_500)
+  expect(calculateCommission({ type: 'hybrid', fixedAmount: 500, rate: 10 }, 10_000)).toBe(1_500)
 })
 ```
 
@@ -324,6 +324,8 @@ Expected: all tests PASS.
 git add app/components/owners/data tests/lib
 git commit -m "feat(owner-portal): add statement calculations"
 ```
+
+Review fixes may add a follow-up commit; each fix must rerun the focused tests before the task reviewer re-checks the complete task diff.
 
 ---
 
