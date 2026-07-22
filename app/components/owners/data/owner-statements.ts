@@ -32,11 +32,13 @@ export interface OwnerStatementLine {
 export interface OwnerStatementIssue {
   id: string
   statementId: string
-  /** ID of the statement line the issue is attached to. Optional for
+  /**
+   * ID of the statement line the issue is attached to. Optional for
    *  backward-compatibility with existing fixtures (Task 1 seed has no
    *  per-line issues). The "one open issue per line" rule in
    *  `useOwnerStatements.raiseIssue` requires this field to be set for any
-   *  issue created through the lifecycle composable. */
+   *  issue created through the lifecycle composable.
+   */
   lineId?: string
   description: string
   amount: number
@@ -57,6 +59,11 @@ export interface OwnerStatement {
   totalAmount: number
   createdAt: string
   publishedAt?: string
+  /**
+   * Staff id who published this statement. Set on the
+   *  `publish()` transition; undefined while the statement is still a draft.
+   */
+  publishedBy?: string
   /** Frozen snapshot of the line items at the moment of publication. Only set when status === 'published'. */
   publishedSnapshot?: { lines: OwnerStatementLine[], totalAmount: number, currency: string }
   issues: OwnerStatementIssue[]
@@ -117,6 +124,7 @@ export const mockOwnerStatements: OwnerStatement[] = [
     status: 'published',
     createdAt: '2026-06-02T08:00:00.000Z',
     publishedAt: '2026-06-03T10:30:00.000Z',
+    publishedBy: 'staff-1',
     lines: [
       { id: 'sl-7', category: 'revenue', label: 'Gross booking revenue', amount: 42_000_000 },
       { id: 'sl-8', category: 'expense', label: 'Cleaning & laundry', amount: -2_300_000 },

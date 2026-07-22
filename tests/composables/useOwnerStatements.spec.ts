@@ -9,8 +9,7 @@ import type {
   OwnerStatementIssue,
   OwnerStatementLine,
 } from '~/components/owners/data/owner-statements'
-import type { Owner, OwnerPropertyMapping } from '~/components/owners/data/owners'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { calculateCommission, mockCommissionRules } from '~/components/owners/data/commission-rules'
 import { mockOwnerLedgerEntries } from '~/components/owners/data/owner-ledger'
 import { mockOwnerStatements } from '~/components/owners/data/owner-statements'
@@ -25,12 +24,39 @@ const TEST_PERIOD_NEXT = '2026-07'
 // Snapshot of the seed before each test so we can detect leaks across the suite.
 const initialStatementIds = mockOwnerStatements.map(s => s.id).sort()
 
-beforeEach(() => {
-  vi.useRealTimers()
+// --- Test-local mocks ------------------------------------------------------
+// `vi.mock` is hoisted to the top of the file by vitest, so any state the mock
+// factory closes over MUST live inside `vi.hoisted()` to be reachable from
+// both the factory and the test bodies. The spy records every alert created
+// during the test so assertions can assert on type / severity / context.
+//
+// `useOwnerStatements` imports `useNotifications` directly (no globalThis
+// shim), so the module factory here is the source of truth that backs the
+// alert calls.
+
+interface AlertCall {
+  type: string
+  severity: string
+  context: Record<string, any>
+}
+const notificationsMock = vi.hoisted(() => {
+  const callLog: AlertCall[] = []
+  return {
+    callLog,
+    spy: {
+      createAlert: (type: string, severity: string, context: Record<string, any>) => {
+        callLog.push({ type, severity, context })
+      },
+    },
+  }
 })
 
-afterEach(() => {
-  vi.useRealTimers()
+vi.mock('~/composables/useNotifications', () => ({
+  useNotifications: () => notificationsMock.spy,
+}))
+
+beforeEach(() => {
+  notificationsMock.callLog.length = 0
 })
 
 // --- Helpers --------------------------------------------------------------
@@ -42,22 +68,6 @@ function findLedgerFor(ownerId: string, listingId: string, period: string): Owne
   if (!entry)
     throw new Error(`Missing ledger entry for ${ownerId}/${listingId}/${period}.`)
   return entry
-}
-
-function findOwner(id: string): Owner {
-  const owner = mockOwners.find(o => o.id === id)
-  if (!owner)
-    throw new Error(`Owner ${id} missing from seed.`)
-  return owner
-}
-
-function findMapping(ownerId: string, listingId: string): OwnerPropertyMapping {
-  const mapping = mockOwnerPropertyMappings.find(
-    m => m.ownerId === ownerId && m.listingId === listingId,
-  )
-  if (!mapping)
-    throw new Error(`Mapping missing for ${ownerId}/${listingId}.`)
-  return mapping
 }
 
 function findCommissionRule(id: string): CommissionRule {
@@ -87,15 +97,47 @@ describe('useOwnerStatements', () => {
       expect(Array.isArray(adjustments.value)).toBe(true)
       expect(Array.isArray(exportActivity.value)).toBe(true)
     })
+
+    it('every seeded published statement carries publishedBy (consistent backfill)', () => {
+      // No drill-deep via the composable — assert directly against the seed
+      // so a fixture regression trips here before it ever hits the runtime.
+      const published = mockOwnerStatements.filter(s => s.status === 'published')
+      expect(published.length).toBeGreaterThan(0)
+      for (const stmt of published) {
+        expect(stmt.publishedAt, `${stmt.id} publishedAt`).toBeTruthy()
+        expect(stmt.publishedBy, `${stmt.id} publishedBy`).toBeTruthy()
+        expect(typeof stmt.publishedBy).toBe('string')
+      }
+    })
+
+    it('every seeded draft statement does NOT carry publishedBy', () => {
+      const drafts = mockOwnerStatements.filter(s => s.status === 'draft')
+      expect(drafts.length).toBeGreaterThan(0)
+      for (const stmt of drafts) {
+        expect(stmt.publishedBy, `${stmt.id} should not have publishedBy`).toBeUndefined()
+        expect(stmt.publishedAt, `${stmt.id} should not have publishedAt`).toBeUndefined()
+      }
+    })
   })
 
   describe('generateForPeriod', () => {
-    it('validates the YYYY-MM format and rejects malformed input', () => {
+    it('validates the YYYY-MM format and rejects malformed input via { ok: false, error }', () => {
       const { generateForPeriod } = useOwnerStatements()
-      expect(() => generateForPeriod('2026-6')).toThrow(/YYYY-MM/i)
-      expect(() => generateForPeriod('2026/06')).toThrow(/YYYY-MM/i)
-      expect(() => generateForPeriod('june-2026')).toThrow(/YYYY-MM/i)
-      expect(() => generateForPeriod('')).toThrow(/YYYY-MM/i)
+      for (const bad of ['2026-6', '2026/06', 'june-2026', '', '2026-13', '2026-00', 'abc-de']) {
+        const result = generateForPeriod(bad)
+        expect(result.ok, `expected ok=false for "${bad}"`).toBe(false)
+        if (!result.ok)
+          expect(result.error).toMatch(/YYYY-MM/i)
+      }
+    })
+
+    it('a malformed-period call MUST NOT alert and MUST NOT mutate statements', () => {
+      const { generateForPeriod, statements } = useOwnerStatements()
+      const before = statements.value
+      const result = generateForPeriod('not-a-period')
+      expect(result.ok).toBe(false)
+      expect(statements.value).toBe(before)
+      expect(notificationsMock.callLog).toHaveLength(0)
     })
 
     it('returns ok with created=0 when called for a period with no ledger data', () => {
@@ -172,26 +214,12 @@ describe('useOwnerStatements', () => {
     })
 
     it('idempotency does not emit OWNER_STATEMENT_DRAFT_READY on a no-op re-run', () => {
-      const callLog: Array<{ type: string, severity: string, context: Record<string, any> }> = []
-      const fakeNotifications = {
-        createAlert: (type: string, severity: string, context: Record<string, any>) => {
-          callLog.push({ type, severity, context })
-        },
-      }
-      const w = globalThis as unknown as Record<string, unknown>
-      const previous = w.useNotifications
-      w.useNotifications = () => fakeNotifications
-      try {
-        const { generateForPeriod } = useOwnerStatements()
-        const result = generateForPeriod(TEST_PERIOD)
-        expect(result.created).toBe(0)
-        expect(callLog.filter(c => c.type === 'OWNER_STATEMENT_DRAFT_READY')).toHaveLength(0)
-      }
-      finally {
-        if (previous === undefined)
-          delete w.useNotifications
-        else w.useNotifications = previous
-      }
+      const { generateForPeriod } = useOwnerStatements()
+      const result = generateForPeriod(TEST_PERIOD)
+      expect(result.created).toBe(0)
+      expect(
+        notificationsMock.callLog.filter(c => c.type === 'OWNER_STATEMENT_DRAFT_READY'),
+      ).toHaveLength(0)
     })
   })
 
@@ -241,27 +269,20 @@ describe('useOwnerStatements', () => {
     })
 
     it('emits an OWNER_STATEMENT_PUBLISHED notification via createAlert', () => {
-      const callLog: Array<{ type: string, severity: string, context: Record<string, any> }> = []
-      const fakeNotifications = {
-        createAlert: (type: string, severity: string, context: Record<string, any>) => {
-          callLog.push({ type, severity, context })
-        },
-      }
-      const w = globalThis as unknown as Record<string, unknown>
-      const previous = w.useNotifications
-      w.useNotifications = () => fakeNotifications
-      try {
-        const { publish } = useOwnerStatements()
-        publish('stmt-3', 'staff-1')
-        const matches = callLog.filter(c => c.type === 'OWNER_STATEMENT_PUBLISHED')
-        expect(matches).toHaveLength(1)
-        expect(matches[0].context.statementId).toBe('stmt-3')
-      }
-      finally {
-        if (previous === undefined)
-          delete w.useNotifications
-        else w.useNotifications = previous
-      }
+      const { publish } = useOwnerStatements()
+      publish('stmt-3', 'staff-1')
+      const matches = notificationsMock.callLog.filter(c => c.type === 'OWNER_STATEMENT_PUBLISHED')
+      expect(matches).toHaveLength(1)
+      expect(matches[0].severity).toBe('INFO')
+      expect(matches[0].context.statementId).toBe('stmt-3')
+      expect(matches[0].context.publishedBy).toBe('staff-1')
+    })
+
+    it('publishes never reach createAlert when the call is rejected (no alert leaks on early-return)', () => {
+      const { publish } = useOwnerStatements()
+      // stmt-2 is already published; publish() must early-return without firing.
+      publish('stmt-2', 'staff-1')
+      expect(notificationsMock.callLog).toHaveLength(0)
     })
   })
 
@@ -382,33 +403,28 @@ describe('useOwnerStatements', () => {
     })
 
     it('emits an OWNER_ISSUE_RAISED notification via createAlert', () => {
-      const callLog: Array<{ type: string, severity: string, context: Record<string, any> }> = []
-      const fakeNotifications = {
-        createAlert: (type: string, severity: string, context: Record<string, any>) => {
-          callLog.push({ type, severity, context })
-        },
-      }
-      const w = globalThis as unknown as Record<string, unknown>
-      const previous = w.useNotifications
-      w.useNotifications = () => fakeNotifications
-      try {
-        const { raiseIssue } = useOwnerStatements()
-        raiseIssue({
-          statementId: 'stmt-1',
-          lineId: 'sl-3',
-          description: 'Utilities review',
-          amount: -10_000,
-        })
-        const matches = callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED')
-        expect(matches).toHaveLength(1)
-        expect(matches[0].context.statementId).toBe('stmt-1')
-        expect(matches[0].context.lineId).toBe('sl-3')
-      }
-      finally {
-        if (previous === undefined)
-          delete w.useNotifications
-        else w.useNotifications = previous
-      }
+      const { raiseIssue } = useOwnerStatements()
+      raiseIssue({
+        statementId: 'stmt-1',
+        lineId: 'sl-3',
+        description: 'Utilities review',
+        amount: -10_000,
+      })
+      const matches = notificationsMock.callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED')
+      expect(matches).toHaveLength(1)
+      expect(matches[0].severity).toBe('WARNING')
+      expect(matches[0].context.statementId).toBe('stmt-1')
+      expect(matches[0].context.lineId).toBe('sl-3')
+    })
+
+    it('duplicate-issue refusal does not leak a new alert (only successful raiseIssue fires)', () => {
+      const { raiseIssue } = useOwnerStatements()
+      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-7', description: 'first', amount: -1 })
+      const afterFirst = notificationsMock.callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED').length
+      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-7', description: 'second', amount: -2 })
+      const afterSecond = notificationsMock.callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED').length
+      expect(afterFirst).toBe(1)
+      expect(afterSecond).toBe(1)
     })
   })
 
@@ -603,7 +619,3 @@ describe('useOwnerStatements', () => {
     })
   })
 })
-
-// Touch the helpers to avoid "unused" warnings if lint enforces strict refs.
-void findOwner
-void findMapping

@@ -29,11 +29,12 @@
 //   * `OWNER_STATEMENT_PUBLISHED` fires once per `publish` success.
 //   * `OWNER_ISSUE_RAISED` fires once per successful `raiseIssue`.
 //
-// These three alert codes are NOT in the current `AlertType` union (that lives
+// These three alert codes are NOT yet in the `AlertType` union (that lives
 // in `~/components/notifications/data/alerts.ts`, owned by Task 8). Per the
-// Task 5 brief we use the existing generic `createAlert(type, severity, ctx)`
-// API and cast the type string through `as never` so this composable does
-// not block on Task 8. The blocker is clearly reported in the report file.
+// Task 5 review we keep the `as never` cast on the type string so this
+// composable does not block on Task 8 — when Task 8 lands, the only
+// follow-up required is to add the three ids to `AlertType`, no other call
+// sites change.
 
 import type { CommissionRule } from '~/components/owners/data/commission-rules'
 import type {
@@ -63,6 +64,7 @@ import {
   mockOwnerStatements,
 } from '~/components/owners/data/owner-statements'
 import { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/owners'
+import { useNotifications } from '~/composables/useNotifications'
 
 // --- Public types ----------------------------------------------------------
 
@@ -179,7 +181,7 @@ function generateExportId(): string {
   return `exa-gen-${Date.now().toString(36)}-${exportIdCounter.toString(36)}`
 }
 
-// --- Notifications shim ----------------------------------------------------
+// --- Notifications --------------------------------------------------------
 //
 // `useNotifications().createAlert(type, severity, context)` accepts an
 // `Alert['type']` (which is the strict `AlertType` union). The three
@@ -188,26 +190,21 @@ function generateExportId(): string {
 // existing generic API and cast through `as never` so adding the new types
 // to `alerts.ts` later is the only remaining work — no other call sites
 // need to change.
-
-type GenericCreateAlert = (
-  type: string,
-  severity: 'CRITICAL' | 'WARNING' | 'INFO',
-  context: Record<string, any>,
-) => void
+//
+// `useNotifications` is imported normally rather than resolved through
+// `globalThis` so this composable behaves like every other composable in
+// the repo (auto-imported by Nuxt in production, imported explicitly in
+// tests via `vi.mock`). Tests install a spy on the `createAlert` method
+// to prove the call path.
 
 function emitOwnerAlert(
   type: 'OWNER_STATEMENT_DRAFT_READY' | 'OWNER_STATEMENT_PUBLISHED' | 'OWNER_ISSUE_RAISED',
   severity: 'CRITICAL' | 'WARNING' | 'INFO',
   context: Record<string, any>,
 ): void {
-  // Resolve lazily — `useNotifications` is the Nuxt auto-import that may
-  // also be exposed on `globalThis` in the test harness.
-  const factory = (globalThis as any).useNotifications
-  if (typeof factory !== 'function')
-    return
-  const notif = factory() as { createAlert: GenericCreateAlert }
   // Cast `type` through `never` — same effect as `as any`, but conveys the
   // intent that this is a temporary bridge until Task 8 lands.
+  const notif = useNotifications()
   notif.createAlert(type as never, severity, context)
 }
 
@@ -261,9 +258,10 @@ export function useOwnerStatements() {
    */
   function generateForPeriod(period: string): GenerateForPeriodResult {
     if (!YYYY_MM_RE.test(period)) {
-      throw new Error(
-        `generateForPeriod: invalid period "${period}" — expected YYYY-MM (e.g. "2026-06").`,
-      )
+      return {
+        ok: false,
+        error: `Invalid period "${period}" — expected YYYY-MM (e.g. "2026-06").`,
+      }
     }
 
     const owners = mockOwners
@@ -541,9 +539,11 @@ export function useOwnerStatements() {
   // --- Read helpers -----------------------------------------------------
 
   /**
-   * Return the current draft statements (sorted by period desc, then id
-   * asc) for dashboard / list views. Always returns a fresh array so
-   * callers can sort without aliasing storage.
+   * Return all draft statements for dashboard / list views.
+   *
+   * Sorted by `period` descending (newest month first) with `id` ascending as
+   * a tiebreaker for stable ordering across re-renders. Always returns a
+   * freshly-sliced array so callers may sort further without aliasing storage.
    */
   function computeDrafts(): OwnerStatement[] {
     return statements.value
