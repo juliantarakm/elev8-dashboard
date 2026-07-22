@@ -1,0 +1,404 @@
+import { computed } from 'vue'
+import type { CommissionRule } from '~/components/owners/data/commission-rules'
+import {
+  mockCommissionRules,
+} from '~/components/owners/data/commission-rules'
+import type {
+  Owner,
+  OwnerPropertyMapping,
+  OwnerStatus,
+} from '~/components/owners/data/owners'
+import {
+  mockOwners,
+  mockOwnerPropertyMappings,
+} from '~/components/owners/data/owners'
+import type { OwnerPermissionConfig } from '~/components/owners/data/owner-permissions'
+import { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
+
+// Re-export the value namespaces so consumers can `import { mockOwners } from
+// '~/composables/useOwners'` without reaching into the data layer directly.
+export { mockOwners, mockOwnerPropertyMappings } from '~/components/owners/data/owners'
+export { mockCommissionRules } from '~/components/owners/data/commission-rules'
+export { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
+
+export type {
+  Owner,
+  OwnerStatus,
+  OwnerLanguage,
+  StatementCurrency,
+  OwnerPropertyMapping,
+} from '~/components/owners/data/owners'
+export type { CommissionRule, CommissionTier } from '~/components/owners/data/commission-rules'
+export type {
+  OwnerPermissionConfig,
+  OwnerPermissionTemplateId,
+  OwnerDashboardField,
+  OwnerStatementField,
+} from '~/components/owners/data/owner-permissions'
+
+/**
+ * Input shape for the owner onboarding save form.
+ *
+ * `owner` carries the editable owner fields; `mappings`, `commissionRules`,
+ * and `permissions` are the join rows that are paired with the new owner in
+ * one transaction. `inviteNow` decides whether the owner is created in `draft`
+ * or immediately transitioned to `invited`.
+ */
+export interface SaveOwnerInput {
+  owner: Omit<Owner, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+  mappings: Omit<OwnerPropertyMapping, 'id' | 'ownerId'>[]
+  commissionRules: Omit<CommissionRule, 'id' | 'ownerId'>[]
+  permissions: OwnerPermissionConfig
+  inviteNow: boolean
+}
+
+let ownerIdCounter = 0
+function generateOwnerId(): string {
+  ownerIdCounter += 1
+  return `own-${Date.now().toString(36)}-${ownerIdCounter.toString(36)}`
+}
+
+let mappingIdCounter = 0
+function generateMappingId(): string {
+  mappingIdCounter += 1
+  return `opm-new-${mappingIdCounter.toString(36)}`
+}
+
+let ruleIdCounter = 0
+function generateRuleId(): string {
+  ruleIdCounter += 1
+  return `cr-new-${ruleIdCounter.toString(36)}`
+}
+
+export function useOwners() {
+  const owners = useState<Owner[]>('elev8-tenant-owners', () => structuredClone(mockOwners))
+  const mappings = useState<OwnerPropertyMapping[]>(
+    'elev8-owner-property-mappings',
+    () => structuredClone(mockOwnerPropertyMappings),
+  )
+  const commissionRules = useState<CommissionRule[]>(
+    'elev8-owner-commission-rules',
+    () => structuredClone(mockCommissionRules),
+  )
+  const permissions = useState<OwnerPermissionConfig[]>(
+    'elev8-owner-permissions',
+    () => structuredClone(mockOwnerPermissions),
+  )
+
+  const search = useState<string>('elev8-owner-search', () => '')
+  const statusFilter = useState<OwnerStatus | 'all'>('elev8-owner-status-filter', () => 'all')
+  const propertyFilter = useState<string>('elev8-owner-property-filter', () => 'all')
+
+  /**
+   * Check whether adding (or updating) a mapping would keep total ownership
+   * for the (listingId, unitId) scope at or below 100%.
+   *
+   * @param mapping Draft mapping without an `id`.
+   * @param excludeMappingId Optional existing mapping id to skip (used when editing).
+   */
+  function validateOwnership(
+    mapping: Omit<OwnerPropertyMapping, 'id'>,
+    excludeMappingId?: string,
+  ): { valid: boolean, allocated: number } {
+    const allocated = mappings.value
+      .filter(item =>
+        item.listingId === mapping.listingId
+        && item.unitId === mapping.unitId
+        && item.id !== excludeMappingId,
+      )
+      .reduce((sum, item) => sum + item.ownershipPercentage, 0)
+    return {
+      valid: allocated + mapping.ownershipPercentage <= 100,
+      allocated,
+    }
+  }
+
+  function nowIso(): string {
+    return new Date().toISOString()
+  }
+
+  /**
+   * Create a new owner along with their mappings, commission rules, and
+   * permission config. Rejects case-insensitive email duplicates.
+   *
+   * Status is set to `invited` when `inviteNow` is true, otherwise `draft`.
+   */
+  function createOwner(input: SaveOwnerInput): { success: boolean, error?: string, ownerId?: string } {
+    const normalizedEmail = input.owner.email.trim().toLowerCase()
+    if (!normalizedEmail) {
+      return { success: false, error: 'Email is required.' }
+    }
+    const emailTaken = owners.value.some(
+      owner => owner.email.trim().toLowerCase() === normalizedEmail,
+    )
+    if (emailTaken) {
+      return { success: false, error: 'An owner with this email already exists.' }
+    }
+
+    // Validate every mapping's ownership fits before committing the owner.
+    for (const draft of input.mappings) {
+      const check = validateOwnership({
+        ownerId: '__pending__',
+        ...draft,
+      } as Omit<OwnerPropertyMapping, 'id'>)
+      if (!check.valid) {
+        return {
+          success: false,
+          error: `Ownership for listing ${draft.listingId} would exceed 100% (already ${check.allocated}%).`,
+        }
+      }
+    }
+
+    const ownerId = generateOwnerId()
+    const timestamp = nowIso()
+    const status: OwnerStatus = input.inviteNow ? 'invited' : 'draft'
+    const newOwner: Owner = {
+      ...input.owner,
+      id: ownerId,
+      status,
+      invitedAt: input.inviteNow ? timestamp : undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }
+
+    owners.value = [...owners.value, newOwner]
+
+    if (input.mappings.length > 0) {
+      const newMappings: OwnerPropertyMapping[] = input.mappings.map(draft => ({
+        ...draft,
+        id: generateMappingId(),
+        ownerId,
+      }))
+      mappings.value = [...mappings.value, ...newMappings]
+    }
+
+    if (input.commissionRules.length > 0) {
+      const newRules: CommissionRule[] = input.commissionRules.map((draft) => {
+        // Spread a discriminated-union draft and assign id/ownerId.
+        // The spread widens the union, so re-narrow by typing the result as
+        // `CommissionRule` and forwarding the spread fields.
+        const { ...rest } = draft
+        return { ...rest, id: generateRuleId(), ownerId } as CommissionRule
+      })
+      commissionRules.value = [...commissionRules.value, ...newRules]
+    }
+
+    // Permissions are keyed by ownerId; replace the placeholder draft that
+    // came in from the dialog so it points at the freshly minted ownerId.
+    const newPermissions = permissions.value.filter(p => p.ownerId !== input.permissions.ownerId)
+    newPermissions.push({ ...input.permissions, ownerId })
+    permissions.value = newPermissions
+
+    return { success: true, ownerId }
+  }
+
+  function updateOwner(ownerId: string, patch: Partial<Omit<Owner, 'id' | 'createdAt'>>): { success: boolean, error?: string } {
+    const owner = owners.value.find(o => o.id === ownerId)
+    if (!owner) {
+      return { success: false, error: 'Owner not found.' }
+    }
+    // Re-validate email uniqueness if it changed.
+    if (patch.email && patch.email.trim().toLowerCase() !== owner.email.trim().toLowerCase()) {
+      const normalizedEmail = patch.email.trim().toLowerCase()
+      const emailTaken = owners.value.some(
+        o => o.id !== ownerId && o.email.trim().toLowerCase() === normalizedEmail,
+      )
+      if (emailTaken) {
+        return { success: false, error: 'An owner with this email already exists.' }
+      }
+    }
+    const updated: Owner = {
+      ...owner,
+      ...patch,
+      updatedAt: nowIso(),
+    }
+    owners.value = owners.value.map(o => o.id === ownerId ? updated : o)
+    return { success: true }
+  }
+
+  /**
+   * Transition helper — stamps status + the matching timestamp, refuses
+   * transitions that aren't allowed from the current status.
+   */
+  function transitionStatus(
+    ownerId: string,
+    nextStatus: OwnerStatus,
+    allowedFrom: OwnerStatus[],
+    timestampField: 'invitedAt' | 'activatedAt',
+  ): { success: boolean, error?: string } {
+    const owner = owners.value.find(o => o.id === ownerId)
+    if (!owner) {
+      return { success: false, error: 'Owner not found.' }
+    }
+    if (!allowedFrom.includes(owner.status)) {
+      return {
+        success: false,
+        error: `Cannot transition owner from ${owner.status} to ${nextStatus}.`,
+      }
+    }
+    const timestamp = nowIso()
+    const patched: Owner = {
+      ...owner,
+      status: nextStatus,
+      [timestampField]: timestamp,
+      updatedAt: timestamp,
+    }
+    owners.value = owners.value.map(o => o.id === ownerId ? patched : o)
+    return { success: true }
+  }
+
+  function inviteOwner(ownerId: string) {
+    return transitionStatus(ownerId, 'invited', ['draft'], 'invitedAt')
+  }
+
+  function activateOwner(ownerId: string) {
+    return transitionStatus(ownerId, 'active', ['invited'], 'activatedAt')
+  }
+
+  function deactivateOwner(ownerId: string): { success: boolean, error?: string } {
+    return transitionStatus(ownerId, 'inactive', ['active'], 'activatedAt')
+  }
+
+  function reactivateOwner(ownerId: string): { success: boolean, error?: string } {
+    return transitionStatus(ownerId, 'active', ['inactive'], 'activatedAt')
+  }
+
+  function addMapping(input: Omit<OwnerPropertyMapping, 'id'>): { success: boolean, error?: string, mappingId?: string } {
+    const check = validateOwnership(input)
+    if (!check.valid) {
+      return {
+        success: false,
+        error: `Ownership for listing ${input.listingId} would exceed 100% (already ${check.allocated}%).`,
+      }
+    }
+    const mappingId = generateMappingId()
+    const newMapping: OwnerPropertyMapping = { ...input, id: mappingId }
+    mappings.value = [...mappings.value, newMapping]
+    return { success: true, mappingId }
+  }
+
+  function updateMapping(mappingId: string, patch: Partial<Omit<OwnerPropertyMapping, 'id' | 'ownerId'>>): { success: boolean, error?: string } {
+    const mapping = mappings.value.find(m => m.id === mappingId)
+    if (!mapping) {
+      return { success: false, error: 'Mapping not found.' }
+    }
+    const next: OwnerPropertyMapping = { ...mapping, ...patch }
+    if (patch.ownershipPercentage !== undefined) {
+      const check = validateOwnership(next, mappingId)
+      if (!check.valid) {
+        return {
+          success: false,
+          error: `Ownership for listing ${mapping.listingId} would exceed 100% (already ${check.allocated}%).`,
+        }
+      }
+    }
+    mappings.value = mappings.value.map(m => m.id === mappingId ? next : m)
+    return { success: true }
+  }
+
+  function removeMapping(mappingId: string): { success: boolean, error?: string } {
+    const mapping = mappings.value.find(m => m.id === mappingId)
+    if (!mapping) {
+      return { success: false, error: 'Mapping not found.' }
+    }
+    mappings.value = mappings.value.filter(m => m.id !== mappingId)
+    return { success: true }
+  }
+
+  // Lookups ----------------------------------------------------------------
+
+  const listingsForOwner = computed(() => {
+    return (ownerId: string) =>
+      mappings.value.filter(m => m.ownerId === ownerId)
+  })
+
+  const ownersForListing = computed(() => {
+    return (listingId: string) =>
+      mappings.value.filter(m => m.listingId === listingId)
+  })
+
+  function byId(ownerId: string): Owner | undefined {
+    return owners.value.find(o => o.id === ownerId)
+  }
+
+  function findPermissions(ownerId: string): OwnerPermissionConfig | undefined {
+    return permissions.value.find(p => p.ownerId === ownerId)
+  }
+
+  function updatePermissions(ownerId: string, patch: Partial<Omit<OwnerPermissionConfig, 'ownerId'>>): { success: boolean, error?: string } {
+    const existing = findPermissions(ownerId)
+    if (!existing) {
+      return { success: false, error: 'Permission config not found for owner.' }
+    }
+    const updated: OwnerPermissionConfig = {
+      ...existing,
+      ...patch,
+      ownerId,
+      updatedAt: nowIso(),
+    }
+    permissions.value = permissions.value.map(p => p.ownerId === ownerId ? updated : p)
+    return { success: true }
+  }
+
+  function rulesForOwner(ownerId: string): CommissionRule[] {
+    return commissionRules.value.filter(r => r.ownerId === ownerId)
+  }
+
+  // Filters ----------------------------------------------------------------
+
+  const filteredOwners = computed(() => {
+    const searchNeedle = search.value.trim().toLowerCase()
+    const listingIdsForOwner = new Map<string, Set<string>>()
+    for (const m of mappings.value) {
+      if (!listingIdsForOwner.has(m.ownerId))
+        listingIdsForOwner.set(m.ownerId, new Set())
+      listingIdsForOwner.get(m.ownerId)!.add(m.listingId)
+    }
+
+    return owners.value.filter((owner) => {
+      if (statusFilter.value !== 'all' && owner.status !== statusFilter.value) {
+        return false
+      }
+      if (propertyFilter.value !== 'all') {
+        const listings = listingIdsForOwner.get(owner.id)
+        if (!listings || !listings.has(propertyFilter.value)) {
+          return false
+        }
+      }
+      if (searchNeedle) {
+        const haystack = `${owner.name} ${owner.email}`.toLowerCase()
+        if (!haystack.includes(searchNeedle)) {
+          return false
+        }
+      }
+      return true
+    })
+  })
+
+  return {
+    owners,
+    mappings,
+    commissionRules,
+    permissions,
+    search,
+    statusFilter,
+    propertyFilter,
+    validateOwnership,
+    createOwner,
+    updateOwner,
+    inviteOwner,
+    activateOwner,
+    deactivateOwner,
+    reactivateOwner,
+    addMapping,
+    updateMapping,
+    removeMapping,
+    updatePermissions,
+    findPermissions,
+    rulesForOwner,
+    listingsForOwner,
+    ownersForListing,
+    byId,
+    filteredOwners,
+  }
+}
