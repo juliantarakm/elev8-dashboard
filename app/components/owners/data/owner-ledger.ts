@@ -55,6 +55,81 @@ export interface OwnerLedgerEntry {
   updatedAt: string
 }
 
+// --- Pure statement calculation helpers -------------------------------------
+//
+// A statement is built from a `StatementInput` — the five signed magnitudes a
+// payout is derived from. Expenses/commission/taxes are supplied as positive
+// magnitudes (they are subtracted); adjustments are signed (added as-is).
+
+export interface StatementInput {
+  grossRevenue: number
+  operatingExpenses: number
+  commission: number
+  taxesAndFees: number
+  adjustments: number
+}
+
+export interface StatementTotals extends StatementInput {
+  /** grossRevenue − operatingExpenses − commission − taxesAndFees + adjustments. */
+  netPayout: number
+}
+
+/** Round a currency amount to two decimals at the domain boundary. */
+export function roundCurrency(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+/**
+ * Scale every property amount by an ownership share (e.g. 0.4 for a 40% co-owner)
+ * before rolling up owner totals. Rounds each field at the domain boundary.
+ */
+export function applyOwnershipShare(input: StatementInput, share: number): StatementInput {
+  return {
+    grossRevenue: roundCurrency(input.grossRevenue * share),
+    operatingExpenses: roundCurrency(input.operatingExpenses * share),
+    commission: roundCurrency(input.commission * share),
+    taxesAndFees: roundCurrency(input.taxesAndFees * share),
+    adjustments: roundCurrency(input.adjustments * share),
+  }
+}
+
+/** Compute the net payout from a statement input, rounding at the boundary. */
+export function calculateStatementTotals(input: StatementInput): StatementTotals {
+  return {
+    grossRevenue: roundCurrency(input.grossRevenue),
+    operatingExpenses: roundCurrency(input.operatingExpenses),
+    commission: roundCurrency(input.commission),
+    taxesAndFees: roundCurrency(input.taxesAndFees),
+    adjustments: roundCurrency(input.adjustments),
+    netPayout: roundCurrency(
+      input.grossRevenue
+      - input.operatingExpenses
+      - input.commission
+      - input.taxesAndFees
+      + input.adjustments,
+    ),
+  }
+}
+
+/**
+ * Convert a ledger entry into a statement input. The commission is supplied by
+ * the caller (via `calculateCommission`), and any prior-period `adjustments`
+ * default to zero. Taxes and platform fees are combined into `taxesAndFees`.
+ */
+export function ledgerEntryToStatementInput(
+  entry: OwnerLedgerEntry,
+  commission: number,
+  adjustments = 0,
+): StatementInput {
+  return {
+    grossRevenue: entry.grossRevenue,
+    operatingExpenses: entry.expenses,
+    commission,
+    taxesAndFees: entry.taxes + entry.platformFees,
+    adjustments,
+  }
+}
+
 // --- Seed fixtures ----------------------------------------------------------
 
 export const mockOwnerLedgerEntries: OwnerLedgerEntry[] = [

@@ -7,6 +7,9 @@
 // was originally told. Adjustments after publication create a separate
 // "issue" record that links back to the original statement.
 
+import type { StatementInput } from './owner-ledger'
+import { roundCurrency } from './owner-ledger'
+
 export type OwnerStatementStatus = 'draft' | 'published'
 
 export type OwnerStatementLineCategory
@@ -51,6 +54,28 @@ export interface OwnerStatement {
   /** Frozen snapshot of the line items at the moment of publication. Only set when status === 'published'. */
   publishedSnapshot?: { lines: OwnerStatementLine[], totalAmount: number, currency: string }
   issues: OwnerStatementIssue[]
+}
+
+// --- Pure statement line builder --------------------------------------------
+
+/**
+ * Build the signed statement lines from a statement input. Revenue is positive;
+ * expenses, commission, and taxes/fees are stored as negative amounts;
+ * adjustments keep their sign. The line amounts sum to the net payout. The
+ * adjustment line is omitted when there is no adjustment.
+ */
+export function buildStatementLines(input: StatementInput): OwnerStatementLine[] {
+  const lines: OwnerStatementLine[] = [
+    { id: 'line-revenue', category: 'revenue', label: 'Gross booking revenue', amount: roundCurrency(input.grossRevenue) },
+    { id: 'line-expense', category: 'expense', label: 'Operating expenses', amount: roundCurrency(-input.operatingExpenses) },
+    { id: 'line-commission', category: 'commission', label: 'Management commission', amount: roundCurrency(-input.commission) },
+    { id: 'line-tax', category: 'tax', label: 'Taxes & platform fees', amount: roundCurrency(-input.taxesAndFees) },
+  ]
+
+  if (input.adjustments !== 0)
+    lines.push({ id: 'line-adjustment', category: 'adjustment', label: 'Adjustments', amount: roundCurrency(input.adjustments) })
+
+  return lines
 }
 
 // --- Seed fixtures ----------------------------------------------------------

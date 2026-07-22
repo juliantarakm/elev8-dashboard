@@ -28,6 +28,91 @@ export type CommissionRule
     | (CommissionRuleBase & { type: 'tiered', tiers: CommissionTier[] })
     | (CommissionRuleBase & { type: 'hybrid', fixedAmount: number, rate: number })
 
+// --- Pure calculation helpers ----------------------------------------------
+//
+// `rate` is a percentage (0–100) throughout the domain — see the fixtures
+// below (cr-1 `rate: 20` = 20%) and the statement fixtures they feed. The
+// helpers divide by 100 internally so callers pass rules straight from the
+// stored `CommissionRule` shape.
+
+/**
+ * The minimal shape needed to compute a commission, derived from `CommissionRule`
+ * so callers can pass a live rule or a lightweight literal (e.g. a draft in a form).
+ */
+export type CommissionCalculationRule
+  = | Pick<Extract<CommissionRule, { type: 'flat' }>, 'type' | 'rate'>
+    | Pick<Extract<CommissionRule, { type: 'tiered' }>, 'type' | 'tiers'>
+    | Pick<Extract<CommissionRule, { type: 'hybrid' }>, 'type' | 'fixedAmount' | 'rate'>
+
+/** Round a currency amount to two decimals at the domain boundary. */
+function roundCurrency(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+/**
+ * Compute the management commission for a given revenue.
+ *
+ * - flat:   `revenue * rate%`
+ * - hybrid: `fixedAmount + revenue * rate%`
+ * - tiered: progressive (marginal) — each band of revenue is charged at that
+ *   tier's rate. Revenue above the top capped tier is not charged.
+ */
+export function calculateCommission(rule: CommissionCalculationRule, revenue: number): number {
+  if (rule.type === 'flat')
+    return roundCurrency(revenue * (rule.rate / 100))
+
+  if (rule.type === 'hybrid')
+    return roundCurrency(rule.fixedAmount + revenue * (rule.rate / 100))
+
+  let remaining = revenue
+  let lowerBound = 0
+  let total = 0
+
+  for (const tier of rule.tiers) {
+    const band = tier.upTo === null ? remaining : Math.min(remaining, tier.upTo - lowerBound)
+    const charged = Math.max(0, band)
+    total += charged * (tier.rate / 100)
+    remaining -= charged
+    if (tier.upTo !== null)
+      lowerBound = tier.upTo
+    if (remaining <= 0)
+      break
+  }
+
+  return roundCurrency(total)
+}
+
+/**
+ * Find the commission rule in effect for an (owner, listing) pair during a
+ * `YYYY-MM` period. A rule is effective when its interval contains the last day
+ * of the period. When several rules overlap, the one with the latest
+ * `effectiveFrom` wins.
+ */
+export function findEffectiveCommissionRule(
+  rules: CommissionRule[],
+  ownerId: string,
+  listingId: string,
+  period: string,
+): CommissionRule | undefined {
+  const periodEnd = endOfPeriod(period)
+
+  return rules
+    .filter(rule =>
+      rule.ownerId === ownerId
+      && rule.listingId === listingId
+      && rule.effectiveFrom <= periodEnd
+      && (rule.effectiveTo === undefined || rule.effectiveTo >= periodEnd))
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
+}
+
+/** Last calendar day of a `YYYY-MM` period as a `YYYY-MM-DD` string. */
+function endOfPeriod(period: string): string {
+  const year = Number(period.slice(0, 4))
+  const month = Number(period.slice(5, 7))
+  // Day 0 of the next month = last day of `month` (month is 1-based here).
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10)
+}
+
 // --- Seed fixtures ----------------------------------------------------------
 
 export const mockCommissionRules: CommissionRule[] = [
