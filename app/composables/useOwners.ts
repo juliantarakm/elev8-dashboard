@@ -122,6 +122,12 @@ export function useOwners() {
    * permission config. Rejects case-insensitive email duplicates.
    *
    * Status is set to `invited` when `inviteNow` is true, otherwise `draft`.
+   *
+   * Ownership is validated in two passes:
+   *  1. The batch must not cumulatively exceed 100% on any single (listingId,
+   *     unitId) scope on its own (two 60% rows for the same scope = 120%).
+   *  2. The batch + every existing mapping on the same scope must also stay
+   *     ≤ 100% (existing 100% + new 1% = 101%).
    */
   function createOwner(input: SaveOwnerInput): { success: boolean, error?: string, ownerId?: string } {
     const normalizedEmail = input.owner.email.trim().toLowerCase()
@@ -135,16 +141,36 @@ export function useOwners() {
       return { success: false, error: 'An owner with this email already exists.' }
     }
 
-    // Validate every mapping's ownership fits before committing the owner.
+    // Pass 1 — batch itself must not cumulatively exceed 100% on a single scope.
+    const batchTotals = new Map<string, number>()
     for (const draft of input.mappings) {
-      const check = validateOwnership({
-        ownerId: '__pending__',
-        ...draft,
-      } as Omit<OwnerPropertyMapping, 'id'>)
-      if (!check.valid) {
+      const key = `${draft.listingId}::${draft.unitId ?? ''}`
+      const next = (batchTotals.get(key) ?? 0) + draft.ownershipPercentage
+      if (next > 100) {
+        const scopeLabel = draft.unitId
+          ? `listing ${draft.listingId} unit ${draft.unitId}`
+          : `listing ${draft.listingId}`
         return {
           success: false,
-          error: `Ownership for listing ${draft.listingId} would exceed 100% (already ${check.allocated}%).`,
+          error: `Ownership for ${scopeLabel} would exceed 100% in the same batch (cumulative ${next}%).`,
+        }
+      }
+      batchTotals.set(key, next)
+    }
+
+    // Pass 2 — combined with existing stored mappings on the same scope.
+    for (const [key, batchTotal] of batchTotals) {
+      const [listingId, unitId] = key.split('::') as [string, string]
+      const existingTotal = mappings.value
+        .filter(item => item.listingId === listingId && (item.unitId ?? '') === unitId)
+        .reduce((sum, item) => sum + item.ownershipPercentage, 0)
+      if (existingTotal + batchTotal > 100) {
+        const scopeLabel = unitId
+          ? `listing ${listingId} unit ${unitId}`
+          : `listing ${listingId}`
+        return {
+          success: false,
+          error: `Ownership for ${scopeLabel} would exceed 100% (existing ${existingTotal}% + batch ${batchTotal}%).`,
         }
       }
     }
@@ -192,7 +218,16 @@ export function useOwners() {
     return { success: true, ownerId }
   }
 
-  function updateOwner(ownerId: string, patch: Partial<Omit<Owner, 'id' | 'createdAt'>>): { success: boolean, error?: string } {
+  /**
+   * Editable owner fields — lifecycle fields (`status`, `invitedAt`,
+   * `activatedAt`) and immutable fields (`id`, `createdAt`, `updatedAt`)
+   * are deliberately excluded so the lifecycle helpers
+   * (`inviteOwner`/`activateOwner`/`deactivateOwner`/`reactivateOwner`)
+   * cannot be bypassed by a stray `updateOwner` call.
+   */
+  type EditableOwnerFields = Omit<Owner, 'id' | 'status' | 'invitedAt' | 'activatedAt' | 'createdAt' | 'updatedAt'>
+
+  function updateOwner(ownerId: string, patch: Partial<EditableOwnerFields>): { success: boolean, error?: string } {
     const owner = owners.value.find(o => o.id === ownerId)
     if (!owner) {
       return { success: false, error: 'Owner not found.' }
@@ -255,8 +290,30 @@ export function useOwners() {
     return transitionStatus(ownerId, 'active', ['invited'], 'activatedAt')
   }
 
+  /**
+   * Deactivation intentionally does NOT touch `activatedAt` — the timestamp
+   * records when the owner became active, and deactivating them does not
+   * erase their history. The `Owner` domain does not carry a separate
+   * `deactivatedAt` field, so we only flip `status` and refresh `updatedAt`.
+   */
   function deactivateOwner(ownerId: string): { success: boolean, error?: string } {
-    return transitionStatus(ownerId, 'inactive', ['active'], 'activatedAt')
+    const owner = owners.value.find(o => o.id === ownerId)
+    if (!owner) {
+      return { success: false, error: 'Owner not found.' }
+    }
+    if (owner.status !== 'active') {
+      return {
+        success: false,
+        error: `Cannot transition owner from ${owner.status} to inactive.`,
+      }
+    }
+    const patched: Owner = {
+      ...owner,
+      status: 'inactive',
+      updatedAt: nowIso(),
+    }
+    owners.value = owners.value.map(o => o.id === ownerId ? patched : o)
+    return { success: true }
   }
 
   function reactivateOwner(ownerId: string): { success: boolean, error?: string } {
@@ -283,12 +340,20 @@ export function useOwners() {
       return { success: false, error: 'Mapping not found.' }
     }
     const next: OwnerPropertyMapping = { ...mapping, ...patch }
-    if (patch.ownershipPercentage !== undefined) {
+    // Revalidate whenever the (listingId, unitId) scope moves or the
+    // ownership percentage changes. Moving a saturated mapping into an
+    // already-100% scope would otherwise sneak past the guard.
+    const scopeChanged = (patch.listingId !== undefined && patch.listingId !== mapping.listingId)
+      || (patch.unitId !== undefined && patch.unitId !== mapping.unitId)
+    if (patch.ownershipPercentage !== undefined || scopeChanged) {
       const check = validateOwnership(next, mappingId)
       if (!check.valid) {
+        const scopeLabel = mapping.unitId
+          ? `listing ${mapping.listingId} unit ${mapping.unitId}`
+          : `listing ${mapping.listingId}`
         return {
           success: false,
-          error: `Ownership for listing ${mapping.listingId} would exceed 100% (already ${check.allocated}%).`,
+          error: `Ownership for ${scopeLabel} would exceed 100% (already ${check.allocated}%).`,
         }
       }
     }

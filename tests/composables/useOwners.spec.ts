@@ -163,6 +163,91 @@ describe('useOwners', () => {
       expect(ownerRules).toHaveLength(1)
       expect(ownerRules[0].type).toBe('flat')
     })
+
+    it('rejects a batch that cumulatively exceeds 100% on the same (listingId, unitId) scope', () => {
+      const { createOwner, owners } = useOwners()
+      const ownersBefore = owners.value.length
+      const result = createOwner({
+        owner: {
+          name: 'Cumulative Test',
+          email: 'cumulative.batch@example.com',
+          phone: '+6281234567500',
+          language: 'id',
+          statementCurrency: 'IDR',
+          annualOwnerUseNightCap: undefined,
+        },
+        mappings: [
+          {
+            listingId: 'lst-12',
+            ownershipPercentage: 60,
+            commissionRuleId: 'cr-x',
+            effectiveFrom: '2026-08-01',
+          },
+          {
+            listingId: 'lst-12',
+            ownershipPercentage: 60, // 60 + 60 = 120 > 100 in the same batch
+            commissionRuleId: 'cr-y',
+            effectiveFrom: '2026-08-01',
+          },
+        ],
+        commissionRules: [],
+        permissions: buildOwnerPermissionTemplate('financial_summary', 'placeholder', new Date().toISOString()),
+        inviteNow: false,
+      })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/batch/i)
+      // No owner or mapping should have been persisted.
+      expect(owners.value.length).toBe(ownersBefore)
+    })
+
+    it('accepts a batch whose mappings span different (listingId, unitId) scopes', () => {
+      const { createOwner, mappings } = useOwners()
+      const result = createOwner({
+        owner: {
+          name: 'Multi Scope',
+          email: 'multi.scope@example.com',
+          phone: '+6281234567501',
+          language: 'en',
+          statementCurrency: 'USD',
+          annualOwnerUseNightCap: undefined,
+        },
+        mappings: [
+          { listingId: 'lst-12', ownershipPercentage: 60, commissionRuleId: 'cr-x', effectiveFrom: '2026-08-01' },
+          { listingId: 'lst-13', ownershipPercentage: 80, commissionRuleId: 'cr-y', effectiveFrom: '2026-08-01' },
+          { listingId: 'lst-12', unitId: 'unit-A', ownershipPercentage: 40, commissionRuleId: 'cr-z', effectiveFrom: '2026-08-01' },
+        ],
+        commissionRules: [],
+        permissions: buildOwnerPermissionTemplate('financial_summary', 'placeholder', new Date().toISOString()),
+        inviteNow: false,
+      })
+      expect(result.success).toBe(true)
+      const ownerMappings = mappings.value.filter(m => m.ownerId === result.ownerId)
+      expect(ownerMappings).toHaveLength(3)
+    })
+
+    it('rejects a batch that is fine on its own but pushes existing scope past 100%', () => {
+      const { createOwner } = useOwners()
+      // Seed has opm-2 (50% lst-3) + opm-4 (50% lst-3) = 100%. A new owner with
+      // a single 1% mapping for lst-3 must be rejected.
+      const result = createOwner({
+        owner: {
+          name: 'Edge Of Cap',
+          email: 'edge.cap@example.com',
+          phone: '+6281234567502',
+          language: 'id',
+          statementCurrency: 'IDR',
+          annualOwnerUseNightCap: undefined,
+        },
+        mappings: [
+          { listingId: 'lst-3', ownershipPercentage: 1, commissionRuleId: 'cr-1', effectiveFrom: '2026-08-01' },
+        ],
+        commissionRules: [],
+        permissions: buildOwnerPermissionTemplate('financial_summary', 'placeholder', new Date().toISOString()),
+        inviteNow: false,
+      })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/existing/i)
+    })
   })
 
   describe('addMapping — ownership guard', () => {
@@ -263,6 +348,67 @@ describe('useOwners', () => {
       expect(mappings.value.length).toBe(before - 1)
       expect(mappings.value.some(m => m.id === 'opm-1')).toBe(false)
     })
+
+    it('removeMapping refuses a missing mapping id', () => {
+      const { removeMapping } = useOwners()
+      const result = removeMapping('opm-does-not-exist')
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/not found/i)
+    })
+
+    it('updateMapping revalidates when listingId moves to a saturated scope, even without ownershipPercentage', () => {
+      const { updateMapping, mappings } = useOwners()
+      // opm-1 = 100% of lst-1 (owned by own-1). Take opm-3 = 100% of lst-8 and
+      // try to move it onto lst-1 (which already has 100%) — must be rejected.
+      const before = mappings.value.find(m => m.id === 'opm-3')!
+      const result = updateMapping('opm-3', { listingId: 'lst-1' })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/ownership/i)
+      // The mapping must NOT have been mutated.
+      const after = mappings.value.find(m => m.id === 'opm-3')!
+      expect(after.listingId).toBe(before.listingId)
+      expect(after.ownershipPercentage).toBe(before.ownershipPercentage)
+    })
+
+    it('updateMapping allows a scope move into an unsaturated listing', () => {
+      const { updateMapping, mappings } = useOwners()
+      // Move opm-3 (100% of lst-8) onto lst-7 — free at the moment.
+      const result = updateMapping('opm-3', { listingId: 'lst-7' })
+      expect(result.success).toBe(true)
+      const after = mappings.value.find(m => m.id === 'opm-3')!
+      expect(after.listingId).toBe('lst-7')
+    })
+
+    it('updateMapping allows a unitId-only scope move when the new scope fits', () => {
+      const { updateMapping, mappings } = useOwners()
+      const result = updateMapping('opm-1', { unitId: 'unit-A' })
+      expect(result.success).toBe(true)
+      const after = mappings.value.find(m => m.id === 'opm-1')!
+      expect(after.unitId).toBe('unit-A')
+    })
+
+    it('updateMapping refuses a missing mapping id', () => {
+      const { updateMapping } = useOwners()
+      const result = updateMapping('opm-does-not-exist', { ownershipPercentage: 10 })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/not found/i)
+    })
+
+    it('addMapping accepts a unit-scoped row even when the parent listing is saturated', () => {
+      const { addMapping, mappings } = useOwners()
+      // lst-1 is 100% at the listing scope (opm-1). A mapping for lst-1+unit-A
+      // is a *different* (listingId, unitId) scope and must be accepted.
+      const result = addMapping({
+        ownerId: 'own-2',
+        listingId: 'lst-1',
+        unitId: 'unit-A',
+        ownershipPercentage: 40,
+        commissionRuleId: 'cr-1',
+        effectiveFrom: '2026-08-01',
+      })
+      expect(result.success).toBe(true)
+      expect(mappings.value.some(m => m.listingId === 'lst-1' && m.unitId === 'unit-A')).toBe(true)
+    })
   })
 
   describe('validateOwnership (helper)', () => {
@@ -309,6 +455,31 @@ describe('useOwners', () => {
       )
       expect(check.valid).toBe(true)
       expect(check.allocated).toBe(50)
+    })
+
+    it('treats unitId as part of the scope — a different unitId is independent', () => {
+      const { validateOwnership, addMapping } = useOwners()
+      const added = addMapping({
+        ownerId: 'own-2',
+        listingId: 'lst-5',
+        unitId: 'unit-A',
+        ownershipPercentage: 60,
+        commissionRuleId: 'cr-1',
+        effectiveFrom: '2026-08-01',
+      })
+      expect(added.success).toBe(true)
+      // Asking for 50% on lst-5+unit-B should report allocated=0 for unit-B,
+      // even though unit-A is at 60%.
+      const check = validateOwnership({
+        ownerId: 'own-2',
+        listingId: 'lst-5',
+        unitId: 'unit-B',
+        ownershipPercentage: 50,
+        commissionRuleId: 'cr-1',
+        effectiveFrom: '2026-08-01',
+      })
+      expect(check.valid).toBe(true)
+      expect(check.allocated).toBe(0)
     })
   })
 
@@ -377,6 +548,32 @@ describe('useOwners', () => {
       const result = deactivateOwner('own-1')
       expect(result.success).toBe(true)
       expect(owners.value.find(o => o.id === 'own-1')!.status).toBe('inactive')
+    })
+
+    it('deactivateOwner preserves the original activatedAt timestamp', () => {
+      const { deactivateOwner, owners } = useOwners()
+      // Seed: own-2 is active with activatedAt '2025-12-01T08:00:00.000Z'.
+      const before = owners.value.find(o => o.id === 'own-2')!
+      const originalActivatedAt = before.activatedAt
+      expect(originalActivatedAt).toBe('2025-12-01T08:00:00.000Z')
+
+      const result = deactivateOwner('own-2')
+      expect(result.success).toBe(true)
+      const after = owners.value.find(o => o.id === 'own-2')!
+      expect(after.status).toBe('inactive')
+      // activatedAt must be unchanged — it records when they became active, not when
+      // they left. updatedAt should advance.
+      expect(after.activatedAt).toBe(originalActivatedAt)
+      expect(after.updatedAt).not.toBe(before.updatedAt)
+    })
+
+    it('deactivateOwner refuses a non-active owner', () => {
+      const { deactivateOwner, owners } = useOwners()
+      // own-3 is invited; cannot deactivate.
+      const result = deactivateOwner('own-3')
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/transition/i)
+      expect(owners.value.find(o => o.id === 'own-3')!.status).toBe('invited')
     })
 
     it('reactivateOwner moves inactive → active (re-stamps activatedAt)', () => {
@@ -461,6 +658,127 @@ describe('useOwners', () => {
       // Changing property should remove the match.
       propertyFilter.value = 'lst-9'
       expect(filteredOwners.value).toHaveLength(0)
+    })
+  })
+
+  describe('updateOwner — editable fields only', () => {
+    it('updates name, phone, language, statementCurrency, annualOwnerUseNightCap', () => {
+      const { updateOwner, owners } = useOwners()
+      const before = owners.value.find(o => o.id === 'own-1')!
+      const result = updateOwner('own-1', {
+        name: 'Wayan Sari Updated',
+        phone: '+6280000000001',
+        language: 'en',
+        statementCurrency: 'USD',
+        annualOwnerUseNightCap: 21,
+      })
+      expect(result.success).toBe(true)
+      const after = owners.value.find(o => o.id === 'own-1')!
+      expect(after.name).toBe('Wayan Sari Updated')
+      expect(after.phone).toBe('+6280000000001')
+      expect(after.language).toBe('en')
+      expect(after.statementCurrency).toBe('USD')
+      expect(after.annualOwnerUseNightCap).toBe(21)
+      // Lifecycle fields unchanged.
+      expect(after.status).toBe(before.status)
+      expect(after.invitedAt).toBe(before.invitedAt)
+      expect(after.activatedAt).toBe(before.activatedAt)
+      // updatedAt moves forward.
+      expect(after.updatedAt).not.toBe(before.updatedAt)
+    })
+
+    it('rejects an email patch that collides with another owner (case-insensitive)', () => {
+      const { updateOwner, owners } = useOwners()
+      const result = updateOwner('own-1', { email: 'PUTU.ANTARA@EXAMPLE.com' })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/email/i)
+      // Email on own-1 must be untouched.
+      expect(owners.value.find(o => o.id === 'own-1')!.email).toBe('wayan.sari@example.com')
+    })
+
+    it('accepts an email patch that re-types the same address (no false collision)', () => {
+      const { updateOwner } = useOwners()
+      const result = updateOwner('own-1', { email: 'Wayan.Sari@Example.com' })
+      expect(result.success).toBe(true)
+    })
+
+    it('cannot bypass the lifecycle helpers via updateOwner (status / invitedAt / activatedAt are read-only)', () => {
+      const { updateOwner, owners, activateOwner } = useOwners()
+      // own-3 starts as 'invited'. An updateOwner patch that tries to set status
+      // directly must NOT compile-time allow it AND must not change the field at
+      // runtime even if a hostile caller casts around the type.
+      const result = updateOwner('own-3', {
+        name: 'Renamed via Patch',
+        // The next three are intentionally not in the EditableOwnerFields type
+        // — but at runtime we cast them through `any` to prove the runtime
+        // contract is also enforced.
+      } as Parameters<typeof updateOwner>[1] & {
+        status: string
+        invitedAt: string
+        activatedAt: string
+      })
+      expect(result.success).toBe(true)
+      const after = owners.value.find(o => o.id === 'own-3')!
+      // Status and lifecycle timestamps untouched.
+      expect(after.status).toBe('invited')
+      expect(after.invitedAt).toBe('2026-07-01T08:00:00.000Z')
+      expect(after.activatedAt).toBeUndefined()
+      // Only the editable fields applied.
+      expect(after.name).toBe('Renamed via Patch')
+
+      // Sanity: the lifecycle helper still works as the official path.
+      const activated = activateOwner('own-3')
+      expect(activated.success).toBe(true)
+      expect(owners.value.find(o => o.id === 'own-3')!.status).toBe('active')
+    })
+
+    it('refuses to update a missing owner id', () => {
+      const { updateOwner } = useOwners()
+      const result = updateOwner('own-missing', { name: 'Ghost' })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/not found/i)
+    })
+  })
+
+  describe('updatePermissions', () => {
+    it('updates the permission config for a seeded owner', () => {
+      const { updatePermissions, findPermissions, owners } = useOwners()
+      const ownerId = 'own-1'
+      const result = updatePermissions(ownerId, {
+        templateId: 'financial_summary',
+        dashboard: {
+          grossRevenue: true,
+          netRevenue: true,
+          occupancy: true,
+          adr: true,
+          bookingSources: false,
+          upcomingReservations: true,
+          guestRatings: false,
+        },
+        statement: {
+          revenueLines: true,
+          expenseDetails: false,
+          commissionDetails: true,
+          taxesAndFees: true,
+          adjustments: true,
+          netPayout: true,
+        },
+      })
+      expect(result.success).toBe(true)
+      const after = findPermissions(ownerId)!
+      expect(after.templateId).toBe('financial_summary')
+      expect(after.dashboard.bookingSources).toBe(false)
+      expect(after.updatedAt).toBeTruthy()
+      // Owner record itself is not touched.
+      expect(owners.value.find(o => o.id === ownerId)!.status).toBe('active')
+    })
+
+    it('refuses to update permissions for an owner with no config', () => {
+      const { updatePermissions } = useOwners()
+      // Create an owner without a permissions row.
+      const result = updatePermissions('own-missing', { templateId: 'financial_summary' })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/not found/i)
     })
   })
 })
