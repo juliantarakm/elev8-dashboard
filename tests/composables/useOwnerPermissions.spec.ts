@@ -1,28 +1,29 @@
-import { beforeEach, describe, expect, it } from 'vitest'
 import type {
   OwnerDashboardField,
   OwnerPermissionConfig,
   OwnerStatementField,
 } from '~/components/owners/data/owner-permissions'
-import { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  mockOwnerPermissions,
   normalizePermissionsSeed,
-  permissionTemplates,
-  useOwnerPermissions,
-} from '~/composables/useOwnerPermissions'
+  ownerPermissionTemplates,
+} from '~/components/owners/data/owner-permissions'
+import { useOwnerPermissions } from '~/composables/useOwnerPermissions'
+import { useOwners } from '~/composables/useOwners'
 
 // Capture the initial template state once on module import. Some tests
-// mutate `permissionTemplates` in place to prove the snapshot invariant
-// (applyTemplate must not be live-linked). We restore the templates before
-// each test so test ordering cannot break the others.
+// mutate `ownerPermissionTemplates` in place to prove the snapshot
+// invariant (applyTemplate must not be live-linked). We restore the
+// templates before each test so test ordering cannot break the others.
 const initialPermissionTemplates = structuredClone(
-  permissionTemplates,
-) as typeof permissionTemplates
+  ownerPermissionTemplates,
+) as typeof ownerPermissionTemplates
 
 beforeEach(() => {
   // Restore every field on every template to its initial value.
-  for (let i = 0; i < permissionTemplates.length; i++) {
-    const target = permissionTemplates[i]
+  for (let i = 0; i < ownerPermissionTemplates.length; i++) {
+    const target = ownerPermissionTemplates[i]
     const source = initialPermissionTemplates[i]
     for (const field of Object.keys(target.dashboard) as OwnerDashboardField[]) {
       target.dashboard[field] = source.dashboard[field]
@@ -38,26 +39,26 @@ beforeEach(() => {
 describe('useOwnerPermissions — permission templates', () => {
   describe('built-in templates', () => {
     it('exposes both full_transparency and financial_summary', () => {
-      const ids = permissionTemplates.map(t => t.id).sort()
+      const ids = ownerPermissionTemplates.map(t => t.id).sort()
       expect(ids).toEqual(['financial_summary', 'full_transparency'])
     })
 
     it('full_transparency enables every dashboard field', () => {
-      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
       for (const value of Object.values(template.dashboard)) {
         expect(value).toBe(true)
       }
     })
 
     it('full_transparency enables every statement field', () => {
-      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
       for (const value of Object.values(template.statement)) {
         expect(value).toBe(true)
       }
     })
 
     it('financial_summary enables ONLY net revenue, occupancy, ADR (dashboard) and commission summary, net payout (statement)', () => {
-      const template = permissionTemplates.find(t => t.id === 'financial_summary')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'financial_summary')!
 
       // ON — the brief says these five fields are visible.
       expect(template.dashboard.netRevenue).toBe(true)
@@ -151,15 +152,21 @@ describe('useOwnerPermissions — permission templates', () => {
       }
     })
 
-    it('does NOT inherit the looser financial_summary dashboard from mockOwnerPermissions', () => {
-      // The data-layer seed (mockOwnerPermissions) has financial_summary rows
-      // with extras like grossRevenue / upcomingReservations set to true. The
-      // composable initializer MUST replace those with the strict canonical
-      // definition, not just clone them. Pin the two specifically-loosest
-      // dashboard fields and assert they are now false.
+    it('data-layer mockOwnerPermissions is itself strict at the source (canonicalized upstream)', () => {
+      // After the data layer tightened its constants, mockOwnerPermissions
+      // ships strict — the financial_summary rows do NOT carry the looser
+      // defaults (grossRevenue / upcomingReservations on) anymore. Pin the
+      // two specifically-loosest dashboard fields so a future regression
+      // (someone reintroducing the looser values) fails loudly here.
       const mockOwn2 = mockOwnerPermissions.find(p => p.ownerId === 'own-2')!
-      expect(mockOwn2.dashboard.grossRevenue).toBe(true) // data-layer source is loose
-      expect(mockOwn2.dashboard.upcomingReservations).toBe(true)
+      expect(mockOwn2.templateId).toBe('financial_summary')
+      expect(mockOwn2.dashboard.grossRevenue).toBe(false)
+      expect(mockOwn2.dashboard.upcomingReservations).toBe(false)
+      expect(mockOwn2.dashboard.guestRatings).toBe(false)
+      // Expected-ON fields must still be true.
+      expect(mockOwn2.dashboard.netRevenue).toBe(true)
+      expect(mockOwn2.dashboard.occupancy).toBe(true)
+      expect(mockOwn2.dashboard.adr).toBe(true)
 
       const { findPermission } = useOwnerPermissions()
       const stored = findPermission('own-2')!
@@ -347,7 +354,7 @@ describe('useOwnerPermissions — permission templates', () => {
       expect(after.statement.netPayout).toBe(true)
     })
 
-    it('mutating permissionTemplates AFTER applyTemplate does NOT retroactively change stored configs', () => {
+    it('mutating ownerPermissionTemplates AFTER applyTemplate does NOT retroactively change stored configs', () => {
       const { applyTemplate, findPermission } = useOwnerPermissions()
       // Apply the same template to two owners.
       applyTemplate('own-1', 'full_transparency')
@@ -357,7 +364,7 @@ describe('useOwnerPermissions — permission templates', () => {
 
       // Now mutate the source template in place — this is exactly the kind
       // of edit the brief warns about.
-      const ft = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const ft = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
       ft.dashboard.grossRevenue = false
       ft.dashboard.adr = false
       ft.statement.netPayout = false
@@ -402,7 +409,7 @@ describe('useOwnerPermissions — permission templates', () => {
       const { applyTemplate, findPermission } = useOwnerPermissions()
       applyTemplate('own-1', 'full_transparency')
       const stored = findPermission('own-1')!
-      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
       // structuredClone yields a new object — the stored records MUST NOT
       // alias the template records.
       expect(Object.is(stored.dashboard, template.dashboard)).toBe(false)
@@ -416,7 +423,7 @@ describe('useOwnerPermissions — permission templates', () => {
       const { applyTemplate, findPermission } = useOwnerPermissions()
       applyTemplate('own-1', 'full_transparency')
       const stored = findPermission('own-1')!
-      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
 
       const beforeGross = template.dashboard.grossRevenue
       const beforeNetPayout = template.statement.netPayout
@@ -436,7 +443,7 @@ describe('useOwnerPermissions — permission templates', () => {
       // future maintainer might), confirm storage stays put.
       const { applyTemplate, findPermission } = useOwnerPermissions()
       applyTemplate('own-1', 'full_transparency')
-      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const template = ownerPermissionTemplates.find(t => t.id === 'full_transparency')!
       const beforeStored = findPermission('own-1')!
 
       template.dashboard.adr = false
@@ -631,6 +638,126 @@ describe('useOwnerPermissions — permission templates', () => {
       const before = configs.value
       updateDashboardField('own-1', 'guestRatings', false)
       expect(configs.value).not.toBe(before)
+    })
+  })
+
+  describe('cross-composable init order (shared useState key)', () => {
+    it('useOwners() first then useOwnerPermissions() — own-2 / own-3 stay strict financial_summary', () => {
+      // The two composables share the `'elev8-owner-permissions'` key. The
+      // dangerous ordering is `useOwners()` first — if its initializer ever
+      // baked the looser seed directly into storage, `useOwnerPermissions()`
+      // would then read it back unchanged (useState skips its initializer).
+      // Both initializers MUST call the same `normalizePermissionsSeed` so
+      // whichever wins the race, storage lands strict.
+      const { permissions } = useOwners() // run FIRST
+      const own2 = permissions.value.find(p => p.ownerId === 'own-2')!
+      expect(own2.dashboard.netRevenue).toBe(true)
+      expect(own2.dashboard.occupancy).toBe(true)
+      expect(own2.dashboard.adr).toBe(true)
+      expect(own2.dashboard.grossRevenue).toBe(false)
+      expect(own2.dashboard.upcomingReservations).toBe(false)
+      expect(own2.dashboard.guestRatings).toBe(false)
+      expect(own2.statement.commissionDetails).toBe(true)
+      expect(own2.statement.netPayout).toBe(true)
+      expect(own2.statement.revenueLines).toBe(false)
+      expect(own2.statement.expenseDetails).toBe(false)
+      expect(own2.statement.taxesAndFees).toBe(false)
+      expect(own2.statement.adjustments).toBe(false)
+
+      // Independent second read; same backing array, so the same view.
+      const { findPermission } = useOwnerPermissions()
+      const stored = findPermission('own-2')!
+      expect(stored.dashboard.grossRevenue).toBe(false)
+      expect(stored.dashboard.upcomingReservations).toBe(false)
+      expect(stored.statement.netPayout).toBe(true)
+      expect(stored.statement.expenseDetails).toBe(false)
+    })
+
+    it('useOwnerPermissions() first then useOwners() — own-2 / own-3 still strict', () => {
+      // Reverse-order sanity check.
+      useOwnerPermissions() // run FIRST
+      const { permissions } = useOwners()
+      const own3 = permissions.value.find(p => p.ownerId === 'own-3')!
+      expect(own3.dashboard.netRevenue).toBe(true)
+      expect(own3.dashboard.occupancy).toBe(true)
+      expect(own3.dashboard.adr).toBe(true)
+      expect(own3.dashboard.grossRevenue).toBe(false)
+      expect(own3.dashboard.bookingSources).toBe(false)
+      expect(own3.dashboard.upcomingReservations).toBe(false)
+      expect(own3.dashboard.guestRatings).toBe(false)
+      expect(own3.statement.commissionDetails).toBe(true)
+      expect(own3.statement.netPayout).toBe(true)
+      expect(own3.statement.revenueLines).toBe(false)
+      expect(own3.statement.expenseDetails).toBe(false)
+      expect(own3.statement.taxesAndFees).toBe(false)
+      expect(own3.statement.adjustments).toBe(false)
+    })
+
+    it('writes through one composable are visible immediately in the other', () => {
+      useOwnerPermissions()
+      const { applyTemplate } = useOwnerPermissions()
+      applyTemplate('own-1', 'financial_summary')
+
+      const { permissions, findPermissions } = useOwners()
+      const fromOwners = permissions.value.find(p => p.ownerId === 'own-1')!
+      expect(fromOwners.templateId).toBe('financial_summary')
+      // useOwners exposes findPermissions (plural); confirm symmetry.
+      const looked = findPermissions('own-1')!
+      expect(looked.templateId).toBe('financial_summary')
+      expect(looked.dashboard.grossRevenue).toBe(false)
+      expect(looked.statement.netPayout).toBe(true)
+    })
+  })
+
+  describe('updatePermissions — hostile patch handling', () => {
+    it('updatePermissionsPatch no longer carries templateId (compile-time)', () => {
+      // The patch TYPE excludes `templateId`. A TS compiler check at runtime
+      // can't fail, but we can assert the type shape via a runtime probe:
+      // the keys of an empty patch object must not contain `templateId`.
+      const emptyPatch: Record<string, unknown> = {}
+      expect('templateId' in emptyPatch).toBe(false)
+      // Built-in template switches must therefore go through `applyTemplate`.
+      // The composable exposes applyTemplate for that purpose.
+      const { applyTemplate } = useOwnerPermissions()
+      expect(typeof applyTemplate).toBe('function')
+    })
+
+    it('runtime patch with a hostile templateId key is ignored — fields-only patching proceeds', () => {
+      // Even if a hostile caller smuggled in a `templateId` field via a
+      // type cast at runtime, the composable must not honour it: the storage
+      // record's `templateId` only changes when a field flip moves the
+      // owner out of a built-in (=> `'custom'`), never by copying the
+      // patch's templateId.
+      const { applyTemplate, updatePermissions, findPermission } = useOwnerPermissions()
+      applyTemplate('own-1', 'full_transparency')
+      const before = findPermission('own-1')!
+      expect(before.templateId).toBe('full_transparency')
+
+      // Cast around the type to smuggle templateId in.
+      const hostilePatch = {
+        templateId: 'financial_summary' as unknown,
+        dashboard: { guestRatings: false },
+      }
+      updatePermissions('own-1', hostilePatch as Parameters<typeof updatePermissions>[1])
+
+      const after = findPermission('own-1')!
+      // The smuggled templateId must NOT have taken effect — storage still
+      // claims `'full_transparency'`, but the field flip moves the owner
+      // to `'custom'` because the field set no longer matches a built-in.
+      expect(after.templateId).not.toBe('financial_summary')
+      expect(after.templateId).toBe('custom')
+      // The dashboard flip DID take effect — that's the legitimate half.
+      expect(after.dashboard.guestRatings).toBe(false)
+      // Other fields preserved from the original `full_transparency` template.
+      expect(after.dashboard.netRevenue).toBe(true)
+      expect(after.dashboard.occupancy).toBe(true)
+    })
+
+    it('rejects an update against an owner with no permission config', () => {
+      const { updatePermissions } = useOwnerPermissions()
+      const result = updatePermissions('own-missing', { dashboard: { netRevenue: true } })
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/not found/i)
     })
   })
 })

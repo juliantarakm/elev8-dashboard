@@ -1,40 +1,34 @@
-import { computed } from 'vue'
 import type { CommissionRule } from '~/components/owners/data/commission-rules'
-import {
-  mockCommissionRules,
-} from '~/components/owners/data/commission-rules'
+import type { OwnerPermissionConfig } from '~/components/owners/data/owner-permissions'
 import type {
   Owner,
   OwnerPropertyMapping,
   OwnerStatus,
 } from '~/components/owners/data/owners'
-import {
-  mockOwners,
-  mockOwnerPropertyMappings,
-} from '~/components/owners/data/owners'
-import type { OwnerPermissionConfig } from '~/components/owners/data/owner-permissions'
-import { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
+import { computed } from 'vue'
+import { mockCommissionRules } from '~/components/owners/data/commission-rules'
+import { mockOwnerPermissions, normalizePermissionsSeed } from '~/components/owners/data/owner-permissions'
+import { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/owners'
 
 // Re-export the value namespaces so consumers can `import { mockOwners } from
 // '~/composables/useOwners'` without reaching into the data layer directly.
-export { mockOwners, mockOwnerPropertyMappings } from '~/components/owners/data/owners'
 export { mockCommissionRules } from '~/components/owners/data/commission-rules'
-export { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
-
-export type {
-  Owner,
-  OwnerStatus,
-  OwnerLanguage,
-  StatementCurrency,
-  OwnerPropertyMapping,
-} from '~/components/owners/data/owners'
 export type { CommissionRule, CommissionTier } from '~/components/owners/data/commission-rules'
-export type {
+export {
+  OwnerDashboardField,
   OwnerPermissionConfig,
   OwnerPermissionTemplateId,
-  OwnerDashboardField,
   OwnerStatementField,
 } from '~/components/owners/data/owner-permissions'
+export { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
+export type {
+  Owner,
+  OwnerLanguage,
+  OwnerPropertyMapping,
+  OwnerStatus,
+  StatementCurrency,
+} from '~/components/owners/data/owners'
+export { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/owners'
 
 /**
  * Input shape for the owner onboarding save form.
@@ -82,7 +76,7 @@ export function useOwners() {
   )
   const permissions = useState<OwnerPermissionConfig[]>(
     'elev8-owner-permissions',
-    () => structuredClone(mockOwnerPermissions),
+    () => normalizePermissionsSeed(mockOwnerPermissions),
   )
 
   const search = useState<string>('elev8-owner-search', () => '')

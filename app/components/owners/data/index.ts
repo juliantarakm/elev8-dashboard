@@ -20,10 +20,13 @@ export type {
   OwnerPermissionConfig,
 } from './owner-permissions'
 export {
-  ownerDashboardFieldLabels,
-  ownerStatementFieldLabels,
+  buildOwnerPermissionConfig,
   buildOwnerPermissionTemplate,
   mockOwnerPermissions,
+  normalizePermissionsSeed,
+  ownerDashboardFieldLabels,
+  ownerPermissionTemplates,
+  ownerStatementFieldLabels,
 } from './owner-permissions'
 
 export type {

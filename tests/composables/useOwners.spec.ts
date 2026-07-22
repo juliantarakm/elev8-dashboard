@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { useOwners } from '~/composables/useOwners'
-import { mockOwners, mockOwnerPropertyMappings } from '~/components/owners/data/owners'
 import { mockCommissionRules } from '~/components/owners/data/commission-rules'
 import { buildOwnerPermissionTemplate } from '~/components/owners/data/owner-permissions'
+import { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/owners'
+import { useOwners } from '~/composables/useOwners'
 
 describe('useOwners', () => {
   describe('seed data', () => {
