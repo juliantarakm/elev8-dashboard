@@ -138,23 +138,27 @@ export const mockOwnerStatements: OwnerStatement[] = [
     totalAmount: 6_386,
     issues: [],
   },
-  // I Putu — June 2026 statement for lst-3 (draft, 50% share).
+  // I Putu — June 2026 statement for lst-3 (draft, 50% co-owner share, IDR).
+  // Commission follows cr-2 (tiered 18% / 22% on the first 50M IDR):
+  //   Tier 1: 50_000_000 * 18% = 9_000_000
+  //   Tier 2: 60_000_000 * 22% = 13_200_000
+  //   Total:                       22_200_000 IDR
   {
     id: 'stmt-4',
     ownerId: 'own-2',
     listingId: 'lst-3',
     period: '2026-06',
-    currency: 'USD',
+    currency: 'IDR',
     status: 'draft',
     createdAt: '2026-07-02T08:00:00.000Z',
     lines: [
-      { id: 'sl-19', category: 'revenue', label: 'Gross booking revenue (50% share)', amount: 6_800 },
-      { id: 'sl-20', category: 'expense', label: 'Cleaning & laundry (50% share)', amount: -180 },
-      { id: 'sl-21', category: 'commission', label: 'Management commission (tiered)', amount: -1_360 },
-      { id: 'sl-22', category: 'tax', label: 'Local tourism tax (50% share)', amount: -340 },
-      { id: 'sl-23', category: 'fee', label: 'Platform fees (50% share)', amount: -408 },
+      { id: 'sl-19', category: 'revenue', label: 'Gross booking revenue (50% share)', amount: 110_000_000 },
+      { id: 'sl-20', category: 'expense', label: 'Cleaning & laundry (50% share)', amount: -2_900_000 },
+      { id: 'sl-21', category: 'commission', label: 'Management commission (tiered 18% / 22%)', amount: -22_200_000 },
+      { id: 'sl-22', category: 'tax', label: 'Local tourism tax (50% share)', amount: -5_500_000 },
+      { id: 'sl-23', category: 'fee', label: 'Platform fees (50% share)', amount: -6_600_000 },
     ],
-    totalAmount: 4_512,
+    totalAmount: 72_800_000,
     issues: [],
   },
   // Ni Kadek — June 2026 statement for lst-3 (draft, 50% share).

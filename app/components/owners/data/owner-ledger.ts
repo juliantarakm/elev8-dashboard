@@ -141,35 +141,35 @@ export const mockOwnerLedgerEntries: OwnerLedgerEntry[] = [
     createdAt: '2026-07-01T08:00:00.000Z',
     updatedAt: '2026-07-01T08:00:00.000Z',
   },
-  // I Putu — lst-3, June 2026 (50% share — same source breakdown as the co-owner).
+  // I Putu — lst-3, June 2026 (50% co-owner share, IDR — same listing/period as led-5).
   {
     id: 'led-4',
     ownerId: 'own-2',
     listingId: 'lst-3',
     period: '2026-06',
-    currency: 'USD',
-    grossRevenue: 6_800,
-    expenses: 180,
-    taxes: 340,
-    platformFees: 408,
+    currency: 'IDR',
+    grossRevenue: 110_000_000,
+    expenses: 2_900_000,
+    taxes: 5_500_000,
+    platformFees: 6_600_000,
     sources: [
-      { source: 'airbnb', revenue: 4_200, reservations: 3, nights: 13 },
-      { source: 'booking_com', revenue: 2_600, reservations: 2, nights: 8 },
+      { source: 'airbnb', revenue: 68_000_000, reservations: 3, nights: 13 },
+      { source: 'booking_com', revenue: 42_000_000, reservations: 2, nights: 8 },
     ],
     occupiedNights: 21,
     availableNights: 30,
-    nightlyRateSum: 6_800,
+    nightlyRateSum: 110_000_000,
     reservationCount: 5,
     averageRating: 4.9,
     ratingsCount: 4,
     upcomingReservations: [
-      { id: 'up-4', guestName: 'Daniel Park', checkIn: '2026-07-22', checkOut: '2026-07-26', nights: 4, source: 'airbnb', totalAmount: 1_480 },
+      { id: 'up-4', guestName: 'Daniel Park', checkIn: '2026-07-22', checkOut: '2026-07-26', nights: 4, source: 'airbnb', totalAmount: 24_000_000 },
     ],
     isPriorPeriodAdjustment: false,
     createdAt: '2026-07-01T08:00:00.000Z',
     updatedAt: '2026-07-01T08:00:00.000Z',
   },
-  // Ni Kadek — lst-3, June 2026 (50% share — same underlying property as I Putu).
+  // Ni Kadek — lst-3, June 2026 (50% co-owner share, IDR — identical underlying numbers as led-4).
   {
     id: 'led-5',
     ownerId: 'own-3',
@@ -190,19 +190,24 @@ export const mockOwnerLedgerEntries: OwnerLedgerEntry[] = [
     reservationCount: 5,
     averageRating: 4.9,
     ratingsCount: 4,
-    upcomingReservations: [],
+    upcomingReservations: [
+      { id: 'up-4', guestName: 'Daniel Park', checkIn: '2026-07-22', checkOut: '2026-07-26', nights: 4, source: 'airbnb', totalAmount: 24_000_000 },
+    ],
     isPriorPeriodAdjustment: false,
     createdAt: '2026-07-01T08:00:00.000Z',
     updatedAt: '2026-07-01T08:00:00.000Z',
   },
   // Prior-period adjustment — Wayan's April 2026 platform fee was understated by 180k IDR.
+  // Pure platform-fee correction: grossRevenue untouched, platformFees +180,000 to recover
+  // the missed Airbnb host fee. The adjustmentReason + adjustsPeriod fields make the
+  // correction intent explicit for downstream UI/auditing.
   {
     id: 'led-6',
     ownerId: 'own-1',
     listingId: 'lst-1',
     period: '2026-04',
     currency: 'IDR',
-    grossRevenue: -180_000,
+    grossRevenue: 0,
     expenses: 0,
     taxes: 0,
     platformFees: 180_000,
@@ -216,7 +221,7 @@ export const mockOwnerLedgerEntries: OwnerLedgerEntry[] = [
     upcomingReservations: [],
     isPriorPeriodAdjustment: true,
     adjustsPeriod: '2026-04',
-    adjustmentReason: 'Airbnb host fee correction — retroactively applied after Apr statement published.',
+    adjustmentReason: 'Platform-fee correction — +180,000 IDR Airbnb host fee understated in April statement; correction added to platformFees, grossRevenue untouched.',
     createdAt: '2026-06-12T08:00:00.000Z',
     updatedAt: '2026-06-12T08:00:00.000Z',
   },
