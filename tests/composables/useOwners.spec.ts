@@ -1,3 +1,4 @@
+import type { OwnerDashboardField } from '~/components/owners/data/owner-permissions'
 import { describe, expect, it } from 'vitest'
 import { mockCommissionRules } from '~/components/owners/data/commission-rules'
 import { buildOwnerPermissionTemplate } from '~/components/owners/data/owner-permissions'
@@ -741,42 +742,108 @@ describe('useOwners', () => {
   })
 
   describe('updatePermissions', () => {
-    it('updates the permission config for a seeded owner', () => {
+    it('updates dashboard fields, stamps templateId=custom, and copies nested records', () => {
       const { updatePermissions, findPermissions, owners } = useOwners()
-      const ownerId = 'own-1'
+      const ownerId = 'own-1' // seed: full_transparency
       const result = updatePermissions(ownerId, {
-        templateId: 'financial_summary',
-        dashboard: {
-          grossRevenue: true,
-          netRevenue: true,
-          occupancy: true,
-          adr: true,
-          bookingSources: false,
-          upcomingReservations: true,
-          guestRatings: false,
-        },
-        statement: {
-          revenueLines: true,
-          expenseDetails: false,
-          commissionDetails: true,
-          taxesAndFees: true,
-          adjustments: true,
-          netPayout: true,
-        },
+        dashboard: { guestRatings: false },
       })
       expect(result.success).toBe(true)
       const after = findPermissions(ownerId)!
-      expect(after.templateId).toBe('financial_summary')
-      expect(after.dashboard.bookingSources).toBe(false)
+      // Field-level edit moves the owner out of the built-in template bucket.
+      expect(after.templateId).toBe('custom')
+      // Patched bit flipped.
+      expect(after.dashboard.guestRatings).toBe(false)
+      // Other dashboard fields preserved from full_transparency.
+      expect(after.dashboard.grossRevenue).toBe(true)
+      expect(after.dashboard.netRevenue).toBe(true)
+      expect(after.dashboard.occupancy).toBe(true)
+      expect(after.dashboard.adr).toBe(true)
+      expect(after.dashboard.bookingSources).toBe(true)
+      expect(after.dashboard.upcomingReservations).toBe(true)
+      // Statement section untouched.
+      expect(after.statement.netPayout).toBe(true)
+      expect(after.statement.revenueLines).toBe(true)
       expect(after.updatedAt).toBeTruthy()
       // Owner record itself is not touched.
       expect(owners.value.find(o => o.id === ownerId)!.status).toBe('active')
     })
 
+    it('updates statement fields and stamps templateId=custom', () => {
+      const { updatePermissions, findPermissions } = useOwners()
+      const result = updatePermissions('own-1', {
+        statement: { taxesAndFees: false },
+      })
+      expect(result.success).toBe(true)
+      const after = findPermissions('own-1')!
+      expect(after.templateId).toBe('custom')
+      expect(after.statement.taxesAndFees).toBe(false)
+      // Other statement fields preserved.
+      expect(after.statement.commissionDetails).toBe(true)
+      expect(after.statement.netPayout).toBe(true)
+      // Dashboard unchanged.
+      expect(after.dashboard.grossRevenue).toBe(true)
+    })
+
+    it('a patch with no actual field edit leaves templateId alone (no spurious flip to custom)', () => {
+      const { updatePermissions, findPermissions } = useOwners()
+      // own-2 starts at financial_summary. An empty patch (no nested keys)
+      // should be a no-op — the previous templateId stays put.
+      const result = updatePermissions('own-2', {})
+      expect(result.success).toBe(true)
+      const after = findPermissions('own-2')!
+      expect(after.templateId).toBe('financial_summary')
+    })
+
+    it('copies nested records — mutating the patch after the call does NOT leak into storage', () => {
+      const { updatePermissions, findPermissions } = useOwners()
+      const draft = { dashboard: { guestRatings: false } } as { dashboard?: Partial<Record<OwnerDashboardField, boolean>> }
+      updatePermissions('own-1', draft)
+      // Mutate the OUTSIDE draft object after the call. Storage must be
+      // unaffected because the patch was copied into storage.
+      ;(draft.dashboard as Record<string, boolean>).guestRatings = true
+      const stored = findPermissions('own-1')!
+      expect(stored.dashboard.guestRatings).toBe(false)
+    })
+
+    it('runtime patch with a smuggled templateId field is ignored (storage lands at custom, never at the smuggled id)', () => {
+      const { updatePermissions, findPermissions } = useOwners()
+      const ownerId = 'own-1' // seed: full_transparency
+      // Cast around the type system to smuggle templateId.
+      const hostile = {
+        templateId: 'financial_summary' as unknown,
+        dashboard: { guestRatings: false } as Partial<Record<OwnerDashboardField, boolean>>,
+      }
+      const result = updatePermissions(ownerId, hostile as Parameters<typeof updatePermissions>[1])
+      expect(result.success).toBe(true)
+      const after = findPermissions(ownerId)!
+      // Smuggled templateId MUST NOT have taken effect. Storage ends at
+      // 'custom' (because the legit dashboard flip still counts) — never
+      // at the smuggled 'financial_summary'.
+      expect(after.templateId).not.toBe('financial_summary')
+      expect(after.templateId).toBe('custom')
+      // The legit dashboard flip DID take effect.
+      expect(after.dashboard.guestRatings).toBe(false)
+      // Statement untouched (no edit).
+      expect(after.statement.revenueLines).toBe(true)
+    })
+
+    it('runtime patch with only a smuggled templateId (no field edit) leaves storage alone', () => {
+      const { updatePermissions, findPermissions } = useOwners()
+      const ownerId = 'own-2' // seed: financial_summary
+      // No field edit is smuggled — only a templateId. Storage must stay
+      // at the previous templateId because nothing was actually touched.
+      const hostile = { templateId: 'full_transparency' as unknown }
+      const result = updatePermissions(ownerId, hostile as Parameters<typeof updatePermissions>[1])
+      expect(result.success).toBe(true)
+      const after = findPermissions(ownerId)!
+      expect(after.templateId).toBe('financial_summary')
+    })
+
     it('refuses to update permissions for an owner with no config', () => {
       const { updatePermissions } = useOwners()
-      // Create an owner without a permissions row.
-      const result = updatePermissions('own-missing', { templateId: 'financial_summary' })
+      // Patch type now excludes templateId; send a dashboard flip instead.
+      const result = updatePermissions('own-missing', { dashboard: { netRevenue: true } })
       expect(result.success).toBe(false)
       expect(result.error).toMatch(/not found/i)
     })

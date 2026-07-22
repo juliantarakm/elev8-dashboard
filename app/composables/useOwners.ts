@@ -14,7 +14,7 @@ import { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/
 // '~/composables/useOwners'` without reaching into the data layer directly.
 export { mockCommissionRules } from '~/components/owners/data/commission-rules'
 export type { CommissionRule, CommissionTier } from '~/components/owners/data/commission-rules'
-export {
+export type {
   OwnerDashboardField,
   OwnerPermissionConfig,
   OwnerPermissionTemplateId,
@@ -384,15 +384,51 @@ export function useOwners() {
     return permissions.value.find(p => p.ownerId === ownerId)
   }
 
-  function updatePermissions(ownerId: string, patch: Partial<Omit<OwnerPermissionConfig, 'ownerId'>>): { success: boolean, error?: string } {
+  /**
+   * Patch shape for `updatePermissions`. `templateId` is deliberately NOT
+   * patchable here — switching between built-in templates must go through
+   * `applyTemplate` (the one path that re-derives `dashboard` and
+   * `statement` from the canonical source). Patching `templateId` here
+   * would let a caller mark an owner as `'full_transparency'` while the
+   * stored fields still reflect `'financial_summary'` (or vice-versa),
+   * creating an unsafe mismatch the UI would then render literally.
+   */
+  function updatePermissions(
+    ownerId: string,
+    patch: {
+      dashboard?: Partial<Record<OwnerDashboardField, boolean>>
+      statement?: Partial<Record<OwnerStatementField, boolean>>
+    },
+  ): { success: boolean, error?: string } {
     const existing = findPermissions(ownerId)
     if (!existing) {
       return { success: false, error: 'Permission config not found for owner.' }
     }
+    const touchedDashboard = patch.dashboard !== undefined
+    const touchedStatement = patch.statement !== undefined
+    // Copy nested records into a fresh object so post-call mutation of
+    // `patch.dashboard` cannot leak into storage.
+    const dashboard = touchedDashboard
+      ? { ...existing.dashboard, ...patch.dashboard }
+      : existing.dashboard
+    const statement = touchedStatement
+      ? { ...existing.statement, ...patch.statement }
+      : existing.statement
+    // Field-level edits always flip the owner to `'custom'`. Even when a
+    // hostile caller smuggles in a `templateId` field via `as any`, we
+    // ignore it here: storage's templateId either stays at the previous
+    // built-in id (no field edit) or moves to `'custom'` (one or more
+    // fields were touched). Built-in ids are never re-applied through
+    // this entry point.
+    const templateId: OwnerPermissionTemplateId = (touchedDashboard || touchedStatement)
+      ? 'custom'
+      : existing.templateId
     const updated: OwnerPermissionConfig = {
       ...existing,
-      ...patch,
       ownerId,
+      templateId,
+      dashboard,
+      statement,
       updatedAt: nowIso(),
     }
     permissions.value = permissions.value.map(p => p.ownerId === ownerId ? updated : p)
