@@ -6,6 +6,7 @@ import type {
 } from '~/components/owners/data/owner-permissions'
 import { mockOwnerPermissions } from '~/components/owners/data/owner-permissions'
 import {
+  normalizePermissionsSeed,
   permissionTemplates,
   useOwnerPermissions,
 } from '~/composables/useOwnerPermissions'
@@ -84,6 +85,203 @@ describe('useOwnerPermissions — permission templates', () => {
       for (const field of otherStatement) {
         expect(template.statement[field], `statement.${field}`).toBe(false)
       }
+    })
+  })
+
+  describe('init — normalization through canonical templates', () => {
+    it('honors the composable\'s strict full_transparency for own-1 immediately on useState creation', () => {
+      // No applyTemplate — we read straight from the useState initializer.
+      const { findPermission } = useOwnerPermissions()
+      const stored = findPermission('own-1')!
+      expect(stored.templateId).toBe('full_transparency')
+      // Every dashboard field must be true.
+      for (const field of Object.keys(stored.dashboard) as OwnerDashboardField[]) {
+        expect(stored.dashboard[field], `dashboard.${field}`).toBe(true)
+      }
+      // Every statement field must be true.
+      for (const field of Object.keys(stored.statement) as OwnerStatementField[]) {
+        expect(stored.statement[field], `statement.${field}`).toBe(true)
+      }
+    })
+
+    it('honors the composable\'s strict financial_summary for own-2 and own-3 immediately (NOT the looser data-layer seed)', () => {
+      // No applyTemplate — the seeded strict financial_summary must be
+      // visible the moment useOwnerPermissions runs.
+      const { findPermission } = useOwnerPermissions()
+      const onDashboard: OwnerDashboardField[] = ['netRevenue', 'occupancy', 'adr']
+      const onStatement: OwnerStatementField[] = ['commissionDetails', 'netPayout']
+
+      for (const ownerId of ['own-2', 'own-3']) {
+        const stored = findPermission(ownerId)!
+        expect(stored.templateId).toBe('financial_summary')
+
+        // Expected ON — exactly these five fields.
+        for (const field of onDashboard) {
+          expect(stored.dashboard[field], `${ownerId}.dashboard.${field}`).toBe(true)
+        }
+        for (const field of onStatement) {
+          expect(stored.statement[field], `${ownerId}.statement.${field}`).toBe(true)
+        }
+
+        // Expected OFF — every other dashboard / statement field is hidden.
+        const offDashboard: OwnerDashboardField[] = [
+          'grossRevenue',
+          'bookingSources',
+          'upcomingReservations',
+          'guestRatings',
+        ]
+        for (const field of offDashboard) {
+          expect(
+            stored.dashboard[field],
+            `${ownerId}.dashboard.${field} must be false (strict financial_summary)`,
+          ).toBe(false)
+        }
+        const offStatement: OwnerStatementField[] = [
+          'revenueLines',
+          'expenseDetails',
+          'taxesAndFees',
+          'adjustments',
+        ]
+        for (const field of offStatement) {
+          expect(
+            stored.statement[field],
+            `${ownerId}.statement.${field} must be false (strict financial_summary)`,
+          ).toBe(false)
+        }
+      }
+    })
+
+    it('does NOT inherit the looser financial_summary dashboard from mockOwnerPermissions', () => {
+      // The data-layer seed (mockOwnerPermissions) has financial_summary rows
+      // with extras like grossRevenue / upcomingReservations set to true. The
+      // composable initializer MUST replace those with the strict canonical
+      // definition, not just clone them. Pin the two specifically-loosest
+      // dashboard fields and assert they are now false.
+      const mockOwn2 = mockOwnerPermissions.find(p => p.ownerId === 'own-2')!
+      expect(mockOwn2.dashboard.grossRevenue).toBe(true) // data-layer source is loose
+      expect(mockOwn2.dashboard.upcomingReservations).toBe(true)
+
+      const { findPermission } = useOwnerPermissions()
+      const stored = findPermission('own-2')!
+      expect(stored.dashboard.grossRevenue).toBe(false)
+      expect(stored.dashboard.upcomingReservations).toBe(false)
+    })
+  })
+
+  describe('normalizePermissionsSeed (canonical normalizer)', () => {
+    it('preserves custom configs through normalization (templateId === "custom" passes through, deep-cloned)', () => {
+      const customConfig: OwnerPermissionConfig = {
+        ownerId: 'own-custom-test',
+        templateId: 'custom',
+        dashboard: {
+          grossRevenue: false,
+          netRevenue: true,
+          occupancy: false,
+          adr: true,
+          bookingSources: false,
+          upcomingReservations: true,
+          guestRatings: false,
+        },
+        statement: {
+          revenueLines: false,
+          expenseDetails: false,
+          commissionDetails: true,
+          taxesAndFees: false,
+          adjustments: true,
+          netPayout: true,
+        },
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      }
+      const seeds = [customConfig]
+      const normalized = normalizePermissionsSeed(seeds)
+
+      expect(normalized[0].templateId).toBe('custom')
+      expect(normalized[0].ownerId).toBe('own-custom-test')
+      // Same field values — passed through.
+      for (const field of Object.keys(customConfig.dashboard) as OwnerDashboardField[]) {
+        expect(normalized[0].dashboard[field]).toBe(customConfig.dashboard[field])
+      }
+      for (const field of Object.keys(customConfig.statement) as OwnerStatementField[]) {
+        expect(normalized[0].statement[field]).toBe(customConfig.statement[field])
+      }
+      // Deep clone — different references at every level.
+      expect(Object.is(normalized[0], customConfig)).toBe(false)
+      expect(Object.is(normalized[0].dashboard, customConfig.dashboard)).toBe(false)
+      expect(Object.is(normalized[0].statement, customConfig.statement)).toBe(false)
+    })
+
+    it('replaces built-in template ids with the canonical field maps (loose seed → strict composable)', () => {
+      // Construct a deliberately loose financial_summary that differs from
+      // the canonical template. The normalizer must NOT preserve that.
+      const looseConfig: OwnerPermissionConfig = {
+        ownerId: 'own-loose',
+        templateId: 'financial_summary',
+        dashboard: {
+          grossRevenue: true, // loose: this should be ON
+          netRevenue: true,
+          occupancy: true,
+          adr: true,
+          bookingSources: false,
+          upcomingReservations: true, // loose: this should be ON
+          guestRatings: true, // loose: this should be ON
+        },
+        statement: {
+          revenueLines: false,
+          expenseDetails: false,
+          commissionDetails: true,
+          taxesAndFees: true, // loose: this should be ON
+          adjustments: false,
+          netPayout: true,
+        },
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      }
+      const normalized = normalizePermissionsSeed([looseConfig])
+      // Looseness must be discarded; canonical strict fields must take over.
+      expect(normalized[0].dashboard.grossRevenue).toBe(false)
+      expect(normalized[0].dashboard.upcomingReservations).toBe(false)
+      expect(normalized[0].dashboard.guestRatings).toBe(false)
+      expect(normalized[0].statement.taxesAndFees).toBe(false)
+      // The five canonical-ON fields must still be ON.
+      expect(normalized[0].dashboard.netRevenue).toBe(true)
+      expect(normalized[0].dashboard.occupancy).toBe(true)
+      expect(normalized[0].dashboard.adr).toBe(true)
+      expect(normalized[0].statement.commissionDetails).toBe(true)
+      expect(normalized[0].statement.netPayout).toBe(true)
+      // updatedAt preserved as supplied.
+      expect(normalized[0].updatedAt).toBe('2026-01-01T00:00:00.000Z')
+    })
+
+    it('does not mutate the input seeds array or its items', () => {
+      // The normalizer must deep-clone custom configs and replace built-in
+      // entries — not edit the seed in place.
+      const customConfig: OwnerPermissionConfig = {
+        ownerId: 'own-x',
+        templateId: 'custom',
+        dashboard: {
+          grossRevenue: false,
+          netRevenue: true,
+          occupancy: false,
+          adr: true,
+          bookingSources: false,
+          upcomingReservations: true,
+          guestRatings: false,
+        },
+        statement: {
+          revenueLines: false,
+          expenseDetails: false,
+          commissionDetails: true,
+          taxesAndFees: false,
+          adjustments: false,
+          netPayout: true,
+        },
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      }
+      const seeds: OwnerPermissionConfig[] = [customConfig]
+      const originalRef = seeds[0]
+      const originalDashboardGrossRevenue = seeds[0].dashboard.grossRevenue
+      normalizePermissionsSeed(seeds)
+      expect(seeds[0]).toBe(originalRef)
+      expect(seeds[0].dashboard.grossRevenue).toBe(originalDashboardGrossRevenue)
     })
   })
 
@@ -196,6 +394,62 @@ describe('useOwnerPermissions — permission templates', () => {
       const seededIds = configs.value.map(c => c.ownerId).sort()
       const mockIds = mockOwnerPermissions.map(p => p.ownerId).sort()
       expect(seededIds).toEqual(mockIds)
+    })
+  })
+
+  describe('structuredClone — snapshot independence for applyTemplate', () => {
+    it('stores dashboard/statement records whose references are independent from the source template', () => {
+      const { applyTemplate, findPermission } = useOwnerPermissions()
+      applyTemplate('own-1', 'full_transparency')
+      const stored = findPermission('own-1')!
+      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      // structuredClone yields a new object — the stored records MUST NOT
+      // alias the template records.
+      expect(Object.is(stored.dashboard, template.dashboard)).toBe(false)
+      expect(Object.is(stored.statement, template.statement)).toBe(false)
+      // Equal by value though.
+      expect(stored.dashboard).toEqual(template.dashboard)
+      expect(stored.statement).toEqual(template.statement)
+    })
+
+    it('mutating the stored config\'s nested records does NOT mutate the source template', () => {
+      const { applyTemplate, findPermission } = useOwnerPermissions()
+      applyTemplate('own-1', 'full_transparency')
+      const stored = findPermission('own-1')!
+      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+
+      const beforeGross = template.dashboard.grossRevenue
+      const beforeNetPayout = template.statement.netPayout
+      // Mutate the STORED config's nested records directly.
+      stored.dashboard.grossRevenue = false
+      stored.statement.netPayout = false
+
+      // The source template must NOT have moved.
+      expect(template.dashboard.grossRevenue).toBe(beforeGross)
+      expect(template.dashboard.grossRevenue).toBe(true)
+      expect(template.statement.netPayout).toBe(beforeNetPayout)
+      expect(template.statement.netPayout).toBe(true)
+    })
+
+    it('mutating the source template\'s records does NOT mutate the stored config', () => {
+      // The reverse direction: edit the source template (the same way a
+      // future maintainer might), confirm storage stays put.
+      const { applyTemplate, findPermission } = useOwnerPermissions()
+      applyTemplate('own-1', 'full_transparency')
+      const template = permissionTemplates.find(t => t.id === 'full_transparency')!
+      const beforeStored = findPermission('own-1')!
+
+      template.dashboard.adr = false
+      template.dashboard.occupancy = false
+      template.statement.netPayout = false
+
+      const afterStored = findPermission('own-1')!
+      expect(afterStored.dashboard.adr).toBe(true)
+      expect(afterStored.dashboard.occupancy).toBe(true)
+      expect(afterStored.statement.netPayout).toBe(true)
+      // Same reference (Vue reactivity on object identity isn't expected to
+      // fire here since the array reference is what changed).
+      expect(afterStored).toBe(beforeStored)
     })
   })
 

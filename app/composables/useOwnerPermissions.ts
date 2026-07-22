@@ -13,11 +13,16 @@
 // Staff can flip individual fields afterwards — that marks the owner as
 // templateId='custom' so future template edits don't trample the override.
 //
-// ⚠️  Snapshot semantics: applying a template copies the dashboard/statement
-//     records into a fresh object. Later mutations to the source template
-//     must NOT retroactively change already-saved owner configs (a real
-//     staff workflow: someone iterates on a template during onboarding, but
-//     owners who already accepted an invite must keep what they were given).
+// ⚠️  Single canonical template source: `permissionTemplates` at module scope.
+//     Both the useState initializer (via `normalizePermissionsSeed`) and
+//     `applyTemplate` resolve templates from THIS array. Any drift between
+//     the two paths is impossible because they share the same lookup.
+//
+// ⚠️  Snapshot semantics: `structuredClone` is used wherever we copy a
+//     template's dashboard/statement records into either a seeded config or
+//     a freshly-applied config. Mutating the source template array later
+//     has no effect on already-saved owner configs — even on boolean fields
+//     today, this matters the moment those records grow nested objects.
 
 import type {
   OwnerDashboardField,
@@ -39,10 +44,12 @@ export { mockOwnerPermissions } from '~/components/owners/data/owner-permissions
 
 // --- Built-in permission templates -----------------------------------------
 //
-// These are the source-of-truth field maps that `applyTemplate` copies from.
-// They are mutable plain objects — that lets tests prove the snapshot
-// invariant by editing them in place and asserting the stored config is
-// untouched. In the app they are read-only constants.
+// These are the source-of-truth field maps that `applyTemplate` AND the
+// `normalizePermissionsSeed` initializer copy from. They are mutable plain
+// objects — that lets tests prove the snapshot invariant by editing them in
+// place and asserting the stored config is untouched. In the app they are
+// read-only constants; the module-level `permissionTemplates` array is the
+// single canonical source every code path below resolves from.
 
 interface OwnerPermissionTemplate {
   id: Exclude<OwnerPermissionTemplateId, 'custom'>
@@ -128,6 +135,60 @@ export interface MutationResult {
   error?: string
 }
 
+// --- Seed normalization ----------------------------------------------------
+
+/**
+ * Build a fresh `OwnerPermissionConfig` from one of the two built-in
+ * templates defined above. `structuredClone` is used for the dashboard and
+ * statement records so the resulting object never aliases the source.
+ */
+function buildConfigFromBuiltInTemplate(
+  ownerId: string,
+  templateId: 'full_transparency' | 'financial_summary',
+  updatedAt: string,
+): OwnerPermissionConfig {
+  const template = permissionTemplates.find(t => t.id === templateId)
+  if (!template) {
+    throw new Error(`Built-in permission template "${templateId}" not found.`)
+  }
+  return {
+    ownerId,
+    templateId,
+    dashboard: structuredClone(template.dashboard),
+    statement: structuredClone(template.statement),
+    updatedAt,
+  }
+}
+
+/**
+ * Normalize a list of seed permission configs through the canonical
+ * composable templates.
+ *
+ *   - Built-in template ids (`full_transparency`, `financial_summary`) are
+ *     REPLACED with the strict canonical field map. This guards against
+ *     the data-layer seed drifting (a looser `financial_summary` in the
+ *     mock would otherwise be inherited by `useOwnerPermissions`).
+ *   - `custom` template ids pass through unchanged (deep-cloned so the
+ *     input array isn't aliased).
+ *
+ * Exported so the useState initializer and tests can both use the same
+ * normalization rules from one place — single source of truth.
+ */
+export function normalizePermissionsSeed(
+  seeds: OwnerPermissionConfig[],
+): OwnerPermissionConfig[] {
+  return seeds.map((seed) => {
+    if (seed.templateId === 'custom') {
+      return structuredClone(seed)
+    }
+    return buildConfigFromBuiltInTemplate(
+      seed.ownerId,
+      seed.templateId,
+      seed.updatedAt,
+    )
+  })
+}
+
 // --- Composable ------------------------------------------------------------
 
 export function useOwnerPermissions() {
@@ -136,10 +197,15 @@ export function useOwnerPermissions() {
    * composables read from the same backing store. Either one can read,
    * either one can write, and a config update done here surfaces in
    * `useOwners().permissions.value` immediately.
+   *
+   * The initializer feeds `mockOwnerPermissions` through
+   * `normalizePermissionsSeed`, so the first read of `configs.value`
+   * already reflects the composable's strict templates — NOT the looser
+   * data-layer seed.
    */
   const configs = useState<OwnerPermissionConfig[]>(
     'elev8-owner-permissions',
-    () => structuredClone(mockOwnerPermissions),
+    () => normalizePermissionsSeed(mockOwnerPermissions),
   )
 
   function nowIso(): string {
@@ -151,10 +217,12 @@ export function useOwnerPermissions() {
   }
 
   /**
-   * Apply a built-in template to an owner. The dashboard/statement records
-   * are copied into a fresh object, so subsequent mutations of the source
-   * template (`permissionTemplates`) cannot retroactively change the stored
-   * config — the snapshot guarantee called out in the task brief.
+   * Apply a built-in template to an owner. `structuredClone` is used for
+   * both nested records so the resulting object has zero aliasing with
+   * the source template — subsequent in-place mutations of the source
+   * `permissionTemplates` array cannot retroactively change the stored
+   * config, and mutating the STORED config cannot retroactively change
+   * the source.
    *
    * `templateId === 'custom'` is rejected: there is no "custom" template to
    * apply. To create an owner that diverges from a built-in template, start
@@ -165,27 +233,18 @@ export function useOwnerPermissions() {
     ownerId: string,
     templateId: OwnerPermissionTemplateId,
   ): OwnerPermissionConfig {
-    const template = permissionTemplates.find(item => item.id === templateId)
-    if (!template) {
+    if (templateId === 'custom') {
       throw new Error(
-        `Permission template "${templateId}" not found. `
-        + `Pick one of: ${permissionTemplates.map(t => t.id).join(', ')}.`,
+        'Cannot apply the "custom" template — start from full_transparency or financial_summary and customize via updateDashboardField / updateStatementField.',
       )
     }
-
-    const next: OwnerPermissionConfig = {
-      ownerId,
-      templateId,
-      dashboard: { ...template.dashboard },
-      statement: { ...template.statement },
-      updatedAt: nowIso(),
-    }
+    const next = buildConfigFromBuiltInTemplate(ownerId, templateId, nowIso())
     configs.value = [
       ...configs.value.filter((item: OwnerPermissionConfig) => item.ownerId !== ownerId),
       next,
     ]
-    // Return a clone so the caller can read/mutate the result without leaking
-    // writes back into storage (storage now owns `next`).
+    // Return a fresh clone so the caller can read/mutate the result without
+    // leaking writes back into storage (storage now owns `next`).
     return structuredClone(next)
   }
 
@@ -291,5 +350,7 @@ export function useOwnerPermissions() {
     updateStatementField,
     updatePermissions,
     findPermission,
+    // Re-export helpers that downstream tests / future UI call sites might want.
+    normalizePermissionsSeed,
   }
 }
