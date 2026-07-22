@@ -32,6 +32,12 @@ export interface OwnerStatementLine {
 export interface OwnerStatementIssue {
   id: string
   statementId: string
+  /** ID of the statement line the issue is attached to. Optional for
+   *  backward-compatibility with existing fixtures (Task 1 seed has no
+   *  per-line issues). The "one open issue per line" rule in
+   *  `useOwnerStatements.raiseIssue` requires this field to be set for any
+   *  issue created through the lifecycle composable. */
+  lineId?: string
   description: string
   amount: number
   createdAt: string
