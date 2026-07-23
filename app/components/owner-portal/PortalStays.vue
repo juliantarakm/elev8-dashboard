@@ -31,8 +31,8 @@ function retry(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
   retrySync(payload.stay.id, payload.target)
 }
 
-function retryEvent(target: OwnerStaySyncTarget, stay: OwnerStay) {
-  retrySync(stay.id, target)
+function retryEvent(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
+  retrySync(payload.stay.id, payload.target)
 }
 
 function saved() {
