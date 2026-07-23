@@ -5,5 +5,5 @@ definePageMeta({
 </script>
 
 <template>
-  <PortalMagicLinkForm />
+  <OwnerPortalMagicLinkForm />
 </template>

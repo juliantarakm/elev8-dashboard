@@ -61,12 +61,12 @@ useHead(() => ({
             </div>
           </div>
           <div class="flex-1 p-4">
-            <PortalSidebar />
+            <OwnerPortalSidebar />
           </div>
         </aside>
 
         <div class="flex min-w-0 flex-1 flex-col">
-          <PortalHeader />
+          <OwnerPortalHeader />
           <main class="flex-1 p-4 sm:p-6 lg:p-8">
             <div class="mx-auto w-full max-w-7xl">
               <slot />
