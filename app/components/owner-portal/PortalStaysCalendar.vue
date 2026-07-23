@@ -13,6 +13,7 @@ import { listings } from '~/components/listings/data/listings'
 import { getWeekDays } from '~/components/operations-calendar/data/operations-calendar'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import PortalSyncStatus from './PortalSyncStatus.vue'
+
 const props = defineProps<{
   anchor?: Date
 }>()
@@ -51,6 +52,7 @@ function retry(target: OwnerStaySyncTarget, stay: OwnerStay) {
   emit('retry', { stay, target })
 }
 </script>
+
 <template>
   <div class="space-y-3">
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -116,4 +118,3 @@ function retry(target: OwnerStaySyncTarget, stay: OwnerStay) {
     </p>
   </div>
 </template>
-
