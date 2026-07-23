@@ -7,25 +7,20 @@
 // owner experience is simpler — a week grid of the owner's own listings
 // with the stay event rendered as a clickable card that opens the dialog
 // and shows the guest, dates, and per-target sync status.
-
 import type { OwnerStay, OwnerStaySyncTarget } from '~/components/owners/data/owner-stays'
 import { computed } from 'vue'
 import { listings } from '~/components/listings/data/listings'
 import { getWeekDays } from '~/components/operations-calendar/data/operations-calendar'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import PortalSyncStatus from './PortalSyncStatus.vue'
-
 const props = defineProps<{
   anchor?: Date
 }>()
-
 const emit = defineEmits<{
   edit: [value: OwnerStay]
   retry: [value: { stay: OwnerStay, target: OwnerStaySyncTarget }]
 }>()
-
 const { myStays } = useOwnerPortal()
-
 const weekDays = computed(() => getWeekDays(props.anchor))
 const listingsById = computed(() => new Map(listings.value.map(l => [l.id, l])))
 const stays = computed<OwnerStay[]>(() => myStays.value.filter(s => s.status === 'active'))
@@ -33,7 +28,6 @@ const ownerListingIds = computed(() => Array.from(new Set(stays.value.map(s => s
 const ownerListings = computed(() => ownerListingIds.value
   .map(id => listingsById.value.get(id))
   .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing)))
-
 const eventsByListingAndDay = computed(() => {
   const result = new Map<string, Map<string, OwnerStay>>()
   for (const stay of stays.value) {
@@ -46,22 +40,17 @@ const eventsByListingAndDay = computed(() => {
   }
   return result
 })
-
 const todayKey = computed(() => weekDays.value[0]?.key ?? new Date().toISOString().slice(0, 10))
-
 function stayFor(listingId: string, dayKey: string) {
   return eventsByListingAndDay.value.get(listingId)?.get(dayKey) ?? null
 }
-
 function edit(stay: OwnerStay) {
   emit('edit', stay)
 }
-
 function retry(target: OwnerStaySyncTarget, stay: OwnerStay) {
   emit('retry', { stay, target })
 }
 </script>
-
 <template>
   <div class="space-y-3">
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
