@@ -90,7 +90,7 @@ function saved() {
           </Table>
         </div>
       </TabsContent>
-    </Tabs><PortalStayDialog
+    </Tabs><OwnerPortalStayDialog
       v-model="dialogOpen"
       :stay="editing"
       :owner-id="currentOwner?.id ?? 'own-1'"
