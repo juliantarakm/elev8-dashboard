@@ -91,10 +91,9 @@ function saved() {
         </div>
       </TabsContent>
     </Tabs><PortalStayDialog
-      :open="dialogOpen"
+      v-model="dialogOpen"
       :stay="editing"
       :owner-id="currentOwner?.id ?? 'own-1'"
-      @update:open="(v: boolean) => dialogOpen = v"
       @saved="saved"
     />
   </div>
