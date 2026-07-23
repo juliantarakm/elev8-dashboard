@@ -6,7 +6,7 @@ import { useOwnerStays } from '~/composables/useOwnerStays'
 defineOptions({ name: 'PortalStayDialog' })
 
 const props = defineProps<{
-  open: boolean
+  modelValue: boolean
   stay?: OwnerStay | null
   ownerId: string
   listingId?: string
@@ -14,10 +14,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'update:open': [value: boolean]
+  'update:modelValue': [value: boolean]
   'saved': [value: OwnerStay]
   'cancelled': []
 }>()
+
+const open = computed<boolean>({
+  get: () => props.modelValue,
+  set: value => emit('update:modelValue', value),
+})
 
 const { createStay, updateStay, detectConflicts, getCapWarning } = useOwnerStays()
 
@@ -46,8 +51,8 @@ watch(() => props.stay?.id, () => {
   capWarning.value = undefined
 })
 
-watch(() => props.open, (open) => {
-  if (open) {
+watch(open, (value) => {
+  if (value) {
     conflicts.value = []
     error.value = ''
   }
@@ -105,12 +110,12 @@ async function save() {
     return
   }
   emit('saved', result.stay)
-  emit('update:open', false)
+  open.value = false
 }
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" @update:open="(v) => open = v">
     <DialogContent aria-describedby="stay-dialog-description" class="sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{{ stay ? 'Edit stay' : 'Create stay' }}</DialogTitle><DialogDescription id="stay-dialog-description">
@@ -136,7 +141,7 @@ async function save() {
         </Alert>
       </div>
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">
+        <Button variant="outline" @click="open = false">
           Cancel
         </Button><Button :disabled="saving || invalid" @click="save">
           {{ saving ? 'Saving…' : 'Confirm stay' }}

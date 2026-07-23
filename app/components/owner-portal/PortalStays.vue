@@ -35,12 +35,6 @@ function saved() {
   editing.value = null
   dialogOpen.value = false
 }
-
-function onDialogUpdate(value: boolean) {
-  dialogOpen.value = value
-  if (!value)
-    editing.value = null
-}
 </script>
 
 <template>
@@ -100,7 +94,7 @@ function onDialogUpdate(value: boolean) {
       :open="dialogOpen"
       :stay="editing"
       :owner-id="currentOwner?.id ?? 'own-1'"
-      @update:open="onDialogUpdate"
+      @update:open="(v: boolean) => dialogOpen = v"
       @saved="saved"
     />
   </div>
