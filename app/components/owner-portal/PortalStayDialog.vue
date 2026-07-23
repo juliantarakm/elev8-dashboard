@@ -34,14 +34,20 @@ const saving = ref(false)
 const _syncTargets: OwnerStaySyncTarget[] = ['cockpit', 'channex', 'notifications']
 void _syncTargets
 
+watch(() => props.stay?.id, () => {
+  guestName.value = props.stay?.guestName ?? ''
+  listingId.value = props.stay?.listingId ?? props.listingId ?? 'lst-1'
+  unitId.value = props.stay?.unitId ?? ''
+  checkIn.value = props.stay?.checkIn ?? ''
+  checkOut.value = props.stay?.checkOut ?? ''
+  notes.value = props.stay?.notes ?? ''
+  conflicts.value = []
+  error.value = ''
+  capWarning.value = undefined
+})
+
 watch(() => props.open, (open) => {
   if (open) {
-    guestName.value = props.stay?.guestName ?? ''
-    listingId.value = props.stay?.listingId ?? props.listingId ?? 'lst-1'
-    unitId.value = props.stay?.unitId ?? ''
-    checkIn.value = props.stay?.checkIn ?? ''
-    checkOut.value = props.stay?.checkOut ?? ''
-    notes.value = props.stay?.notes ?? ''
     conflicts.value = []
     error.value = ''
   }
