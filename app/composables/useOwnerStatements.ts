@@ -41,14 +41,8 @@
 //     `generateForPeriod` creates it.
 //   * `OWNER_STATEMENT_PUBLISHED` fires once per `publish` success.
 //   * `OWNER_ISSUE_RAISED` fires once per successful `raiseIssue`.
-//
-// These three alert codes are NOT yet in the `AlertType` union (that lives
-// in `~/components/notifications/data/alerts.ts`, owned by Task 8). Per the
-// Task 5 review we keep the `as never` cast on the type string so this
-// composable does not block on Task 8 — when Task 8 lands, the only
-// follow-up required is to add the three ids to `AlertType`, no other call
-// sites change.
 
+import type { AlertType } from '~/components/notifications/data/alerts'
 import type { CommissionRule } from '~/components/owners/data/commission-rules'
 import type {
   OwnerLedgerEntry,
@@ -215,12 +209,8 @@ function clonePlain<T>(value: T): T {
 // --- Notifications --------------------------------------------------------
 //
 // `useNotifications().createAlert(type, severity, context)` accepts an
-// `Alert['type']` (which is the strict `AlertType` union). The three
-// owner-portal alert ids this composable emits are not part of that union
-// yet (they live in Task 8's scope). We deliberately route through the
-// existing generic API and cast through `as never` so adding the new types
-// to `alerts.ts` later is the only remaining work — no other call sites
-// need to change.
+// `AlertType` from `~/components/notifications/data/alerts`. This composable
+// narrows the owner-portal subset it actually emits.
 //
 // `useNotifications` is imported normally rather than resolved through
 // `globalThis` so this composable behaves like every other composable in
@@ -228,15 +218,18 @@ function clonePlain<T>(value: T): T {
 // tests via `vi.mock`). Tests install a spy on the `createAlert` method
 // to prove the call path.
 
+type OwnerStatementAlertType
+  = | 'OWNER_STATEMENT_DRAFT_READY'
+    | 'OWNER_STATEMENT_PUBLISHED'
+    | 'OWNER_ISSUE_RAISED'
+
 function emitOwnerAlert(
-  type: 'OWNER_STATEMENT_DRAFT_READY' | 'OWNER_STATEMENT_PUBLISHED' | 'OWNER_ISSUE_RAISED',
+  type: OwnerStatementAlertType,
   severity: 'CRITICAL' | 'WARNING' | 'INFO',
   context: Record<string, any>,
 ): void {
-  // Cast `type` through `never` — same effect as `as any`, but conveys the
-  // intent that this is a temporary bridge until Task 8 lands.
   const notif = useNotifications()
-  notif.createAlert(type as never, severity, context)
+  notif.createAlert(type as AlertType, severity, context)
 }
 
 // --- Composable ------------------------------------------------------------

@@ -3,6 +3,7 @@
 // with deep-copy snapshots, immutable financial edits, next-period
 // adjustments, single-open-issue rule per line, and mock export activity.
 
+import type { AlertType } from '~/components/notifications/data/alerts'
 import type { CommissionRule } from '~/components/owners/data/commission-rules'
 import type { OwnerLedgerEntry } from '~/components/owners/data/owner-ledger'
 import type {
@@ -10,6 +11,7 @@ import type {
   OwnerStatementLine,
 } from '~/components/owners/data/owner-statements'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { alertDisplayLabels, alertIcons, alertRouteMap, getDescription as getAlertDescription } from '~/components/notifications/data/alerts'
 import { calculateCommission, mockCommissionRules } from '~/components/owners/data/commission-rules'
 import { mockOwnerLedgerEntries } from '~/components/owners/data/owner-ledger'
 import { mockOwnerStatements } from '~/components/owners/data/owner-statements'
@@ -20,6 +22,15 @@ import { useOwnerStatements } from '~/composables/useOwnerStatements'
 // and prevents flakiness if the seed set ever grows.
 const TEST_PERIOD = '2026-06'
 const TEST_PERIOD_NEXT = '2026-07'
+
+const ownerAlertTypes: AlertType[] = [
+  'OWNER_STATEMENT_DRAFT_READY',
+  'OWNER_STATEMENT_PUBLISHED',
+  'OWNER_STAY_CONFIRMED',
+  'OWNER_STAY_CONFLICT',
+  'OWNER_ISSUE_RAISED',
+  'OWNER_USE_CAP_EXCEEDED',
+]
 
 // Snapshot of the seed before each test so we can detect leaks across the suite.
 const initialStatementIds = mockOwnerStatements.map(s => s.id).sort()
@@ -76,6 +87,36 @@ function findCommissionRule(id: string): CommissionRule {
     throw new Error(`Commission rule ${id} missing.`)
   return found
 }
+
+describe('owner notification contracts', () => {
+  it('registers labels, icons, routes, and descriptions for every owner alert', () => {
+    const validRoutes = new Set([
+      '/owner-statements',
+      '/owners',
+      '/owner-portal/statements',
+      '/owner-portal/stays',
+    ])
+    const context = {
+      statementId: 'stmt-1',
+      ownerId: 'own-1',
+      listingId: 'lst-1',
+      period: TEST_PERIOD,
+      guestName: 'Wayan Sari',
+      checkIn: '2026-08-01',
+      checkOut: '2026-08-04',
+      conflicts: [{ id: 'res-1' }],
+      projectedNights: 31,
+      cap: 30,
+    }
+
+    for (const type of ownerAlertTypes) {
+      expect(alertDisplayLabels[type], `${type} label`).toBeTruthy()
+      expect(alertIcons[type], `${type} icon`).toMatch(/^i-lucide-/)
+      expect(validRoutes.has(alertRouteMap[type] ?? ''), `${type} route`).toBe(true)
+      expect(getAlertDescription(type, context), `${type} description`).not.toBe('')
+    }
+  })
+})
 
 describe('useOwnerStatements', () => {
   describe('seed initialization', () => {

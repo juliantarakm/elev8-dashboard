@@ -664,4 +664,26 @@ describe('useOwnerPortal', () => {
       }
     })
   })
+
+  describe('owner dashboard selectors', () => {
+    it('narrows metrics and applies the co-owner share', async () => {
+      await loginAs('putu.antara@example.com')
+      const portal = useOwnerPortal()
+      expect(portal.assignedProperties.value).toHaveLength(2)
+      portal.selectedPropertyId.value = 'lst-3'
+      const ledger = mockOwnerLedgerEntries.find(entry => entry.ownerId === 'own-2' && entry.listingId === 'lst-3')!
+      expect(portal.propertyMetrics.value?.grossRevenue).toBe(ledger.grossRevenue * 0.5)
+    })
+
+    it('keeps owner-use nights separate and omits hidden fields', async () => {
+      await loginAs('putu.antara@example.com')
+      const portal = useOwnerPortal()
+      expect(portal.ownerUseNights.value).toBeGreaterThanOrEqual(0)
+      const keys = portal.dashboardMetricDescriptors.value.map(metric => metric.key)
+      expect(keys).not.toContain('grossRevenue')
+      expect(keys).not.toContain('bookingSources')
+      expect(keys).not.toContain('upcomingReservations')
+      expect(keys).not.toContain('guestRatings')
+    })
+  })
 })

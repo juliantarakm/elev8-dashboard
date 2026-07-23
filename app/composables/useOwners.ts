@@ -1,4 +1,4 @@
-import type { CommissionRule } from '~/components/owners/data/commission-rules'
+import type { CommissionRule, CommissionRuleDraft } from '~/components/owners/data/commission-rules'
 import type { OwnerPermissionConfig } from '~/components/owners/data/owner-permissions'
 import type {
   Owner,
@@ -13,7 +13,7 @@ import { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/
 // Re-export the value namespaces so consumers can `import { mockOwners } from
 // '~/composables/useOwners'` without reaching into the data layer directly.
 export { mockCommissionRules } from '~/components/owners/data/commission-rules'
-export type { CommissionRule, CommissionTier } from '~/components/owners/data/commission-rules'
+export type { CommissionRule, CommissionRuleDraft, CommissionTier } from '~/components/owners/data/commission-rules'
 export type {
   OwnerDashboardField,
   OwnerPermissionConfig,
@@ -40,8 +40,8 @@ export { mockOwnerPropertyMappings, mockOwners } from '~/components/owners/data/
  */
 export interface SaveOwnerInput {
   owner: Omit<Owner, 'id' | 'status' | 'createdAt' | 'updatedAt'>
-  mappings: Omit<OwnerPropertyMapping, 'id' | 'ownerId'>[]
-  commissionRules: Omit<CommissionRule, 'id' | 'ownerId'>[]
+  mappings: Omit<OwnerPropertyMapping, 'id' | 'ownerId' | 'commissionRuleId'>[]
+  commissionRules: CommissionRuleDraft[]
   permissions: OwnerPermissionConfig
   inviteNow: boolean
 }
@@ -183,24 +183,26 @@ export function useOwners() {
 
     owners.value = [...owners.value, newOwner]
 
+    const newRules: CommissionRule[] = input.mappings.map(() => ({
+      id: generateRuleId(),
+      ownerId,
+      name: 'Custom management rule',
+      type: 'flat' as const,
+      rate: 0,
+      listingId: '',
+      effectiveFrom: new Date().toISOString().slice(0, 10),
+    } satisfies CommissionRule))
+    if (newRules.length > 0)
+      commissionRules.value = [...commissionRules.value, ...newRules]
+
     if (input.mappings.length > 0) {
-      const newMappings: OwnerPropertyMapping[] = input.mappings.map(draft => ({
+      const newMappings: OwnerPropertyMapping[] = input.mappings.map((draft, index) => ({
         ...draft,
         id: generateMappingId(),
         ownerId,
+        commissionRuleId: newRules[index]!.id,
       }))
       mappings.value = [...mappings.value, ...newMappings]
-    }
-
-    if (input.commissionRules.length > 0) {
-      const newRules: CommissionRule[] = input.commissionRules.map((draft) => {
-        // Spread a discriminated-union draft and assign id/ownerId.
-        // The spread widens the union, so re-narrow by typing the result as
-        // `CommissionRule` and forwarding the spread fields.
-        const { ...rest } = draft
-        return { ...rest, id: generateRuleId(), ownerId } as CommissionRule
-      })
-      commissionRules.value = [...commissionRules.value, ...newRules]
     }
 
     // Permissions are keyed by ownerId; replace the placeholder draft that

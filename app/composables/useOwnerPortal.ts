@@ -31,7 +31,7 @@ import type { OwnerDashboardField, OwnerStatementField } from '~/components/owne
 import type { OwnerStatement, OwnerStatementIssue } from '~/components/owners/data/owner-statements'
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
 import type { Owner, OwnerPropertyMapping } from '~/components/owners/data/owners'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { mockOwnerLedgerEntries } from '~/components/owners/data/owner-ledger'
 import { useOwnerAuth } from '~/composables/useOwnerAuth'
 import { useOwnerPermissions } from '~/composables/useOwnerPermissions'
@@ -198,8 +198,40 @@ export function useOwnerPortal() {
     return result
   })
 
+  const selectedPropertyId = ref<string | null>(null)
+
+  const propertyMetrics = computed<OwnerDashboardMetrics | null>(() => {
+    const owner = currentOwner.value
+    if (!owner)
+      return null
+    const entries = mockOwnerLedgerEntries.filter(entry => entry.ownerId === owner.id && (!selectedPropertyId.value || entry.listingId === selectedPropertyId.value)).map((entry) => {
+      const share = (ownerFilteredMappings.value.find(mapping => mapping.listingId === entry.listingId)?.ownershipPercentage ?? 100) / 100
+      return { ...entry, grossRevenue: entry.grossRevenue * share, expenses: entry.expenses * share, taxes: entry.taxes * share, platformFees: entry.platformFees * share, nightlyRateSum: entry.nightlyRateSum * share }
+    })
+    const period = latestNonAdjustmentPeriod(entries)
+    return period ? sumMetricsForPeriod(entries, period, owner) : null
+  })
+
+  const dashboardMetricDescriptors = computed(() => {
+    const metrics = propertyMetrics.value
+    if (!metrics)
+      return []
+    const descriptors = [
+      { key: 'grossRevenue' as const, label: 'Gross Revenue', value: `${metrics.currency} ${metrics.grossRevenue.toLocaleString()}` },
+      { key: 'netRevenue' as const, label: 'Net Revenue', value: `${metrics.currency} ${metrics.netRevenue.toLocaleString()}` },
+      { key: 'occupancy' as const, label: 'Occupancy', value: `${Math.round(metrics.occupancy * 100)}%` },
+      { key: 'adr' as const, label: 'ADR', value: `${metrics.currency} ${Math.round(metrics.adr).toLocaleString()}` },
+      { key: 'bookingSources' as const, label: 'Booking Sources', value: 'Available' },
+      { key: 'upcomingReservations' as const, label: 'Upcoming Reservations', value: `${metrics.upcomingReservations.length}` },
+      { key: 'guestRatings' as const, label: 'Guest Ratings', value: 'Available' },
+    ]
+    return descriptors.filter(metric => canViewDashboardField(metric.key))
+  })
+
+  const ownerUseNights = computed(() => ownerFilteredStays.value.filter(stay => stay.status !== 'cancelled' && stay.countsAgainstOwnerUseCap).reduce((sum, stay) => sum + stay.nights, 0))
+
   /**
-   * Dashboard metrics — only computed when an owner is logged in. The
+   * The
    * ledger module is a pure fixture; we read it directly. (A real
    * implementation would route through a `useOwnerLedger` composable
    * that owns its own useState — until then, the seed is the source of
@@ -247,6 +279,10 @@ export function useOwnerPortal() {
     myStays: ownerFilteredStays,
     myIssues: ownerFilteredIssues,
     dashboardMetrics,
+    propertyMetrics,
+    selectedPropertyId,
+    dashboardMetricDescriptors,
+    ownerUseNights,
     canViewDashboardField,
     canViewStatementField,
   }

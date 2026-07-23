@@ -1,5 +1,6 @@
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as operationsCalendar from '~/components/operations-calendar/data/operations-calendar'
 import { mockOwnerStays } from '~/components/owners/data/owner-stays'
 import {
   countNights,
@@ -69,6 +70,57 @@ function activeStay(overrides: Partial<OwnerStay> = {}): OwnerStay {
     ...overrides,
   }
 }
+
+describe('owner stay calendar events', () => {
+  it('maps active stays to all-day events and excludes cancelled stays without mutating input', () => {
+    const stays = [
+      activeStay({
+        id: 'ost-calendar-active',
+        listingId: 'lst-1',
+        guestName: 'Wayan Sari',
+        checkIn: '2026-09-20',
+        checkOut: '2026-09-22',
+        notes: 'Family stay',
+      }),
+      activeStay({
+        id: 'ost-calendar-cancelled',
+        listingId: 'lst-1',
+        guestName: 'Cancelled stay',
+        status: 'cancelled',
+      }),
+    ]
+    const original = structuredClone(stays)
+    const buildOwnerStayEvents = (
+      operationsCalendar as typeof operationsCalendar & {
+        buildOwnerStayEvents?: (source: OwnerStay[]) => operationsCalendar.CalendarEvent[]
+      }
+    ).buildOwnerStayEvents
+
+    expect(buildOwnerStayEvents).toBeTypeOf('function')
+    if (!buildOwnerStayEvents)
+      return
+
+    const events = buildOwnerStayEvents(stays)
+
+    expect(operationsCalendar.eventTypeLabels.owner_stay).toBe('Owner stay')
+    expect(operationsCalendar.eventTypeTones.owner_stay).toBeTruthy()
+    expect(events).toHaveLength(1)
+    expect(events[0]).toEqual(expect.objectContaining({
+      id: 'owner-stay-ost-calendar-active',
+      listingId: 'lst-1',
+      type: 'owner_stay',
+      title: 'Wayan Sari',
+      start: '2026-09-20T00:00:00+08:00',
+      end: '2026-09-22T00:00:00+08:00',
+      guestName: 'Wayan Sari',
+      status: 'active',
+      notes: 'Family stay',
+    }))
+    expect(events[0]?.listingName).toBeTruthy()
+    expect(events[0]?.colorIndex).toEqual(expect.any(Number))
+    expect(stays).toEqual(original)
+  })
+})
 
 describe('owner stay date helpers', () => {
   it('treats stays as half-open intervals', () => {

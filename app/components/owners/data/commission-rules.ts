@@ -28,6 +28,13 @@ export type CommissionRule
     | (CommissionRuleBase & { type: 'tiered', tiers: CommissionTier[] })
     | (CommissionRuleBase & { type: 'hybrid', fixedAmount: number, rate: number })
 
+export type CommissionRuleDraft
+  = CommissionRule extends infer Rule
+    ? Rule extends CommissionRule
+      ? Omit<Rule, 'id' | 'ownerId'>
+      : never
+    : never
+
 // --- Pure calculation helpers ----------------------------------------------
 //
 // `rate` is a percentage (0–100) throughout the domain — see the fixtures

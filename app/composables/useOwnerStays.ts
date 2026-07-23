@@ -1,3 +1,4 @@
+import type { AlertType } from '~/components/notifications/data/alerts'
 import type {
   OwnerStay,
   OwnerStayStatus,
@@ -208,13 +209,17 @@ function syncStateFor(failures: OwnerStaySyncTarget[] = []): Record<OwnerStaySyn
   }
 }
 
+type OwnerStayAlertType
+  = | 'OWNER_STAY_CONFIRMED'
+    | 'OWNER_STAY_CONFLICT'
+    | 'OWNER_USE_CAP_EXCEEDED'
+
 function emitOwnerStayAlert(
-  type: 'OWNER_STAY_CONFIRMED' | 'OWNER_STAY_CONFLICT' | 'OWNER_USE_CAP_EXCEEDED',
+  type: OwnerStayAlertType,
   severity: 'INFO' | 'WARNING' | 'CRITICAL',
   context: Record<string, unknown>,
 ): void {
-  // Owner alert types are added by Task 8. Keep this temporary cast until then.
-  useNotifications().createAlert(type as never, severity, context)
+  useNotifications().createAlert(type as AlertType, severity, context)
 }
 
 export function useOwnerStays() {
