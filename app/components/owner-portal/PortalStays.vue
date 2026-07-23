@@ -2,6 +2,7 @@
 import type { OwnerStay, OwnerStaySyncTarget } from '~/components/owners/data/owner-stays'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import { useOwnerStays } from '~/composables/useOwnerStays'
+import PortalStaysCalendar from './PortalStaysCalendar.vue'
 
 const { myStays, currentOwner } = useOwnerPortal()
 const { cancelStay, retrySync } = useOwnerStays()
@@ -21,8 +22,8 @@ function cancel(stay: OwnerStay) {
   cancelStay(stay.id, 'Cancelled by owner')
 }
 
-function retry(stay: OwnerStay, target: OwnerStaySyncTarget) {
-  retrySync(stay.id, target)
+function retry(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
+  retrySync(payload.stay.id, payload.target)
 }
 
 function saved() {
@@ -50,25 +51,10 @@ function saved() {
           List
         </TabsTrigger>
       </TabsList><TabsContent value="calendar" class="min-h-0">
-        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <Card v-for="stay in active" :key="stay.id">
-            <CardHeader>
-              <CardTitle class="text-base">
-                {{ stay.checkIn }} → {{ stay.checkOut }}
-              </CardTitle><CardDescription>{{ stay.guestName }} · {{ stay.nights }} nights</CardDescription>
-            </CardHeader><CardContent>
-              <PortalSyncStatus :stay="stay" @retry="retry(stay, $event)" /><div class="mt-3 flex gap-2">
-                <Button size="sm" variant="outline" @click="edit(stay)">
-                  Edit
-                </Button><Button size="sm" variant="ghost" @click="cancel(stay)">
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card><p v-if="!active.length" class="text-sm text-muted-foreground">
-            No active stays.
-          </p>
-        </div>
+        <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retry" />
+        <p v-if="!active.length" class="mt-4 text-sm text-muted-foreground">
+          No active stays.
+        </p>
       </TabsContent><TabsContent value="list">
         <div class="overflow-auto rounded-md border">
           <Table>
