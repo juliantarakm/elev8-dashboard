@@ -258,6 +258,131 @@ describe('useOwnerStatements', () => {
         findSpy.mockRestore()
       }
     })
+
+    it('uses owner-scoped ledger amounts and ledger currency without applying ownership twice', async () => {
+      const { generateForPeriod, statements } = useOwnerStatements()
+      const ledgerModule = await import('~/components/owners/data/owner-ledger')
+      const period = '2027-03'
+      const synthetic = [
+        {
+          id: 'led-owner-tiered',
+          ownerId: 'own-2',
+          listingId: 'lst-3',
+          period,
+          currency: 'IDR',
+          grossRevenue: 110_000_000,
+          expenses: 2_900_000,
+          taxes: 5_500_000,
+          platformFees: 6_600_000,
+          sources: [],
+          occupiedNights: 18,
+          availableNights: 30,
+          nightlyRateSum: 110_000_000,
+          reservationCount: 4,
+          averageRating: 4.8,
+          ratingsCount: 4,
+          upcomingReservations: [],
+          isPriorPeriodAdjustment: false,
+          createdAt: '2027-04-01T00:00:00.000Z',
+          updatedAt: '2027-04-01T00:00:00.000Z',
+        },
+        {
+          id: 'led-owner-hybrid',
+          ownerId: 'own-2',
+          listingId: 'lst-8',
+          period,
+          currency: 'USD',
+          grossRevenue: 9_400,
+          expenses: 780,
+          taxes: 470,
+          platformFees: 564,
+          sources: [],
+          occupiedNights: 15,
+          availableNights: 30,
+          nightlyRateSum: 9_400,
+          reservationCount: 3,
+          averageRating: 4.7,
+          ratingsCount: 3,
+          upcomingReservations: [],
+          isPriorPeriodAdjustment: false,
+          createdAt: '2027-04-01T00:00:00.000Z',
+          updatedAt: '2027-04-01T00:00:00.000Z',
+        },
+      ]
+      const ledgerSpy = vi.spyOn(ledgerModule, 'mockOwnerLedgerEntries', 'get')
+        .mockReturnValue([...ledgerModule.mockOwnerLedgerEntries, ...synthetic])
+
+      try {
+        const result = generateForPeriod(period)
+        expect(result).toMatchObject({ ok: true, created: 2 })
+
+        const tiered = statements.value.find(s => s.ownerId === 'own-2' && s.listingId === 'lst-3' && s.period === period)!
+        expect(tiered.currency).toBe('IDR')
+        expect(tiered.totalAmount).toBe(72_800_000)
+        expect(tiered.lines.find(line => line.category === 'commission')?.amount).toBe(-22_200_000)
+
+        const hybrid = statements.value.find(s => s.ownerId === 'own-2' && s.listingId === 'lst-8' && s.period === period)!
+        expect(hybrid.currency).toBe('USD')
+        expect(hybrid.totalAmount).toBe(5_926)
+        expect(hybrid.lines.find(line => line.category === 'commission')?.amount).toBe(-1_660)
+      }
+      finally {
+        ledgerSpy.mockRestore()
+      }
+    })
+
+    it('skips mappings that are not effective on the statement period end', async () => {
+      const mapping = mockOwnerPropertyMappings.find(item => item.id === 'opm-1')!
+      const originalEffectiveFrom = mapping.effectiveFrom
+      const originalEffectiveTo = mapping.effectiveTo
+      mapping.effectiveFrom = '2025-01-01'
+      mapping.effectiveTo = '2026-12-31'
+
+      const ledgerModule = await import('~/components/owners/data/owner-ledger')
+      const period = '2027-04'
+      const entry = {
+        ...ledgerModule.mockOwnerLedgerEntries.find(item => item.id === 'led-1')!,
+        id: 'led-expired-mapping',
+        period,
+      }
+      const ledgerSpy = vi.spyOn(ledgerModule, 'mockOwnerLedgerEntries', 'get')
+        .mockReturnValue([...ledgerModule.mockOwnerLedgerEntries, entry])
+
+      try {
+        const result = useOwnerStatements().generateForPeriod(period)
+        expect(result).toMatchObject({ ok: true, created: 0 })
+      }
+      finally {
+        mapping.effectiveFrom = originalEffectiveFrom
+        mapping.effectiveTo = originalEffectiveTo
+        ledgerSpy.mockRestore()
+      }
+    })
+
+    it('uses only the exact effective commission rule referenced by the mapping', async () => {
+      const mapping = mockOwnerPropertyMappings.find(item => item.id === 'opm-1')!
+      const originalRuleId = mapping.commissionRuleId
+      mapping.commissionRuleId = 'cr-missing'
+
+      const ledgerModule = await import('~/components/owners/data/owner-ledger')
+      const period = '2027-05'
+      const entry = {
+        ...ledgerModule.mockOwnerLedgerEntries.find(item => item.id === 'led-1')!,
+        id: 'led-missing-rule',
+        period,
+      }
+      const ledgerSpy = vi.spyOn(ledgerModule, 'mockOwnerLedgerEntries', 'get')
+        .mockReturnValue([...ledgerModule.mockOwnerLedgerEntries, entry])
+
+      try {
+        const result = useOwnerStatements().generateForPeriod(period)
+        expect(result).toMatchObject({ ok: true, created: 0 })
+      }
+      finally {
+        mapping.commissionRuleId = originalRuleId
+        ledgerSpy.mockRestore()
+      }
+    })
   })
 
   describe('publish', () => {
@@ -403,8 +528,16 @@ describe('useOwnerStatements', () => {
   })
 
   describe('raiseIssue + resolveIssue', () => {
+    it('initializes the standalone issue store from statement fixture issues', () => {
+      const { issues } = useOwnerStatements()
+      expect(issues.value.find(issue => issue.id === 'sti-1')).toMatchObject({
+        statementId: 'stmt-2',
+        resolvedAt: '2026-06-10T14:00:00.000Z',
+      })
+    })
+
     it('creates an issue tied to a specific line on the statement', () => {
-      const { raiseIssue, issues } = useOwnerStatements()
+      const { raiseIssue, issues, statements } = useOwnerStatements()
       const result = raiseIssue({
         statementId: 'stmt-1',
         lineId: 'sl-5',
@@ -417,6 +550,8 @@ describe('useOwnerStatements', () => {
       expect(created.amount).toBe(-50_000)
       expect(created.id).toBeTruthy()
       expect(created.createdAt).toBeTruthy()
+      expect(statements.value.find(statement => statement.id === 'stmt-1')?.issues)
+        .toContainEqual(expect.objectContaining({ id: created.id, lineId: 'sl-5' }))
     })
 
     it('enforces the one-open-issue-per-line rule — duplicates return the existing issue', () => {
@@ -435,14 +570,16 @@ describe('useOwnerStatements', () => {
         description: 'Another review on the same line',
         amount: -20_000,
       })
-      expect(second.ok).toBe(false)
-      if (!second.ok)
-        expect(second.reason).toBe('duplicate_open_issue')
+      expect(second.ok).toBe(true)
+      if (first.ok && second.ok) {
+        expect(second.existing).toBe(true)
+        expect(second.issue.id).toBe(first.issue.id)
+      }
       expect(issues.value.length).toBe(beforeCount)
     })
 
-    it('allows a new issue on the same line after the previous one was resolved', () => {
-      const { raiseIssue, resolveIssue } = useOwnerStatements()
+    it('allows a new issue on the same line after the previous one was resolved and keeps both stores synchronized', () => {
+      const { raiseIssue, resolveIssue, issues, statements } = useOwnerStatements()
       const first = raiseIssue({
         statementId: 'stmt-1',
         lineId: 'sl-2',
@@ -452,6 +589,9 @@ describe('useOwnerStatements', () => {
       expect(first.ok).toBe(true)
       const firstIssue = (first as { ok: true, issue: OwnerStatementIssue }).issue
       resolveIssue(firstIssue.id)
+      expect(issues.value.find(issue => issue.id === firstIssue.id)?.resolvedAt).toBeTruthy()
+      expect(statements.value.find(statement => statement.id === 'stmt-1')?.issues.find(issue => issue.id === firstIssue.id)?.resolvedAt).toBeTruthy()
+
       const second = raiseIssue({
         statementId: 'stmt-1',
         lineId: 'sl-2',
@@ -472,6 +612,17 @@ describe('useOwnerStatements', () => {
       expect(result.ok).toBe(false)
     })
 
+    it('rejects an issue when the line does not belong to the statement', () => {
+      const { raiseIssue } = useOwnerStatements()
+      const result = raiseIssue({
+        statementId: 'stmt-1',
+        lineId: 'sl-7',
+        description: 'Line from another statement',
+        amount: 0,
+      })
+      expect(result).toEqual({ ok: false, reason: 'invalid_line' })
+    })
+
     it('emits an OWNER_ISSUE_RAISED notification via createAlert', () => {
       const { raiseIssue } = useOwnerStatements()
       raiseIssue({
@@ -489,9 +640,9 @@ describe('useOwnerStatements', () => {
 
     it('duplicate-issue refusal does not leak a new alert (only successful raiseIssue fires)', () => {
       const { raiseIssue } = useOwnerStatements()
-      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-7', description: 'first', amount: -1 })
+      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-6', description: 'first', amount: -1 })
       const afterFirst = notificationsMock.callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED').length
-      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-7', description: 'second', amount: -2 })
+      raiseIssue({ statementId: 'stmt-1', lineId: 'sl-6', description: 'second', amount: -2 })
       const afterSecond = notificationsMock.callLog.filter(c => c.type === 'OWNER_ISSUE_RAISED').length
       expect(afterFirst).toBe(1)
       expect(afterSecond).toBe(1)
@@ -520,7 +671,6 @@ describe('useOwnerStatements', () => {
 
       const result = recordAdjustment({
         ownerStatementId: 'stmt-1',
-        nextPeriod: TEST_PERIOD_NEXT,
         amount: -100_000,
         reason: 'Retroactive utility undercharge correction.',
       })
@@ -547,11 +697,29 @@ describe('useOwnerStatements', () => {
       const { recordAdjustment } = useOwnerStatements()
       const result = recordAdjustment({
         ownerStatementId: 'stmt-3', // still draft
-        nextPeriod: TEST_PERIOD_NEXT,
         amount: -50_000,
         reason: 'test',
       })
       expect(result.ok).toBe(false)
+    })
+
+    it('derives the next period from the source statement, including December rollover', () => {
+      const { recordAdjustment, statements } = useOwnerStatements()
+      const published = statements.value.find(statement => statement.id === 'stmt-2')!
+      statements.value = [
+        ...statements.value,
+        { ...JSON.parse(JSON.stringify(published)), id: 'stmt-december', period: '2026-12' },
+      ]
+
+      const result = recordAdjustment({
+        ownerStatementId: 'stmt-december',
+        amount: -25_000,
+        reason: 'Year-end correction',
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok)
+        expect(result.adjustment.nextPeriod).toBe('2027-01')
     })
 
     it('uses spread replacement when storing adjustments', () => {
@@ -560,7 +728,6 @@ describe('useOwnerStatements', () => {
       const before = adjustments.value
       recordAdjustment({
         ownerStatementId: 'stmt-1',
-        nextPeriod: TEST_PERIOD_NEXT,
         amount: -10_000,
         reason: 'spread test',
       })
@@ -625,6 +792,25 @@ describe('useOwnerStatements', () => {
       const elapsed = Date.now() - start
       expect(result.ok).toBe(true)
       expect(elapsed).toBeLessThan(5_000)
+    })
+
+    it('keeps concurrent exports unique across composable instances in the same millisecond', async () => {
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000)
+      try {
+        const first = useOwnerStatements()
+        const second = useOwnerStatements()
+        const [pdf, xlsx] = await Promise.all([
+          first.mockExport({ format: 'pdf', statementId: 'stmt-1', actor: 'staff-1' }),
+          second.mockExport({ format: 'xlsx', statementId: 'stmt-1', actor: 'staff-2' }),
+        ])
+
+        expect(pdf.ok && xlsx.ok).toBe(true)
+        if (pdf.ok && xlsx.ok)
+          expect(pdf.activity.id).not.toBe(xlsx.activity.id)
+      }
+      finally {
+        nowSpy.mockRestore()
+      }
     })
 
     it('does NOT mutate statements when exporting (read-only operation)', async () => {
@@ -711,14 +897,14 @@ describe('useOwnerStatements', () => {
       const a = useOwnerStatements()
       const b = useOwnerStatements()
       const seen = new Set<string>()
-      // Mint 25 issues on each instance against distinct line ids, mixing
-      // instances across the loop to exercise counter independence.
+      const initialIssueCount = a.issues.value.length
+      // Reuse one valid statement line, resolving each issue before creating
+      // the next so the one-open-issue-per-line rule remains intact.
       for (let i = 0; i < 25; i++) {
         const target = i % 2 === 0 ? a : b
-        const lineId = `sl-cross-${i}`
         const result = target.raiseIssue({
           statementId: 'stmt-1',
-          lineId,
+          lineId: 'sl-1',
           description: `cross-instance ${i}`,
           amount: -1,
         })
@@ -726,14 +912,15 @@ describe('useOwnerStatements', () => {
         if (result.ok) {
           expect(seen.has(result.issue.id)).toBe(false)
           seen.add(result.issue.id)
+          target.resolveIssue(result.issue.id)
         }
       }
       // The two instances share the same underlying `useState` buckets, so
-      // every issue minted across both lands in one shared store. The unique
-      // set must therefore equal the total count we minted.
+      // every issue minted across both lands in one shared store, alongside
+      // the resolved issue seeded from stmt-2.
       expect(seen.size).toBe(25)
-      expect(a.issues.value).toHaveLength(25)
-      expect(b.issues.value).toHaveLength(25)
+      expect(a.issues.value).toHaveLength(initialIssueCount + 25)
+      expect(b.issues.value).toHaveLength(initialIssueCount + 25)
       // And every id is unique across the shared store.
       const all = a.issues.value.map(i => i.id)
       expect(new Set(all).size).toBe(all.length)
@@ -767,13 +954,11 @@ describe('useOwnerStatements', () => {
       b.publish('stmt-3', 'staff-1')
       const resultA = a.recordAdjustment({
         ownerStatementId: 'stmt-1',
-        nextPeriod: TEST_PERIOD_NEXT,
         amount: -1,
         reason: 'a',
       })
       const resultB = b.recordAdjustment({
         ownerStatementId: 'stmt-3',
-        nextPeriod: TEST_PERIOD_NEXT,
         amount: -2,
         reason: 'b',
       })

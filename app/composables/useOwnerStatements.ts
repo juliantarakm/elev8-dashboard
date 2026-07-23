@@ -67,7 +67,6 @@ import {
   mockCommissionRules,
 } from '~/components/owners/data/commission-rules'
 import {
-  applyOwnershipShare,
   calculateStatementTotals,
   ledgerEntryToStatementInput,
   mockOwnerLedgerEntries,
@@ -132,8 +131,8 @@ export interface RaiseIssueInput {
 }
 
 export type RaiseIssueResult
-  = | { ok: true, issue: OwnerStatementIssue }
-    | { ok: false, reason: 'statement_not_found' | 'duplicate_open_issue' }
+  = | { ok: true, issue: OwnerStatementIssue, existing: boolean }
+    | { ok: false, reason: 'statement_not_found' | 'invalid_line' }
 
 /**
  * `recordAdjustment` derives `ownerId`, `listingId`, and `period` from the
@@ -143,7 +142,6 @@ export type RaiseIssueResult
  */
 export interface RecordAdjustmentInput {
   ownerStatementId: string
-  nextPeriod: string
   amount: number
   reason: string
 }
@@ -165,6 +163,20 @@ export type MockExportResult
 // --- Constants -------------------------------------------------------------
 
 const YYYY_MM_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
+
+function periodEndDate(period: string): string {
+  const year = Number(period.slice(0, 4))
+  const month = Number(period.slice(5, 7))
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10)
+}
+
+function nextPeriod(period: string): string {
+  const year = Number(period.slice(0, 4))
+  const month = Number(period.slice(5, 7))
+  return month === 12
+    ? `${year + 1}-01`
+    : `${year}-${String(month + 1).padStart(2, '0')}`
+}
 
 /**
  * Mock export delay. Short enough that tests do not hang, long enough to
@@ -240,7 +252,7 @@ export function useOwnerStatements() {
   )
   const issues = useState<OwnerStatementIssue[]>(
     'elev8-owner-statement-issues',
-    () => [],
+    () => structuredClone(mockOwnerStatements.flatMap(statement => statement.issues)),
   )
   const adjustments = useState<OwnerStatementAdjustment[]>(
     'elev8-owner-statement-adjustments',
@@ -251,26 +263,19 @@ export function useOwnerStatements() {
     () => [],
   )
 
-  // --- Per-instance ID generator ----------------------------------------
+  // --- Collision-safe ID generator --------------------------------------
   //
-  // Each `useOwnerStatements()` call keeps a prefix-specific counter inside
-  // the closure. The counter is paired with a store-based collision check so
-  // generated IDs cannot collide with seed IDs, IDs minted earlier in the
-  // same batch, or IDs minted by another composable instance. Because the
-  // state is instance-local, it does not leak across tests or HMR reloads.
-  const idCounters = new Map<string, number>()
-
+  // UUIDs avoid timestamp/counter races when separate composable instances
+  // create records concurrently. The live-store check remains as a defensive
+  // guard around the generated value.
   function deriveUniqueId(
     prefix: string,
     isTaken: (id: string) => boolean,
   ): string {
-    let counter = idCounters.get(prefix) ?? 0
     let id = ''
     do {
-      counter += 1
-      id = `${prefix}-gen-${Date.now().toString(36)}-${counter.toString(36)}`
+      id = `${prefix}-${globalThis.crypto.randomUUID()}`
     } while (isTaken(id))
-    idCounters.set(prefix, counter)
     return id
   }
 
@@ -303,9 +308,10 @@ export function useOwnerStatements() {
    * For every (active owner, listing) mapping whose `commissionRuleId` is
    * effective at the period end AND whose ledger has an entry for the
    * period, a draft statement is created with:
-   *   - the owner's `statementCurrency`,
-   *   - ownership share applied to every line,
-   *   - the effective commission rule's commission.
+   *   - the owner-scoped ledger currency and amounts,
+   *   - the exact commission rule referenced by the effective mapping,
+   *   - no second ownership scaling because ledger rows are already keyed and
+   *     calculated per owner.
    *
    * Idempotency: an existing (ownerId, listingId, period) statement in any
    * status is left alone — generation is a no-op for that tuple. This is
@@ -334,6 +340,7 @@ export function useOwnerStatements() {
         .filter(s => s.period === period)
         .map(s => `${s.ownerId}::${s.listingId}`),
     )
+    const periodEnd = periodEndDate(period)
 
     let created = 0
     let skipped = 0
@@ -349,6 +356,13 @@ export function useOwnerStatements() {
 
       const ownerMappings = mappings.filter(m => m.ownerId === owner.id)
       for (const mapping of ownerMappings) {
+        const mappingIsEffective = mapping.effectiveFrom <= periodEnd
+          && (mapping.effectiveTo === undefined || mapping.effectiveTo >= periodEnd)
+        if (!mappingIsEffective) {
+          skipped += 1
+          continue
+        }
+
         const key = `${owner.id}::${mapping.listingId}`
         if (existingKeys.has(key)) {
           skipped += 1
@@ -367,12 +381,15 @@ export function useOwnerStatements() {
           continue
         }
 
-        const rule = findEffectiveCommissionRule(
-          rules,
-          owner.id,
-          mapping.listingId,
-          period,
-        )
+        const referencedRule = rules.find(candidate => candidate.id === mapping.commissionRuleId)
+        const rule = referencedRule
+          ? findEffectiveCommissionRule(
+              [referencedRule],
+              owner.id,
+              mapping.listingId,
+              period,
+            )
+          : undefined
         if (!rule) {
           // A mapping without an effective commission rule is a configuration
           // gap — skip rather than emit a draft with a zero commission.
@@ -496,13 +513,17 @@ export function useOwnerStatements() {
       return { ok: false, reason: 'statement_not_found' }
     }
 
+    if (!statement.lines.some(line => line.id === input.lineId)) {
+      return { ok: false, reason: 'invalid_line' }
+    }
+
     const existingOpen = issues.value.find(
       i => i.statementId === input.statementId
         && i.lineId === input.lineId
         && !i.resolvedAt,
     )
     if (existingOpen) {
-      return { ok: false, reason: 'duplicate_open_issue' }
+      return { ok: true, issue: existingOpen, existing: true }
     }
 
     const issue: OwnerStatementIssue = {
@@ -514,6 +535,10 @@ export function useOwnerStatements() {
       createdAt: nowIso(),
     }
     issues.value = [...issues.value, issue]
+    statements.value = statements.value.map(item => item.id === statement.id
+      ? { ...item, issues: [...item.issues, issue] }
+      : item,
+    )
 
     emitOwnerAlert('OWNER_ISSUE_RAISED', 'WARNING', {
       statementId: issue.statementId,
@@ -524,7 +549,7 @@ export function useOwnerStatements() {
       amount: issue.amount,
     })
 
-    return { ok: true, issue }
+    return { ok: true, issue, existing: false }
   }
 
   /** Stamp `resolvedAt` on an open issue. */
@@ -532,10 +557,18 @@ export function useOwnerStatements() {
     const target = issues.value.find(i => i.id === issueId)
     if (!target)
       return { ok: false }
+
+    const resolvedAt = nowIso()
     issues.value = issues.value.map(i => i.id === issueId
-      ? { ...i, resolvedAt: nowIso() }
+      ? { ...i, resolvedAt }
       : i,
     )
+    statements.value = statements.value.map(statement => ({
+      ...statement,
+      issues: statement.issues.map(issue => issue.id === issueId
+        ? { ...issue, resolvedAt }
+        : issue),
+    }))
     return { ok: true }
   }
 
@@ -572,7 +605,7 @@ export function useOwnerStatements() {
       ownerId: source.ownerId,
       listingId: source.listingId,
       period: source.period,
-      nextPeriod: input.nextPeriod,
+      nextPeriod: nextPeriod(source.period),
       amount: input.amount,
       reason: input.reason,
       createdAt: nowIso(),
@@ -682,9 +715,8 @@ function buildDraftFromLedger(
 ): OwnerStatement {
   const commission = calculateCommission(rule, entry.grossRevenue)
   const input: StatementInput = ledgerEntryToStatementInput(entry, commission)
-  const shared = applyOwnershipShare(input, mapping.ownershipPercentage / 100)
-  const lines = buildStatementLines(shared)
-  const totals = calculateStatementTotals(shared)
+  const lines = buildStatementLines(input)
+  const totals = calculateStatementTotals(input)
   // Round line amounts so what the UI displays is the source of truth.
   const roundedLines: OwnerStatementLine[] = lines.map(line => ({
     ...line,
@@ -696,7 +728,7 @@ function buildDraftFromLedger(
     ownerId: owner.id,
     listingId: mapping.listingId,
     period: entry.period,
-    currency: owner.statementCurrency,
+    currency: entry.currency,
     status: 'draft',
     lines: roundedLines,
     totalAmount,
