@@ -31,6 +31,10 @@ function retry(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
   retrySync(payload.stay.id, payload.target)
 }
 
+function retryEvent(target: OwnerStaySyncTarget, stay: OwnerStay) {
+  retrySync(stay.id, target)
+}
+
 function saved() {
   editing.value = null
   dialogOpen.value = false
@@ -58,7 +62,7 @@ function saved() {
         </TabsTrigger>
       </TabsList><TabsContent value="calendar" class="min-h-0">
         <div v-if="active.length" class="space-y-3">
-          <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retry" />
+          <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retryEvent" />
         </div>
         <Card v-else>
           <CardContent class="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
