@@ -18,6 +18,11 @@ function edit(stay: OwnerStay) {
   dialogOpen.value = true
 }
 
+function openCreate() {
+  editing.value = null
+  dialogOpen.value = true
+}
+
 function cancel(stay: OwnerStay) {
   cancelStay(stay.id, 'Cancelled by owner')
 }
@@ -28,6 +33,13 @@ function retry(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
 
 function saved() {
   editing.value = null
+  dialogOpen.value = false
+}
+
+function onDialogUpdate(value: boolean) {
+  dialogOpen.value = value
+  if (!value)
+    editing.value = null
 }
 </script>
 
@@ -40,7 +52,7 @@ function saved() {
         </h1><p class="text-sm text-muted-foreground">
           Manage owner-use reservations for your properties.
         </p>
-      </div><Button @click="editing = null; dialogOpen = true">
+      </div><Button @click="openCreate">
         <Icon name="lucide:plus" class="mr-2 size-4" />Create stay
       </Button>
     </div><Tabs default-value="calendar" class="min-h-0">
@@ -51,12 +63,26 @@ function saved() {
           List
         </TabsTrigger>
       </TabsList><TabsContent value="calendar" class="min-h-0">
-        <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retry" />
-        <p v-if="!active.length" class="mt-4 text-sm text-muted-foreground">
-          No active stays.
-        </p>
+        <div v-if="active.length" class="space-y-3">
+          <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retry" />
+        </div>
+        <Card v-else>
+          <CardContent class="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
+            <Icon name="lucide:calendar-off" class="size-6 opacity-60" />
+            <p>No active stays yet. Create your first stay to see it on the calendar.</p>
+            <Button size="sm" @click="openCreate">
+              <Icon name="lucide:plus" class="mr-1.5 size-4" />Create stay
+            </Button>
+          </CardContent>
+        </Card>
       </TabsContent><TabsContent value="list">
-        <div class="overflow-auto rounded-md border">
+        <Card v-if="[...active, ...cancelled].length === 0">
+          <CardContent class="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
+            <Icon name="lucide:calendar-off" class="size-6 opacity-60" />
+            <p>No owner stays yet.</p>
+          </CardContent>
+        </Card>
+        <div v-else class="overflow-auto rounded-md border">
           <Table>
             <TableHeader><TableRow><TableHead>Dates</TableHead><TableHead>Guest</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader><TableBody>
               <TableRow v-for="stay in [...active, ...cancelled]" :key="stay.id">
@@ -70,6 +96,12 @@ function saved() {
           </Table>
         </div>
       </TabsContent>
-    </Tabs><PortalStayDialog v-model:open="dialogOpen" :stay="editing" :owner-id="currentOwner?.id ?? 'own-1'" @saved="saved" />
+    </Tabs><PortalStayDialog
+      :open="dialogOpen"
+      :stay="editing"
+      :owner-id="currentOwner?.id ?? 'own-1'"
+      @update:open="onDialogUpdate"
+      @saved="saved"
+    />
   </div>
 </template>
