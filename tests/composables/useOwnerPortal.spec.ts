@@ -227,36 +227,46 @@ describe('useOwnerPortal', () => {
       await loginAs('putu.antara@example.com')
       const { visibleStatements } = useOwnerPortal()
       const ids = visibleStatements.value.map(s => s.id).sort()
-      // own-2 has stmt-3 (lst-8) and stmt-4 (lst-3) in the seed.
-      expect(ids).toEqual(['stmt-3', 'stmt-4'])
+      // own-2 has stmt-3 (lst-8) + stmt-4 (lst-3) as drafts plus stmt-11..13
+      // (lst-8 published) + stmt-14..15 (lst-3 co-owner share published).
+      expect(ids).toEqual(['stmt-11', 'stmt-12', 'stmt-13', 'stmt-14', 'stmt-15', 'stmt-3', 'stmt-4'])
       expect(visibleStatements.value.every(s => s.ownerId === 'own-2')).toBe(true)
     })
 
     it('does not leak the co-owned property statement owned by the other co-owner', async () => {
       // Ni Kadek (own-3) co-owns lst-3 with I Putu (own-2). She must see
-      // stmt-5 (her own) but NOT stmt-4 (I Putu's co-owner share of the same
+      // stmt-5 (her own) plus stmt-16..19 (her published lst-3 history)
+      // but NOT stmt-4 or stmt-14/15 (I Putu's co-owner share of the same
       // listing/period).
       await loginAs('kadek.deviani@example.com')
       const { visibleStatements } = useOwnerPortal()
       const ids = visibleStatements.value.map(s => s.id)
-      expect(ids).toEqual(['stmt-5'])
+      expect(ids).toEqual(['stmt-5', 'stmt-16', 'stmt-17', 'stmt-18', 'stmt-19'])
       // Critical: the co-owner share of the same (listing, period) tuple
-      // MUST NOT appear in the list.
+      // MUST NOT appear in the list — neither the existing draft (stmt-4)
+      // nor the new published entries (stmt-14, stmt-15).
       expect(visibleStatements.value.some(s => s.id === 'stmt-4')).toBe(false)
+      expect(visibleStatements.value.some(s => s.id === 'stmt-14')).toBe(false)
+      expect(visibleStatements.value.some(s => s.id === 'stmt-15')).toBe(false)
     })
 
     it('putu (own-2) does not see stmt-5 (own-3 share of the same property)', async () => {
       await loginAs('putu.antara@example.com')
       const { visibleStatements } = useOwnerPortal()
-      expect(visibleStatements.value.some(s => s.id === 'stmt-5')).toBe(false)
+      // own-3's share of the co-owned lst-3 (stmt-5 draft + stmt-16..19
+      // published) must not appear in own-2's portal.
+      for (const id of ['stmt-5', 'stmt-16', 'stmt-17', 'stmt-18', 'stmt-19']) {
+        expect(visibleStatements.value.some(s => s.id === id)).toBe(false)
+      }
     })
 
     it('excludes both draft and published statements — no leakage through any status', async () => {
       await loginAs('wayan.sari@example.com')
       const { visibleStatements } = useOwnerPortal()
-      // own-1 has stmt-1 (draft, June 2026) and stmt-2 (published, May 2026).
+      // own-1 has stmt-1 (draft, June 2026), stmt-2 (published, May 2026),
+      // and stmt-6..stmt-10 (published Jul..Nov 2026).
       const ids = visibleStatements.value.map(s => s.id).sort()
-      expect(ids).toEqual(['stmt-1', 'stmt-2'])
+      expect(ids).toEqual(['stmt-1', 'stmt-10', 'stmt-2', 'stmt-6', 'stmt-7', 'stmt-8', 'stmt-9'])
       // And the own-2 / own-3 statements are NOT in there.
       for (const id of ['stmt-3', 'stmt-4', 'stmt-5']) {
         expect(ids).not.toContain(id)
@@ -463,13 +473,18 @@ describe('useOwnerPortal', () => {
       expect(kadekListingIds).toContain(CO_OWNED_LISTING)
 
       // Statements: each owner sees their OWN share, not the co-owner's.
-      // (own-2 has stmt-4, own-3 has stmt-5 — same listing, different totals.)
-      expect(putuStatementIds).toEqual(['stmt-3', 'stmt-4'])
-      expect(kadekStatementIds).toEqual(['stmt-5'])
+      // (own-2 has stmt-3, stmt-4, stmt-11..15 — own-3 has stmt-5,
+      // stmt-16..19 — same listing, different totals.) The IDs are
+      // listed in mock-seed-array order (no .sort() on putuStatementIds)
+      // so the cross-owner test invariant matches what the UI shows.
+      expect(putuStatementIds).toEqual(['stmt-3', 'stmt-4', 'stmt-11', 'stmt-12', 'stmt-13', 'stmt-14', 'stmt-15'])
+      expect(kadekStatementIds).toEqual(['stmt-5', 'stmt-16', 'stmt-17', 'stmt-18', 'stmt-19'])
       // Critical: the CO_OWNER's statement ID must never appear in the
       // other's portal.
       expect(putuStatementIds).not.toContain('stmt-5')
       expect(kadekStatementIds).not.toContain('stmt-4')
+      expect(putuStatementIds).not.toContain('stmt-16')
+      expect(kadekStatementIds).not.toContain('stmt-14')
 
       // Rules: own-2 has cr-2 (lst-3) + cr-3 (lst-8); own-3 has cr-4 (lst-3).
       expect(putuRuleIds).toEqual(['cr-2', 'cr-3'])
@@ -663,7 +678,9 @@ describe('useOwnerPortal', () => {
       let portal = useOwnerPortal()
       expect(portal.currentOwner.value?.id).toBe('own-1')
       expect(portal.assignedMappings.value).toHaveLength(1)
-      expect(portal.visibleStatements.value).toHaveLength(2)
+      // own-1 visibleStatements now includes stmt-6..stmt-10 (5 new published
+      // rows) on top of the original 2 (stmt-1 draft + stmt-2 published).
+      expect(portal.visibleStatements.value).toHaveLength(7)
 
       useOwnerAuth().logout()
       // After logout, the SAME composable instance re-reads from the
