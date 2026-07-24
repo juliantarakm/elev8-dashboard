@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // Owner Portal — Reservation Calendar.
 //
-// Read-mostly view of guest bookings plus the owner's own personal-use
-// blocks. Guest bars are read-only and labelled with channel + guest
-// name; owner blocks are visually distinct (Elev8 gold) and editable via
-// a popover. The only write action is "New owner reservation" which
-// emits a date-range payload so the parent can drive the create flow.
+// Layout: listing names run vertically as column headers; the week runs
+// horizontally as day columns. Each row is a single listing; each cell
+// contains stacked reservation bars (guest stays in emerald, owner
+// blocks in amber) that span their date range. The "New owner
+// reservation" button emits a date-range payload for the parent to
+// drive the create flow.
 
 import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
 import { computed, ref } from 'vue'
@@ -154,45 +155,71 @@ function newOwnerReservation() {
         New owner reservation
       </Button>
     </header>
-    <div class="grid grid-cols-7 border-b pb-1 text-xs uppercase tracking-wide text-muted-foreground">
-      <div
-        v-for="cell in monthGrid.slice(0, 7)"
-        :key="cell.key"
-        class="px-2"
-      >
-        {{ cell.weekday }}
-      </div>
-    </div>
-    <div
-      v-for="listing in ownerListings"
-      :key="listing.id"
-      class="space-y-2"
-    >
-      <div class="text-sm font-medium">
-        {{ listing.name }}
-      </div>
-      <div class="relative grid grid-cols-7 border bg-background">
-        <div
-          v-for="cell in monthGrid"
-          :key="`${listing.id}-${cell.key}`"
-          class="relative h-12 min-h-12 border-b border-r px-1 pt-0.5 text-left text-[10px] last:border-r-0"
-          :class="cell.inMonth ? (cell.isToday ? 'bg-primary/5' : 'bg-background') : 'bg-muted/10 text-muted-foreground/60'"
-        >
-          <span
-            class="text-[10px] font-semibold"
-            :class="cell.inMonth ? 'text-foreground' : 'text-muted-foreground/60'"
+
+    <div class="overflow-x-auto rounded-md border bg-background">
+      <table class="w-full border-collapse text-xs">
+        <thead>
+          <tr class="border-b bg-muted/30">
+            <th class="sticky left-0 z-10 min-w-32 border-r bg-muted/30 px-3 py-2 text-left font-medium">
+              Listing
+            </th>
+            <th
+              v-for="cell in monthGrid"
+              :key="cell.key"
+              class="min-w-12 border-r px-1 py-2 text-center font-normal"
+              :class="cell.inMonth ? 'text-foreground' : 'text-muted-foreground/60'"
+            >
+              <div class="text-[10px] uppercase tracking-wide">
+                {{ cell.weekday }}
+              </div>
+              <div class="text-sm font-semibold" :class="cell.isToday ? 'text-primary' : ''">
+                {{ cell.date.getDate() }}
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="listing in ownerListings"
+            :key="listing.id"
+            class="border-b"
           >
-            {{ cell.date.getDate() }}
-          </span>
-        </div>
+            <th class="sticky left-0 z-10 min-w-32 border-r bg-background px-3 py-3 text-left align-top text-sm font-medium">
+              <div class="font-medium">
+                {{ listing.name }}
+              </div>
+              <div class="text-[10px] font-normal text-muted-foreground">
+                {{ listing.location }}
+              </div>
+            </th>
+            <td
+              v-for="cell in monthGrid"
+              :key="`${listing.id}-${cell.key}`"
+              class="relative h-16 min-w-12 border-r border-b p-0 align-top"
+              :class="cell.inMonth ? (cell.isToday ? 'bg-primary/5' : '') : 'bg-muted/10'"
+            />
+          </tr>
+        </tbody>
+      </table>
+      <!-- Bar overlay layer: positioned absolutely on top of the table cells
+           so the listing/date alignment stays in the grid while bars span
+           their date range. -->
+      <div
+        v-for="(listing, listingIndex) in ownerListings"
+        :key="`bars-${listing.id}`"
+        class="pointer-events-none relative"
+        :style="{
+          marginTop: `-${(ownerListings.length - listingIndex) * 64}px`,
+        }"
+      >
         <div
           v-for="bar in (barsByListing[listing.id] ?? [])"
           :key="bar.id"
           class="pointer-events-auto absolute"
           :style="{
             top: `${bar.topPx}px`,
-            left: `${bar.leftPct}%`,
-            width: `${bar.widthPct}%`,
+            left: `calc(128px + ${bar.leftPct * (100 - 9.4) / 100}%)`,
+            width: `${bar.widthPct * (100 - 9.4) / 100}%`,
             height: '20px',
           }"
         >
