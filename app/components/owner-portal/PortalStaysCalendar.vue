@@ -52,10 +52,6 @@ function dateKeyToIndex(key: string): number {
   return monthGrid.value.findIndex(cell => cell.key === key)
 }
 
-function dayIndex(key: string): number {
-  return dateKeyToIndex(key) + 1
-}
-
 function buildBarsForListing(listingId: string): StayBar[] {
   const listingStays = ownerStays.value
     .filter(s => s.listingId === listingId)
