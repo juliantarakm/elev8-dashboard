@@ -1,20 +1,21 @@
 <script setup lang="ts">
 // My Stays page — owner-portal entry point for owner reservations and
-// personal-use blocks. Renders the PortalReservationCalendar under a page
-// layout that surfaces the "new owner reservation" create flow.
+// personal-use blocks. Renders the redesigned PortalReservationCalendar
+// (single-property month grid with property info, occupancy stats, and
+// room-type selector) plus the dialog for creating owner blocks.
 
-import { ref } from 'vue'
 import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
-import { useOwnerPortal } from '~/composables/useOwnerPortal'
+import { ref } from 'vue'
+import { toast } from 'vue-sonner'
+import PortalOwnerReservationPopover from '~/components/owner-portal/PortalOwnerReservationPopover.vue'
+import PortalReservationCalendar from '~/components/owner-portal/PortalReservationCalendar.vue'
 import { mockOwnerReservations } from '~/components/owners/data/owner-reservations-seed'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { toast } from 'vue-sonner'
-import PortalReservationCalendar from '~/components/owner-portal/PortalReservationCalendar.vue'
-import PortalOwnerReservationPopover from '~/components/owner-portal/PortalOwnerReservationPopover.vue'
+import { useOwnerPortal } from '~/composables/useOwnerPortal'
 
 definePageMeta({
   layout: 'owner-portal',
@@ -25,11 +26,8 @@ void currentOwner
 void myOwnerIds
 void listings
 
-// Local state for the create dialog — the calendar emits the intent
-// (date range + listing); the parent captures the optional note and
-// emits a synthetic owner_block reservation back into the seed array
-// so the calendar re-renders with the new bar.
 const calendarAnchor = ref<Date>(new Date())
+const selectedListingId = ref<string | null>(null)
 const createOpen = ref(false)
 const createListingId = ref<string | null>(null)
 const createCheckIn = ref('')
@@ -101,22 +99,13 @@ function openReservation(reservation: OwnerReservation) {
 
 <template>
   <div class="flex h-[calc(100vh-9rem)] min-h-0 flex-col gap-4 p-4 sm:p-6 lg:p-8">
-    <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold tracking-tight">
-          My Stays
-        </h1>
-        <p class="text-sm text-muted-foreground">
-          See upcoming guest reservations and block out dates for your own personal stays.
-        </p>
-      </div>
-      <Button
-        class="self-start rounded-full bg-emerald-100 px-4 text-emerald-900 hover:bg-emerald-200 sm:self-auto"
-        @click="startCreate({ checkIn: todayISO(), checkOut: addDaysISO(todayISO(), 2) })"
-      >
-        <Icon name="lucide:plus" class="mr-1.5 size-4" />
-        New owner reservation
-      </Button>
+    <header class="space-y-1">
+      <h1 class="text-2xl font-semibold tracking-tight">
+        My Stays
+      </h1>
+      <p class="text-sm text-muted-foreground">
+        See upcoming guest reservations and block out dates for your own personal stays.
+      </p>
     </header>
 
     <div class="flex min-h-0 flex-1 flex-col">
@@ -133,6 +122,7 @@ function openReservation(reservation: OwnerReservation) {
       <PortalReservationCalendar
         v-else
         v-model:anchor="calendarAnchor"
+        v-model:listing-id="selectedListingId"
         :reservations="reservations"
         class="flex-1"
         @create-owner-reservation="startCreate"
@@ -193,7 +183,7 @@ function openReservation(reservation: OwnerReservation) {
     <PortalOwnerReservationPopover
       v-model:open="popoverOpen"
       :reservation="selectedReservation"
-      @edit="(res) => { selectedReservation = res; popoverOpen = false; toast.info('Editing owner block: ' + (res.note ?? res.id)) }"
+      @edit="(res) => { selectedReservation = res; popoverOpen = false; toast.info(`Editing owner block: ${res.note ?? res.id}`) }"
       @remove="(res) => { localReservations = localReservations.filter(r => r.id !== res.id); popoverOpen = false; toast.info('Owner block removed.') }"
     />
   </div>
