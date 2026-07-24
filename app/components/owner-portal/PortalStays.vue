@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { OwnerStay, OwnerStaySyncTarget } from '~/components/owners/data/owner-stays'
+import { Button } from '~/components/ui/button'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import { useOwnerStays } from '~/composables/useOwnerStays'
-import { Button } from '~/components/ui/button'
 import PortalStaysCalendar from './PortalStaysCalendar.vue'
 
 const { myStays, currentOwner } = useOwnerPortal()
@@ -83,12 +83,12 @@ const monthLabel = computed(() => calendarAnchor.value.toLocaleDateString('en-US
       </TabsList><TabsContent value="calendar" class="min-h-0">
         <div v-if="active.length" class="space-y-3">
           <PortalStaysCalendar
-        :anchor="calendarAnchor"
-        @edit="edit"
-        @cancel="cancel"
-        @retry="retryEvent"
-        @create="onCalendarCreate"
-      />
+            :anchor="calendarAnchor"
+            @edit="edit"
+            @cancel="cancel"
+            @retry="retryEvent"
+            @create="onCalendarCreate"
+          />
         </div>
         <Card v-else>
           <CardContent class="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
