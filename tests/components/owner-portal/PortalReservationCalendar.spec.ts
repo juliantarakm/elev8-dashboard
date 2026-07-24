@@ -191,13 +191,21 @@ describe('portalReservationCalendar', () => {
 
     const button = document.body.querySelector('button[aria-label*="Owner block"]') as HTMLElement | null
     expect(button).toBeTruthy()
-    // Bar wrapper sits two levels above the button (button → div with style
-    // → table). Look at the closest element with the inline `left:` style.
-    const barWrapper = button?.closest<HTMLElement>('[style*="left:"]')
-    expect(barWrapper).toBeTruthy()
-    const style = barWrapper?.getAttribute('style') ?? ''
-    const leftPct = Number(style.match(/left:\s*([\d.]+)%/)?.[1] ?? -1)
-    const widthPct = Number(style.match(/width:\s*([\d.]+)%/)?.[1] ?? -1)
+    // Find the bar wrapper (an ancestor whose inline style sets `left:`
+    // and `width:` in percent). Search up to the document body.
+    let cursor: HTMLElement | null = button
+    let style: string | null = null
+    while (cursor) {
+      const attr = cursor.getAttribute('style') ?? ''
+      if (attr.includes('left:') && attr.includes('width:')) {
+        style = attr
+        break
+      }
+      cursor = cursor.parentElement
+    }
+    expect(style).not.toBeNull()
+    const leftPct = Number(style!.match(/left:\s*([\d.]+)%/)?.[1] ?? -1)
+    const widthPct = Number(style!.match(/width:\s*([\d.]+)%/)?.[1] ?? -1)
     expect(leftPct).toBeGreaterThan(50)
     expect(widthPct).toBeGreaterThan(5)
   })
