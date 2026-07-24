@@ -36,10 +36,6 @@ function cancel(stay: OwnerStay) {
   cancelStay(stay.id, 'Cancelled by owner')
 }
 
-function retry(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
-  retrySync(payload.stay.id, payload.target)
-}
-
 function retryEvent(payload: { stay: OwnerStay, target: OwnerStaySyncTarget }) {
   retrySync(payload.stay.id, payload.target)
 }
