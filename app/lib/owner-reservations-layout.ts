@@ -2,8 +2,11 @@
 //
 // The shared `getMonthGrid` lives in the operations calendar data layer;
 // here we add the reservation-specific shape (date objects, in-month flag,
-// today highlight) plus a stacking algorithm that turns a flat list of
-// reservations into row-indexed bars ready for absolute positioning.
+// today highlight) plus a bar builder that turns a flat list of
+// reservations into single-row bars ready for absolute positioning. Each
+// reservation produces exactly one bar — overlapping stays visually
+// overlap on the same horizontal line, and reservations that cross a
+// week boundary are NOT split into per-week segments.
 
 import type { OwnerReservation, OwnerReservationBar, OwnerReservationDay } from '~/components/owners/data/owner-reservations'
 
@@ -40,7 +43,8 @@ export function buildReservationMonthGrid(anchor: Date): OwnerReservationDay[] {
   return cells
 }
 
-/** Format a `Date` as `YYYY-MM-DD` using the *local* date components.
+/**
+ * Format a `Date` as `YYYY-MM-DD` using the *local* date components.
  *
  * `Date#toISOString` always returns UTC, which is one calendar day behind
  * the user's intent for any time zone east of UTC (e.g. Bali is UTC+8,
@@ -63,18 +67,17 @@ export function columnIndexFor(grid: OwnerReservationDay[], key: string | Date):
 
 /**
  * Convert a flat list of reservations into positioned bars for the given
- * listing, scoped to the month grid. Bars are grouped by `roomTypeId`
- * (with a fallback for reservations that don't specify a room type) so
- * overlapping stays in the same room stack on their own row, but
- * different rooms can be displayed side-by-side.
+ * listing, scoped to the month grid. Each reservation produces exactly
+ * one bar on `row: 0` — overlapping stays visually overlap on the same
+ * horizontal line, and reservations that cross a week boundary are
+ * rendered as a single contiguous bar (never split into segments).
  *
  *   - Skips reservations entirely outside the grid.
- *   - Clamps `endDay` to the last in-grid day so a stay that ends next
- *     month still renders the leading portion of its bar.
- *   - Splits bars that cross a week boundary into multiple segments (a
- *     "wrapsForward" / "wrapsBackward" pair), each with their own row.
- *   - Stacks overlapping rows using a first-fit decreasing-height style
- *     row finder within each room group.
+ *   - Clamps `startDay` to 0 and `endDay` to the last in-grid cell so a
+ *     stay that started before this month (or ends next month) still
+ *     renders. The `wrapsBackward` / `wrapsForward` flags tell the
+ *     component which edges ran past the grid so it can drop the
+ *     half-cell inset at that edge.
  */
 export function buildReservationBars(
   grid: OwnerReservationDay[],
@@ -84,10 +87,7 @@ export function buildReservationBars(
   if (reservations.length === 0)
     return []
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
   const lastIndex = grid.length - 1
-  const lastKey = grid[lastIndex]?.key
 
   interface Segment {
     reservation: OwnerReservation
@@ -115,38 +115,16 @@ export function buildReservationBars(
   if (segments.length === 0)
     return []
 
-  // Group segments by their room bucket so the row stacker never mixes
-  // bars from different rooms onto the same row. A reservation without a
-  // roomTypeId shares a single fallback bucket per listing.
-  const byRoom = new Map<string, Segment[]>()
-  for (const segment of segments) {
-    const key = segment.reservation.roomTypeId ?? `__listing__${listingId}`
-    const bucket = byRoom.get(key) ?? []
-    bucket.push(segment)
-    byRoom.set(key, bucket)
-  }
-
   const bars: OwnerReservationBar[] = []
-  let rowOffset = 0
-  // Stable order: bucket by room type name so layout doesn't shift when
-  // the mock data is regenerated.
-  for (const [roomKey, group] of [...byRoom.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    const groupBars: OwnerReservationBar[] = []
-    for (const segment of group) {
-      const { reservation, startDay, endDay } = segment
-      if (endDay < startDay)
-        continue
-
-      let cursor = startDay
-      while (cursor <= endDay) {
-        const weekEnd = Math.min(cursor + (6 - (cursor % 7)), endDay)
-        pushBar(grid, groupBars, reservation, cursor, weekEnd, today, lastKey)
-        cursor = weekEnd + 1
-      }
-    }
-    assignRows(groupBars, rowOffset)
-    bars.push(...groupBars)
-    rowOffset += groupBars.reduce((max, b) => Math.max(max, b.row + 1), 0)
+  // Each reservation produces exactly one bar — the calendar UI renders
+  // every reservation on the same horizontal line (overlapping stays
+  // visually overlap on that line), and never splits a reservation into
+  // separate segments per visible week.
+  for (const segment of segments) {
+    const { reservation, startDay, endDay } = segment
+    if (endDay < startDay)
+      continue
+    pushBar(grid, bars, reservation, startDay, endDay)
   }
   return bars
 }
@@ -157,8 +135,6 @@ function pushBar(
   reservation: OwnerReservation,
   startDay: number,
   endDay: number,
-  today: Date,
-  lastKey: string | undefined,
 ) {
   const lastIndex = grid.length - 1
   const startsBeforeGrid = startDay < 0
@@ -166,11 +142,9 @@ function pushBar(
   const trimmedStart = Math.max(0, startDay)
   const trimmedEnd = Math.min(lastIndex, endDay)
 
-  const key = reservation.id
-  const type = reservation.type
   bars.push({
-    id: `${key}-${trimmedStart}-${trimmedEnd}`,
-    type,
+    id: `${reservation.id}-${trimmedStart}-${trimmedEnd}`,
+    type: reservation.type,
     listingId: reservation.listingId,
     guestName: reservation.guestName,
     channel: reservation.channel,
@@ -182,35 +156,4 @@ function pushBar(
     wrapsBackward: startsBeforeGrid,
     wrapsForward: endsAfterGrid,
   })
-  void today
-  void lastKey
-}
-
-function assignRows(bars: OwnerReservationBar[], rowOffset = 0) {
-  // Group bars by their visible week (row 0-6 = first week, etc.) so two
-  // overlapping bars in different weeks do not contend for the same row.
-  const byWeek = new Map<number, OwnerReservationBar[]>()
-  for (const bar of bars) {
-    const week = Math.floor(bar.startDay / 7)
-    const bucket = byWeek.get(week) ?? []
-    bucket.push(bar)
-    byWeek.set(week, bucket)
-  }
-  for (const bucket of byWeek.values()) {
-    // Sort by earliest start to make stacking stable.
-    bucket.sort((a, b) => a.startDay - b.startDay || a.endDay - b.endDay)
-    const rowEnds: number[] = []
-    for (const bar of bucket) {
-      let row = rowEnds.findIndex(end => end < bar.startDay)
-      if (row === -1) {
-        row = rowEnds.length
-        rowEnds.push(bar.endDay)
-      }
-      else {
-        const current = rowEnds[row] ?? 0
-        rowEnds[row] = Math.max(current, bar.endDay)
-      }
-      bar.row = row + rowOffset
-    }
-  }
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
+import { describe, expect, it } from 'vitest'
 import {
   buildReservationBars,
   buildReservationMonthGrid,
@@ -66,14 +66,13 @@ describe('buildReservationBars', () => {
     expect(bar?.row).toBe(0)
   })
 
-  it('stacks overlapping stays in separate rows', () => {
+  it('places overlapping stays on the same row so they visually overlap', () => {
     const grid = buildReservationMonthGrid(new Date(2025, 11, 1))
     const a = reservation({ id: 'a', checkIn: '2025-12-15', checkOut: '2025-12-18' })
     const b = reservation({ id: 'b', checkIn: '2025-12-16', checkOut: '2025-12-20' })
     const bars = buildReservationBars(grid, 'lst-1', [a, b])
     expect(bars).toHaveLength(2)
-    const rows = bars.map(bar => bar.row).sort()
-    expect(rows).toEqual([0, 1])
+    expect(bars.every(bar => bar.row === 0)).toBe(true)
   })
 
   it('places non-overlapping stays in the same row', () => {
@@ -85,14 +84,15 @@ describe('buildReservationBars', () => {
     expect(new Set(rows).size).toBe(1)
   })
 
-  it('wraps stays that cross a week boundary into two segments', () => {
+  it('renders a stay that crosses a week boundary as a single bar', () => {
     const grid = buildReservationMonthGrid(new Date(2025, 11, 1))
     const stay = reservation({ id: 'r-2', checkIn: '2025-12-22', checkOut: '2025-12-30' })
     const bars = buildReservationBars(grid, 'lst-1', [stay])
-    expect(bars).toHaveLength(2)
-    // First segment ends mid-week, second segment continues on the next row.
+    expect(bars).toHaveLength(1)
+    // The single bar spans the full range (clipped to the grid edges only
+    // if it actually extends past them — this stay is fully in-month).
+    expect(bars[0]?.startDay).toBeGreaterThan(0)
     expect(bars[0]?.endDay).toBeLessThan(41)
-    expect(bars[1]?.startDay).toBeGreaterThan(bars[0]?.endDay ?? 0)
   })
 
   it('only returns bars for the requested listing', () => {
