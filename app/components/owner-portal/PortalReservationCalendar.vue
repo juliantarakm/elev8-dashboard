@@ -39,6 +39,10 @@ const anchor = computed({
 
 const reservations = computed<OwnerReservation[]>(() => props.reservations ?? mockOwnerReservations)
 
+const ROW_HEIGHT_PX = 140
+const BAR_TOP_OFFSET_PX = 36
+const BAR_ROW_GAP_PX = 28
+
 const monthGrid = computed(() => buildReservationMonthGrid(anchor.value))
 const monthLabel = computed(() => anchor.value.toLocaleDateString('en-US', { month: 'long' }))
 const yearLabel = computed(() => anchor.value.toLocaleDateString('en-US', { year: 'numeric' }))
@@ -77,7 +81,7 @@ const barsByListing = computed<Record<string, BarWithCoords[]>>(() => {
       const totalCells = 42
       return {
         ...bar,
-        topPx: 28 + bar.row * 24,
+        topPx: BAR_TOP_OFFSET_PX + bar.row * BAR_ROW_GAP_PX,
         leftPct: (bar.startDay / totalCells) * 100,
         widthPct: ((bar.endDay - bar.startDay + 1) / totalCells) * 100,
       }
@@ -195,7 +199,8 @@ function newOwnerReservation() {
             <td
               v-for="cell in monthGrid"
               :key="`${listing.id}-${cell.key}`"
-              class="relative h-24 min-w-14 border-r border-b p-0 align-top"
+              class="relative min-w-14 border-r border-b p-0 align-top"
+              :style="{ height: `${ROW_HEIGHT_PX}px` }"
               :class="cell.inMonth ? (cell.isToday ? 'bg-primary/5' : '') : 'bg-muted/10'"
             />
           </tr>
@@ -209,7 +214,7 @@ function newOwnerReservation() {
         :key="`bars-${listing.id}`"
         class="pointer-events-none relative"
         :style="{
-          marginTop: `-${(ownerListings.length - listingIndex) * 96}px`,
+          marginTop: `-${(ownerListings.length - listingIndex) * ROW_HEIGHT_PX}px`,
         }"
       >
         <div
