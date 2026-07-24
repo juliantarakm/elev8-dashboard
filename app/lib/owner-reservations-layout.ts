@@ -40,7 +40,14 @@ export function buildReservationMonthGrid(anchor: Date): OwnerReservationDay[] {
   return cells
 }
 
-/** Format a `Date` as `YYYY-MM-DD`. */
+/** Format a `Date` as `YYYY-MM-DD` using the *local* date components.
+ *
+ * `Date#toISOString` always returns UTC, which is one calendar day behind
+ * the user's intent for any time zone east of UTC (e.g. Bali is UTC+8,
+ * midnight local is 16:00 the previous day in UTC). The reservation
+ * grid is keyed by the user's local calendar day, so we must format from
+ * the local getters.
+ */
 export function toDateKey(date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')

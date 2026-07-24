@@ -98,7 +98,7 @@ export function getMonthGrid(anchorDate = new Date()) {
     date.setDate(start.getDate() + index)
     const month = date.getMonth()
     return {
-      key: date.toISOString().slice(0, 10),
+      key: formatLocalDateKey(date),
       label: date.toLocaleDateString('en-US', { day: 'numeric' }),
       weekday: date.toLocaleDateString('en-US', { weekday: 'short' }),
       date,
@@ -118,7 +118,7 @@ export function getWeekDays(anchorDate = new Date()) {
     const date = new Date(start)
     date.setDate(start.getDate() + index)
     return {
-      key: date.toISOString().slice(0, 10),
+      key: formatLocalDateKey(date),
       label: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
       date,
     }
