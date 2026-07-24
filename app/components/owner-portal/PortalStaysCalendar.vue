@@ -1,21 +1,23 @@
 <script setup lang="ts">
 // Owner-stay calendar.
 //
-// Reuses the staff OperationsCalendarBoard grid so the visual rhythm
-// (week header, listing rows, day cells, event chips) matches the rest of
-// the operations experience, but feeds it only this owner's stays and
-// decorates the chip with the guest name and date range.
+// Renders the shared OperationsCalendarBoard grid for visual context, then
+// overlays an always-clickable list of the owner's active stays below it.
+// Clicking a stay card emits `edit` so the parent dialog opens, regardless
+// of the board's internal click handling.
 
 import type { CalendarEvent, CalendarListing, OperationsFilters } from '~/components/operations-calendar/data/operations-calendar'
-import type { OwnerStay, OwnerStaySyncTarget } from '~/components/owners/data/owner-stays'
+import type { OwnerStay } from '~/components/owners/data/owner-stays'
 import { computed, ref } from 'vue'
 import { listings } from '~/components/listings/data/listings'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
 import {
   buildOwnerStayEvents,
   getWeekDays,
 } from '~/components/operations-calendar/data/operations-calendar'
 import OperationsCalendarBoard from '~/components/operations-calendar/OperationsCalendarBoard.vue'
-import { Badge } from '~/components/ui/badge'
+import PortalSyncStatus from './PortalSyncStatus.vue'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 
 const props = defineProps<{
@@ -24,7 +26,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [value: OwnerStay]
-  retry: [value: { stay: OwnerStay, target: OwnerStaySyncTarget }]
 }>()
 
 const { myStays } = useOwnerPortal()
@@ -50,14 +51,20 @@ const ownerListings = computed<CalendarListing[]>(() => ownerListingIds.value
   .map(id => listingsById.value.get(id))
   .filter((listing): listing is CalendarListing => Boolean(listing)))
 
-const staysById = computed<Record<string, OwnerStay>>(() =>
-  Object.fromEntries(ownerStays.value.map(s => [s.id, s])),
-)
+const staysByListing = computed<Record<string, OwnerStay[]>>(() => {
+  const grouped: Record<string, OwnerStay[]> = {}
+  for (const stay of ownerStays.value) {
+    if (!grouped[stay.listingId])
+      grouped[stay.listingId] = []
+    grouped[stay.listingId]!.push(stay)
+  }
+  return grouped
+})
 
 const events = computed<CalendarEvent[]>(() => buildOwnerStayEvents(ownerStays.value)
   .map((event) => {
     const listing = listingsById.value.get(event.listingId)
-    const stay = staysById.value[event.id.replace('owner-stay-', '')]
+    const stay = staysByListing.value[event.listingId]?.find(s => s.id === event.id.replace('owner-stay-', ''))
     return {
       ...event,
       listingName: listing?.name ?? event.listingId,
@@ -98,26 +105,23 @@ function groupEventsByKey(values: CalendarEvent[], key: (event: CalendarEvent) =
   return map
 }
 
-function stayFor(event: CalendarEvent): OwnerStay | null {
-  return staysById.value[event.id.replace('owner-stay-', '')] ?? null
-}
-
 function edit(stay: OwnerStay) {
   emit('edit', stay)
 }
 </script>
 
 <template>
-  <div class="space-y-3">
+  <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-2">
       <Badge variant="secondary">
         {{ ownerStays.length }} active stay{{ ownerStays.length === 1 ? '' : 's' }}
       </Badge>
       <span class="text-xs text-muted-foreground">
-        Click a chip to edit.
+        Click any stay card below to edit.
       </span>
     </div>
     <OperationsCalendarBoard
+      v-if="ownerListings.length"
       :events="events"
       :events-by-day="eventsByDay"
       :events-by-day-and-listing="eventsByDayAndListing"
@@ -127,12 +131,47 @@ function edit(stay: OwnerStay) {
       :selected-day="selectedDay"
       :show-all-listings="showAllListings"
       :filters="filters"
-      @event-click="(event) => { const stay = stayFor(event); if (stay) edit(stay) }"
+      @event-click="(event) => { const stay = event && staysByListing[event.listingId]?.find(s => `owner-stay-${s.id}` === event.id); if (stay) edit(stay) }"
       @update:selected-day="selectedDay = $event"
       @update:show-all-listings="showAllListings = $event"
     />
-    <div v-if="!ownerListings.length" class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+    <div v-else class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
       No active properties for this account yet.
     </div>
+    <section v-if="ownerListings.length" class="space-y-3">
+      <h3 class="text-sm font-semibold">
+        Active stays
+      </h3>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="stay in ownerStays"
+          :key="stay.id"
+          class="rounded-md border bg-card p-3"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-sm font-medium">
+                {{ stay.guestName }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                {{ listingsById.get(stay.listingId)?.name ?? stay.listingId }}
+              </p>
+            </div>
+            <Badge variant="outline" class="shrink-0">
+              {{ stay.nights }}n
+            </Badge>
+          </div>
+          <p class="mt-2 text-xs text-muted-foreground">
+            {{ stay.checkIn }} → {{ stay.checkOut }}
+          </p>
+          <PortalSyncStatus :stay="stay" class="mt-2" />
+          <div class="mt-3 flex justify-end">
+            <Button size="sm" @click="edit(stay)">
+              Edit stay
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
