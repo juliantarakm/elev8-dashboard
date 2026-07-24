@@ -124,8 +124,10 @@ describe('owner portal statements', () => {
     expect(wrapper.findAll('input, textarea, select').length).toBe(0)
   })
 
-  it('shows loading and success feedback for PDF and XLSX mock exports', async () => {
+  it('opens the browser print dialog for PDF (no mock export)', async () => {
     loginAs('own-1')
+
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {})
 
     const wrapper = mount(PortalStatementDetail, {
       props: { statementId: 'stmt-2' },
@@ -134,10 +136,21 @@ describe('owner portal statements', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="export-pdf"]').trigger('click')
-    expect(wrapper.get('[data-testid="export-pdf"]').text()).toContain('Exporting')
-    await vi.runAllTimersAsync()
+    expect(printSpy).toHaveBeenCalled()
+    // PDF button never shows "Exporting" — it just opens the print dialog
+    expect(wrapper.get('[data-testid="export-pdf"]').text()).not.toContain('Exporting')
+    // And it never calls mockExport for the PDF format
+    expect(toastMock.success).not.toHaveBeenCalled()
+  })
+
+  it('shows loading and success feedback for XLSX mock export', async () => {
+    loginAs('own-1')
+
+    const wrapper = mount(PortalStatementDetail, {
+      props: { statementId: 'stmt-2' },
+      global: globalOptions,
+    })
     await flushPromises()
-    expect(toastMock.success).toHaveBeenCalledWith(expect.stringMatching(/PDF/i))
 
     await wrapper.get('[data-testid="export-xlsx"]').trigger('click')
     expect(wrapper.get('[data-testid="export-xlsx"]').text()).toContain('Exporting')
