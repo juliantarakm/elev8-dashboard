@@ -178,7 +178,8 @@ function assignRows(bars: OwnerReservationBar[]) {
         rowEnds.push(bar.endDay)
       }
       else {
-        rowEnds[row] = Math.max(rowEnds[row], bar.endDay)
+        const current = rowEnds[row] ?? 0
+        rowEnds[row] = Math.max(current, bar.endDay)
       }
       bar.row = row
     }
