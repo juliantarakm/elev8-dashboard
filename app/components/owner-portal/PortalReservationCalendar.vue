@@ -9,15 +9,15 @@
 
 import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
 import { computed, ref } from 'vue'
+import { listings } from '~/components/listings/data/listings'
+import { mockOwnerReservations } from '~/components/owners/data/owner-reservations-seed'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
   buildReservationBars,
   buildReservationMonthGrid,
 } from '~/lib/owner-reservations-layout'
-import { mockOwnerReservations } from '~/components/owners/data/owner-reservations-seed'
 import PortalOwnerReservationPopover from './PortalOwnerReservationPopover.vue'
-import { useOwnerPortal } from '~/composables/useOwnerPortal'
 
 const props = defineProps<{
   anchor?: Date
@@ -26,17 +26,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:anchor': [value: Date]
-  createOwnerReservation: [value: { checkIn: string, checkOut: string, listingId?: string }]
-  editOwnerReservation: [value: OwnerReservation]
-  removeOwnerReservation: [value: OwnerReservation]
+  'createOwnerReservation': [value: { checkIn: string, checkOut: string, listingId?: string }]
+  'editOwnerReservation': [value: OwnerReservation]
+  'removeOwnerReservation': [value: OwnerReservation]
 }>()
-
-const { listings } = useOwnerPortal()
 
 const anchor = computed({
   get: () => props.anchor ?? new Date(),
   set: value => emit('update:anchor', value),
 })
+
+const reservations = computed<OwnerReservation[]>(() => props.reservations ?? mockOwnerReservations)
 
 const monthGrid = computed(() => buildReservationMonthGrid(anchor.value))
 const monthLabel = computed(() => anchor.value.toLocaleDateString('en-US', { month: 'long' }))
@@ -46,10 +46,8 @@ const ownerListings = computed(() => {
   const ids = new Set<string>()
   for (const reservation of reservations.value)
     ids.add(reservation.listingId)
-  return listings.value.filter(l => ids.has(l.id))
+  return listings.value.filter((l): l is NonNullable<typeof l> => ids.has(l.id))
 })
-
-const reservations = computed<OwnerReservation[]>(() => props.reservations ?? mockOwnerReservations)
 
 interface BarWithCoords {
   id: string
