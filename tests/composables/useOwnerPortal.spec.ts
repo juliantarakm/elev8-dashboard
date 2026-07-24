@@ -499,19 +499,42 @@ describe('useOwnerPortal', () => {
     })
 
     it('returns owner-scoped grossRevenue / netRevenue / occupancy / adr for the current period', async () => {
-      // Wayan — lst-1 — June 2026 ledger (led-1): 38.5M IDR gross, 27 occupied
-      // / 30 available nights, 6 reservations, nightly rate sum 38.5M.
+      // Derived dynamically from the new fixture: Wayan's "current period" is
+      // the latest non-adjustment period in her ledger (the 12-month extension
+      // moved it from 2026-06 to 2026-11). Hardcoding 38.5M / 27/30 / 6 etc.
+      // would couple the test to a specific month; deriving from the fixture
+      // keeps the original intent (current-period rollup) stable as the
+      // fixture grows. Wayan has multiple listings — the dashboardMetrics
+      // current-period rollup is the sum of every (owner, listing) entry
+      // that shares the latest period.
       await loginAs('wayan.sari@example.com')
       const { dashboardMetrics } = useOwnerPortal()
       const metrics = dashboardMetrics.value
       expect(metrics).not.toBeNull()
       expect(metrics!.currency).toBe('IDR')
+
+      const own1Entries = mockOwnerLedgerEntries.filter(
+        e => e.ownerId === 'own-1' && !e.isPriorPeriodAdjustment,
+      )
+      const currentPeriod = own1Entries.map(e => e.period).sort().pop()!
+      const currentEntries = own1Entries.filter(e => e.period === currentPeriod)
+
+      const expectedGross = currentEntries.reduce((sum, e) => sum + e.grossRevenue, 0)
+      const expectedNet = currentEntries.reduce(
+        (sum, e) => sum + e.grossRevenue - e.expenses - e.taxes - e.platformFees,
+        0,
+      )
+      const occupied = currentEntries.reduce((sum, e) => sum + e.occupiedNights, 0)
+      const available = currentEntries.reduce((sum, e) => sum + e.availableNights, 0)
+      const rateSum = currentEntries.reduce((sum, e) => sum + e.nightlyRateSum, 0)
+      const resCount = currentEntries.reduce((sum, e) => sum + e.reservationCount, 0)
+
       // Gross / net / occupancy / ADR roll up from the owner-scoped ledger.
-      expect(metrics!.grossRevenue).toBe(38_500_000)
-      expect(metrics!.netRevenue).toBe(38_500_000 - 3_500_000 - 1_925_000 - 2_310_000)
-      expect(metrics!.occupancy).toBeCloseTo(27 / 30, 5)
-      expect(metrics!.adr).toBeCloseTo(38_500_000 / 6, 5)
-      expect(metrics!.reservationCount).toBe(6)
+      expect(metrics!.grossRevenue).toBe(expectedGross)
+      expect(metrics!.netRevenue).toBe(expectedNet)
+      expect(metrics!.occupancy).toBeCloseTo(occupied / available, 5)
+      expect(metrics!.adr).toBeCloseTo(rateSum / resCount, 5)
+      expect(metrics!.reservationCount).toBe(resCount)
     })
 
     it('does NOT aggregate across owners — only the logged-in owner\'s ledger is summed', async () => {
@@ -521,17 +544,24 @@ describe('useOwnerPortal', () => {
       await loginAs('putu.antara@example.com')
       const { dashboardMetrics } = useOwnerPortal()
       const metrics = dashboardMetrics.value!
-      // Sanity: I Putu's ledgers in the seed are led-3 + led-4 only.
-      const putuLedger = mockOwnerLedgerEntries.filter(
-        e => e.ownerId === 'own-2' && !e.isPriorPeriodAdjustment,
-      )
-      const putuGross = putuLedger.reduce((sum, e) => sum + e.grossRevenue, 0)
-      // The seed mixes IDR + USD — dashboardMetrics normalises to a single
-      // currency bucket per owner (the most common is the canonical "current
-      // period" — usually the latest period in their ledger). What we pin
-      // down is that the result reflects ONLY own-2's ledgers.
-      expect(metrics.grossRevenue).toBe(putuGross)
-      // And it must NOT include own-1's led-1 (38.5M IDR).
+
+      // The seed mixes IDR + USD, and the 12-month extension now puts many
+      // own-2 entries on the books. dashboardMetrics normalises to a single
+      // currency bucket per owner, using the LATEST non-adjustment period.
+      // What we pin down is that the result reflects ONLY own-2's ledgers.
+      const own2Current = mockOwnerLedgerEntries
+        .filter(e => e.ownerId === 'own-2' && !e.isPriorPeriodAdjustment)
+        .map(e => e.period)
+        .sort()
+        .pop()!
+      const own2CurrentGross = mockOwnerLedgerEntries
+        .filter(
+          e => e.ownerId === 'own-2' && e.period === own2Current && !e.isPriorPeriodAdjustment,
+        )
+        .reduce((sum, e) => sum + e.grossRevenue, 0)
+      expect(metrics.grossRevenue).toBe(own2CurrentGross)
+
+      // And it must NOT include own-1's led-1 (any month).
       const wayanGross = mockOwnerLedgerEntries
         .filter(e => e.ownerId === 'own-1' && !e.isPriorPeriodAdjustment)
         .reduce((sum, e) => sum + e.grossRevenue, 0)
@@ -542,9 +572,21 @@ describe('useOwnerPortal', () => {
       await loginAs('wayan.sari@example.com')
       const { dashboardMetrics } = useOwnerPortal()
       const upcoming = dashboardMetrics.value!.upcomingReservations
-      // Wayan's led-1 has up-1 (Hiroshi) + up-2 (Sophie) in her upcoming list.
+
+      // Pin to the current period's upcoming list dynamically — the
+      // 12-month extension moved Wayan's current period to 2026-11, and
+      // that ledger's upcomingReservations is the authoritative list.
+      const own1Entries = mockOwnerLedgerEntries.filter(
+        e => e.ownerId === 'own-1' && !e.isPriorPeriodAdjustment,
+      )
+      const currentPeriod = own1Entries.map(e => e.period).sort().pop()!
+      const currentEntry = own1Entries.find(e => e.period === currentPeriod)!
+      const expectedGuests = currentEntry.upcomingReservations
+        .map(u => u.guestName)
+        .sort()
       const guestNames = upcoming.map(u => u.guestName).sort()
-      expect(guestNames).toEqual(['Hiroshi Tanaka', 'Sophie Laurent'])
+      expect(guestNames).toEqual(expectedGuests)
+
       // And it must NOT include I Putu's up-3 (Emily Carter, on lst-8) or
       // up-4 (Daniel Park — appears in BOTH led-4 and led-5 but only led-4
       // is own-2's).
@@ -671,8 +713,22 @@ describe('useOwnerPortal', () => {
       const portal = useOwnerPortal()
       expect(portal.assignedProperties.value).toHaveLength(2)
       portal.selectedPropertyId.value = 'lst-3'
-      const ledger = mockOwnerLedgerEntries.find(entry => entry.ownerId === 'own-2' && entry.listingId === 'lst-3')!
-      expect(portal.propertyMetrics.value?.grossRevenue).toBe(ledger.grossRevenue * 0.5)
+      // propertyMetrics rolls up the LATEST non-adjustment period for the
+      // selected property, not whichever row `find` happens to return first.
+      // Pin the test to the latest own-2 / lst-3 entry so it stays stable as
+      // the fixture grows.
+      const own2Lst3Entries = mockOwnerLedgerEntries.filter(
+        entry =>
+          entry.ownerId === 'own-2'
+          && entry.listingId === 'lst-3'
+          && !entry.isPriorPeriodAdjustment,
+      )
+      const latestOwn2Lst3 = own2Lst3Entries
+        .map(e => e.period)
+        .sort()
+        .pop()!
+      const latestEntry = own2Lst3Entries.find(e => e.period === latestOwn2Lst3)!
+      expect(portal.propertyMetrics.value?.grossRevenue).toBe(latestEntry.grossRevenue * 0.5)
     })
 
     it('keeps owner-use nights separate and omits hidden fields', async () => {
