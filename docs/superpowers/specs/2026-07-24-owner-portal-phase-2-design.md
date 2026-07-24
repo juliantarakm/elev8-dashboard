@@ -258,7 +258,10 @@ export function useOwnerDashboard(): {
 - The composable reads `mockOwnerLedgerEntries` directly, filtering by `ownerId === currentOwnerId` first, then `(selectedPropertyId == null || entry.listingId === selectedPropertyId)`. `isPriorPeriodAdjustment === false` rows are aggregated; `true` rows are skipped at the top-level (they're surfaced separately on the statement detail).
 - Currency comes from `currentOwner.statementCurrency`, not from the ledger entries (matches the existing `useOwnerPortal` pattern).
 - Ownership share is applied: per `(ownerId, listingId)`, multiply magnitudes by `mapping.ownershipPercentage / 100`. Same pattern as `useOwnerPortal.propertyMetrics`.
-- Aggregations per month: `grossRevenue.sum`, `expenses.sum`, `taxes.sum`, `platformFees.sum`, `nightlyRateSum.sum`, `reservationCount.sum`, `occupiedNights.sum`, `availableNights.sum`, `ratingsCount.sum`, `averageRating.weightedBy(ratingsCount)`.
+- Aggregations per month: `grossRevenue.sum`, `expenses.sum`, `taxes.sum`, `platformFees.sum`, `nightlyRateSum.sum`, `reservationCount.sum`, `occupiedNights.sum`, `availableNights.sum`, `ratingsCount.sum`, `averageRating = sum(rating × ratingsCount) / sum(ratingsCount)` (count-weighted; null when no ratings in the month).
+- When `statementId.value === null`, all outputs in `detail` are `null` and `isNotFound.value === false` (no statement is being requested — the page is in a loading state).
+- "Hidden via `v-if` if `monthlyRevenueSeries.length === 0`" is the permission gate signal: the composable returns an empty array when the field is gated off, and the chart component renders nothing. Components never call `canViewDashboardField` directly.
+- "YoY overlay" in `PortalRevenueChart` is rendered as a dashed line on the same primary axis (not a secondary axis), labeled "Prior year" in the legend, with a lower opacity to keep the current year visually dominant.
 
 ### 4.2 `useOwnerStatementDetail`
 
