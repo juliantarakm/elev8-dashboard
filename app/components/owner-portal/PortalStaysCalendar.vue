@@ -10,11 +10,11 @@
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
 import { computed } from 'vue'
 import { listings } from '~/components/listings/data/listings'
+import { getWeekDays } from '~/components/operations-calendar/data/operations-calendar'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
-import { getWeekDays } from '~/components/operations-calendar/data/operations-calendar'
-import PortalSyncStatus from './PortalSyncStatus.vue'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
+import PortalSyncStatus from './PortalSyncStatus.vue'
 
 const props = defineProps<{
   anchor?: Date
