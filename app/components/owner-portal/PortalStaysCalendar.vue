@@ -11,11 +11,10 @@
 // that listing (board's `create` event is relayed to the parent).
 
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { listings } from '~/components/listings/data/listings'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
 import { getMonthGrid } from '~/components/operations-calendar/data/operations-calendar'
+import { Badge } from '~/components/ui/badge'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import PortalSyncStatus from './PortalSyncStatus.vue'
 
