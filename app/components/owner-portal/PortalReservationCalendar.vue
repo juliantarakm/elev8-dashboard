@@ -77,7 +77,7 @@ const barsByListing = computed<Record<string, BarWithCoords[]>>(() => {
       const totalCells = 42
       return {
         ...bar,
-        topPx: 24 + bar.row * 22,
+        topPx: 28 + bar.row * 24,
         leftPct: (bar.startDay / totalCells) * 100,
         widthPct: ((bar.endDay - bar.startDay + 1) / totalCells) * 100,
       }
@@ -160,7 +160,7 @@ function newOwnerReservation() {
       <table class="w-full border-collapse text-xs">
         <thead>
           <tr class="border-b bg-muted/30">
-            <th class="sticky left-0 z-10 min-w-32 border-r bg-muted/30 px-3 py-2 text-left font-medium">
+            <th class="sticky left-0 z-10 min-w-44 border-r bg-muted/30 px-3 py-3 text-left font-medium">
               Listing
             </th>
             <th
@@ -184,7 +184,7 @@ function newOwnerReservation() {
             :key="listing.id"
             class="border-b"
           >
-            <th class="sticky left-0 z-10 min-w-32 border-r bg-background px-3 py-3 text-left align-top text-sm font-medium">
+            <th class="sticky left-0 z-10 min-w-44 border-r bg-background px-3 py-4 text-left align-top text-sm font-medium">
               <div class="font-medium">
                 {{ listing.name }}
               </div>
@@ -195,7 +195,7 @@ function newOwnerReservation() {
             <td
               v-for="cell in monthGrid"
               :key="`${listing.id}-${cell.key}`"
-              class="relative h-16 min-w-12 border-r border-b p-0 align-top"
+              class="relative h-24 min-w-14 border-r border-b p-0 align-top"
               :class="cell.inMonth ? (cell.isToday ? 'bg-primary/5' : '') : 'bg-muted/10'"
             />
           </tr>
@@ -209,7 +209,7 @@ function newOwnerReservation() {
         :key="`bars-${listing.id}`"
         class="pointer-events-none relative"
         :style="{
-          marginTop: `-${(ownerListings.length - listingIndex) * 64}px`,
+          marginTop: `-${(ownerListings.length - listingIndex) * 96}px`,
         }"
       >
         <div
