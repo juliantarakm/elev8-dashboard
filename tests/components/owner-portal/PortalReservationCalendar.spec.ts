@@ -107,6 +107,32 @@ describe('portalReservationCalendar', () => {
     expect(bar?.textContent).toMatch(/Amelia/)
   })
 
+  it('renders each reservation as a single bar even when it crosses a week boundary', async () => {
+    // Dec 22 (Mon) → Dec 30 (Tue) crosses the Sun→Mon boundary mid-stay.
+    const reservation = makeReservation({
+      id: 'cross-week',
+      listingId: 'lst-1',
+      type: 'guest',
+      channel: 'direct',
+      guestName: 'Cross Week',
+      checkIn: '2025-12-22',
+      checkOut: '2025-12-30',
+      status: 'confirmed',
+    })
+    mount(PortalReservationCalendar, {
+      attachTo: document.body,
+      global: globalOptions,
+      props: {
+        anchor: new Date(2025, 11, 1),
+        reservations: [reservation],
+      },
+    })
+    await vi.runOnlyPendingTimersAsync()
+
+    const buttons = Array.from(document.body.querySelectorAll('button[aria-label*="Cross Week"]'))
+    expect(buttons).toHaveLength(1)
+  })
+
   it('renders owner blocks as amber bars with the note', async () => {
     const reservation = makeReservation({
       id: 'o-1',
@@ -133,7 +159,7 @@ describe('portalReservationCalendar', () => {
     expect(bar?.textContent).toMatch(/Family visit/)
   })
 
-  it('stacks overlapping owner blocks in separate rows (different top values)', async () => {
+  it('renders overlapping owner blocks on the same line (same top value)', async () => {
     const a = makeReservation({
       id: 'a',
       listingId: 'lst-1',
@@ -167,17 +193,73 @@ describe('portalReservationCalendar', () => {
     const barB = buttons.find(b => b.textContent?.includes('Block-B')) as HTMLElement | undefined
     expect(barA).toBeTruthy()
     expect(barB).toBeTruthy()
+    // Bars share the same horizontal line within their starting row so
+    // overlapping stays visually overlap on that line rather than
+    // stack. Both blocks start in the same week (Dec 8-14) so the cell
+    // rows align, and each bar's wrapper has the same relative `top`
+    // offset (set by BAR_TOP_OFFSET_PX) inside its own cell.
     const styleA = barA?.parentElement?.getAttribute('style') ?? ''
     const styleB = barB?.parentElement?.getAttribute('style') ?? ''
-    const topA = Number(styleA.match(/top:\s*(\d+)/)?.[1] ?? -1)
-    const topB = Number(styleB.match(/top:\s*(\d+)/)?.[1] ?? -1)
-    expect(topA).not.toBe(topB)
+    expect(styleA).toContain('top: 36px')
+    expect(styleB).toContain('top: 36px')
+  })
+
+  it('anchors each bar to the row of its starting cell', async () => {
+    // Two non-overlapping reservations in different weeks — each sits
+    // at the y of its own starting row.
+    const early = makeReservation({
+      id: 'early',
+      listingId: 'lst-1',
+      type: 'guest',
+      channel: 'airbnb',
+      guestName: 'Early Guest',
+      checkIn: '2025-12-10',
+      checkOut: '2025-12-12',
+      status: 'confirmed',
+    })
+    const late = makeReservation({
+      id: 'late',
+      listingId: 'lst-1',
+      type: 'guest',
+      channel: 'airbnb',
+      guestName: 'Late Guest',
+      checkIn: '2025-12-22',
+      checkOut: '2025-12-24',
+      status: 'confirmed',
+    })
+    mount(PortalReservationCalendar, {
+      attachTo: document.body,
+      global: globalOptions,
+      props: {
+        anchor: new Date(2025, 11, 1),
+        reservations: [early, late],
+      },
+    })
+    await vi.runOnlyPendingTimersAsync()
+
+    const earlyBtn = document.body.querySelector('button[aria-label*="Early Guest"]') as HTMLElement | null
+    const lateBtn = document.body.querySelector('button[aria-label*="Late Guest"]') as HTMLElement | null
+    expect(earlyBtn).toBeTruthy()
+    expect(lateBtn).toBeTruthy()
+    // Bars live inside their starting cell as absolutely-positioned
+    // children, so the bar's parent cell carries the start date.
+    // Dec 10 sits in row 1 of cells, Dec 22 in row 3 — different cells.
+    const earlyCell = earlyBtn?.parentElement?.parentElement
+    const lateCell = lateBtn?.parentElement?.parentElement
+    expect(earlyCell).not.toBe(lateCell)
+    expect(earlyCell?.textContent).toContain('10')
+    expect(lateCell?.textContent).toContain('22')
   })
 
   it('places a block 24-27 on the matching day cells, not Dec 3', async () => {
     const reservation = makeReservation({
-      id: 'r-24-27', listingId: 'lst-1', type: 'owner_block',
-      note: 'Range-24-27', checkIn: '2025-12-24', checkOut: '2025-12-27', status: 'confirmed',
+      id: 'r-24-27',
+      listingId: 'lst-1',
+      type: 'owner_block',
+      note: 'Range-24-27',
+      checkIn: '2025-12-24',
+      checkOut: '2025-12-27',
+      status: 'confirmed',
     })
     mount(PortalReservationCalendar, {
       attachTo: document.body,
@@ -191,16 +273,17 @@ describe('portalReservationCalendar', () => {
 
     const button = document.body.querySelector('button[aria-label*="Owner block"]') as HTMLElement | null
     expect(button).toBeTruthy()
-    // The bar's `left:` style is anchored to the listing column. A block on
-    // Dec 24-27 sits at columns 24-27 out of 42 — well past the 60% mark.
+    // The bar lives inside its starting cell (Dec 24), so the wrapper
+    // carries `left:` (the half-cell offset to the middle of Dec 24)
+    // and `width:` (enough to reach the middle of Dec 27).
     const style = button?.parentElement?.getAttribute('style') ?? ''
     expect(style).toMatch(/left:/)
     expect(style).toMatch(/width:/)
-    // The width must span the day cells (≥ 5% of the day region, i.e.
-    // roughly 2 days out of 42).
-    const widthMatch = style.match(/width:\s*calc\(\s*([\d.]+)%\s*\*\s*([\d.]+)\s*\/\s*100\s*\)/)
+    // 3 nights (Dec 24-27) spans 3 cells of cell width = ~7.14% of
+    // the cell, well past the 5% threshold.
+    const widthMatch = style.match(/width:\s*([\d.]+)%/)
     if (widthMatch) {
-      const widthPct = Number(widthMatch[1]!) * Number(widthMatch[2]!) / 100
+      const widthPct = Number(widthMatch[1]!)
       expect(widthPct).toBeGreaterThan(5)
     }
   })
