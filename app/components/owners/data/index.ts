@@ -53,3 +53,13 @@ export type {
   StatementCurrency,
 } from './owners'
 export { mockOwnerPropertyMappings, mockOwners } from './owners'
+
+export type {
+  OwnerReservation,
+  OwnerReservationType,
+  OwnerReservationChannel,
+  OwnerReservationStatus,
+  OwnerReservationBar,
+  OwnerReservationDay,
+} from './owner-reservations'
+export { mockOwnerReservations } from './owner-reservations-seed'
