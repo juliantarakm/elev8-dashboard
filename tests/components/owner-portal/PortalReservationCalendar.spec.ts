@@ -174,6 +174,34 @@ describe('portalReservationCalendar', () => {
     expect(topA).not.toBe(topB)
   })
 
+  it('places a block 24-27 on the matching day cells, not Dec 3', async () => {
+    const reservation = makeReservation({
+      id: 'r-24-27', listingId: 'lst-1', type: 'owner_block',
+      note: 'Range-24-27', checkIn: '2025-12-24', checkOut: '2025-12-27', status: 'confirmed',
+    })
+    mount(PortalReservationCalendar, {
+      attachTo: document.body,
+      global: globalOptions,
+      props: {
+        anchor: new Date(2025, 11, 1),
+        reservations: [reservation],
+      },
+    })
+    await vi.runOnlyPendingTimersAsync()
+
+    const button = document.body.querySelector('button[aria-label*="Owner block"]') as HTMLElement | null
+    expect(button).toBeTruthy()
+    // Bar wrapper sits two levels above the button (button → div with style
+    // → table). Look at the closest element with the inline `left:` style.
+    const barWrapper = button?.closest<HTMLElement>('[style*="left:"]')
+    expect(barWrapper).toBeTruthy()
+    const style = barWrapper?.getAttribute('style') ?? ''
+    const leftPct = Number(style.match(/left:\s*([\d.]+)%/)?.[1] ?? -1)
+    const widthPct = Number(style.match(/width:\s*([\d.]+)%/)?.[1] ?? -1)
+    expect(leftPct).toBeGreaterThan(50)
+    expect(widthPct).toBeGreaterThan(5)
+  })
+
   it('emits update:anchor when Previous is clicked', async () => {
     const wrapper = mount(PortalReservationCalendar, {
       attachTo: document.body,
