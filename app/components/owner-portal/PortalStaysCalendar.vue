@@ -10,12 +10,12 @@ import type { CalendarEvent, CalendarListing, OperationsFilters } from '~/compon
 import type { OwnerStay, OwnerStaySyncTarget } from '~/components/owners/data/owner-stays'
 import { computed, ref } from 'vue'
 import { listings } from '~/components/listings/data/listings'
-import { Badge } from '~/components/ui/badge'
 import {
   buildOwnerStayEvents,
   getWeekDays,
 } from '~/components/operations-calendar/data/operations-calendar'
 import OperationsCalendarBoard from '~/components/operations-calendar/OperationsCalendarBoard.vue'
+import { Badge } from '~/components/ui/badge'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 
 const props = defineProps<{
@@ -127,7 +127,7 @@ function retry(target: OwnerStaySyncTarget, stay: OwnerStay) {
       :events-by-day-and-listing="eventsByDayAndListing"
       :events-by-listing-and-day="eventsByListingAndDay"
       :week-days="weekDays"
-      :view="'week'"
+      view="week"
       :selected-day="selectedDay"
       :show-all-listings="showAllListings"
       :filters="filters"
