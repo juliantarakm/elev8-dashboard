@@ -105,13 +105,6 @@ function stayFor(event: CalendarEvent): OwnerStay | null {
 function edit(stay: OwnerStay) {
   emit('edit', stay)
 }
-
-function retry(target: OwnerStaySyncTarget, _stay: OwnerStay) {
-  // Synchronization retry is initiated from the day view elsewhere;
-  // this calendar only emits the edit path on chip click.
-  void _stay
-  void target
-}
 </script>
 
 <template>
