@@ -9,17 +9,26 @@ const { cancelStay, retrySync } = useOwnerStays()
 void currentOwner
 const dialogOpen = ref(false)
 const editing = ref<OwnerStay | null>(null)
+const createDefaults = ref<{ listingId?: string, defaultCheckIn?: string } | null>(null)
 
 const active = computed(() => myStays.value.filter(s => s.status === 'active'))
 const cancelled = computed(() => myStays.value.filter(s => s.status === 'cancelled'))
 
 function edit(stay: OwnerStay) {
+  createDefaults.value = null
   editing.value = stay
   dialogOpen.value = true
 }
 
 function openCreate() {
   editing.value = null
+  createDefaults.value = null
+  dialogOpen.value = true
+}
+
+function onCalendarCreate(payload: { listingId: string, dayKey: string }) {
+  editing.value = null
+  createDefaults.value = payload
   dialogOpen.value = true
 }
 
@@ -62,7 +71,7 @@ function saved() {
         </TabsTrigger>
       </TabsList><TabsContent value="calendar" class="min-h-0">
         <div v-if="active.length" class="space-y-3">
-          <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retryEvent" />
+          <PortalStaysCalendar @edit="edit" @cancel="cancel" @retry="retryEvent" @create="onCalendarCreate" />
         </div>
         <Card v-else>
           <CardContent class="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">

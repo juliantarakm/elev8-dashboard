@@ -1,20 +1,23 @@
 <script setup lang="ts">
 // Owner-stay calendar.
 //
-// Renders a property × day grid where each cell with an active stay
-// becomes a clickable button. The shared OperationsCalendarBoard would
-// have been the natural fit, but its event-chip click handling depends
-// on internal event bubbling that did not translate reliably into the
-// owner-portal context, so we render a focused owner grid here instead.
+// Reuses the shared OperationsCalendarBoard grid for visual context, then
+// listens to its `eventClick` and `create` emits to drive the dialog:
+// chip clicks edit an existing stay, day cell clicks open a new stay
+// dialog pre-filled with the chosen listing and check-in date.
 
+import type { CalendarEvent, CalendarListing, OperationsFilters } from '~/components/operations-calendar/data/operations-calendar'
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { listings } from '~/components/listings/data/listings'
-import { getWeekDays } from '~/components/operations-calendar/data/operations-calendar'
 import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
-import { useOwnerPortal } from '~/composables/useOwnerPortal'
+import {
+  buildOwnerStayEvents,
+  getWeekDays,
+} from '~/components/operations-calendar/data/operations-calendar'
+import OperationsCalendarBoard from '~/components/operations-calendar/OperationsCalendarBoard.vue'
 import PortalSyncStatus from './PortalSyncStatus.vue'
+import { useOwnerPortal } from '~/composables/useOwnerPortal'
 
 const props = defineProps<{
   anchor?: Date
@@ -22,38 +25,98 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [value: OwnerStay]
+  create: [value: { listingId: string, dayKey: string }]
 }>()
 
 const { myStays } = useOwnerPortal()
 
-const weekDays = computed(() => getWeekDays(props.anchor))
+const selectedDay = ref<string | undefined>(undefined)
+const showAllListings = ref(false)
+const emptyFilters: OperationsFilters = {
+  listingSearch: '',
+  listingTags: [],
+  eventTypes: [],
+}
+const filters = ref<OperationsFilters>({ ...emptyFilters })
 
-const listingsById = computed(() => new Map(listings.value.map(l => [l.id, l])))
+const listingsById = computed(() => new Map(
+  listings.value.map(l => [l.id, { id: l.id, name: l.name, colorIndex: 0, property: l.property, unitTypeLabel: l.room, roomLabel: l.name, isSingleUnit: l.unitType === 'single', tags: l.tags, bookings: l.bookings } satisfies CalendarListing]),
+))
 
 const ownerStays = computed<OwnerStay[]>(() => myStays.value.filter(s => s.status === 'active'))
 
-const ownerListings = computed(() => Array.from(new Set(ownerStays.value.map(s => s.listingId)))
-  .map(id => listingsById.value.get(id))
-  .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing)))
+const ownerListingIds = computed(() => Array.from(new Set(ownerStays.value.map(s => s.listingId))))
 
-const staysByListingAndDay = computed(() => {
-  const result: Record<string, Record<string, OwnerStay>> = {}
+const ownerListings = computed<CalendarListing[]>(() => ownerListingIds.value
+  .map(id => listingsById.value.get(id))
+  .filter((listing): listing is CalendarListing => Boolean(listing)))
+
+const staysByListing = computed<Record<string, OwnerStay[]>>(() => {
+  const grouped: Record<string, OwnerStay[]> = {}
   for (const stay of ownerStays.value) {
-    if (!result[stay.listingId])
-      result[stay.listingId] = {}
-    result[stay.listingId]![stay.checkIn] = stay
+    if (!grouped[stay.listingId])
+      grouped[stay.listingId] = []
+    grouped[stay.listingId]!.push(stay)
+  }
+  return grouped
+})
+
+const events = computed<CalendarEvent[]>(() => buildOwnerStayEvents(ownerStays.value)
+  .map((event) => {
+    const listing = listingsById.value.get(event.listingId)
+    const stay = staysByListing.value[event.listingId]?.find(s => `owner-stay-${s.id}` === event.id)
+    return {
+      ...event,
+      listingName: listing?.name ?? event.listingId,
+      colorIndex: listing?.colorIndex ?? 0,
+      title: stay?.guestName ?? event.title,
+      notes: stay ? `${stay.checkIn} → ${stay.checkOut} · ${stay.nights}n` : event.notes,
+    }
+  }))
+
+const eventsByDay = computed(() => groupEventsByKey(events.value, e => e.start.slice(0, 10)))
+const eventsByDayAndListing = computed(() => groupEventsByKey(events.value, e => `${e.start.slice(0, 10)}::${e.listingId}`))
+const eventsByListingAndDay = computed(() => {
+  const result = new Map<string, Map<string, CalendarEvent[]>>()
+  for (const event of events.value) {
+    const day = event.start.slice(0, 10)
+    let inner = result.get(event.listingId)
+    if (!inner) {
+      inner = new Map()
+      result.set(event.listingId, inner)
+    }
+    const bucket = inner.get(day) ?? []
+    bucket.push(event)
+    inner.set(day, bucket)
   }
   return result
 })
 
-const todayKey = computed(() => weekDays.value[0]?.key ?? new Date().toISOString().slice(0, 10))
+const weekDays = computed(() => getWeekDays(props.anchor))
 
-function stayFor(listingId: string, dayKey: string) {
-  return staysByListingAndDay.value[listingId]?.[dayKey] ?? null
+function groupEventsByKey(values: CalendarEvent[], key: (event: CalendarEvent) => string) {
+  const map = new Map<string, CalendarEvent[]>()
+  for (const event of values) {
+    const k = key(event)
+    const bucket = map.get(k) ?? []
+    bucket.push(event)
+    map.set(k, bucket)
+  }
+  return map
 }
 
-function edit(stay: OwnerStay) {
-  emit('edit', stay)
+function findStayForEvent(event: CalendarEvent): OwnerStay | null {
+  return staysByListing.value[event.listingId]?.find(s => `owner-stay-${s.id}` === event.id) ?? null
+}
+
+function onEventClick(event: CalendarEvent) {
+  const stay = findStayForEvent(event)
+  if (stay)
+    emit('edit', stay)
+}
+
+function onCreate(payload: { listingId: string, dayKey: string }) {
+  emit('create', payload)
 }
 </script>
 
@@ -64,66 +127,27 @@ function edit(stay: OwnerStay) {
         {{ ownerStays.length }} active stay{{ ownerStays.length === 1 ? '' : 's' }}
       </Badge>
       <span class="text-xs text-muted-foreground">
-        Click a chip to edit the stay.
+        Click a chip to edit. Click any empty day cell to create a new stay for that listing.
       </span>
     </div>
-    <div
+    <OperationsCalendarBoard
       v-if="ownerListings.length"
-      class="space-y-3"
-    >
-      <div
-        v-for="listing in ownerListings"
-        :key="listing.id"
-        class="rounded-lg border bg-card p-3"
-      >
-        <div class="mb-2 flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium">
-              {{ listing.name }}
-            </p>
-            <p class="text-xs text-muted-foreground">
-              {{ listing.location }}
-            </p>
-          </div>
-          <Badge variant="outline">
-            {{ listing.property }}
-          </Badge>
-        </div>
-        <div class="grid grid-cols-7 gap-1">
-          <div
-            v-for="day in weekDays"
-            :key="`${listing.id}-${day.key}`"
-            class="min-h-16 rounded border border-dashed p-1 text-center"
-            :class="day.key === todayKey ? 'border-primary/40 bg-primary/5' : 'border-muted'"
-          >
-            <p class="text-[10px] uppercase tracking-wide text-muted-foreground">
-              {{ day.label.split(' ')[0] }}
-            </p>
-            <button
-              v-if="stayFor(listing.id, day.key)"
-              type="button"
-              class="mt-1 w-full rounded bg-primary/10 px-1 py-1 text-left text-[11px] text-foreground transition-colors hover:bg-primary/20"
-              @click="edit(stayFor(listing.id, day.key)!)"
-            >
-              <div class="font-medium">
-                {{ stayFor(listing.id, day.key)!.guestName }}
-              </div>
-              <div class="text-[10px] text-muted-foreground">
-                {{ stayFor(listing.id, day.key)!.nights }}n
-              </div>
-            </button>
-            <p
-              v-else
-              class="mt-2 text-[10px] text-muted-foreground/70"
-            >
-              —
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      :events="events"
+      :events-by-day="eventsByDay"
+      :events-by-day-and-listing="eventsByDayAndListing"
+      :events-by-listing-and-day="eventsByListingAndDay"
+      :week-days="weekDays"
+      view="week"
+      :selected-day="selectedDay"
+      :show-all-listings="showAllListings"
+      :filters="filters"
+      @event-click="onEventClick"
+      @create="onCreate"
+      @update:selected-day="selectedDay = $event"
+      @update:show-all-listings="showAllListings = $event"
+    />
     <div v-else class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-      No active properties for this account yet.
+      No active properties for this account yet. Use Create stay above to add a stay.
     </div>
     <section v-if="ownerStays.length" class="space-y-3">
       <h3 class="text-sm font-semibold">
@@ -135,7 +159,7 @@ function edit(stay: OwnerStay) {
           :key="`status-${stay.id}`"
           class="rounded-md border bg-card p-3"
         >
-          <div class="mb-2 flex items-start justify-between">
+          <div class="mb-2 flex items-start justify-between gap-2">
             <div>
               <p class="text-sm font-medium">
                 {{ stay.guestName }}
@@ -149,11 +173,6 @@ function edit(stay: OwnerStay) {
             </Badge>
           </div>
           <PortalSyncStatus :stay="stay" />
-          <div class="mt-2 flex justify-end">
-            <Button size="sm" variant="outline" @click="edit(stay)">
-              Edit
-            </Button>
-          </div>
         </div>
       </div>
     </section>

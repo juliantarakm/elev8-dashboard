@@ -10,6 +10,7 @@ const props = defineProps<{
   stay?: OwnerStay | null
   ownerId: string
   listingId?: string
+  defaultCheckIn?: string
   syncFailureTargets?: OwnerStaySyncTarget[]
 }>()
 
@@ -28,8 +29,9 @@ const { createStay, updateStay, detectConflicts, getCapWarning } = useOwnerStays
 
 const guestName = ref(props.stay?.guestName ?? '')
 const listingId = ref(props.stay?.listingId ?? props.listingId ?? 'lst-1')
+const initialCheckIn = props.stay?.checkIn ?? props.defaultCheckIn ?? ''
 const unitId = ref(props.stay?.unitId ?? '')
-const checkIn = ref(props.stay?.checkIn ?? '')
+const checkIn = ref(props.stay?.checkIn ?? initialCheckIn)
 const checkOut = ref(props.stay?.checkOut ?? '')
 const notes = ref(props.stay?.notes ?? '')
 const conflicts = ref<OwnerStayConflict[]>([])
