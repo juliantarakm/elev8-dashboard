@@ -106,8 +106,12 @@ interface BarWithCoords {
   widthPct: number
 }
 
-const barsByListingRow = computed<Record<string, BarWithCoords[]>>(() => {
-  const out: Record<string, BarWithCoords[]> = {}
+interface PlacedBar extends BarWithCoords {
+  roomRow: number
+}
+
+const barsByListingRow = computed<Record<string, PlacedBar[]>>(() => {
+  const out: Record<string, PlacedBar[]> = {}
   for (const listing of ownerListings.value) {
     const listingReservations = reservations.value.filter(r => r.listingId === listing.id)
     const bars = buildReservationBars(monthGrid.value, listing.id, listingReservations)
@@ -122,19 +126,12 @@ const barsByListingRow = computed<Record<string, BarWithCoords[]>>(() => {
         topPx: BAR_TOP_OFFSET_PX + bar.row * BAR_ROW_GAP_PX,
         leftPct: (bar.startDay / totalCells) * 100,
         widthPct: ((bar.endDay - bar.startDay + 1) / totalCells) * 100,
-        // Offset by roomIndex (each row in the listing consumes a table row).
-        // We encode that as a per-bar `roomRow` so the overlay layer can
-        // translate by `(roomRow * ROW_HEIGHT_PX)`.
         roomRow: safeRoomIndex,
-      } as BarWithCoords & { roomRow: number }]
+      }]
     }
   }
   return out
 })
-
-const flatBars = computed<(BarWithCoords & { roomRow: number })[]>(() =>
-  Object.values(barsByListingRow.value).flat(),
-)
 
 const totalRows = computed(() => {
   let total = 1 // header
@@ -175,7 +172,7 @@ function goToToday() {
 const selectedReservation = ref<OwnerReservation | null>(null)
 const popoverOpen = ref(false)
 
-function openBar(bar: BarWithCoords & { roomRow: number }) {
+function openBar(bar: PlacedBar) {
   const reservationId = bar.id.split('-').slice(0, -2).join('-')
   const found = reservations.value.find(r => r.id === reservationId)
   if (!found)
