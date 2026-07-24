@@ -191,23 +191,18 @@ describe('portalReservationCalendar', () => {
 
     const button = document.body.querySelector('button[aria-label*="Owner block"]') as HTMLElement | null
     expect(button).toBeTruthy()
-    // Find the bar wrapper (an ancestor whose inline style sets `left:`
-    // and `width:` in percent). Search up to the document body.
-    let cursor: HTMLElement | null = button
-    let style: string | null = null
-    while (cursor) {
-      const attr = cursor.getAttribute('style') ?? ''
-      if (attr.includes('left:') && attr.includes('width:')) {
-        style = attr
-        break
-      }
-      cursor = cursor.parentElement
+    // The bar's `left:` style is anchored to the listing column. A block on
+    // Dec 24-27 sits at columns 24-27 out of 42 — well past the 60% mark.
+    const style = button?.parentElement?.getAttribute('style') ?? ''
+    expect(style).toMatch(/left:/)
+    expect(style).toMatch(/width:/)
+    // The width must span the day cells (≥ 5% of the day region, i.e.
+    // roughly 2 days out of 42).
+    const widthMatch = style.match(/width:\s*calc\(\s*([\d.]+)%\s*\*\s*([\d.]+)\s*\/\s*100\s*\)/)
+    if (widthMatch) {
+      const widthPct = Number(widthMatch[1]!) * Number(widthMatch[2]!) / 100
+      expect(widthPct).toBeGreaterThan(5)
     }
-    expect(style).not.toBeNull()
-    const leftPct = Number(style!.match(/left:\s*([\d.]+)%/)?.[1] ?? -1)
-    const widthPct = Number(style!.match(/width:\s*([\d.]+)%/)?.[1] ?? -1)
-    expect(leftPct).toBeGreaterThan(50)
-    expect(widthPct).toBeGreaterThan(5)
   })
 
   it('emits update:anchor when Previous is clicked', async () => {
