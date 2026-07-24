@@ -61,5 +61,7 @@ export type {
   OwnerReservationStatus,
   OwnerReservationBar,
   OwnerReservationDay,
+  OwnerRoomType,
+  OwnerRoom,
 } from './owner-reservations'
-export { mockOwnerReservations } from './owner-reservations-seed'
+export { mockOwnerReservations, mockOwnerRoomTypes, mockOwnerRooms } from './owner-reservations-seed'
