@@ -100,7 +100,7 @@ function openReservation(reservation: OwnerReservation) {
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-col gap-6 p-4 sm:p-6 lg:p-8">
+  <div class="flex h-[calc(100vh-9rem)] min-h-0 flex-col gap-4 p-4 sm:p-6 lg:p-8">
     <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">
@@ -119,24 +119,27 @@ function openReservation(reservation: OwnerReservation) {
       </Button>
     </header>
 
-    <Card v-if="!reservations.length">
-      <CardContent class="flex flex-col items-center gap-2 p-12 text-center text-sm text-muted-foreground">
-        <Icon name="lucide:calendar-off" class="size-8 opacity-50" />
-        <p>No reservations on your properties yet.</p>
-        <Button size="sm" @click="startCreate({ checkIn: todayISO(), checkOut: addDaysISO(todayISO(), 2) })">
-          Block your first dates
-        </Button>
-      </CardContent>
-    </Card>
+    <div class="flex min-h-0 flex-1 flex-col">
+      <Card v-if="!reservations.length" class="flex-1">
+        <CardContent class="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+          <Icon name="lucide:calendar-off" class="size-8 opacity-50" />
+          <p>No reservations on your properties yet.</p>
+          <Button size="sm" @click="startCreate({ checkIn: todayISO(), checkOut: addDaysISO(todayISO(), 2) })">
+            Block your first dates
+          </Button>
+        </CardContent>
+      </Card>
 
-    <PortalReservationCalendar
-      v-else
-      v-model:anchor="calendarAnchor"
-      :reservations="reservations"
-      @create-owner-reservation="startCreate"
-      @edit-owner-reservation="openReservation"
-      @remove-owner-reservation="(res) => { localReservations = localReservations.filter(r => r.id !== res.id); toast.info('Owner block removed.') }"
-    />
+      <PortalReservationCalendar
+        v-else
+        v-model:anchor="calendarAnchor"
+        :reservations="reservations"
+        class="flex-1"
+        @create-owner-reservation="startCreate"
+        @edit-owner-reservation="openReservation"
+        @remove-owner-reservation="(res) => { localReservations = localReservations.filter(r => r.id !== res.id); toast.info('Owner block removed.') }"
+      />
+    </div>
 
     <Dialog v-model:open="createOpen">
       <DialogContent class="sm:max-w-md">

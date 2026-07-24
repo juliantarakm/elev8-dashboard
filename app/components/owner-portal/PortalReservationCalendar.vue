@@ -122,7 +122,7 @@ function newOwnerReservation() {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="flex h-full min-h-0 flex-col space-y-4">
     <header class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <Button
@@ -160,7 +160,7 @@ function newOwnerReservation() {
       </Button>
     </header>
 
-    <div class="overflow-x-auto rounded-md border bg-background">
+    <div class="min-h-0 flex-1 overflow-auto rounded-md border bg-background">
       <table class="w-full border-collapse text-xs">
         <thead>
           <tr class="border-b bg-muted/30">
