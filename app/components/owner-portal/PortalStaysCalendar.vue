@@ -1,21 +1,21 @@
 <script setup lang="ts">
 // Owner-stay calendar.
 //
-// Reuses the shared OperationsCalendarBoard grid for visual context, then
-// listens to its `eventClick` and `create` emits to drive the dialog:
-// chip clicks edit an existing stay, day cell clicks open a new stay
-// dialog pre-filled with the chosen listing and check-in date.
+// Renders a property × month grid where each active stay is drawn as a
+// bar that spans its date range. Bars belonging to overlapping stays in
+// the same listing are stacked vertically (rows of a nested mini-grid),
+// so the user can see exactly which dates each stay occupies and which
+// nights are still free.
+//
+// Click a bar to edit. Click an empty day cell to create a new stay for
+// that listing (board's `create` event is relayed to the parent).
 
-import type { CalendarEvent, CalendarListing, OperationsFilters } from '~/components/operations-calendar/data/operations-calendar'
 import type { OwnerStay } from '~/components/owners/data/owner-stays'
 import { computed, ref } from 'vue'
 import { listings } from '~/components/listings/data/listings'
-import {
-  buildOwnerStayEvents,
-  getWeekDays,
-} from '~/components/operations-calendar/data/operations-calendar'
-import OperationsCalendarBoard from '~/components/operations-calendar/OperationsCalendarBoard.vue'
 import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { getMonthGrid } from '~/components/operations-calendar/data/operations-calendar'
 import { useOwnerPortal } from '~/composables/useOwnerPortal'
 import PortalSyncStatus from './PortalSyncStatus.vue'
 
@@ -30,93 +30,83 @@ const emit = defineEmits<{
 
 const { myStays } = useOwnerPortal()
 
-const selectedDay = ref<string | undefined>(undefined)
-const showAllListings = ref(false)
-const emptyFilters: OperationsFilters = {
-  listingSearch: '',
-  listingTags: [],
-  eventTypes: [],
-}
-const filters = ref<OperationsFilters>({ ...emptyFilters })
+const anchor = computed(() => props.anchor ?? new Date())
 
-const listingsById = computed(() => new Map(
-  listings.value.map(l => [l.id, { id: l.id, name: l.name, colorIndex: 0, property: l.property, unitTypeLabel: l.room, roomLabel: l.name, isSingleUnit: l.unitType === 'single', tags: l.tags, bookings: l.bookings } satisfies CalendarListing]),
-))
+const monthGrid = computed(() => getMonthGrid(anchor.value))
+
+const listingsById = computed(() => new Map(listings.value.map(l => [l.id, l])))
 
 const ownerStays = computed<OwnerStay[]>(() => myStays.value.filter(s => s.status === 'active'))
 
-const ownerListingIds = computed(() => Array.from(new Set(ownerStays.value.map(s => s.listingId))))
-
-const ownerListings = computed<CalendarListing[]>(() => ownerListingIds.value
+const ownerListings = computed(() => Array.from(new Set(ownerStays.value.map(s => s.listingId)))
   .map(id => listingsById.value.get(id))
-  .filter((listing): listing is CalendarListing => Boolean(listing)))
+  .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing)))
 
-const staysByListing = computed<Record<string, OwnerStay[]>>(() => {
-  const grouped: Record<string, OwnerStay[]> = {}
-  for (const stay of ownerStays.value) {
-    if (!grouped[stay.listingId])
-      grouped[stay.listingId] = []
-    grouped[stay.listingId]!.push(stay)
+interface StayBar {
+  stay: OwnerStay
+  startIndex: number
+  endIndex: number
+  row: number
+}
+
+function dateKeyToIndex(key: string): number {
+  return monthGrid.value.findIndex(cell => cell.key === key)
+}
+
+function dayIndex(key: string): number {
+  return dateKeyToIndex(key) + 1
+}
+
+function buildBarsForListing(listingId: string): StayBar[] {
+  const listingStays = ownerStays.value
+    .filter(s => s.listingId === listingId)
+    .slice()
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+
+  const bars: StayBar[] = []
+  const rowEnd: number[] = []
+  for (const stay of listingStays) {
+    const startIndex = dateKeyToIndex(stay.checkIn)
+    const checkOutIndex = dateKeyToIndex(stay.checkOut)
+    // Cap endIndex at the visible grid range so stays outside the month
+    // still render in the first/last week they overlap.
+    const endIndex = checkOutIndex === -1
+      ? monthGrid.value.findLastIndex(cell => cell.key < stay.checkOut)
+      : checkOutIndex
+    if (startIndex === -1 || endIndex === -1 || endIndex < startIndex)
+      continue
+
+    let row = rowEnd.findIndex(end => end <= startIndex)
+    if (row === -1) {
+      row = rowEnd.length
+      rowEnd.push(endIndex)
+    }
+    else {
+      rowEnd[row] = endIndex
+    }
+    bars.push({ stay, startIndex, endIndex, row })
   }
-  return grouped
+  return bars
+}
+
+const barsByListing = computed<Record<string, StayBar[]>>(() => {
+  const out: Record<string, StayBar[]> = {}
+  for (const listing of ownerListings.value)
+    out[listing.id] = buildBarsForListing(listing.id)
+  return out
 })
 
-const events = computed<CalendarEvent[]>(() => buildOwnerStayEvents(ownerStays.value)
-  .map((event) => {
-    const listing = listingsById.value.get(event.listingId)
-    const stay = staysByListing.value[event.listingId]?.find(s => `owner-stay-${s.id}` === event.id)
-    return {
-      ...event,
-      listingName: listing?.name ?? event.listingId,
-      colorIndex: listing?.colorIndex ?? 0,
-      title: stay?.guestName ?? event.title,
-      notes: stay ? `${stay.checkIn} → ${stay.checkOut} · ${stay.nights}n` : event.notes,
-    }
-  }))
-
-const eventsByDay = computed(() => groupEventsByKey(events.value, e => e.start.slice(0, 10)))
-const eventsByDayAndListing = computed(() => groupEventsByKey(events.value, e => `${e.start.slice(0, 10)}::${e.listingId}`))
-const eventsByListingAndDay = computed(() => {
-  const result = new Map<string, Map<string, CalendarEvent[]>>()
-  for (const event of events.value) {
-    const day = event.start.slice(0, 10)
-    let inner = result.get(event.listingId)
-    if (!inner) {
-      inner = new Map()
-      result.set(event.listingId, inner)
-    }
-    const bucket = inner.get(day) ?? []
-    bucket.push(event)
-    inner.set(day, bucket)
-  }
-  return result
-})
-
-const weekDays = computed(() => getWeekDays(props.anchor))
-
-function groupEventsByKey(values: CalendarEvent[], key: (event: CalendarEvent) => string) {
-  const map = new Map<string, CalendarEvent[]>()
-  for (const event of values) {
-    const k = key(event)
-    const bucket = map.get(k) ?? []
-    bucket.push(event)
-    map.set(k, bucket)
-  }
-  return map
+function edit(stay: OwnerStay) {
+  emit('edit', stay)
 }
 
-function findStayForEvent(event: CalendarEvent): OwnerStay | null {
-  return staysByListing.value[event.listingId]?.find(s => `owner-stay-${s.id}` === event.id) ?? null
-}
-
-function onEventClick(event: CalendarEvent) {
-  const stay = findStayForEvent(event)
-  if (stay)
-    emit('edit', stay)
-}
-
-function onCreate(payload: { listingId: string, dayKey: string }) {
-  emit('create', payload)
+function onCellClick(cell: { key: string, inMonth: boolean }) {
+  if (!cell.inMonth)
+    return
+  const firstListing = ownerListings.value[0]
+  if (!firstListing)
+    return
+  emit('create', { listingId: firstListing.id, dayKey: cell.key })
 }
 </script>
 
@@ -127,25 +117,82 @@ function onCreate(payload: { listingId: string, dayKey: string }) {
         {{ ownerStays.length }} active stay{{ ownerStays.length === 1 ? '' : 's' }}
       </Badge>
       <span class="text-xs text-muted-foreground">
-        Click a chip to edit. Click any empty day cell to create a new stay for that listing.
+        Click a bar to edit. Bars span the stay's date range; overlapping bars stack.
       </span>
     </div>
-    <OperationsCalendarBoard
-      v-if="ownerListings.length"
-      :events="events"
-      :events-by-day="eventsByDay"
-      :events-by-day-and-listing="eventsByDayAndListing"
-      :events-by-listing-and-day="eventsByListingAndDay"
-      :week-days="weekDays"
-      view="week"
-      :selected-day="selectedDay"
-      :show-all-listings="showAllListings"
-      :filters="filters"
-      @event-click="onEventClick"
-      @create="onCreate"
-      @update:selected-day="selectedDay = $event"
-      @update:show-all-listings="showAllListings = $event"
-    />
+    <div v-if="ownerListings.length" class="space-y-4">
+      <div
+        v-for="listing in ownerListings"
+        :key="listing.id"
+        class="rounded-lg border bg-card"
+      >
+        <div class="flex items-center justify-between border-b px-4 py-2">
+          <div>
+            <p class="text-sm font-medium">
+              {{ listing.name }}
+            </p>
+            <p class="text-xs text-muted-foreground">
+              {{ listing.location }}
+            </p>
+          </div>
+          <Badge variant="outline">
+            {{ listing.property }}
+          </Badge>
+        </div>
+        <div
+          class="grid grid-cols-7 border-b bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground"
+        >
+          <div
+            v-for="cell in monthGrid.slice(0, 7)"
+            :key="cell.key"
+            class="border-r px-2 py-1 last:border-r-0"
+          >
+            {{ cell.weekday }}
+          </div>
+        </div>
+        <div class="relative grid grid-cols-7">
+          <button
+            v-for="cell in monthGrid"
+            :key="`cell-${cell.key}`"
+            type="button"
+            class="relative h-20 min-h-20 border-b border-r px-1.5 py-1 text-left text-xs transition-colors last:border-r-0 hover:bg-muted/40"
+            :class="cell.inMonth ? 'bg-background' : 'bg-muted/10 text-muted-foreground'"
+            @click="onCellClick(cell)"
+          >
+            <span
+              class="text-[10px] font-semibold"
+              :class="cell.inMonth ? 'text-foreground' : 'text-muted-foreground/60'"
+            >
+              {{ cell.label }}
+            </span>
+          </button>
+          <div
+            v-for="bar in (barsByListing[listing.id] ?? [])"
+            :key="bar.stay.id"
+            class="pointer-events-none absolute"
+            :style="{
+              top: `calc(1.25rem + ${bar.row} * 1.45rem + ${bar.row * 2}px + 0.25rem)`,
+              left: `calc(((${bar.startIndex} % 7) / 7) * 100% + 2px)`,
+              width: `calc(((${bar.endIndex} - ${bar.startIndex} + 1) / 7) * 100% - 4px)`,
+              height: '1.25rem',
+            }"
+          >
+            <button
+              type="button"
+              class="pointer-events-auto flex h-full w-full items-center gap-1 truncate rounded bg-primary/15 px-1.5 text-[11px] text-foreground transition-colors hover:bg-primary/25"
+              @click="edit(bar.stay)"
+            >
+              <span class="truncate font-medium">
+                {{ bar.stay.guestName }}
+              </span>
+              <span class="ml-auto text-[10px] text-muted-foreground">
+                {{ bar.stay.nights }}n
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div v-else class="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
       No active properties for this account yet. Use Create stay above to add a stay.
     </div>

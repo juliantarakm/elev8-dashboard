@@ -85,6 +85,28 @@ export function getCalendarListings(): CalendarListing[] {
   }))
 }
 
+export function getMonthGrid(anchorDate = new Date()) {
+  const start = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1)
+  // Snap to Monday.
+  const dayOfWeek = start.getDay()
+  const offset = (dayOfWeek + 6) % 7
+  start.setDate(start.getDate() - offset)
+  start.setHours(0, 0, 0, 0)
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + index)
+    const month = date.getMonth()
+    return {
+      key: date.toISOString().slice(0, 10),
+      label: date.toLocaleDateString('en-US', { day: 'numeric' }),
+      weekday: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      date,
+      inMonth: month === anchorDate.getMonth(),
+    }
+  })
+}
+
 export function getWeekDays(anchorDate = new Date()) {
   const start = new Date(anchorDate)
   const day = start.getDay()
