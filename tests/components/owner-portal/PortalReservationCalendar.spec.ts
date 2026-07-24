@@ -1,7 +1,7 @@
+import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import type { OwnerReservation } from '~/components/owners/data/owner-reservations'
 import PortalReservationCalendar from '~/components/owner-portal/PortalReservationCalendar.vue'
 
 const ButtonStub = {
@@ -55,7 +55,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('PortalReservationCalendar', () => {
+describe('portalReservationCalendar', () => {
   it('renders day cells with the date number top-right', async () => {
     mount(PortalReservationCalendar, {
       attachTo: document.body,
@@ -80,8 +80,14 @@ describe('PortalReservationCalendar', () => {
 
   it('renders guest stays as emerald bars spanning the booking dates', async () => {
     const reservation = makeReservation({
-      id: 'r-1', listingId: 'lst-1', type: 'guest', channel: 'airbnb',
-      guestName: 'Amelia', checkIn: '2025-12-10', checkOut: '2025-12-15', status: 'confirmed',
+      id: 'r-1',
+      listingId: 'lst-1',
+      type: 'guest',
+      channel: 'airbnb',
+      guestName: 'Amelia',
+      checkIn: '2025-12-10',
+      checkOut: '2025-12-15',
+      status: 'confirmed',
     })
     mount(PortalReservationCalendar, {
       attachTo: document.body,
@@ -103,8 +109,13 @@ describe('PortalReservationCalendar', () => {
 
   it('renders owner blocks as amber bars with the note', async () => {
     const reservation = makeReservation({
-      id: 'o-1', listingId: 'lst-1', type: 'owner_block',
-      note: 'Family visit', checkIn: '2025-12-20', checkOut: '2025-12-23', status: 'confirmed',
+      id: 'o-1',
+      listingId: 'lst-1',
+      type: 'owner_block',
+      note: 'Family visit',
+      checkIn: '2025-12-20',
+      checkOut: '2025-12-23',
+      status: 'confirmed',
     })
     mount(PortalReservationCalendar, {
       attachTo: document.body,
@@ -124,12 +135,22 @@ describe('PortalReservationCalendar', () => {
 
   it('stacks overlapping owner blocks in separate rows (different top values)', async () => {
     const a = makeReservation({
-      id: 'a', listingId: 'lst-1', type: 'owner_block',
-      note: 'Block-A', checkIn: '2025-12-10', checkOut: '2025-12-15', status: 'confirmed',
+      id: 'a',
+      listingId: 'lst-1',
+      type: 'owner_block',
+      note: 'Block-A',
+      checkIn: '2025-12-10',
+      checkOut: '2025-12-15',
+      status: 'confirmed',
     })
     const b = makeReservation({
-      id: 'b', listingId: 'lst-1', type: 'owner_block',
-      note: 'Block-B', checkIn: '2025-12-12', checkOut: '2025-12-18', status: 'confirmed',
+      id: 'b',
+      listingId: 'lst-1',
+      type: 'owner_block',
+      note: 'Block-B',
+      checkIn: '2025-12-12',
+      checkOut: '2025-12-18',
+      status: 'confirmed',
     })
     mount(PortalReservationCalendar, {
       attachTo: document.body,
