@@ -81,6 +81,24 @@ const monthLabel = computed(() => calendarAnchor.value.toLocaleDateString('en-US
           List
         </TabsTrigger>
       </TabsList><TabsContent value="calendar" class="min-h-0">
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <Button variant="outline" size="sm" @click="shiftMonth(-1)">
+            <Icon name="lucide:chevron-left" class="size-4" />
+            Previous
+          </Button>
+          <div class="flex flex-col items-center gap-1">
+            <span class="text-sm font-semibold">
+              {{ monthLabel }}
+            </span>
+            <Button variant="ghost" size="sm" @click="goToToday">
+              Today
+            </Button>
+          </div>
+          <Button variant="outline" size="sm" @click="shiftMonth(1)">
+            Next
+            <Icon name="lucide:chevron-right" class="size-4" />
+          </Button>
+        </div>
         <div v-if="active.length" class="space-y-3">
           <PortalStaysCalendar
             :anchor="calendarAnchor"
