@@ -80,8 +80,8 @@ export function usePromoCodes() {
       value: draft.discountType === 'free_upsell' ? 0 : draft.value,
       currency: draft.discountType === 'fixed' ? (draft.currency ?? null) : null,
       active: draft.active,
-      validFrom: draft.validFrom ?? null,
-      validUntil: draft.validUntil ?? null,
+      bookingWindows: (draft.bookingWindows ?? []).map(w => ({ from: w.from ?? null, until: w.until ?? null })),
+      stayWindows: (draft.stayWindows ?? []).map(w => ({ from: w.from ?? null, until: w.until ?? null })),
       usageLimit: draft.usageLimit ?? null,
       redemptionCount: draft.redemptionCount ?? 0,
       createdAt: now,
@@ -101,6 +101,12 @@ export function usePromoCodes() {
       const nextType = patch.discountType ?? c.discountType
       const nextValue = nextType === 'free_upsell' ? 0 : (patch.value ?? c.value)
       const nextCurrency = nextType === 'fixed' ? (patch.currency ?? c.currency ?? null) : null
+      const nextBooking = patch.bookingWindows
+        ? patch.bookingWindows.map(w => ({ from: w.from ?? null, until: w.until ?? null }))
+        : (c.bookingWindows ?? [])
+      const nextStay = patch.stayWindows
+        ? patch.stayWindows.map(w => ({ from: w.from ?? null, until: w.until ?? null }))
+        : (c.stayWindows ?? [])
       updated = {
         ...c,
         ...patch,
@@ -108,8 +114,8 @@ export function usePromoCodes() {
         discountType: nextType,
         value: nextValue,
         currency: nextCurrency,
-        validFrom: patch.validFrom ?? c.validFrom ?? null,
-        validUntil: patch.validUntil ?? c.validUntil ?? null,
+        bookingWindows: nextBooking,
+        stayWindows: nextStay,
         usageLimit: patch.usageLimit ?? c.usageLimit ?? null,
         freeUpsellServiceIds: nextType === 'free_upsell' ? (patch.freeUpsellServiceIds ?? c.freeUpsellServiceIds ?? []) : undefined,
         listingIds: patch.listingIds ?? c.listingIds ?? [],

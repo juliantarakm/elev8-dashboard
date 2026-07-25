@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
+import { formatPromoDiscount, formatPromoWindowCompact, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
 import { usePromoCodes } from '~/composables/usePromoCodes'
 
 const { codes } = defineProps<{
@@ -30,12 +30,25 @@ function statusLabel(code: PromoCode) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-function formatDateRange(code: PromoCode) {
-  if (!code.validFrom && !code.validUntil)
-    return 'Always'
-  const from = code.validFrom ? new Date(code.validFrom).toLocaleDateString() : '—'
-  const to = code.validUntil ? new Date(code.validUntil).toLocaleDateString() : '—'
-  return `${from} → ${to}`
+function tableWindowLabel(from: string | null | undefined, until: string | null | undefined) {
+  const f = from ? new Date(from).toLocaleDateString() : null
+  const u = until ? new Date(until).toLocaleDateString() : null
+  if (f && u) return `${f} → ${u}`
+  if (f) return `from ${f}`
+  if (u) return `until ${u}`
+  return 'Always'
+}
+
+function bookingWindowRows(windows: { from: string | null; until: string | null }[]) {
+  return windows
+    .map(w => formatPromoWindowCompact(w))
+    .filter((label): label is string => label !== null)
+}
+
+function stayWindowRows(windows: { from: string | null; until: string | null }[]) {
+  return windows
+    .map(w => formatPromoWindowCompact(w))
+    .filter((label): label is string => label !== null)
 }
 
 function statusColor(code: PromoCode) {
@@ -56,6 +69,8 @@ const decoratedCodes = computed(() => codes.map((code) => {
     freeUpsellCount,
     listingCount,
     scopeLabel,
+    bookingWindows: code.bookingWindows ?? [],
+    stayWindows: code.stayWindows ?? [],
   }
 }))
 </script>
@@ -69,7 +84,7 @@ const decoratedCodes = computed(() => codes.map((code) => {
           <TableHead>Discount</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Scope</TableHead>
-          <TableHead>Valid period</TableHead>
+          <TableHead>Validity</TableHead>
           <TableHead>Redemptions</TableHead>
           <TableHead>Status</TableHead>
           <TableHead class="w-[80px]">
@@ -118,8 +133,36 @@ const decoratedCodes = computed(() => codes.map((code) => {
               </span>
             </div>
           </TableCell>
-          <TableCell class="text-muted-foreground text-sm">
-            {{ formatDateRange(code) }}
+          <TableCell class="text-muted-foreground text-xs space-y-0.5">
+            <template v-if="code.bookingWindows.length === 0 && code.stayWindows.length === 0">
+              <div>Always</div>
+            </template>
+            <template v-else>
+              <div v-if="code.bookingWindows.length > 0" class="flex items-start gap-1">
+                <Icon name="lucide:calendar-clock" class="size-3 shrink-0 mt-0.5" />
+                <span class="min-w-0">
+                  <template v-if="code.bookingWindows.length === 1">
+                    Book {{ bookingWindowRows(code.bookingWindows)[0] }}
+                  </template>
+                  <template v-else>
+                    Book {{ bookingWindowRows(code.bookingWindows)[0] }}
+                    <span class="text-muted-foreground/70">· +{{ code.bookingWindows.length - 1 }} more</span>
+                  </template>
+                </span>
+              </div>
+              <div v-if="code.stayWindows.length > 0" class="flex items-start gap-1">
+                <Icon name="lucide:bed" class="size-3 shrink-0 mt-0.5" />
+                <span class="min-w-0">
+                  <template v-if="code.stayWindows.length === 1">
+                    Stay {{ stayWindowRows(code.stayWindows)[0] }}
+                  </template>
+                  <template v-else>
+                    Stay {{ stayWindowRows(code.stayWindows)[0] }}
+                    <span class="text-muted-foreground/70">· +{{ code.stayWindows.length - 1 }} more</span>
+                  </template>
+                </span>
+              </div>
+            </template>
           </TableCell>
           <TableCell>
             <span class="font-medium">{{ code.redemptionCount }}</span>

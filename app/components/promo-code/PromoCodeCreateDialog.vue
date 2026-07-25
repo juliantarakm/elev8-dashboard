@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import type { PromoCodeDiscountType } from './data/promo-codes'
+import type { PromoCodeDiscountType, PromoCodeWindow } from './data/promo-codes'
 import { usePromoCodes } from '~/composables/usePromoCodes'
 import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
 import { listings as allListings, allTags } from '~/components/listings/data/listings'
@@ -19,8 +19,8 @@ const description = ref('')
 const discountType = ref<PromoCodeDiscountType>('%')
 const value = ref<number>(10)
 const currency = ref<string>('USD')
-const validFrom = ref('')
-const validUntil = ref('')
+const bookingWindows = ref<PromoCodeWindow[]>([])
+const stayWindows = ref<PromoCodeWindow[]>([])
 const usageLimit = ref<number | null>(null)
 const active = ref(true)
 const freeUpsellServiceIds = ref<string[]>([])
@@ -39,8 +39,8 @@ function reset() {
   discountType.value = '%'
   value.value = 10
   currency.value = 'USD'
-  validFrom.value = ''
-  validUntil.value = ''
+  bookingWindows.value = []
+  stayWindows.value = []
   usageLimit.value = null
   active.value = true
   freeUpsellServiceIds.value = []
@@ -173,6 +173,30 @@ watch(tagPopoverOpen, (open) => {
 })
 
 // ─── Submit ────────────────────────────────────────────────────────────────
+function addBookingWindow() {
+  bookingWindows.value = [...bookingWindows.value, { from: null, until: null }]
+}
+
+function removeBookingWindow(idx: number) {
+  bookingWindows.value = bookingWindows.value.filter((_, i) => i !== idx)
+}
+
+function updateBookingWindow(idx: number, key: 'from' | 'until', value: string) {
+  bookingWindows.value = bookingWindows.value.map((w, i) => (i === idx ? { ...w, [key]: value || null } : w))
+}
+
+function addStayWindow() {
+  stayWindows.value = [...stayWindows.value, { from: null, until: null }]
+}
+
+function removeStayWindow(idx: number) {
+  stayWindows.value = stayWindows.value.filter((_, i) => i !== idx)
+}
+
+function updateStayWindow(idx: number, key: 'from' | 'until', value: string) {
+  stayWindows.value = stayWindows.value.map((w, i) => (i === idx ? { ...w, [key]: value || null } : w))
+}
+
 function submit() {
   const trimmed = code.value.trim()
   if (!trimmed) {
@@ -199,8 +223,8 @@ function submit() {
     value: isFreeUpsell.value ? 0 : value.value,
     currency: discountType.value === 'fixed' ? currency.value : null,
     active: active.value,
-    validFrom: validFrom.value || null,
-    validUntil: validUntil.value || null,
+    bookingWindows: bookingWindows.value.map(w => ({ from: w.from || null, until: w.until || null })),
+    stayWindows: stayWindows.value.map(w => ({ from: w.from || null, until: w.until || null })),
     usageLimit: usageLimit.value,
     freeUpsellServiceIds: isFreeUpsell.value ? freeUpsellServiceIds.value : [],
     listingIds: listingIds.value,
@@ -475,14 +499,98 @@ function submit() {
           </Popover>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-2">
-            <Label>Valid from <span class="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input v-model="validFrom" type="date" />
+        <div class="space-y-3 rounded-md border p-3">
+          <div>
+            <p class="text-sm font-medium">
+              Validity windows
+            </p>
+            <p class="text-xs text-muted-foreground">
+              Leave both lists empty for an always-valid code. Each list accepts multiple date ranges — the code is redeemable when at least one booking range <em>and</em> at least one stay range are open.
+            </p>
           </div>
+
           <div class="space-y-2">
-            <Label>Valid until <span class="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input v-model="validUntil" type="date" />
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <Icon name="lucide:calendar-clock" class="size-3.5 text-muted-foreground" />
+                <Label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Booking windows</Label>
+              </div>
+              <Button type="button" variant="ghost" size="sm" class="h-7 text-xs" @click="addBookingWindow">
+                <Icon name="lucide:plus" class="size-3.5 mr-1" />
+                Add window
+              </Button>
+            </div>
+            <div v-if="bookingWindows.length === 0" class="rounded-md border border-dashed py-4 text-center text-xs text-muted-foreground">
+              No booking window — code is bookable any time.
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="(window, idx) in bookingWindows"
+                :key="`bw-${idx}`"
+                class="grid grid-cols-[1fr_1fr_auto] items-end gap-2 rounded-md border bg-muted/30 p-2"
+              >
+                <div class="space-y-1">
+                  <Label class="text-xs">From</Label>
+                  <Input :model-value="window.from ?? ''" type="date" @input="(e: Event) => updateBookingWindow(idx, 'from', (e.target as HTMLInputElement).value)" />
+                </div>
+                <div class="space-y-1">
+                  <Label class="text-xs">Until</Label>
+                  <Input :model-value="window.until ?? ''" type="date" @input="(e: Event) => updateBookingWindow(idx, 'until', (e.target as HTMLInputElement).value)" />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  class="size-8 text-muted-foreground hover:text-destructive"
+                  :aria-label="`Remove booking window ${idx + 1}`"
+                  @click="removeBookingWindow(idx)"
+                >
+                  <Icon name="lucide:trash-2" class="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <Icon name="lucide:bed" class="size-3.5 text-muted-foreground" />
+                <Label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stay windows</Label>
+              </div>
+              <Button type="button" variant="ghost" size="sm" class="h-7 text-xs" @click="addStayWindow">
+                <Icon name="lucide:plus" class="size-3.5 mr-1" />
+                Add window
+              </Button>
+            </div>
+            <div v-if="stayWindows.length === 0" class="rounded-md border border-dashed py-4 text-center text-xs text-muted-foreground">
+              No stay window — code applies to any check-in date.
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="(window, idx) in stayWindows"
+                :key="`sw-${idx}`"
+                class="grid grid-cols-[1fr_1fr_auto] items-end gap-2 rounded-md border bg-muted/30 p-2"
+              >
+                <div class="space-y-1">
+                  <Label class="text-xs">From</Label>
+                  <Input :model-value="window.from ?? ''" type="date" @input="(e: Event) => updateStayWindow(idx, 'from', (e.target as HTMLInputElement).value)" />
+                </div>
+                <div class="space-y-1">
+                  <Label class="text-xs">Until</Label>
+                  <Input :model-value="window.until ?? ''" type="date" @input="(e: Event) => updateStayWindow(idx, 'until', (e.target as HTMLInputElement).value)" />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  class="size-8 text-muted-foreground hover:text-destructive"
+                  :aria-label="`Remove stay window ${idx + 1}`"
+                  @click="removeStayWindow(idx)"
+                >
+                  <Icon name="lucide:trash-2" class="size-3.5" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 

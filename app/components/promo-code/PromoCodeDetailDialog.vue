@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
 import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
+import { formatPromoDiscount, formatPromoWindow, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
 import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
 import { listings as allListings } from '~/components/listings/data/listings'
 import { bookingWidgets } from '~/components/booking-widget/data/widgets'
@@ -52,6 +52,9 @@ const assignedListings = computed(() => {
     .map(id => allListings.value.find(l => l.id === id))
     .filter((l): l is NonNullable<typeof l> => l !== undefined)
 })
+
+const bookingWindows = computed(() => props.promoCode?.bookingWindows ?? [])
+const stayWindows = computed(() => props.promoCode?.stayWindows ?? [])
 
 const listingScopeLabel = computed(() => {
   if (!props.promoCode) return '—'
@@ -151,20 +154,32 @@ function onDelete() {
               </div>
             </div>
             <div>
-              <p class="text-muted-foreground text-xs">
-                Valid from
+              <p class="text-muted-foreground text-xs flex items-center gap-1">
+                <Icon name="lucide:calendar-clock" class="size-3" />
+                Booking window
               </p>
-              <p class="font-medium">
-                {{ formatDate(promoCode.validFrom) }}
+              <p v-if="bookingWindows.length === 0" class="font-medium">
+                Any time
               </p>
+              <ul v-else class="mt-1 space-y-0.5">
+                <li v-for="(window, idx) in bookingWindows" :key="`bw-${idx}`" class="font-medium text-sm">
+                  {{ formatPromoWindow(window) }}
+                </li>
+              </ul>
             </div>
             <div>
-              <p class="text-muted-foreground text-xs">
-                Valid until
+              <p class="text-muted-foreground text-xs flex items-center gap-1">
+                <Icon name="lucide:bed" class="size-3" />
+                Stay window
               </p>
-              <p class="font-medium">
-                {{ formatDate(promoCode.validUntil) }}
+              <p v-if="stayWindows.length === 0" class="font-medium">
+                Any check-in
               </p>
+              <ul v-else class="mt-1 space-y-0.5">
+                <li v-for="(window, idx) in stayWindows" :key="`sw-${idx}`" class="font-medium text-sm">
+                  {{ formatPromoWindow(window) }}
+                </li>
+              </ul>
             </div>
             <div>
               <p class="text-muted-foreground text-xs">
