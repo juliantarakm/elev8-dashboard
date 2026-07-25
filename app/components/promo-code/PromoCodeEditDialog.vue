@@ -457,7 +457,7 @@ function submit() {
           <ul v-if="selectedUpsellServices.length > 0" class="flex flex-wrap gap-1.5" role="list" aria-label="Selected upsell services">
             <li v-for="service in selectedUpsellServices" :key="service.id">
               <Badge variant="secondary" class="gap-1 pr-1">
-                <Icon name="lucide:sparkles" class="size-3 text-primary" aria-hidden="true" />
+                <Icon name="lucide:sparkles" class="size-3 text-zinc-700" aria-hidden="true" />
                 <span class="text-xs">{{ service.name }}</span>
                 <button
                   type="button"
@@ -498,7 +498,7 @@ function submit() {
                   <Badge
                     v-if="listingsFilteredByUpsell"
                     variant="outline"
-                    class="h-5 gap-1 border-primary/40 bg-primary/10 px-1.5 text-[10px] text-primary"
+                    class="h-5 gap-1 border-primary/40 bg-primary/10 px-1.5 text-[10px] text-zinc-700"
                     aria-label="Filtered by selected upsell services"
                   >
                     <Icon name="lucide:sparkles" class="size-2.5" aria-hidden="true" />
@@ -512,7 +512,7 @@ function submit() {
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-[420px] p-0" align="start" :side-offset="4">
-              <div v-if="listingsFilteredByUpsell" class="flex items-center gap-1.5 border-b bg-primary/5 px-3 py-1.5 text-[11px] text-primary">
+              <div v-if="listingsFilteredByUpsell" class="flex items-center gap-1.5 border-b bg-primary/5 px-3 py-1.5 text-[11px] text-zinc-700">
                 <Icon name="lucide:sparkles" class="size-3" aria-hidden="true" />
                 <span>Filtered to listings assigned to every selected upsell service.</span>
               </div>
@@ -528,7 +528,7 @@ function submit() {
                       variant="outline"
                       size="sm"
                       class="h-8 shrink-0"
-                      :class="listingTagsFilter.length > 0 ? 'border-primary text-primary' : ''"
+                      :class="listingTagsFilter.length > 0 ? 'border-primary text-zinc-700' : ''"
                       aria-label="Filter listings by tag"
                     >
                       <Icon name="lucide:tag" class="size-3.5" aria-hidden="true" />

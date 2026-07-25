@@ -103,7 +103,7 @@ const decoratedCodes = computed(() => codes.map((code) => {
           </TableCell>
           <TableCell>
             <span v-if="code.isFreeUpsell" class="inline-flex items-center gap-1 text-sm font-medium">
-              <Icon name="lucide:sparkles" class="size-3.5 text-primary" />
+              <Icon name="lucide:sparkles" class="size-3.5 text-zinc-700" />
               {{ formatPromoDiscount(code) }}
             </span>
             <template v-else>
