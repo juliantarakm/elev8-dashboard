@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, getPromoCodeStatus } from './data/promo-codes'
+import { formatPromoDiscount, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
 import { usePromoCodes } from '~/composables/usePromoCodes'
 
 const { codes } = defineProps<{
@@ -43,6 +44,20 @@ function statusColor(code: PromoCode) {
   if (s === 'expired') return 'text-gray-500'
   return 'text-gray-500'
 }
+
+const decoratedCodes = computed(() => codes.map((code) => {
+  const isFreeUpsell = code.discountType === 'free_upsell'
+  const freeUpsellCount = code.freeUpsellServiceIds?.length ?? 0
+  const listingCount = code.listingIds?.length ?? 0
+  const scopeLabel = listingCount === 0 ? 'All listings' : `${listingCount} listing${listingCount === 1 ? '' : 's'}`
+  return {
+    ...code,
+    isFreeUpsell,
+    freeUpsellCount,
+    listingCount,
+    scopeLabel,
+  }
+}))
 </script>
 
 <template>
@@ -53,6 +68,7 @@ function statusColor(code: PromoCode) {
           <TableHead>Code</TableHead>
           <TableHead>Discount</TableHead>
           <TableHead>Type</TableHead>
+          <TableHead>Scope</TableHead>
           <TableHead>Valid period</TableHead>
           <TableHead>Redemptions</TableHead>
           <TableHead>Status</TableHead>
@@ -63,7 +79,7 @@ function statusColor(code: PromoCode) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow v-for="code in codes" :key="code.id">
+        <TableRow v-for="code in decoratedCodes" :key="code.id">
           <TableCell>
             <div class="min-w-0">
               <p class="font-mono font-semibold">
@@ -75,13 +91,32 @@ function statusColor(code: PromoCode) {
             </div>
           </TableCell>
           <TableCell>
-            <span class="text-sm font-medium">{{ formatPromoDiscount(code) }}</span>
-            <span v-if="code.discountType === 'fixed' && code.currency" class="text-xs text-muted-foreground ml-1">{{ code.currency }}</span>
+            <span v-if="code.isFreeUpsell" class="inline-flex items-center gap-1 text-sm font-medium">
+              <Icon name="lucide:sparkles" class="size-3.5 text-primary" />
+              {{ formatPromoDiscount(code) }}
+            </span>
+            <template v-else>
+              <span class="text-sm font-medium">{{ formatPromoDiscount(code) }}</span>
+              <span v-if="code.discountType === 'fixed' && code.currency" class="text-xs text-muted-foreground ml-1">{{ code.currency }}</span>
+            </template>
           </TableCell>
           <TableCell>
-            <Badge variant="outline" class="capitalize">
-              {{ code.discountType === '%' ? 'Percentage' : 'Fixed' }}
-            </Badge>
+            <div class="flex flex-col gap-0.5">
+              <Badge variant="outline" class="capitalize w-fit">
+                {{ getPromoCodeTypeLabel(code) }}
+              </Badge>
+              <span v-if="code.isFreeUpsell" class="text-xs text-muted-foreground">
+                {{ code.freeUpsellCount }} service{{ code.freeUpsellCount === 1 ? '' : 's' }}
+              </span>
+            </div>
+          </TableCell>
+          <TableCell>
+            <div class="flex items-center gap-1.5 text-sm">
+              <Icon name="lucide:home" class="size-3.5 text-muted-foreground" />
+              <span :class="code.listingCount === 0 ? 'text-muted-foreground' : 'font-medium'">
+                {{ code.scopeLabel }}
+              </span>
+            </div>
           </TableCell>
           <TableCell class="text-muted-foreground text-sm">
             {{ formatDateRange(code) }}
@@ -142,7 +177,7 @@ function statusColor(code: PromoCode) {
           </TableCell>
         </TableRow>
         <TableRow v-if="!codes.length">
-          <TableCell colspan="8" class="h-32 text-center text-muted-foreground">
+          <TableCell colspan="9" class="h-32 text-center text-muted-foreground">
             No promo codes found.
           </TableCell>
         </TableRow>

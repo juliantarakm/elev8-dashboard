@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
 import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, getPromoCodeStatus } from './data/promo-codes'
+import { formatPromoDiscount, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
+import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
+import { listings as allListings } from '~/components/listings/data/listings'
 import { bookingWidgets } from '~/components/booking-widget/data/widgets'
 import { usePromoCodes } from '~/composables/usePromoCodes'
 
@@ -35,6 +37,31 @@ const usagesWithLabel = computed(() => usages.value.map((link) => {
 
 const status = computed(() => props.promoCode ? getPromoCodeStatus(props.promoCode) : 'inactive')
 
+const isFreeUpsell = computed(() => props.promoCode?.discountType === 'free_upsell')
+
+const freeUpsellServices = computed(() => {
+  if (!props.promoCode?.freeUpsellServiceIds) return []
+  return props.promoCode.freeUpsellServiceIds
+    .map(id => mockUpsellServices.find(s => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => s !== undefined)
+})
+
+const assignedListings = computed(() => {
+  if (!props.promoCode?.listingIds || props.promoCode.listingIds.length === 0) return []
+  return props.promoCode.listingIds
+    .map(id => allListings.value.find(l => l.id === id))
+    .filter((l): l is NonNullable<typeof l> => l !== undefined)
+})
+
+const listingScopeLabel = computed(() => {
+  if (!props.promoCode) return '—'
+  if (!props.promoCode.listingIds || props.promoCode.listingIds.length === 0)
+    return 'All listings'
+  if (assignedListings.value.length === 0)
+    return `${props.promoCode.listingIds.length} listing(s) — not found`
+  return `${assignedListings.value.length} listing${assignedListings.value.length === 1 ? '' : 's'}`
+})
+
 function formatDate(iso: string | null | undefined) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString()
@@ -64,7 +91,7 @@ function onDelete() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="sm:max-w-lg">
+    <DialogContent class="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Promo code details</DialogTitle>
         <DialogDescription>{{ promoCode?.description || 'No description' }}</DialogDescription>
@@ -81,19 +108,47 @@ function onDelete() {
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p class="text-muted-foreground text-xs">
+                Type
+              </p>
+              <p class="font-medium">
+                {{ getPromoCodeTypeLabel(promoCode) }}
+              </p>
+            </div>
+            <div v-if="!isFreeUpsell">
+              <p class="text-muted-foreground text-xs">
                 Discount
               </p>
               <p class="font-medium">
                 {{ formatPromoDiscount(promoCode) }}<span v-if="promoCode.discountType === 'fixed' && promoCode.currency"> {{ promoCode.currency }}</span>
               </p>
             </div>
-            <div>
+            <div v-if="isFreeUpsell" class="col-span-2">
               <p class="text-muted-foreground text-xs">
-                Type
+                Free upsell services
               </p>
-              <p class="font-medium capitalize">
-                {{ promoCode.discountType === '%' ? 'Percentage' : 'Fixed amount' }}
+              <div v-if="freeUpsellServices.length > 0" class="mt-1 flex flex-wrap gap-1.5">
+                <Badge v-for="service in freeUpsellServices" :key="service.id" variant="secondary" class="gap-1">
+                  <Icon name="lucide:sparkles" class="size-3 text-primary" />
+                  {{ service.name }}
+                </Badge>
+              </div>
+              <p v-else class="text-sm text-muted-foreground italic">
+                No upsells selected
               </p>
+            </div>
+            <div class="col-span-2">
+              <p class="text-muted-foreground text-xs">
+                Assigned listings
+              </p>
+              <p class="font-medium">
+                {{ listingScopeLabel }}
+              </p>
+              <div v-if="assignedListings.length > 0" class="mt-1 flex flex-wrap gap-1.5">
+                <Badge v-for="listing in assignedListings" :key="listing.id" variant="outline" class="gap-1">
+                  <Icon name="lucide:home" class="size-3" />
+                  <span class="truncate max-w-[200px]">{{ listing.name }}</span>
+                </Badge>
+              </div>
             </div>
             <div>
               <p class="text-muted-foreground text-xs">

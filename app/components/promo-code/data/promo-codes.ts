@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-export type PromoCodeDiscountType = '%' | 'fixed'
+export type PromoCodeDiscountType = '%' | 'fixed' | 'free_upsell'
 
 export type PromoCodeStatus = 'active' | 'inactive' | 'expired'
 
@@ -21,6 +21,11 @@ export interface PromoCode {
   // Present when this promo code backs a Platform Console pricing override.
   // Joins the code to its PricingOverride record.
   internalOverrideId?: string
+  // Free Upsell discount type — IDs of UpsellService records that the guest
+  // gets at no charge when redeeming this code. `value` is unused in this mode.
+  freeUpsellServiceIds?: string[]
+  // Listings the promo code applies to. Empty = applies to all listings.
+  listingIds?: string[]
 }
 
 // Analytics scaffold — per-usage-site counter.
@@ -49,6 +54,23 @@ export const promoCodes = ref<PromoCode[]>([
     redemptionCount: 3,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'promo-freespa',
+    code: 'FREESPA',
+    description: 'Free in-villa spa treatment for direct bookings',
+    discountType: 'free_upsell',
+    value: 0,
+    currency: null,
+    active: true,
+    validFrom: null,
+    validUntil: null,
+    usageLimit: 50,
+    redemptionCount: 0,
+    createdAt: '2026-02-10T00:00:00Z',
+    updatedAt: '2026-02-10T00:00:00Z',
+    freeUpsellServiceIds: ['svc-003'],
+    listingIds: ['lst-1', 'lst-4'],
   },
 ])
 
@@ -91,5 +113,13 @@ export function getPromoCodeStatus(code: PromoCode, now: Date = new Date()): Pro
 export function formatPromoDiscount(code: PromoCode): string {
   if (code.discountType === '%')
     return `${code.value}%`
+  if (code.discountType === 'free_upsell')
+    return 'Free Upsell'
   return `${code.value}`
+}
+
+export function getPromoCodeTypeLabel(code: PromoCode): string {
+  if (code.discountType === '%') return 'Percentage'
+  if (code.discountType === 'fixed') return 'Fixed amount'
+  return 'Free Upsell'
 }
