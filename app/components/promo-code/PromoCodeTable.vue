@@ -48,7 +48,7 @@ function stayWindowRows(windows: { from: string | null, until: string | null }[]
 function statusColor(code: PromoCode) {
   const s = status(code)
   if (s === 'active')
-    return 'text-green-600'
+    return 'text-green-700'
   if (s === 'expired')
     return 'text-gray-500'
   return 'text-gray-500'

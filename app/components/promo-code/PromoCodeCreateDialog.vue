@@ -345,8 +345,8 @@ function submit() {
           <div v-if="!isFreeUpsell" class="space-y-2">
             <Label for="promo-create-value">Value</Label>
             <div class="flex items-center gap-2">
-              <span v-if="discountType === 'fixed'" aria-hidden="true" class="rounded-md border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{{ currency }}</span>
-              <span v-else aria-hidden="true" class="rounded-md border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">%</span>
+              <span v-if="discountType === 'fixed'" aria-hidden="true" class="rounded-md border bg-muted px-2 py-1 text-xs font-medium text-foreground">{{ currency }}</span>
+              <span v-else aria-hidden="true" class="rounded-md border bg-muted px-2 py-1 text-xs font-medium text-foreground">%</span>
               <Input id="promo-create-value" v-model.number="value" type="number" min="1" class="flex-1" />
             </div>
           </div>

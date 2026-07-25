@@ -103,7 +103,7 @@ const hasActiveFilters = computed(() => {
                 {{ activeCount }}
               </p>
             </div>
-            <div class="flex size-9 items-center justify-center rounded-full bg-green-500/15 text-green-600" aria-hidden="true">
+            <div class="flex size-9 items-center justify-center rounded-full bg-green-500/15 text-green-700" aria-hidden="true">
               <Icon name="lucide:ticket-percent" class="size-4" />
             </div>
           </div>
