@@ -137,7 +137,7 @@ const hasActiveFilters = computed(() => {
                 {{ totalRedemptions }}
               </p>
             </div>
-            <div class="flex size-9 items-center justify-center rounded-full bg-primary/15 text-zinc-700" aria-hidden="true">
+            <div class="flex size-9 items-center justify-center rounded-full bg-primary/15 text-foreground/80" aria-hidden="true">
               <Icon name="lucide:check-circle" class="size-4" />
             </div>
           </div>
