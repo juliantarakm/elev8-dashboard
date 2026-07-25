@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, formatPromoWindowCompact, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
+import { computed } from 'vue'
 import { usePromoCodes } from '~/composables/usePromoCodes'
+import { formatPromoDiscount, formatPromoWindowCompact, getPromoCodeTypeLabel } from './data/promo-codes'
 
 const { codes } = defineProps<{
   codes: PromoCode[]
@@ -20,8 +20,10 @@ const { getPromoCodeStatus: status } = usePromoCodes()
 
 function statusBadgeVariant(code: PromoCode) {
   const s = status(code)
-  if (s === 'active') return 'default'
-  if (s === 'expired') return 'secondary'
+  if (s === 'active')
+    return 'default'
+  if (s === 'expired')
+    return 'secondary'
   return 'outline'
 }
 
@@ -30,22 +32,13 @@ function statusLabel(code: PromoCode) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-function tableWindowLabel(from: string | null | undefined, until: string | null | undefined) {
-  const f = from ? new Date(from).toLocaleDateString() : null
-  const u = until ? new Date(until).toLocaleDateString() : null
-  if (f && u) return `${f} → ${u}`
-  if (f) return `from ${f}`
-  if (u) return `until ${u}`
-  return 'Always'
-}
-
-function bookingWindowRows(windows: { from: string | null; until: string | null }[]) {
+function bookingWindowRows(windows: { from: string | null, until: string | null }[]) {
   return windows
     .map(w => formatPromoWindowCompact(w))
     .filter((label): label is string => label !== null)
 }
 
-function stayWindowRows(windows: { from: string | null; until: string | null }[]) {
+function stayWindowRows(windows: { from: string | null, until: string | null }[]) {
   return windows
     .map(w => formatPromoWindowCompact(w))
     .filter((label): label is string => label !== null)
@@ -53,8 +46,10 @@ function stayWindowRows(windows: { from: string | null; until: string | null }[]
 
 function statusColor(code: PromoCode) {
   const s = status(code)
-  if (s === 'active') return 'text-green-600'
-  if (s === 'expired') return 'text-gray-500'
+  if (s === 'active')
+    return 'text-green-600'
+  if (s === 'expired')
+    return 'text-gray-500'
   return 'text-gray-500'
 }
 

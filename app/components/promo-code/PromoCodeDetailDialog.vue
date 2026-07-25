@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import type { PromoCode } from './data/promo-codes'
 import { computed } from 'vue'
 import { toast } from 'vue-sonner'
-import type { PromoCode } from './data/promo-codes'
-import { formatPromoDiscount, formatPromoWindow, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
-import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
-import { listings as allListings } from '~/components/listings/data/listings'
 import { bookingWidgets } from '~/components/booking-widget/data/widgets'
+import { listings as allListings } from '~/components/listings/data/listings'
+import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
 import { usePromoCodes } from '~/composables/usePromoCodes'
-
-const open = defineModel<boolean>('open', { default: false })
+import { formatPromoDiscount, formatPromoWindow, getPromoCodeStatus, getPromoCodeTypeLabel } from './data/promo-codes'
 
 const props = defineProps<{
   promoCode: PromoCode | null
@@ -20,10 +18,13 @@ const emit = defineEmits<{
   deleted: [id: string]
 }>()
 
+const open = defineModel<boolean>('open', { default: false })
+
 const { getUsagesByCode, deletePromoCode } = usePromoCodes()
 
 const usages = computed(() => {
-  if (!props.promoCode) return []
+  if (!props.promoCode)
+    return []
   return getUsagesByCode(props.promoCode.id)
 })
 
@@ -40,14 +41,16 @@ const status = computed(() => props.promoCode ? getPromoCodeStatus(props.promoCo
 const isFreeUpsell = computed(() => props.promoCode?.discountType === 'free_upsell')
 
 const freeUpsellServices = computed(() => {
-  if (!props.promoCode?.freeUpsellServiceIds) return []
+  if (!props.promoCode?.freeUpsellServiceIds)
+    return []
   return props.promoCode.freeUpsellServiceIds
     .map(id => mockUpsellServices.find(s => s.id === id))
     .filter((s): s is NonNullable<typeof s> => s !== undefined)
 })
 
 const assignedListings = computed(() => {
-  if (!props.promoCode?.listingIds || props.promoCode.listingIds.length === 0) return []
+  if (!props.promoCode?.listingIds || props.promoCode.listingIds.length === 0)
+    return []
   return props.promoCode.listingIds
     .map(id => allListings.value.find(l => l.id === id))
     .filter((l): l is NonNullable<typeof l> => l !== undefined)
@@ -57,7 +60,8 @@ const bookingWindows = computed(() => props.promoCode?.bookingWindows ?? [])
 const stayWindows = computed(() => props.promoCode?.stayWindows ?? [])
 
 const listingScopeLabel = computed(() => {
-  if (!props.promoCode) return '—'
+  if (!props.promoCode)
+    return '—'
   if (!props.promoCode.listingIds || props.promoCode.listingIds.length === 0)
     return 'All listings'
   if (assignedListings.value.length === 0)
@@ -65,24 +69,23 @@ const listingScopeLabel = computed(() => {
   return `${assignedListings.value.length} listing${assignedListings.value.length === 1 ? '' : 's'}`
 })
 
-function formatDate(iso: string | null | undefined) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString()
-}
-
 function formatDateTime(iso: string | null | undefined) {
-  if (!iso) return '—'
+  if (!iso)
+    return '—'
   return new Date(iso).toLocaleString()
 }
 
 function statusVariant() {
-  if (status.value === 'active') return 'default'
-  if (status.value === 'expired') return 'secondary'
+  if (status.value === 'active')
+    return 'default'
+  if (status.value === 'expired')
+    return 'secondary'
   return 'outline'
 }
 
 function onDelete() {
-  if (!props.promoCode) return
+  if (!props.promoCode)
+    return
   if (!window.confirm(`Delete code ${props.promoCode.code}? This cannot be undone.`))
     return
   deletePromoCode(props.promoCode.id)

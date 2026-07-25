@@ -1,12 +1,10 @@
 <script setup lang="ts">
+import type { PromoCode, PromoCodeDiscountType, PromoCodeWindow } from './data/promo-codes'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import type { PromoCode, PromoCodeDiscountType, PromoCodeWindow } from './data/promo-codes'
-import { usePromoCodes } from '~/composables/usePromoCodes'
-import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
 import { listings as allListings, allTags } from '~/components/listings/data/listings'
-
-const open = defineModel<boolean>('open', { default: false })
+import { mockUpsellServices } from '~/components/upsells/data/upsell-services'
+import { usePromoCodes } from '~/composables/usePromoCodes'
 
 const props = defineProps<{
   promoCode: PromoCode | null
@@ -15,6 +13,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   updated: [codeId: string]
 }>()
+
+const open = defineModel<boolean>('open', { default: false })
 
 const { updatePromoCode, isCodeTaken } = usePromoCodes()
 
@@ -30,6 +30,11 @@ const active = ref(true)
 const freeUpsellServiceIds = ref<string[]>([])
 const listingIds = ref<string[]>([])
 
+// Search-state refs must be declared before hydrate() because that
+// function clears them on entry.
+const freeUpsellSearch = ref('')
+const listingSearch = ref('')
+
 const codeError = ref('')
 const freeUpsellError = ref('')
 
@@ -39,7 +44,8 @@ const isFreeUpsell = computed(() => discountType.value === 'free_upsell')
 
 function hydrate() {
   const c = props.promoCode
-  if (!c) return
+  if (!c)
+    return
   code.value = c.code
   description.value = c.description ?? ''
   discountType.value = c.discountType
@@ -77,11 +83,12 @@ function onCodeInput(event: Event) {
 
 // ─── Free Upsell services picker ────────────────────────────────────────────
 const freeUpsellOpen = ref(false)
-const freeUpsellSearch = ref('')
+// freeUpsellSearch declared above (before hydrate)
 
 const filteredUpsellServices = computed(() => {
   const query = freeUpsellSearch.value.trim().toLowerCase()
-  if (!query) return mockUpsellServices
+  if (!query)
+    return mockUpsellServices
   return mockUpsellServices.filter((s) => {
     const haystack = `${s.name} ${s.category}`.toLowerCase()
     return haystack.includes(query)
@@ -106,25 +113,29 @@ function clearUpsellServices() {
 
 function upsellTriggerLabel() {
   const n = freeUpsellServiceIds.value.length
-  if (n === 0) return 'Select upsell services'
-  if (n === 1) return '1 service selected'
+  if (n === 0)
+    return 'Select upsell services'
+  if (n === 1)
+    return '1 service selected'
   return `${n} services selected`
 }
 
 watch(freeUpsellOpen, (open) => {
-  if (!open) freeUpsellSearch.value = ''
+  if (!open)
+    freeUpsellSearch.value = ''
 })
 
 // ─── Listings picker ────────────────────────────────────────────────────────
 const listingOpen = ref(false)
-const listingSearch = ref('')
+// listingSearch declared above (before hydrate)
 const listingTagsFilter = ref<string[]>([])
 const tagPopoverOpen = ref(false)
 const tagSearch = ref('')
 
 const filteredTags = computed(() => {
   const q = tagSearch.value.trim().toLowerCase()
-  if (!q) return allTags.value
+  if (!q)
+    return allTags.value
   return allTags.value.filter(t => t.toLowerCase().includes(q))
 })
 
@@ -166,8 +177,10 @@ function clearListings() {
 
 function listingTriggerLabel() {
   const n = listingIds.value.length
-  if (n === 0) return 'All listings'
-  if (n === 1) return '1 listing'
+  if (n === 0)
+    return 'All listings'
+  if (n === 1)
+    return '1 listing'
   return `${n} listings`
 }
 
@@ -180,7 +193,8 @@ watch(listingOpen, (open) => {
 })
 
 watch(tagPopoverOpen, (open) => {
-  if (!open) tagSearch.value = ''
+  if (!open)
+    tagSearch.value = ''
 })
 
 // ─── Validity windows ──────────────────────────────────────────────────────
@@ -210,7 +224,8 @@ function updateStayWindow(idx: number, key: 'from' | 'until', value: string) {
 
 // ─── Submit ────────────────────────────────────────────────────────────────
 function submit() {
-  if (!props.promoCode) return
+  if (!props.promoCode)
+    return
   const trimmed = code.value.trim()
   if (!trimmed) {
     codeError.value = 'Code is required'

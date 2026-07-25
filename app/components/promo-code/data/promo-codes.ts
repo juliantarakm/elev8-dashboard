@@ -129,19 +129,9 @@ function areAllWindowsExpired(windows: PromoCodeWindow[] | undefined, now: Date)
   if (!windows || windows.length === 0)
     return false
   return windows.every((w) => {
-    if (!w.until) return false
+    if (!w.until)
+      return false
     return new Date(w.until).getTime() < now.getTime()
-  })
-}
-
-// True when every window is still in the future (i.e. ALL froms are
-// strictly after now). Empty list = already started.
-function areAllWindowsFuture(windows: PromoCodeWindow[] | undefined, now: Date): boolean {
-  if (!windows || windows.length === 0)
-    return false
-  return windows.every((w) => {
-    if (!w.from) return false
-    return new Date(w.from).getTime() > now.getTime()
   })
 }
 
@@ -178,13 +168,16 @@ export function formatPromoDiscount(code: PromoCode): string {
 }
 
 export function getPromoCodeTypeLabel(code: PromoCode): string {
-  if (code.discountType === '%') return 'Percentage'
-  if (code.discountType === 'fixed') return 'Fixed amount'
+  if (code.discountType === '%')
+    return 'Percentage'
+  if (code.discountType === 'fixed')
+    return 'Fixed amount'
   return 'Free Upsell'
 }
 
 function fmt(iso: string | null | undefined): string {
-  if (!iso) return '—'
+  if (!iso)
+    return '—'
   return new Date(iso).toLocaleDateString()
 }
 
@@ -192,9 +185,12 @@ function fmt(iso: string | null | undefined): string {
 export function formatPromoWindow(window: PromoCodeWindow): string {
   const from = window.from
   const until = window.until
-  if (from && until) return `${fmt(from)} → ${fmt(until)}`
-  if (from) return `From ${fmt(from)}`
-  if (until) return `Until ${fmt(until)}`
+  if (from && until)
+    return `${fmt(from)} → ${fmt(until)}`
+  if (from)
+    return `From ${fmt(from)}`
+  if (until)
+    return `Until ${fmt(until)}`
   return 'Always'
 }
 
@@ -203,8 +199,11 @@ export function formatPromoWindow(window: PromoCodeWindow): string {
 export function formatPromoWindowCompact(window: PromoCodeWindow): string | null {
   const f = window.from ? new Date(window.from).toLocaleDateString() : null
   const u = window.until ? new Date(window.until).toLocaleDateString() : null
-  if (f && u) return `${f} → ${u}`
-  if (f) return `from ${f}`
-  if (u) return `until ${u}`
+  if (f && u)
+    return `${f} → ${u}`
+  if (f)
+    return `from ${f}`
+  if (u)
+    return `until ${u}`
   return null
 }

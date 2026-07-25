@@ -1,13 +1,13 @@
 import type { PromoCode, PromoCodeStatus, WidgetPromoCodeLink } from '~/components/promo-code/data/promo-codes'
+import { bookingWidgets } from '~/components/booking-widget/data/widgets'
 import {
   formatPromoDiscount,
   generatePromoId,
   getPromoCodeStatus,
   isPromoCodeExpired,
-  promoCodes as seedPromoCodes,
   widgetPromoCodeLinks as seedLinks,
+  promoCodes as seedPromoCodes,
 } from '~/components/promo-code/data/promo-codes'
-import { bookingWidgets } from '~/components/booking-widget/data/widgets'
 
 export type PromoCodeDraft = Omit<PromoCode, 'id' | 'createdAt' | 'updatedAt' | 'redemptionCount'> & {
   redemptionCount?: number
