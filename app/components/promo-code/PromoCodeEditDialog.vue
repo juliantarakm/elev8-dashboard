@@ -142,6 +142,29 @@ const filteredTags = computed(() => {
 const filteredListings = computed(() => {
   const query = listingSearch.value.trim().toLowerCase()
   let result = allListings.value
+
+  // When this is a Free Upsell code with at least one selected upsell
+  // service, restrict to listings that are assigned to ALL selected
+  // services (intersection). Assigned listings are matched by name since
+  // UpsellService.assignedListings uses names, not IDs.
+  if (isFreeUpsell.value && freeUpsellServiceIds.value.length > 0) {
+    const selectedServices = mockUpsellServices.filter(s => freeUpsellServiceIds.value.includes(s.id))
+    const allowedNames = selectedServices.reduce<Set<string> | null>((acc, service) => {
+      const names = new Set(service.assignedListings)
+      if (acc === null)
+        return names
+      const next = new Set<string>()
+      for (const n of acc) {
+        if (names.has(n))
+          next.add(n)
+      }
+      return next
+    }, null)
+    if (allowedNames && allowedNames.size > 0) {
+      result = result.filter(l => allowedNames.has(l.name))
+    }
+  }
+
   if (listingTagsFilter.value.length > 0) {
     // AND logic: listing must contain every selected tag
     result = result.filter(l => listingTagsFilter.value.every(t => l.tags.includes(t)))
@@ -154,6 +177,10 @@ const filteredListings = computed(() => {
   }
   return result
 })
+
+const listingsFilteredByUpsell = computed(() =>
+  isFreeUpsell.value && freeUpsellServiceIds.value.length > 0,
+)
 
 function toggleListing(id: string) {
   listingIds.value = listingIds.value.includes(id)
@@ -421,6 +448,15 @@ function submit() {
               <Button variant="outline" class="w-full justify-between">
                 <span class="truncate">{{ listingTriggerLabel() }}</span>
                 <div class="flex items-center gap-2">
+                  <Badge
+                    v-if="listingsFilteredByUpsell"
+                    variant="outline"
+                    class="h-5 gap-1 border-primary/40 bg-primary/10 px-1.5 text-[10px] text-primary"
+                    title="Only listings assigned to all selected upsell services are shown."
+                  >
+                    <Icon name="lucide:sparkles" class="size-2.5" />
+                    upsell scope
+                  </Badge>
                   <Badge v-if="listingIds.length > 0" variant="secondary" class="h-4 min-w-4 rounded-full px-1 text-[9px]">
                     {{ listingIds.length }}
                   </Badge>
@@ -429,6 +465,10 @@ function submit() {
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-[420px] p-0" align="start" :side-offset="4">
+              <div v-if="listingsFilteredByUpsell" class="flex items-center gap-1.5 border-b bg-primary/5 px-3 py-1.5 text-[11px] text-primary">
+                <Icon name="lucide:sparkles" class="size-3" />
+                <span>Filtered to listings assigned to every selected upsell service.</span>
+              </div>
               <div class="flex items-center gap-1.5 border-b p-2">
                 <div class="relative flex-1">
                   <Icon name="lucide:search" class="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
