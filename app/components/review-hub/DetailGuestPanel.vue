@@ -129,6 +129,10 @@ const allTagsVisible = computed(() => visibleTagCount.value >= props.review.tags
           Received {{ formatDate(review.review_received_at) }}
         </p>
       </div>
+      <div v-else class="flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2.5">
+        <Icon name="lucide:star" class="size-4 text-muted-foreground shrink-0" />
+        <span class="text-sm text-muted-foreground">Guest left a rating without written feedback</span>
+      </div>
     </template>
 
     <!-- Tags (Channex review tags) -->

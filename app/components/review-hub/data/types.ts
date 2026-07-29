@@ -4,7 +4,12 @@
 export type ReviewSource = 'airbnb' | 'booking_com' | 'direct'
 
 // --- Reply Status (for ReviewRecord) ---
-export type ReplyStatus = 'host_review_pending' | 'needs_reply' | 'replied'
+// - host_review_pending: host hasn't reviewed the guest yet (window open)
+// - needs_reply: guest left a full review (text + rating), host should reply
+// - rating_only: guest left a rating but no written feedback (reply is optional)
+// - replied: host has already replied to the guest
+// (no-review-at-all records are excluded from the feed entirely)
+export type ReplyStatus = 'host_review_pending' | 'needs_reply' | 'rating_only' | 'replied'
 
 // --- Unified Score Category (Channex: {category, score} array, 0-10 scale) ---
 export interface ScoreCategory {
@@ -150,6 +155,7 @@ export const badgeLevelColors: Record<BadgeLevel, { bg: string, text: string, bo
 export const replyStatusLabels: Record<ReplyStatus, string> = {
   host_review_pending: 'Host Review Due',
   needs_reply: 'Needs Reply',
+  rating_only: 'Rating Only',
   replied: 'Replied',
 }
 
@@ -157,6 +163,7 @@ export const replyStatusLabels: Record<ReplyStatus, string> = {
 export const replyStatusIcons: Record<ReplyStatus, string> = {
   host_review_pending: 'lucide:user-check',
   needs_reply: 'lucide:message-circle',
+  rating_only: 'lucide:star',
   replied: 'lucide:check-circle-2',
 }
 
@@ -164,6 +171,7 @@ export const replyStatusIcons: Record<ReplyStatus, string> = {
 export const replyStatusColors: Record<ReplyStatus, { bg: string, text: string }> = {
   host_review_pending: { bg: 'bg-blue-50', text: 'text-blue-700' },
   needs_reply: { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+  rating_only: { bg: 'bg-purple-50', text: 'text-purple-700' },
   replied: { bg: 'bg-green-50', text: 'text-green-700' },
 }
 

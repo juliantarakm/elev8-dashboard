@@ -125,25 +125,30 @@ export function useReviewHub() {
   }
   // Merge into feed items with tag enrichment
   const feedItems = computed<ReviewFeedItem[]>(() => {
-    return reviewRecords.value.map((record) => {
-      const sor = sorRecords.value.find(s => s.reservation_id === record.reservation_id) ?? null
-      const hostReview = hostReviews.value.find((r: AutoReview) => r.reservation_id === record.reservation_id) ?? null
-      const enrichedSor = enrichSorFromTags(record, sor)
-      return {
-        id: record.id,
-        review_record: record,
-        sor: enrichedSor,
-        host_review: hostReview,
-      }
-    })
+    return reviewRecords.value
+      .map((record) => {
+        const sor = sorRecords.value.find(s => s.reservation_id === record.reservation_id) ?? null
+        const hostReview = hostReviews.value.find((r: AutoReview) => r.reservation_id === record.reservation_id) ?? null
+        const enrichedSor = enrichSorFromTags(record, sor)
+        return {
+          id: record.id,
+          review_record: record,
+          sor: enrichedSor,
+          host_review: hostReview,
+        }
+      })
+      // Exclude no-review-at-all records (guest left neither rating nor text).
+      // getComputedStatus returns null for these — they're hidden from the feed entirely.
+      .filter(item => getComputedStatus(item.review_record) !== null)
   })
 
   // Filtered feed items
   const filteredFeedItems = computed(() => {
     return feedItems.value.filter((item) => {
       const r = item.review_record
+      const status = getComputedStatus(r)
 
-      if (filterStatus.value !== 'all' && getComputedStatus(r) !== filterStatus.value)
+      if (filterStatus.value !== 'all' && status !== filterStatus.value)
         return false
       if (filterChannel.value !== 'all' && r.source !== filterChannel.value)
         return false
@@ -159,7 +164,7 @@ export function useReviewHub() {
   })
 
   // Stats
-  function getComputedStatus(record: ReviewRecord): ReplyStatus {
+  function getComputedStatus(record: ReviewRecord): ReplyStatus | null {
     if (record.is_replied) return 'replied'
 
     // Host review not yet submitted + window still open = host_review_pending (takes priority)
@@ -169,20 +174,28 @@ export function useReviewHub() {
 
     if (hostReviewPending) return 'host_review_pending'
 
-    // Guest review visible and has content
-    if (isGuestReviewVisible(record) && (record.guest_review_text || record.guest_rating_overall)) {
-      return 'needs_reply'
-    }
+    // No rating and no text = no review at all = excluded from the feed
+    const hasRating = record.guest_rating_overall !== null
+    const hasText = !!record.guest_review_text
+    if (!hasRating && !hasText) return null
 
+    // Rating present but no text = rating_only (reply is optional, not required)
+    if (hasRating && !hasText) return 'rating_only'
+
+    // Full review (with text) = needs_reply
     return 'needs_reply'
   }
 
-  const hubStats = computed(() => ({
-    host_review_pending: reviewRecords.value.filter(r => getComputedStatus(r) === 'host_review_pending').length,
-    needs_reply: reviewRecords.value.filter(r => getComputedStatus(r) === 'needs_reply').length,
-    replied: reviewRecords.value.filter(r => getComputedStatus(r) === 'replied').length,
-    total: reviewRecords.value.length,
-  }))
+  const hubStats = computed(() => {
+    const visibleRecords = reviewRecords.value.filter(r => getComputedStatus(r) !== null)
+    return {
+      host_review_pending: visibleRecords.filter(r => getComputedStatus(r) === 'host_review_pending').length,
+      needs_reply: visibleRecords.filter(r => getComputedStatus(r) === 'needs_reply').length,
+      rating_only: visibleRecords.filter(r => getComputedStatus(r) === 'rating_only').length,
+      replied: visibleRecords.filter(r => getComputedStatus(r) === 'replied').length,
+      total: visibleRecords.length,
+    }
+  })
 
   // Update a review record
   function updateReviewRecord(id: string, patch: Partial<ReviewRecord>) {

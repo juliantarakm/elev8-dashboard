@@ -166,7 +166,7 @@ function isReplyExpired(item: ReviewFeedItem) {
             <Button
               v-else-if="canReplyToGuest(item) && !isReplyExpired(item)"
               size="sm"
-              :variant="item.review_record.reply_status === 'needs_reply' ? 'default' : 'outline'"
+              :variant="getComputedStatus(item.review_record) === 'needs_reply' ? 'default' : 'outline'"
               class="h-8 gap-1.5"
               @click.stop="emit('select', item)"
             >
